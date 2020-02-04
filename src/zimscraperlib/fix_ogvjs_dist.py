@@ -89,7 +89,9 @@ def fix_source_dir(source_vendors_path, dest_vendors_path="vendors"):
         vara_pos = content.index("var a;a")
         before = content[0:vara_pos]
         after = content[vara_pos:]
-        content = before + function_block.replace("{vendors_path}", dest_vendors_path) + after
+        content = (
+            before + function_block.replace("{vendors_path}", dest_vendors_path) + after
+        )
 
         # second pass, add call to function
         locatefile_pos = content.index(".locateFile")
