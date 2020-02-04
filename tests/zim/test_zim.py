@@ -23,10 +23,7 @@ def test_ziminfo_defaults(ziminfo):
 
 
 def test_updating_values(ziminfo):
-    updates = {
-        "language": "fra",
-        "title": "new title"
-    }
+    updates = {"language": "fra", "title": "new title"}
     ziminfo.update(**updates)
     for k, v in updates.items():
         assert getattr(ziminfo, k) == v
@@ -49,8 +46,8 @@ def test_zimfriterfs_args(ziminfo):
         ("scraper", "scraper"),
     ]
 
-    for index in range(0, len(options_map)):
-        option, attr = options_map[index]
+    for index, option_data in enumerate(options_map):
+        option, attr = option_data
         arg_index = index * 2
         assert zwfs[arg_index] == f"--{option}"
         if option != "tags":
@@ -61,8 +58,8 @@ def test_zimfriterfs_args(ziminfo):
 
 def test_zimwriterfs_command(monkeypatch, ziminfo):
 
-    build_dir = pathlib.Path("/tmp")
-    output_dir = pathlib.Path("/tmp")
+    build_dir = pathlib.Path("build")
+    output_dir = pathlib.Path("output")
     zim_fname = f"{ziminfo.name}.zim"
 
     def mock_subprocess_run(args, **kwargs):
