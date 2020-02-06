@@ -29,13 +29,11 @@ def getLogger(
         - file: False | pathlib.Path
         - file_level: log level for file or console_level
         - file_format: format string for file or log_format """
-    logger = logging.getLogger(name)
-    logger.setLevel(logging.WARNING)
+    logger = logging.Logger(name)
+    logger.setLevel(logging.DEBUG)
 
     # setup console logging
     if console:
-        if console is True:
-            console = sys.stdout
         console_handler = logging.StreamHandler(console)
         console_handler.setFormatter(logging.Formatter(log_format))
         console_handler.setLevel(level)
