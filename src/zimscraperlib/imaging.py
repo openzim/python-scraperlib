@@ -49,7 +49,7 @@ def resize_image(fpath, width, height=None, to=None, method="width"):
             if method == "width":
                 resized = resizeimage.resize(method, image, width)
             elif method == "height":
-                resized = resizeimage.resize(method, image, height=height)
+                resized = resizeimage.resize(method, image, height)
             else:
                 resized = resizeimage.resize(method, image, [width, height])
     kwargs = {"JPEG": {"quality": 100}, "PNG": {}}

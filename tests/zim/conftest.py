@@ -7,6 +7,6 @@ import pytest
 from zimscraperlib.zim import ZimInfo
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="function")
 def ziminfo():
     return ZimInfo()

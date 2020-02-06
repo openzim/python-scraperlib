@@ -1,3 +1,13 @@
+1.0.2 [WIP]
+
+* fixed return value of `get_language_details` on non-existent language
+* fixed crash on `resize_image` with method `height`
+* fixed root logger level (now DEBUG)
+* removed useless `console=True` `getLogger` param
+* completed tests (100% coverage)
+* added `./test` script for quick local testing
+* improved tox.ini
+
 1.0.1
 
 * fixed fix_ogvjs_dist
