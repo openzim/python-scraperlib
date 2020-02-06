@@ -48,7 +48,8 @@ def prepare_ogvjs_folder(tmp_path, videojs_url, ogvjs_url, videojs_ogvjs_url):
 
 @pytest.mark.installed
 def test_installed_script():
-    script = subprocess.run(["fix_ogvjs_dist"], text=True, capture_output=True)  # nosec
+    kwargs = {"universal_newlines": True, "stdout": subprocess.PIPE}
+    script = subprocess.run(["fix_ogvjs_dist"], **kwargs)  # nosec
     assert script.returncode == 1
     assert script.stdout.strip().startswith("Usage: ")
 
@@ -71,7 +72,7 @@ def test_fix_ogvjs_dist(tmp_path, videojs_url, ogvjs_url, videojs_ogvjs_url):
             str(tmp_path),
             "vendors",
         ],
-        text=True,
+        universal_newlines=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
     )
@@ -87,7 +88,7 @@ def test_fix_ogvjs_dist(tmp_path, videojs_url, ogvjs_url, videojs_ogvjs_url):
             str(tmp_path),
             "vendors",
         ],
-        text=True,
+        universal_newlines=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
     )
