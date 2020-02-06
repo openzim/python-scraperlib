@@ -62,7 +62,7 @@ def get_language_details(iso_639_3):
     except iso639.NonExistentLanguageError:
         return {
             "code": iso_639_3,
-            "iso_639_3": iso_639_3,
+            "iso-639-1": iso_639_3,
             "english": iso_639_3,
             "native": iso_639_3,
         }
