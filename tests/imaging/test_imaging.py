@@ -157,3 +157,12 @@ def test_create_favicon_square(square_png_image, square_jpg_image, tmp_path, fmt
     im = Image.open(dst)
     assert im.format == "ICO"
     assert im.size == (256, 256)
+
+
+@pytest.mark.parametrize(
+    "fmt", ["png", "jpg"],
+)
+def test_wrong_extension(square_png_image, square_jpg_image, tmp_path, fmt):
+    src, dst = get_src_dst(square_png_image, square_jpg_image, tmp_path, fmt)
+    with pytest.raises(ValueError):
+        create_favicon(src, dst)
