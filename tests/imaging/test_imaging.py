@@ -6,7 +6,7 @@ import pytest
 
 from PIL import Image
 
-from zimscraperlib.imaging import get_colors, is_hex_color, resize_image
+from zimscraperlib.imaging import get_colors, is_hex_color, resize_image, create_favicon
 
 
 def get_image_size(fpath):
@@ -131,3 +131,29 @@ def test_resize_contain(png_image, jpg_image, tmp_path, fmt):
     tw, th = get_image_size(dst)
     assert tw <= width
     assert th <= height
+
+
+@pytest.mark.parametrize(
+    "fmt,exp_size", [("png", 128), ("jpg", 128)],
+)
+def test_create_favicon(png_image, jpg_image, tmp_path, fmt, exp_size):
+    src, dst = get_src_dst(png_image, jpg_image, tmp_path, fmt)
+    dst = dst.parent.joinpath("favicon.ico")
+    create_favicon(src, dst)
+
+    im = Image.open(dst)
+    assert im.format == "ICO"
+    assert im.size == (exp_size, exp_size)
+
+
+@pytest.mark.parametrize(
+    "fmt", ["png", "jpg"],
+)
+def test_create_favicon_square(square_png_image, square_jpg_image, tmp_path, fmt):
+    src, dst = get_src_dst(square_png_image, square_jpg_image, tmp_path, fmt)
+    dst = dst.parent.joinpath("favicon.ico")
+    create_favicon(src, dst)
+
+    im = Image.open(dst)
+    assert im.format == "ICO"
+    assert im.size == (256, 256)

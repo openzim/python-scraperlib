@@ -7,6 +7,7 @@
 * completed tests (100% coverage)
 * added `./test` script for quick local testing
 * improved tox.ini
+* added `create_favicon` to generate a squared favicon
 
 1.0.1
 
