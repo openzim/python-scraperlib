@@ -19,3 +19,13 @@ def png_image():
 @pytest.fixture(scope="module")
 def jpg_image():
     return src_image("pluto.jpg")
+
+
+@pytest.fixture(scope="module")
+def square_png_image():
+    return src_image("square.png")
+
+
+@pytest.fixture(scope="module")
+def square_jpg_image():
+    return src_image("square.jpg")

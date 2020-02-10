@@ -61,3 +61,22 @@ def resize_image(fpath, width, height=None, to=None, method="width"):
 def is_hex_color(text):
     """ whether supplied text is a valid hex-formated color code """
     return re.search(r"^#(?:[0-9a-fA-F]{3}){1,2}$", text)
+
+
+def create_favicon(source_image, dest_ico):
+    """ generate a squared favicon from a source image """
+    if dest_ico.suffix != ".ico":
+        raise ValueError("favicon extension must be ICO")
+
+    img = PIL.Image.open(source_image)
+    w, h = img.size
+    # resize image to square first
+    if w != h:
+        size = min([w, h])
+        resized = dest_ico.parent.joinpath(
+            f"{source_image.stem}.tmp.{source_image.suffix}"
+        )
+        resize_image(source_image, size, size, resized, "contain")
+        img = PIL.Image.open(resized)
+    # now convert to ICO
+    img.save(str(dest_ico))
