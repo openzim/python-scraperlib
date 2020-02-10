@@ -11,7 +11,7 @@ from zimscraperlib.i18n import setlocale, get_language_details
 
 @pytest.mark.parametrize(
     "code,expected",
-    [("fr", "fr_FR.UTF-8"), ("it_IT.UTF-8", "it_IT.UTF-8"), ("es.utf8", "es_ES.UTF-8")],
+    [("en", "en_US.UTF-8"), ("en_us", "en_US.UTF-8"), ("en.utf8", "en_US.UTF-8")],
 )
 def test_setlocale(tmp_path, code, expected):
     assert setlocale(tmp_path, code) == expected
@@ -94,7 +94,7 @@ def test_selocale_unsupported(tmp_path):
         ),
         (
             "fake",
-            {"code": "fake", "english": "fake", "iso-639-1": "fake", "native": "fake",},
+            {"code": "fake", "english": "fake", "iso-639-1": "fake", "native": "fake"},
         ),
     ],
 )
