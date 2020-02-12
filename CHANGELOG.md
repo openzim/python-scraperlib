@@ -8,6 +8,7 @@
 * added `./test` script for quick local testing
 * improved tox.ini
 * added `create_favicon` to generate a squared favicon
+* added `handle_user_provided_file` to handle user file/URL from param
 
 1.0.1
 
