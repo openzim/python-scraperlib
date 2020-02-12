@@ -1,4 +1,8 @@
-1.0.2 [WIP]
+1.0.3 [WIP]
+
+* 
+
+1.0.2
 
 * fixed return value of `get_language_details` on non-existent language
 * fixed crash on `resize_image` with method `height`
