@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
+import pathlib
+
 import pytest
 
 
@@ -33,3 +35,42 @@ def pytest_collection_modifyitems(config, items):
             item.add_marker(skip_installed)
         if "slow" in item.keywords and not config.getoption("--runslow"):
             item.add_marker(skip_slow)
+
+
+@pytest.fixture(scope="module")
+def valid_http_url():
+    return "http://google.com/favicon.ico"
+
+
+@pytest.fixture(scope="module")
+def valid_https_url():
+    return "https://www.google.com/favicon.ico"
+
+
+@pytest.fixture(scope="module")
+def invalid_url():
+    return "http://nodomain.notld/nofile.noext"
+
+
+def src_image(fname):
+    return pathlib.Path(__file__).parent.joinpath("files", fname)
+
+
+@pytest.fixture(scope="module")
+def png_image():
+    return src_image("commons.png")
+
+
+@pytest.fixture(scope="module")
+def jpg_image():
+    return src_image("pluto.jpg")
+
+
+@pytest.fixture(scope="module")
+def square_png_image():
+    return src_image("square.png")
+
+
+@pytest.fixture(scope="module")
+def square_jpg_image():
+    return src_image("square.jpg")
