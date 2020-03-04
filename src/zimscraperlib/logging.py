@@ -8,6 +8,9 @@ from logging.handlers import RotatingFileHandler
 
 DEFAULT_FORMAT = "[%(asctime)s] %(levelname)s:%(message)s"
 
+# hide DEBUG and INFO level messages from every request (requests uses urllib3)
+logging.getLogger("urllib3").setLevel(logging.WARNING)
+
 
 def getLogger(
     name,
