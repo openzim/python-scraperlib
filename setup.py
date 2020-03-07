@@ -21,7 +21,7 @@ setup(
     long_description_content_type="text/markdown",
     author="kiwix",
     author_email="reg@kiwix.org",
-    url="https://github.com/openzim/python-scraperlib",
+    url="https://github.com/openzim/python_scraperlib",
     keywords="kiwix zim offline",
     license="GPLv3+",
     packages=find_packages("src"),
