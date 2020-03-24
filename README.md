@@ -1,5 +1,4 @@
-zimscraperlib
-=============
+# zimscraperlib
 
 ![Build Status](https://github.com/openzim/python_scraperlib/workflows/CI/badge.svg)
 [![CodeFactor](https://www.codefactor.io/repository/github/openzim/python_scraperlib/badge)](https://www.codefactor.io/repository/github/openzim/python_scraperlib)
@@ -11,13 +10,13 @@ Collection of python code to re-use across python-based scrapers
 
 # Usage
 
-* This library is meant to be installed via PyPI ([`zimscraperlib`](https://pypi.org/project/zimscraperlib/)).
-* Make sure to reference it using a version code as the API is subject to frequent changes.
-* API should remains the same only within the same *minor* version.
+- This library is meant to be installed via PyPI ([`zimscraperlib`](https://pypi.org/project/zimscraperlib/)).
+- Make sure to reference it using a version code as the API is subject to frequent changes.
+- API should remain the same only within the same _minor_ version.
 
 Example usage:
 
-``` pip
+```pip
 zimscraperlib>=1.1,<1.2
 ```
 
@@ -25,15 +24,15 @@ zimscraperlib>=1.1,<1.2
 
 Non-exhaustive list of scrapers using it (check status when updating API):
 
-* [openzim/youtube](https://github.com/openzim/youtube)
-* [openzim/nautilus](https://github.com/openzim/nautilus)
+- [openzim/youtube](https://github.com/openzim/youtube)
+- [openzim/nautilus](https://github.com/openzim/nautilus)
 
 # releasing
 
-* Update your dependencies: `pip install -U setuptools wheel twine`
-* Make sure CHANGELOG.md is up-to-date
-* Bump version on `src/zimscraperlib/VERSION`
-* Build packages `python ./setup.py sdist bdist_wheel`
-* Upload to PyPI `twine upload dist/zimscraperlib-2.0.0*`.
-* Commit your Changelog + version bump changes
-* Tag version on git `git tag -a v2.0.0`
+- Update your dependencies: `pip install -U setuptools wheel twine`
+- Make sure CHANGELOG.md is up-to-date
+- Bump version on `src/zimscraperlib/VERSION`
+- Build packages `python ./setup.py sdist bdist_wheel`
+- Upload to PyPI `twine upload dist/zimscraperlib-2.0.0*`.
+- Commit your Changelog + version bump changes
+- Tag version on git `git tag -a v2.0.0`
