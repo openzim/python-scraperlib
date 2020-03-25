@@ -13,7 +13,7 @@ Collection of python code to re-use across python-based scrapers
 
 * This library is meant to be installed via PyPI ([`zimscraperlib`](https://pypi.org/project/zimscraperlib/)).
 * Make sure to reference it using a version code as the API is subject to frequent changes.
-* API should remains the same only within the same *minor* version.
+* API should remain the same only within the same *minor* version.
 
 Example usage:
 
