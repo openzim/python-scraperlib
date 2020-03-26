@@ -64,8 +64,7 @@ def gen_extra_jumps(parent_dir_count):
     if(parent_dir_count >= 1):
         extra_jumps = '../' * (parent_dir_count-1)
         return extra_jumps
-    else:
-        sys.exit("Something went wrong...")
+    sys.exit("Something went wrong...")
 
 
 def fix_source_dir(source_vendors_path, dest_vendors_path="vendors"):
