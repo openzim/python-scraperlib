@@ -24,7 +24,7 @@ import pathlib
 logging.basicConfig(format="%(levelname)s:%(message)s", level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-function_block = """
+generic_function_block = """
 if (typeof zim_fix_wasm_target === 'undefined') {
     IS_IN_ZIM = self.location.href.indexOf("/-/") != -1 || self.location.href.indexOf("/I/") != -1 || self.location.href.indexOf("/A/") != -1;
     ZIM_IMG_NS = (IS_IN_ZIM) ? '../../{extra_parent_jumps}../I/' : '';
@@ -55,23 +55,13 @@ if (typeof zim_fix_wasm_target === 'undefined') {
 
 """
 
-def get_directory_count_and_string(dest_vendors_path):
-    directories = [i for i in dest_vendors_path.split('/') if i]
-    directory_string = "/".join(map(str, directories))
-    return len(directories), directory_string
-
-def gen_extra_jumps(parent_dir_count):
-    if(parent_dir_count >= 1):
-        extra_jumps = '../' * (parent_dir_count-1)
-        return extra_jumps
-    sys.exit("Something went wrong...")
-
 
 def fix_source_dir(source_vendors_path, dest_vendors_path="vendors"):
     logger.info("about to add fix to ogv.js files to dynamicaly load wasm files in ZIM")
-    
-    parent_dir_count, dest_vendors_path = get_directory_count_and_string(dest_vendors_path)
-    function_block.replace("{extra_parent_jumps}", gen_extra_jumps(parent_dir_count))
+    parent_dir_count = len(pathlib.Path(dest_vendors_path).parts)
+    function_block = generic_function_block.replace(
+        "{extra_parent_jumps}", "../" * (parent_dir_count - 1)
+    )
     root = pathlib.Path(source_vendors_path)
     ogvjs_path = root.joinpath("ogvjs")
 
