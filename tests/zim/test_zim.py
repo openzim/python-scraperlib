@@ -20,19 +20,22 @@ def test_ziminfo_defaults(ziminfo):
     assert ziminfo.homepage == "home.html"
     assert ziminfo.favicon == "favicon.png"
     assert ziminfo.scraper == SCRAPER
+    assert ziminfo.source is None
+    assert ziminfo.flavour is None
+    assert ziminfo.redirects is None
 
 
 def test_updating_values(ziminfo):
-    updates = {"language": "fra", "title": "new title"}
+    updates = {"language": "fra", "title": "new title", "tags": ["test", "tags"]}
     ziminfo.update(**updates)
     for k, v in updates.items():
         assert getattr(ziminfo, k) == v
 
 
 def test_zimfriterfs_args(ziminfo):
-
+    ziminfo.update(tags=["test", "tags"])
     zwfs = ziminfo.to_zimwriterfs_args()
-    assert len(zwfs) == 20
+    assert len(zwfs) == 22
     options_map = [
         ("welcome", "homepage"),
         ("favicon", "favicon"),
@@ -41,8 +44,9 @@ def test_zimfriterfs_args(ziminfo):
         ("description", "description"),
         ("creator", "creator"),
         ("publisher", "publisher"),
-        ("name", "name"),
+        ("minChunkSize", "2048"),
         ("tags", "tags"),
+        ("name", "name"),
         ("scraper", "scraper"),
     ]
 
@@ -50,10 +54,12 @@ def test_zimfriterfs_args(ziminfo):
         option, attr = option_data
         arg_index = index * 2
         assert zwfs[arg_index] == f"--{option}"
-        if option != "tags":
+        if option != "tags" and option != "minChunkSize":
             assert zwfs[arg_index + 1] == getattr(ziminfo, attr)
-        else:
+        elif option == "tags":
             assert zwfs[arg_index + 1] == ";".join(getattr(ziminfo, attr))
+        elif option == "minChunkSize":
+            assert zwfs[arg_index + 1] == "2048"
 
 
 def test_zimwriterfs_command(monkeypatch, ziminfo):
@@ -63,7 +69,7 @@ def test_zimwriterfs_command(monkeypatch, ziminfo):
     zim_fname = f"{ziminfo.name}.zim"
 
     def mock_subprocess_run(args, **kwargs):
-        assert len(args) == 24
+        assert len(args) == 23
         assert args[-1].endswith(".zim")
         assert args[-1] == str(output_dir.joinpath(zim_fname))
         assert args[-2] == str(build_dir)

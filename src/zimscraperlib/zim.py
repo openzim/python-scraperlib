@@ -27,6 +27,9 @@ class ZimInfo(object):
         homepage="home.html",
         favicon="favicon.png",
         scraper=SCRAPER,
+        source=None,
+        flavour=None,
+        redirects=None,
     ):
 
         self.homepage = homepage
@@ -39,13 +42,23 @@ class ZimInfo(object):
         self.name = name
         self.tags = tags
         self.scraper = scraper
+        self.source = source
+        self.flavour = flavour
+        self.redirects = redirects
 
     def update(self, **kwargs):
         for key, value in kwargs.items():
             setattr(self, key, value)
 
-    def to_zimwriterfs_args(self):
-        return [
+    def to_zimwriterfs_args(
+        self,
+        verbose=False,
+        inflateHtml=False,
+        uniqueNamespace=False,
+        withoutFTIndex=False,
+        minChunkSize=2048,
+    ):
+        arg_list = [
             "--welcome",
             self.homepage,
             "--favicon",
@@ -60,13 +73,30 @@ class ZimInfo(object):
             self.creator,
             "--publisher",
             self.publisher,
-            "--name",
-            self.name,
-            "--tags",
-            ";".join(self.tags),
-            "--scraper",
-            self.scraper,
         ]
+
+        if verbose == True:
+            arg_list.append("--verbose")
+        if inflateHtml == True:
+            arg_list.append("--inflateHtml")
+        if uniqueNamespace == True:
+            arg_list.append("--uniqueNamespace")
+        if withoutFTIndex == True:
+            arg_list.append("--withoutFTIndex")
+
+        arg_list.extend(["--minChunkSize", str(minChunkSize)])
+
+        if self.redirects is not None:
+            arg_list.extend(["--redirects", self.redirects])
+        if self.source is not None:
+            arg_list.extend(["--source", self.source])
+        if self.flavour is not None:
+            arg_list.extend(["--flavour", self.flavour])
+        if self.tags != []:
+            arg_list.extend(["--tags", ";".join(self.tags)])
+
+        arg_list.extend(["--name", self.name, "--scraper", self.scraper])
+        return arg_list
 
 
 def make_zim_file(build_dir, output_dir, zim_fname, zim_info):
@@ -74,7 +104,7 @@ def make_zim_file(build_dir, output_dir, zim_fname, zim_info):
     args = (
         [ZimInfo.zimwriterfs_path]
         + zim_info.to_zimwriterfs_args()
-        + ["--verbose", str(build_dir), str(output_dir.joinpath(zim_fname))]
+        + [str(build_dir), str(output_dir.joinpath(zim_fname))]
     )
 
     logger.debug(nicer_args_join(args))
