@@ -75,13 +75,13 @@ class ZimInfo(object):
             self.publisher,
         ]
 
-        if verbose == True:
+        if verbose:
             arg_list.append("--verbose")
-        if inflateHtml == True:
+        if inflateHtml:
             arg_list.append("--inflateHtml")
-        if uniqueNamespace == True:
+        if uniqueNamespace:
             arg_list.append("--uniqueNamespace")
-        if withoutFTIndex == True:
+        if withoutFTIndex:
             arg_list.append("--withoutFTIndex")
 
         arg_list.extend(["--minChunkSize", str(minChunkSize)])
