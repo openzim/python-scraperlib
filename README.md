@@ -1,7 +1,7 @@
 zimscraperlib
 =============
 
-![Build Status](https://github.com/openzim/python_scraperlib/workflows/CI/badge.svg)
+[![Build Status](https://github.com/openzim/python_scraperlib/workflows/CI/badge.svg?query=branch%3Amaster)](https://github.com/openzim/python_scraperlib/actions?query=branch%3Amaster)
 [![CodeFactor](https://www.codefactor.io/repository/github/openzim/python_scraperlib/badge)](https://www.codefactor.io/repository/github/openzim/python_scraperlib)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![PyPI version shields.io](https://img.shields.io/pypi/v/zimscraperlib.svg)](https://pypi.org/project/zimscraperlib/)
