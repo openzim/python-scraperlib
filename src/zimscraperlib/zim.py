@@ -17,19 +17,18 @@ class ZimInfo(object):
 
     def __init__(
         self,
+        homepage="home.html",
+        favicon="favicon.png",
         language="eng",
         title="my title",
         description="my zim description",
         creator="unknown",
         publisher="kiwix",
-        name="test-zim",
-        tags=[],
-        homepage="home.html",
-        favicon="favicon.png",
-        scraper=SCRAPER,
         source=None,
         flavour=None,
-        redirects=None,
+        tags=[],
+        name="test-zim",
+        scraper=SCRAPER,
     ):
 
         self.homepage = homepage
@@ -39,12 +38,11 @@ class ZimInfo(object):
         self.description = description
         self.creator = creator
         self.publisher = publisher
-        self.name = name
-        self.tags = tags
-        self.scraper = scraper
         self.source = source
         self.flavour = flavour
-        self.redirects = redirects
+        self.tags = tags
+        self.name = name
+        self.scraper = scraper
 
     def update(self, **kwargs):
         for key, value in kwargs.items():
@@ -52,11 +50,12 @@ class ZimInfo(object):
 
     def to_zimwriterfs_args(
         self,
-        verbose=False,
+        verbose=True,
         inflateHtml=False,
         uniqueNamespace=False,
         withoutFTIndex=False,
-        minChunkSize=2048,
+        minChunkSize=None,
+        redirects=None,
     ):
         arg_list = [
             "--welcome",
@@ -75,6 +74,15 @@ class ZimInfo(object):
             self.publisher,
         ]
 
+        if self.source is not None:
+            arg_list.extend(["--source", self.source])
+        if self.flavour is not None:
+            arg_list.extend(["--flavour", self.flavour])
+        if self.tags:
+            arg_list.extend(["--tags", ";".join(self.tags)])
+
+        arg_list.extend(["--name", self.name, "--scraper", self.scraper])
+
         if verbose:
             arg_list.append("--verbose")
         if inflateHtml:
@@ -83,19 +91,11 @@ class ZimInfo(object):
             arg_list.append("--uniqueNamespace")
         if withoutFTIndex:
             arg_list.append("--withoutFTIndex")
+        if minChunkSize is not None:
+            arg_list.extend(["--minChunkSize", str(minChunkSize)])
+        if redirects is not None:
+            arg_list.extend(["--redirects", redirects])
 
-        arg_list.extend(["--minChunkSize", str(minChunkSize)])
-
-        if self.redirects is not None:
-            arg_list.extend(["--redirects", self.redirects])
-        if self.source is not None:
-            arg_list.extend(["--source", self.source])
-        if self.flavour is not None:
-            arg_list.extend(["--flavour", self.flavour])
-        if self.tags != []:
-            arg_list.extend(["--tags", ";".join(self.tags)])
-
-        arg_list.extend(["--name", self.name, "--scraper", self.scraper])
         return arg_list
 
 
