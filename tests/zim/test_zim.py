@@ -20,19 +20,28 @@ def test_ziminfo_defaults(ziminfo):
     assert ziminfo.homepage == "home.html"
     assert ziminfo.favicon == "favicon.png"
     assert ziminfo.scraper == SCRAPER
+    assert ziminfo.source is None
+    assert ziminfo.flavour is None
 
 
 def test_updating_values(ziminfo):
-    updates = {"language": "fra", "title": "new title"}
+    updates = {"language": "fra", "title": "new title", "tags": ["test", "tags"]}
     ziminfo.update(**updates)
     for k, v in updates.items():
         assert getattr(ziminfo, k) == v
 
 
 def test_zimfriterfs_args(ziminfo):
-
-    zwfs = ziminfo.to_zimwriterfs_args()
-    assert len(zwfs) == 20
+    ziminfo.update(source="Test Source", flavour="Blueberry", tags=["test", "tags"])
+    zwfs = ziminfo.to_zimwriterfs_args(
+        verbose=True,
+        inflateHtml=True,
+        uniqueNamespace=True,
+        withoutFTIndex=True,
+        minChunkSize=2048,
+        redirects="test.csv",
+    )
+    assert len(zwfs) == 32
     options_map = [
         ("welcome", "homepage"),
         ("favicon", "favicon"),
@@ -41,11 +50,12 @@ def test_zimfriterfs_args(ziminfo):
         ("description", "description"),
         ("creator", "creator"),
         ("publisher", "publisher"),
-        ("name", "name"),
+        ("source", "source"),
+        ("flavour", "flavour"),
         ("tags", "tags"),
+        ("name", "name"),
         ("scraper", "scraper"),
     ]
-
     for index, option_data in enumerate(options_map):
         option, attr = option_data
         arg_index = index * 2
@@ -54,6 +64,17 @@ def test_zimfriterfs_args(ziminfo):
             assert zwfs[arg_index + 1] == getattr(ziminfo, attr)
         else:
             assert zwfs[arg_index + 1] == ";".join(getattr(ziminfo, attr))
+    param_matching_list = [
+        "--verbose",
+        "--inflateHtml",
+        "--uniqueNamespace",
+        "--withoutFTIndex",
+        "--minChunkSize",
+        "2048",
+        "--redirects",
+        "test.csv",
+    ]
+    assert zwfs[24:] == param_matching_list
 
 
 def test_zimwriterfs_command(monkeypatch, ziminfo):
@@ -63,7 +84,7 @@ def test_zimwriterfs_command(monkeypatch, ziminfo):
     zim_fname = f"{ziminfo.name}.zim"
 
     def mock_subprocess_run(args, **kwargs):
-        assert len(args) == 24
+        assert len(args) == 22
         assert args[-1].endswith(".zim")
         assert args[-1] == str(output_dir.joinpath(zim_fname))
         assert args[-2] == str(build_dir)
