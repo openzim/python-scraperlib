@@ -8,7 +8,7 @@ from .logging import getLogger
 
 ROOT_DIR = pathlib.Path(__file__).parent
 NAME = pathlib.Path(__file__).parent.name
-with open(ROOT_DIR.joinpath("VERSION"), "r") as fh:
+with open(ROOT_DIR.joinpath('VERSION'), "r") as fh:
     VERSION = fh.read().strip()
 SCRAPER = f"{NAME} {VERSION}"
 
