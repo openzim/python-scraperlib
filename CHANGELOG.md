@@ -1,6 +1,8 @@
-1.0.3 [WIP]
+1.0.3
 
-* 
+* fix_ogvjs_dist script more generic (#1)
+* updated zim to support other zimwriterfs params (#10)
+* more flexible requirements for requests dependency
 
 1.0.2
 
