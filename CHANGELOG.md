@@ -1,10 +1,17 @@
-1.0.3
+# 1.0.4
+
+* verbose dependencies (urllib3, boto3) now logged at WARNING level by default
+* ability to set verbose dependencies log level and add modules to the list
+* zimscraperlib's logging level now aligned with scraper's requested one
+
+
+# 1.0.3
 
 * fix_ogvjs_dist script more generic (#1)
 * updated zim to support other zimwriterfs params (#10)
 * more flexible requirements for requests dependency
 
-1.0.2
+# 1.0.2
 
 * fixed return value of `get_language_details` on non-existent language
 * fixed crash on `resize_image` with method `height`
@@ -16,11 +23,11 @@
 * added `create_favicon` to generate a squared favicon
 * added `handle_user_provided_file` to handle user file/URL from param
 
-1.0.1
+# 1.0.1
 
 * fixed fix_ogvjs_dist
 
-1.0.0
+# 1.0.0
 
 * initial version providing
  * download: save_file, save_large_file

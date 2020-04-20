@@ -6,10 +6,10 @@ import sys
 import logging
 from logging.handlers import RotatingFileHandler
 
-DEFAULT_FORMAT = "[%(asctime)s] %(levelname)s:%(message)s"
+from .constants import NAME
 
-# hide DEBUG and INFO level messages from every request (requests uses urllib3)
-logging.getLogger("urllib3").setLevel(logging.WARNING)
+DEFAULT_FORMAT = "[%(asctime)s] %(levelname)s:%(message)s"
+VERBOSE_DEPENDENCIES = ["urllib3", "PIL", "boto3", "botocore"]
 
 
 def getLogger(
@@ -22,6 +22,8 @@ def getLogger(
     file_format=None,
     file_max=2 ** 20,
     file_nb_backup=1,
+    deps_level=logging.WARNING,
+    additional_deps=[],
 ):
     """ configured logger for most usages
 
@@ -31,7 +33,19 @@ def getLogger(
         - console: False | True (sys.stdout) | sys.stdout | sys.stderr
         - file: False | pathlib.Path
         - file_level: log level for file or console_level
-        - file_format: format string for file or log_format """
+        - file_format: format string for file or log_format
+        - deps_level: log level for idendified verbose dependencies
+        - additional_deps: additional modules names of verbose dependencies
+            to assign deps_level to """
+
+    # align zimscraperlib logging level to that of scraper
+    logging.Logger(NAME).setLevel(level)
+
+    # set arbitrary level for some known verbose dependencies
+    # prevents them from polluting logs
+    for logger_name in VERBOSE_DEPENDENCIES + additional_deps:
+        logging.getLogger(logger_name).setLevel(logging.WARNING)
+
     logger = logging.Logger(name)
     logger.setLevel(logging.DEBUG)
 

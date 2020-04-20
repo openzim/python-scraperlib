@@ -6,7 +6,7 @@ import shutil
 import pathlib
 import tempfile
 
-from .constants import logger
+from . import logger
 from .download import save_file
 
 

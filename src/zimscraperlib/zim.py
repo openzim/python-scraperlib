@@ -8,7 +8,8 @@
 import os
 import subprocess
 
-from .constants import SCRAPER, logger
+from . import logger
+from .constants import SCRAPER
 from .logging import nicer_args_join
 
 
