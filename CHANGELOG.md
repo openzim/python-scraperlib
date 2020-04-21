@@ -1,3 +1,8 @@
+# 1.0.5
+
+* added s3transfer to verbose dependencies list
+* changed default log format to include module name
+
 # 1.0.4
 
 * verbose dependencies (urllib3, boto3) now logged at WARNING level by default

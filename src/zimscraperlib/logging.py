@@ -8,8 +8,8 @@ from logging.handlers import RotatingFileHandler
 
 from .constants import NAME
 
-DEFAULT_FORMAT = "[%(asctime)s] %(levelname)s:%(message)s"
-VERBOSE_DEPENDENCIES = ["urllib3", "PIL", "boto3", "botocore"]
+DEFAULT_FORMAT = "[%(name)s::%(asctime)s] %(levelname)s:%(message)s"
+VERBOSE_DEPENDENCIES = ["urllib3", "PIL", "boto3", "botocore", "s3transfer"]
 
 
 def getLogger(
@@ -43,7 +43,7 @@ def getLogger(
 
     # set arbitrary level for some known verbose dependencies
     # prevents them from polluting logs
-    for logger_name in VERBOSE_DEPENDENCIES + additional_deps:
+    for logger_name in set(VERBOSE_DEPENDENCIES + additional_deps):
         logging.getLogger(logger_name).setLevel(logging.WARNING)
 
     logger = logging.Logger(name)
