@@ -3,10 +3,11 @@
 # vim: ai ts=4 sts=4 et sw=4 nu
 
 import locale
+import pathlib
 
 import pytest
 
-from zimscraperlib.i18n import setlocale, get_language_details
+from zimscraperlib.i18n import setlocale, get_language_details, _
 
 
 @pytest.mark.parametrize(
@@ -100,3 +101,12 @@ def test_selocale_unsupported(tmp_path):
 )
 def test_lang_details(iso_639_3, expected):
     assert get_language_details(iso_639_3) == expected
+
+
+@pytest.mark.parametrize(
+    "lang,expected",
+    [("en", "Hello World!"), ("fr", "Bonjour monde !"), ("pt_BR.utf8", "Olá Mundo!")],
+)
+def test_translation(lang, expected):
+    setlocale(pathlib.Path(__file__).parent, lang)
+    assert _("Hello World!") == expected
