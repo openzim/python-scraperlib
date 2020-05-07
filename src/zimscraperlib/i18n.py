@@ -8,14 +8,44 @@ import gettext
 import iso639
 
 
+class Locale:
+    short = "en"
+    name = "en_US.UTF-8"
+    locale_dir = None
+    domain = "messages"
+    translation = gettext.translation("messages", fallback=True)
+
+    @classmethod
+    def setup(cls, locale_dir, locale_name):
+        cls.name = locale_name
+        cls.locale_dir = str(locale_dir)
+
+        if "." in locale_name:
+            cls.lang, cls.encoding = locale_name.split(".")
+        else:
+            cls.lang, cls.encoding = locale_name, "UTF-8"
+
+        computed = locale.setlocale(locale.LC_ALL, (cls.lang, cls.encoding))
+
+        gettext.bindtextdomain(cls.domain, cls.locale_dir)
+        gettext.textdomain(cls.domain)
+
+        cls.translation = gettext.translation(
+            cls.domain, cls.locale_dir, languages=[cls.lang], fallback=True
+        )
+        return computed
+
+
+def _(text):
+    """ translates text according to setup'd locale """
+    return Locale.translation.gettext(text)
+
+
 def setlocale(root_dir, locale_name):
     """ set the desired locale for gettext.
 
         call this early """
-    computed = locale.setlocale(locale.LC_ALL, (locale_name.split(".")[0], "UTF-8"))
-    gettext.bindtextdomain("messages", str(root_dir.joinpath("locale")))
-    gettext.textdomain("messages")
-    return computed
+    return Locale.setup(root_dir / "locale", locale_name)
 
 
 def get_language_details(iso_639_3):
