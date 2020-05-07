@@ -1,3 +1,7 @@
+# 1.0.6
+
+* added translation support to i18n
+
 # 1.0.5
 
 * added s3transfer to verbose dependencies list
