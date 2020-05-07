@@ -10,6 +10,8 @@ jobs:
       matrix:
         python-version: [3.6, 3.7, 3.8]
     steps:
+      - name: add required locales for tests
+        run: sudo locale-gen fr_FR.UTF-8 pt_BR.UTF-8 && sudo update-locale
       - uses: actions/checkout@v1
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v1
@@ -29,6 +31,8 @@ jobs:
   qa:
     runs-on: ubuntu-latest
     steps:
+    - name: add required locales for tests
+      run: sudo locale-gen fr_FR.UTF-8 pt_BR.UTF-8 && sudo update-locale
     - uses: actions/checkout@v1
     - name: Set up Python 3.8
       uses: actions/setup-python@v1
