@@ -27,7 +27,6 @@ def temp_video_dir():
 def hosted_video_links():
     links = {
         "mp4": "https://github.com/satyamtg/test-bucket/raw/master/video.mp4",
-        "webm": "",
-        "mkv": "",
+        "mkv": "https://github.com/satyamtg/test-bucket/raw/master/video.mkv",
     }
     return links

@@ -165,11 +165,19 @@ class VidUtil(object):
             logger.error(f"Video file missing in {video_dir} for {video_id}")
             logger.debug(list(video_dir.iterdir()))
             raise FileNotFoundError(f"Missing video file in {video_dir}")
-        if len(files) > 1:
+        elif len(files) > 1:
             logger.warning(
-                f"Multiple video file candidates for {video_id} in {video_dir}. Picking {files[0]} out of {files}"
+                f"Multiple video file candidates for {video_id} in {video_dir}"
             )
-        src_path = files[0]
+            for fl in files:
+                if fl.suffix[1:] == self.video_format:
+                    src_path = fl
+                    logger.info(f"Picking {fl} out of {files}")
+                else:
+                    src_path = files[0]
+                    logger.info(f"Picking {files[0]} out of {files}")
+        else:
+            src_path = files[0]
 
         # don't reencode if not requesting recompress and received wanted format
         if skip_recompress or (

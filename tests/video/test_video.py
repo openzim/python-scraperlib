@@ -29,11 +29,11 @@ def get_video_info(src_path):
     ffprobe_result = ffprobe.stdout.strip().split("\n")
     streams = ffprobe_result[:-1]
     codecs = [stream.split(",")[-1] for stream in streams]
-    format = ffprobe_result[-1].split(",")[1:]
+    format_info = ffprobe_result[-1].split(",")[1:]
     vid_info = {
         "codecs": codecs,
-        "duration": int(format[0].split(".")[0]),
-        "bitrate": int(format[1]),
+        "duration": int(format_info[0].split(".")[0]),
+        "bitrate": int(format_info[1]),
     }
     return vid_info
 
@@ -144,15 +144,13 @@ def test_video_recompression(
     )
 
     # compress the video in webm format
-    vidutil.update(video_format="webm")
+    vidcompressioncfg.update(min_video_bitrate="300k")
+    vidutil.update(video_format="webm", video_compression_cfg=vidcompressioncfg)
     vidutil.recompress_video(src_video_path, webm_video_path, delete_src=False)
     webm_converted_details = get_video_info(webm_video_path)
     for codec in ["vp8", "vorbis"]:
         assert codec in webm_converted_details["codecs"]
     assert original_details["duration"] == webm_converted_details["duration"]
-    assert webm_converted_details["bitrate"] <= humanfriendly.parse_size(
-        getattr(vidcompressioncfg, "max_video_bitrate")
-    )
     assert src_video_path.exists()
 
     # try to compress in mkv without passing codecs and extra params list
@@ -169,13 +167,50 @@ def test_video_recompression(
     vidutil.recompress_video(
         src_video_path,
         mkv_video_path,
-        audio_codec="aac",
-        video_codec="libx265",
+        audio_codec="libvorbis",
+        video_codec="h264",
         extra_ffmpeg_params=[],
     )
     mkv_converted_details = get_video_info(mkv_video_path)
-    for codec in ["hevc", "aac"]:
+    for codec in ["h264", "vorbis"]:
         assert codec in mkv_converted_details["codecs"]
     assert original_details["duration"] == mkv_converted_details["duration"]
     assert not src_video_path.exists()
+    shutil.rmtree(temp_video_dir)
+
+
+def test_process_video_dir(
+    vidutil, vidcompressioncfg, temp_video_dir, hosted_video_links
+):
+    temp_video_dir.mkdir(parents=True)
+    mkv_video_path = temp_video_dir.joinpath("video.mkv")
+    mp4_video_path = temp_video_dir.joinpath("video.mp4")
+    save_large_file(hosted_video_links["mkv"], mkv_video_path)
+    vidutil.process_video_dir(temp_video_dir, "samplevideo")
+    assert not mkv_video_path.exists()
+    assert mp4_video_path.exists()
+    details_1 = get_video_info(mp4_video_path)
+
+    # recompress is false and correct file exists
+    vidutil.update(recompress=False)
+    vidutil.process_video_dir(temp_video_dir, "samplevideo")
+    assert mp4_video_path.exists() and details_1 == get_video_info(mp4_video_path)
+
+    # try with wrong filename
+    try:
+        vidutil.process_video_dir(
+            temp_video_dir, "samplevideo", video_filename="sample"
+        )
+    except FileNotFoundError as exc:
+        assert str(exc) == f"Missing video file in {temp_video_dir}"
+
+    # try with multiple file candidates
+    # we already have video.mp4
+    save_large_file(hosted_video_links["mkv"], mkv_video_path)
+    vidutil.process_video_dir(temp_video_dir, "samplevideo")
+    assert mp4_video_path.exists() and details_1 == get_video_info(mp4_video_path)
+    assert mkv_video_path.exists()
+    vidutil.update(video_format="webm")
+    vidutil.process_video_dir(temp_video_dir, "samplevideo")
+    assert temp_video_dir.joinpath("video.webm").exists()
     shutil.rmtree(temp_video_dir)
