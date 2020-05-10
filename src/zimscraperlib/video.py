@@ -165,7 +165,7 @@ class VidUtil(object):
             logger.error(f"Video file missing in {video_dir} for {video_id}")
             logger.debug(list(video_dir.iterdir()))
             raise FileNotFoundError(f"Missing video file in {video_dir}")
-        elif len(files) > 1:
+        if len(files) > 1:
             logger.warning(
                 f"Multiple video file candidates for {video_id} in {video_dir}"
             )
