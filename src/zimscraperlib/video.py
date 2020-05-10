@@ -104,14 +104,8 @@ class VidUtil(object):
         for key, value in kwargs.items():
             setattr(self, key, value)
 
-    def recompress_video(self, src_path, dst_path, **kwargs):
-        if self.video_format in self.default_video_formats:
-            audio_codec = self.default_video_formats[self.video_format]["acodec"]
-            video_codec = self.default_video_formats[self.video_format]["vcodec"]
-            extra_ffmpeg_params = self.default_video_formats[self.video_format][
-                "params"
-            ]
-        elif (
+    def recompress_video(self, src_path, dst_path, delete_src=True, **kwargs):
+        if (
             "audio_codec" in kwargs
             and "video_codec" in kwargs
             and "extra_ffmpeg_params" in kwargs
@@ -121,6 +115,12 @@ class VidUtil(object):
             extra_ffmpeg_params = kwargs["extra_ffmpeg_params"]
             for key in ["audio_codec", "video_codec", "extra_ffmpeg_params"]:
                 del kwargs[key]
+        elif self.video_format in self.default_video_formats:
+            audio_codec = self.default_video_formats[self.video_format]["acodec"]
+            video_codec = self.default_video_formats[self.video_format]["vcodec"]
+            extra_ffmpeg_params = self.default_video_formats[self.video_format][
+                "params"
+            ]
         else:
             raise TypeError(
                 "The video format with which VidUtil is initialized requires audio_codec, video_codec and extra_ffmpeg_params to be passed as arguments"
@@ -137,10 +137,13 @@ class VidUtil(object):
             )
             + [f"file:{tmp_path}"]
         )
-        logger.info(f"recompress {src_path} -> {dst_path} video format = {self.video_format}")
+        logger.info(
+            f"recompress {src_path} -> {dst_path} video format = {self.video_format}"
+        )
         logger.debug(nicer_args_join(args))
         subprocess.run(args, check=True)
-        src_path.unlink()
+        if delete_src:
+            src_path.unlink()
         tmp_path.replace(dst_path)
 
     def process_video_dir(
