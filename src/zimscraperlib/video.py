@@ -19,6 +19,7 @@ class VidCompressionCfg(object):
         target_audio_bitrate="128k",
         quality_range=(30, 42),
         ffmpeg_video_scale="480:trunc(ow/a/2)*2",
+        quality="best",
     ):
         self.max_video_bitrate = max_video_bitrate
         self.min_video_bitrate = min_video_bitrate
@@ -28,6 +29,7 @@ class VidCompressionCfg(object):
         self.target_audio_bitrate = target_audio_bitrate
         self.quality_range = quality_range
         self.ffmpeg_video_scale = ffmpeg_video_scale
+        self.quality = quality
 
     def update(self, **kwargs):
         for key, value in kwargs.items():
@@ -43,39 +45,42 @@ class VidCompressionCfg(object):
         ffmpeg_cpu_used=0,
     ):
         arg_list = [
-            "-codec:v",
-            video_codec,
-            "-codec:a",
-            audio_codec,
+            "-maxrate",
+            self.max_video_bitrate,
+            "-b:v",
+            self.target_video_bitrate,
+            "-bufsize",
+            self.buffersize,
+            "-ar",
+            str(self.audio_sampling_rate),
+            "-b:a",
+            self.target_audio_bitrate,
+            "-quality",
+            self.quality,
+        ]
+        if self.min_video_bitrate:
+            arg_list += ["-minrate", str(self.min_video_bitrate)]
+        arg_list += [
             "-qmin",
             str(self.quality_range[0]),
             "-qmax",
             str(self.quality_range[1]),
-            "-quality",
-            "best",
-            "-max_muxing_queue_size",
-            str(max_muxing_queue_size),
             "-vf",
             f"scale='{self.ffmpeg_video_scale}'",
-            "-ar",
-            str(self.audio_sampling_rate),
-            "-b:v",
-            self.target_video_bitrate,
-            "-b:a",
-            self.target_audio_bitrate,
-            "-maxrate",
-            self.max_video_bitrate,
-            "-bufsize",
-            self.buffersize,
+            "-codec:v",
+            video_codec,
+            "-codec:a",
+            audio_codec,
+            "-max_muxing_queue_size",
+            str(max_muxing_queue_size),
             "-threads",
             str(threads),
             "-cpu-used",
             str(ffmpeg_cpu_used),
         ]
-        if self.min_video_bitrate:
-            arg_list += ["-minrate", str(self.min_video_bitrate)]
 
         arg_list += extra_ffmpeg_params
+        return arg_list
 
 
 class VidUtil(object):
@@ -94,6 +99,10 @@ class VidUtil(object):
         self.video_format = video_format
         self.video_compression_cfg = video_compression_cfg
         self.recompress = recompress
+
+    def update(self, **kwargs):
+        for key, value in kwargs.items():
+            setattr(self, key, value)
 
     def recompress_video(self, src_path, dst_path, **kwargs):
         if self.video_format in self.default_video_formats:
@@ -128,7 +137,7 @@ class VidUtil(object):
             )
             + [f"file:{tmp_path}"]
         )
-        logger.info(f"recompress {src_path} -> {dst_path} {video_format=}")
+        logger.info(f"recompress {src_path} -> {dst_path} video format = {self.video_format}")
         logger.debug(nicer_args_join(args))
         subprocess.run(args, check=True)
         src_path.unlink()

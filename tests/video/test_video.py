@@ -51,14 +51,14 @@ def test_ffmpeg_args(vidcompressioncfg):
         option, attr = option_data
         arg_index = index * 2
         assert ffargs[arg_index] == f"-{option}"
-        assert ffargs[arg_index + 1] == getattr(vidcompressioncfg, attr)
+        assert ffargs[arg_index + 1] == str(getattr(vidcompressioncfg, attr))
     video_scale = getattr(vidcompressioncfg, "ffmpeg_video_scale")
     qmin, qmax = getattr(vidcompressioncfg, "quality_range")
     assert ffargs[14:20] == [
         "-qmin",
-        qmin,
+        str(qmin),
         "-qmax",
-        qmax,
+        str(qmax),
         "-vf",
         f"scale='{video_scale}'",
     ]
