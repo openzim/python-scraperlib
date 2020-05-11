@@ -27,7 +27,11 @@ def get_video_info(src_path):
     ]
     print(" ".join(args))
     ffprobe = subprocess.run(
-        args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=False
+        args,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        universal_newlines=True,
+        check=False,
     )
     ffprobe_result = ffprobe.stdout.strip().split("\n")
     streams = ffprobe_result[:-1]
