@@ -6,6 +6,7 @@ import pathlib
 import subprocess
 import humanfriendly
 import shutil
+import pytest
 
 from zimscraperlib.download import save_large_file
 
@@ -25,7 +26,9 @@ def get_video_info(src_path):
         "csv",
     ]
     print(" ".join(args))
-    ffprobe = subprocess.run(args, capture_output=True, text=True, check=False)
+    ffprobe = subprocess.run(
+        args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=False
+    )
     ffprobe_result = ffprobe.stdout.strip().split("\n")
     streams = ffprobe_result[:-1]
     codecs = [stream.split(",")[-1] for stream in streams]
@@ -123,6 +126,7 @@ def test_vidutil_update(vidutil, vidcompressioncfg):
         assert getattr(vidutil, k) == v
 
 
+@pytest.mark.slow
 def test_video_recompression(
     vidutil, vidcompressioncfg, temp_video_dir, hosted_video_links
 ):
@@ -179,6 +183,7 @@ def test_video_recompression(
     shutil.rmtree(temp_video_dir)
 
 
+@pytest.mark.slow
 def test_process_video_dir(
     vidutil, vidcompressioncfg, temp_video_dir, hosted_video_links
 ):
