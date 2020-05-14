@@ -21,8 +21,7 @@ class ConfigBuilder(object):
         target_audio_bitrate="128k",
         quantizer_scale_range=(30, 42),
         video_scale="480:trunc(ow/a/2)*2",
-        quality="best",
-        extra_params={"-movflags": "+faststart"},
+        extra_params=["-movflags", "+faststart"],
     ):
         self.video_codec = video_codec
         self.audio_codec = audio_codec
@@ -40,7 +39,7 @@ class ConfigBuilder(object):
         for key, value in kwargs.items():
             setattr(self, key, value)
 
-    def to_ffmpeg_args(self,):
+    def to_ffmpeg_args(self):
         arg_list = []
         # video options
         if self.video_codec:
@@ -49,21 +48,14 @@ class ConfigBuilder(object):
                 arg_list += ["-b:v", self.target_video_bitrate]
             if self.min_video_bitrate:
                 arg_list += ["-minrate", str(self.min_video_bitrate)]
-            if self.max_video_bitrate and self.buffersize:
-                arg_list = [
-                    "-maxrate",
-                    self.max_video_bitrate,
-                    "-bufsize",
-                    self.buffersize,
-                ]
-            elif self.buffersize:
+            if self.max_video_bitrate:
+                arg_list = ["-maxrate", self.max_video_bitrate]
+            if self.buffersize:
                 arg_list = ["-bufsize", self.buffersize]
-            elif self.max_video_bitrate:
-                logger.error("Max video bitrate should only be used with buffersize")
             if self.quantizer_scale_range:
                 qmin, qmax = self.quantizer_scale_range
                 if qmin < -1 or qmin > 69 or qmax < -1 or qmax > 1024:
-                    logger.error(
+                    raise ValueError(
                         "Quantizer scale must range from (-1, -1) to (69, 1024)"
                     )
                 else:
@@ -84,8 +76,7 @@ class ConfigBuilder(object):
 
         # extra options
         if self.extra_params:
-            for key, val in self.extra_params.items():
-                arg_list += [key, val]
+            arg_list += self.extra_params
         return arg_list
 
 
@@ -98,7 +89,7 @@ def reencode(
     max_muxing_queue_size=9999,
 ):
     tmp_path = src_path.parent.joinpath(f"video.tmp{dst_path.suffix}")
-    args = ["ffmpeg", "-y", "-i", f"file:{src_path}"] + config.to_ffmpeg_args()
+    args = ["ffmpeg", "-y", "-i", f"file:{src_path}"] + config
     if threads:
         args += ["-threads", str(threads)]
     if max_muxing_queue_size:
@@ -112,7 +103,7 @@ def reencode(
     tmp_path.replace(dst_path)
 
 
-def get_video_info(src_path):
+def get_media_info(src_path):
     args = [
         "ffprobe",
         "-i",
@@ -138,9 +129,8 @@ def get_video_info(src_path):
     streams = ffprobe_result[:-1]
     codecs = [stream.split(",")[-1] for stream in streams]
     format_info = ffprobe_result[-1].split(",")[1:]
-    vid_info = {
+    return {
         "codecs": codecs,
         "duration": int(format_info[0].split(".")[0]),
         "bitrate": int(format_info[1]),
     }
-    return vid_info

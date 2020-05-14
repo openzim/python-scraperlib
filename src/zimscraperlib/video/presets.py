@@ -3,7 +3,7 @@
 # vim: ai ts=4 sts=4 et sw=4 nu
 
 
-class VoiceMp348k(dict):
+class VoiceMp3Low(dict):
     VERSION = 1
 
     options = {
@@ -34,12 +34,11 @@ class VideoWebmLow(dict):
         "-bufsize": "1000k",
         "-minrate": "300k",
         "-codec:a": "libvorbis",
-        "-quality": "best",
         "-qmin": "30",
         "-qmax": "42",
         "-vf": "scale='480:trunc(ow/a/2)*2'",
-        "-ar": "44100",  # audio sample rate
-        "-b:a": "48k",  # audio bitrate
+        "-ar": "44100",
+        "-b:a": "48k",
     }
 
     def __init__(self, **kwargs):
