@@ -5,25 +5,18 @@
 import pytest
 
 from zimscraperlib.video import ConfigBuilder
-from zimscraperlib.video.presets import VoiceMp3Low, VideoWebmLow
 
 
 @pytest.fixture(scope="function")
 def config_builder():
     return ConfigBuilder()
 
-@pytest.fixture(scope="function")
-def voice_mp3_low():
-    return VoiceMp3Low()
 
 @pytest.fixture(scope="function")
-def video_webm_low():
-    return VideoWebmLow()
-
-@pytest.fixture(scope="function")
-def hosted_video_links():
-    links = {
+def hosted_media_links():
+    return {
         "mp4": "https://github.com/satyamtg/test-bucket/raw/master/video.mp4",
         "mkv": "https://github.com/satyamtg/test-bucket/raw/master/video.mkv",
+        "webm": "https://github.com/satyamtg/test-bucket/raw/master/video.webm",
+        "mp3": "https://github.com/satyamtg/test-bucket/raw/master/audio.mp3",
     }
-    return links

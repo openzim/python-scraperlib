@@ -10,6 +10,8 @@ jobs:
       matrix:
         python-version: [3.6, 3.7, 3.8]
     steps:
+      - name: install ffmpeg
+        run: sudo apt update && sudo apt install ffmpeg
       - name: add required locales for tests
         run: sudo locale-gen fr_FR.UTF-8 pt_BR.UTF-8 && sudo update-locale
       - uses: actions/checkout@v1
@@ -31,6 +33,8 @@ jobs:
   qa:
     runs-on: ubuntu-latest
     steps:
+    - name: install ffmpeg
+      run: sudo apt update && sudo apt install ffmpeg
     - name: add required locales for tests
       run: sudo locale-gen fr_FR.UTF-8 pt_BR.UTF-8 && sudo update-locale
     - uses: actions/checkout@v1

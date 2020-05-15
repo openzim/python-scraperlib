@@ -3,9 +3,10 @@
 # vim: ai ts=4 sts=4 et sw=4 nu
 
 import subprocess
+import tempfile
 
-from . import logger
-from .logging import nicer_args_join
+from .. import logger
+from ..logging import nicer_args_join
 
 
 class ConfigBuilder(object):
@@ -49,9 +50,9 @@ class ConfigBuilder(object):
             if self.min_video_bitrate:
                 arg_list += ["-minrate", str(self.min_video_bitrate)]
             if self.max_video_bitrate:
-                arg_list = ["-maxrate", self.max_video_bitrate]
+                arg_list += ["-maxrate", self.max_video_bitrate]
             if self.buffersize:
-                arg_list = ["-bufsize", self.buffersize]
+                arg_list += ["-bufsize", self.buffersize]
             if self.quantizer_scale_range:
                 qmin, qmax = self.quantizer_scale_range
                 if qmin < -1 or qmin > 69 or qmax < -1 or qmax > 1024:
