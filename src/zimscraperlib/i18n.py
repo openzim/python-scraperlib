@@ -4,8 +4,10 @@
 
 import locale
 import gettext
+import re
 
-import iso639
+from iso639 import languages
+from . import logger
 
 
 class Locale:
@@ -48,51 +50,90 @@ def setlocale(root_dir, locale_name):
     return Locale.setup(root_dir / "locale", locale_name)
 
 
-def get_language_details(iso_639_3):
-    """ dict container iso639-2, name and native name for an iso-639-3 code """
-    non_iso_langs = {
-        "zh-Hans": {
-            "code": "zh-Hans",
-            "iso-639-1": "zh",
-            "english": "Simplified Chinese",
-            "native": "简化字",
-        },
-        "zh-Hant": {
-            "code": "zh-Hant",
-            "iso-639-1": "zh",
-            "english": "Traditional Chinese",
-            "native": "正體字",
-        },
-        "iw": {"code": "iw", "iso-639-1": "he", "english": "Hebrew", "native": "עברית"},
-        "es-419": {
-            "code": "es-419",
-            "iso-639-1": "es-419",
-            "english": "Spanish",
-            "native": "Español",
-        },
-        "multi": {
-            "code": "mul",
-            "iso-639-1": "en",
-            "english": "Multiple Languages",
-            "native": "Multiple Languages",
-        },
-    }
+def get_language_details(query):
+    """returns language details if query is a language or a locale otherwise returns None"""
 
-    try:
-        return (
-            non_iso_langs.get(iso_639_3)
-            if iso_639_3 in non_iso_langs.keys()
-            else {
-                "code": iso_639_3,
-                "iso-639-1": iso639.to_iso639_1(iso_639_3),
-                "english": iso639.to_name(iso_639_3),
-                "native": iso639.to_native(iso_639_3),
-            }
-        )
-    except iso639.NonExistentLanguageError:
+    def get_iso_lang_data(lang):
+        """return details if lang is a valid iso language else raises exception"""
+
+        iso_types = []
+        try:
+            languages.get(part1=lang)
+            iso_types.append("part1")
+        except KeyError:
+            logger.debug("Not a valid iso-639-1")
+        try:
+            languages.get(part2b=lang)
+            iso_types.append("part2b")
+        except KeyError:
+            logger.debug("Not a valid iso-639-2b")
+        try:
+            languages.get(part2t=lang)
+            iso_types.append("part2t")
+        except KeyError:
+            logger.debug("Not a valid iso-639-2t")
+        try:
+            languages.get(part3=lang)
+            iso_types.append("part3")
+        except KeyError:
+            logger.debug("Not a valid iso-639-3")
+        try:
+            languages.get(part5=lang)
+            iso_types.append("part5")
+        except KeyError:
+            logger.debug("Not a valid iso-639-5")
+        try:
+            languages.get(name=lang)
+            iso_types.append("name")
+        except KeyError:
+            logger.debug("Not a valid iso language name")
+
+        if not iso_types:
+            raise Exception("Not a valid iso language name/code")
+
+        res = languages.get(**{iso_types[0]: lang})
+
         return {
-            "code": iso_639_3,
-            "iso-639-1": iso_639_3,
-            "english": iso_639_3,
-            "native": iso_639_3,
+            "iso-639-1": res.part1,
+            "iso-639-2b": res.part2b,
+            "iso-639-2t": res.part2t,
+            "iso-639-3": res.part3,
+            "iso-639-5": res.part5,
+            "english": res.name,
+            "iso_types": iso_types,
         }
+
+    if query.isalpha() and (2 <= len(query) <= 3):
+        # possibility of iso-639 code
+        try:
+            iso_data = get_iso_lang_data(query)
+            iso_data["querytype"] = "purecode"
+        except Exception as exc:
+            logger.error(str(exc))
+            return None
+
+    elif all(x.isalpha() or x == "-" or x == "_" for x in query) and (
+        query.count("_") + query.count("-") == 1
+    ):
+        # possibility of locale
+        query_parts = re.split("-|_", query)
+        try:
+            iso_data = get_iso_lang_data(query_parts[0])
+            iso_data["querytype"] = "locale"
+        except Exception as exc:
+            logger.error(str(exc))
+            return None
+
+    else:
+        # possibility of iso language name
+        try:
+            iso_data = get_iso_lang_data(
+                query.title().replace("Languages", "languages")
+            )
+            iso_data["querytype"] = "languagename"
+        except Exception as exc:
+            logger.error(str(exc))
+            return None
+
+    iso_data["query"] = query
+    return iso_data

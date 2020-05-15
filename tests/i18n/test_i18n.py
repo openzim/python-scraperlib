@@ -24,83 +24,100 @@ def test_selocale_unsupported(tmp_path):
 
 
 @pytest.mark.parametrize(
-    "iso_639_3,expected",
+    "query,expected",
     [
         (
             "zh-Hans",
             {
-                "code": "zh-Hans",
                 "iso-639-1": "zh",
-                "english": "Simplified Chinese",
-                "native": "简化字",
+                "iso-639-2b": "chi",
+                "iso-639-2t": "zho",
+                "iso-639-3": "zho",
+                "iso-639-5": "",
+                "english": "Chinese",
+                "iso_types": ["part1"],
+                "querytype": "locale",
+                "query": "zh-Hans",
             },
         ),
         (
-            "zh-Hant",
+            "hi",
             {
-                "code": "zh-Hant",
-                "iso-639-1": "zh",
-                "english": "Traditional Chinese",
-                "native": "正體字",
+                "iso-639-1": "hi",
+                "iso-639-2b": "hin",
+                "iso-639-2t": "hin",
+                "iso-639-3": "hin",
+                "iso-639-5": "",
+                "english": "Hindi",
+                "iso_types": ["part1"],
+                "querytype": "purecode",
+                "query": "hi",
             },
         ),
         (
-            "iw",
-            {"code": "iw", "iso-639-1": "he", "english": "Hebrew", "native": "עברית"},
-        ),
-        (
-            "es-419",
+            "hin",
             {
-                "code": "es-419",
-                "iso-639-1": "es-419",
-                "english": "Spanish",
-                "native": "Español",
+                "iso-639-1": "hi",
+                "iso-639-2b": "hin",
+                "iso-639-2t": "hin",
+                "iso-639-3": "hin",
+                "iso-639-5": "",
+                "english": "Hindi",
+                "iso_types": ["part2b", "part2t", "part3"],
+                "querytype": "purecode",
+                "query": "hin",
             },
         ),
         (
-            "multi",
+            "Japanese",
             {
-                "code": "mul",
-                "iso-639-1": "en",
-                "english": "Multiple Languages",
-                "native": "Multiple Languages",
+                "iso-639-1": "ja",
+                "iso-639-2b": "jpn",
+                "iso-639-2t": "jpn",
+                "iso-639-3": "jpn",
+                "iso-639-5": "",
+                "english": "Japanese",
+                "iso_types": ["name"],
+                "querytype": "languagename",
+                "query": "Japanese",
             },
         ),
         (
-            "fra",
+            "afa",
             {
-                "code": "fra",
-                "english": "French",
-                "iso-639-1": "fr",
-                "native": "français; langue française",
+                "iso-639-1": "",
+                "iso-639-2b": "afa",
+                "iso-639-2t": "afa",
+                "iso-639-3": "",
+                "iso-639-5": "afa",
+                "english": "Afro-Asiatic languages",
+                "iso_types": ["part2b", "part2t", "part5"],
+                "querytype": "purecode",
+                "query": "afa",
             },
         ),
         (
-            "bam",
+            "afro-asiatic languages",
             {
-                "code": "bam",
-                "english": "Bambara",
-                "iso-639-1": "bm",
-                "native": "bamanankan",
+                "iso-639-1": "",
+                "iso-639-2b": "afa",
+                "iso-639-2t": "afa",
+                "iso-639-3": "",
+                "iso-639-5": "afa",
+                "english": "Afro-Asiatic languages",
+                "iso_types": ["name"],
+                "querytype": "languagename",
+                "query": "afro-asiatic languages",
             },
         ),
-        (
-            "ara",
-            {
-                "code": "ara",
-                "english": "Arabic",
-                "iso-639-1": "ar",
-                "native": "العربية",
-            },
-        ),
-        (
-            "fake",
-            {"code": "fake", "english": "fake", "iso-639-1": "fake", "native": "fake"},
-        ),
+        ("fake-lang", None,),
+        ("fake", None,),
+        ("C#", None,),
+        ("fks", None,),
     ],
 )
-def test_lang_details(iso_639_3, expected):
-    assert get_language_details(iso_639_3) == expected
+def test_lang_details(query, expected):
+    assert get_language_details(query) == expected
 
 
 @pytest.mark.parametrize(
