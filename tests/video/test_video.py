@@ -220,3 +220,14 @@ def test_reencode(config_builder, hosted_media_links):
             assert codec in mkv_converted_details["codecs"]
         assert original_details["duration"] == mkv_converted_details["duration"]
         assert not src_video_path.exists()
+
+        # check ffmpeg fail
+        preset = VideoWebmLow()
+        preset["-qmin"] = "-10"
+        config = preset.to_ffmpeg_args()
+        try:
+            reencode(
+                mp4_video_path, webm_video_path, config, delete_src=True, threads=8
+            )
+        except Exception as exc:
+            assert str(exc) == "FFmpeg failed to run properly"

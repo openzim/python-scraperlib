@@ -3,7 +3,6 @@
 # vim: ai ts=4 sts=4 et sw=4 nu
 
 import subprocess
-import tempfile
 
 from .. import logger
 from ..logging import nicer_args_join
@@ -37,10 +36,14 @@ class ConfigBuilder(object):
         self.extra_params = extra_params
 
     def update(self, **kwargs):
+        """Updates config"""
+
         for key, value in kwargs.items():
             setattr(self, key, value)
 
     def to_ffmpeg_args(self):
+        """Convert config into list of ffmpeg arguments"""
+
         arg_list = []
         # video options
         if self.video_codec:
@@ -59,8 +62,7 @@ class ConfigBuilder(object):
                     raise ValueError(
                         "Quantizer scale must range from (-1, -1) to (69, 1024)"
                     )
-                else:
-                    arg_list += ["-qmin", str(qmin), "-qmax", str(qmax)]
+                arg_list += ["-qmin", str(qmin), "-qmax", str(qmax)]
             if self.video_scale:
                 arg_list += ["-vf", f"scale='{self.video_scale}'"]
 
@@ -89,6 +91,10 @@ def reencode(
     threads=None,
     max_muxing_queue_size=9999,
 ):
+    """Runs ffmpeg with given config
+    
+    config - A list of ffmpeg arguments (except -threads and -max_muxing_queue_size)"""
+
     tmp_path = src_path.parent.joinpath(f"video.tmp{dst_path.suffix}")
     args = ["ffmpeg", "-y", "-i", f"file:{src_path}"] + config
     if threads:
@@ -98,13 +104,22 @@ def reencode(
     args += [f"file:{tmp_path}"]
     logger.info(f"Encode {src_path} -> {dst_path} video format = {dst_path.suffix}")
     logger.debug(nicer_args_join(args))
-    subprocess.run(args, check=True)
-    if delete_src:
-        src_path.unlink()
-    tmp_path.replace(dst_path)
+    try:
+        subprocess.run(args, check=True)
+        if delete_src:
+            src_path.unlink()
+        tmp_path.replace(dst_path)
+    except subprocess.CalledProcessError:
+        logger.error("Could not encode successfully...")
+        logger.debug("Cleaning up...")
+        if tmp_path.exists():
+            tmp_path.unlink()
+        raise Exception("FFmpeg failed to run properly")
 
 
 def get_media_info(src_path):
+    """Returns a dictonary containing info about a media file as returned by ffprobe"""
+
     args = [
         "ffprobe",
         "-i",
