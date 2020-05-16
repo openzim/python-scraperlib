@@ -2,8 +2,10 @@
 # -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
+from .config import Config
 
-class VoiceMp3Low(dict):
+
+class VoiceMp3Low(Config):
     VERSION = 1
 
     options = {
@@ -12,20 +14,10 @@ class VoiceMp3Low(dict):
         "-b:a": "48k",  # target audio bitrate
     }
 
-    def __init__(self, **kwargs):
-        super().__init__(self, **type(self).options)
-        self.update(kwargs)
-
-    def to_ffmpeg_args(self):
-        """Convert the options dict to list of ffmpeg arguments"""
-
-        args = []
-        for k, v in self.items():
-            args += [k, v]
-        return args
+    extras = ["-vn"]
 
 
-class VideoWebmLow(dict):
+class VideoWebmLow(Config):
     VERSION = 1
 
     options = {
@@ -42,15 +34,3 @@ class VideoWebmLow(dict):
         "-ar": "44100",  # audio sampling rate
         "-b:a": "48k",  # target audio bitrate
     }
-
-    def __init__(self, **kwargs):
-        super().__init__(self, **type(self).options)
-        self.update(kwargs)
-
-    def to_ffmpeg_args(self):
-        """Convert the options dict to list of ffmpeg arguments"""
-
-        args = []
-        for k, v in self.items():
-            args += [k, v]
-        return args

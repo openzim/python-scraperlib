@@ -4,13 +4,6 @@
 
 import pytest
 
-from zimscraperlib.video import ConfigBuilder
-
-
-@pytest.fixture(scope="function")
-def config_builder():
-    return ConfigBuilder()
-
 
 @pytest.fixture(scope="function")
 def hosted_media_links():
