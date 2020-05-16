@@ -23,7 +23,8 @@ def reencode(src_path, dst_path, config, delete_src=False, return_output=False):
             src_path.unlink()
         tmp_path.replace(dst_path)
     else:
-        tmp_path.unlink(missing_ok=True)
+        if tmp_path.exists():
+            tmp_path.unlink()
     if return_output:
         return ffmpeg.stderr, ffmpeg.returncode
     return ffmpeg.returncode
