@@ -279,9 +279,7 @@ def test_reencode_return_ffmpeg_output(
         src_path = temp_dir.joinpath(src)
         dest_path = temp_dir.joinpath(dest)
         save_large_file(hosted_media_links[src_path.suffix.replace(".", "")], src_path)
-        ret = reencode(
-            src_path, dest_path, ffmpeg_args, with_process=return_output
-        )
+        ret = reencode(src_path, dest_path, ffmpeg_args, with_process=return_output)
         if return_output:
             success, stdout, stderr = ret
             assert success

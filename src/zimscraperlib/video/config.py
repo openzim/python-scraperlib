@@ -133,7 +133,9 @@ class Config(dict):
             self["-qmin"] = str(qmin)
             self["-qmax"] = str(qmax)
         else:
-            raise ValueError("Quantizer scale should be a tuple of 2 ints and range from (-1, -1) to (69, 1024)")
+            raise ValueError(
+                "Quantizer scale should be a tuple of 2 ints and range from (-1, -1) to (69, 1024)"
+            )
 
     @classmethod
     def build_from(cls, **params):
