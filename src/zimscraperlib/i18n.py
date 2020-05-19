@@ -51,10 +51,10 @@ def setlocale(root_dir, locale_name):
 
 
 def get_language_details(query):
-    """returns language details if query is a language or a locale otherwise returns None"""
+    """ returns language details if query is a language or a locale otherwise returns None """
 
     def get_iso_lang_data(lang):
-        """return details if lang is a valid iso language else raises exception"""
+        """ return details if lang is a valid iso language else raises exception """
 
         iso_types = []
         try:
@@ -92,6 +92,17 @@ def get_language_details(query):
             raise Exception("Not a valid iso language name/code")
 
         res = languages.get(**{iso_types[0]: lang})
+        if res.macro:
+            macro_data = get_iso_lang_data(res.macro)
+            return {
+                "iso-639-1": res.part1 if res.part1 else macro_data["iso-639-1"],
+                "iso-639-2b": res.part2b if res.part2b else macro_data["iso-639-2b"],
+                "iso-639-2t": res.part2t if res.part2t else macro_data["iso-639-2t"],
+                "iso-639-3": res.part3 if res.part3 else macro_data["iso-639-3"],
+                "iso-639-5": res.part5 if res.part5 else macro_data["iso-639-5"],
+                "english": res.name,
+                "iso_types": iso_types,
+            }
 
         return {
             "iso-639-1": res.part1,
