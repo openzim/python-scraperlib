@@ -1,3 +1,7 @@
+# 1.1.0 [WIP]
+
+* added video module
+
 # 1.0.6
 
 * added translation support to i18n

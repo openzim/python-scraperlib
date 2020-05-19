@@ -37,7 +37,7 @@ def reencode(
         logger.debug(nicer_args_join(args))
         ffmpeg = subprocess.run(
             args,
-            stderr=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
             stdout=subprocess.PIPE,
             universal_newlines=True,
         )
@@ -48,5 +48,5 @@ def reencode(
                 src_path.unlink()
             shutil.copy(tmp_path, dst_path)
         if with_process:
-            return ffmpeg.returncode == 0, ffmpeg.stdout, ffmpeg.stderr
+            return ffmpeg.returncode == 0, ffmpeg
         return ffmpeg.returncode == 0

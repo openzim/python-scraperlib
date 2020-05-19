@@ -17,10 +17,9 @@ from zimscraperlib.video.probing import get_media_info
 def download_media_and_reencode(
     temp_dir, src, dest, ffmpeg_args, download_links, **kwargs
 ):
-    temp_dir_path = pathlib.Path(temp_dir)
-    src_path = temp_dir_path.joinpath(src)
-    dest_path = temp_dir_path.joinpath(dest)
-    save_large_file(download_links[src_path.suffix.replace(".", "")], src_path)
+    src_path = temp_dir.joinpath(src)
+    dest_path = temp_dir.joinpath(dest)
+    save_large_file(download_links[src_path.suffix[1:]], src_path)
     return reencode(src_path, dest_path, ffmpeg_args, **kwargs)
 
 
@@ -115,8 +114,7 @@ def test_config_build_from():
     ],
 )
 def test_get_media_info(media_format, media, expected, hosted_media_links):
-    with tempfile.TemporaryDirectory() as temp_dir:
-        src = pathlib.Path(temp_dir).joinpath(media)
+    with tempfile.TemporaryDirectory() as t, pathlib.Path(t).joinpath(media) as src:
         save_large_file(hosted_media_links[media_format], src)
         assert get_media_info(src) == expected
 
@@ -241,11 +239,11 @@ def test_preset_voice_mp3_low():
     ],
 )
 def test_reencode_media(src, dest, ffmpeg_args, expected, hosted_media_links):
-    with tempfile.TemporaryDirectory() as temp_dir:
+    with tempfile.TemporaryDirectory() as t, pathlib.Path(t) as temp_dir:
         download_media_and_reencode(
             temp_dir, src, dest, ffmpeg_args, hosted_media_links
         )
-        converted_details = get_media_info(pathlib.Path(temp_dir).joinpath(dest))
+        converted_details = get_media_info(temp_dir.joinpath(dest))
         assert expected["duration"] == converted_details["duration"]
         assert expected["codecs"] == converted_details["codecs"]
 
@@ -259,11 +257,12 @@ def test_reencode_media(src, dest, ffmpeg_args, expected, hosted_media_links):
     ],
 )
 def test_reencode_delete_src(src, dest, ffmpeg_args, delete_src, hosted_media_links):
-    with tempfile.TemporaryDirectory() as temp_dir:
+    with tempfile.TemporaryDirectory() as t, pathlib.Path(
+        t
+    ) as temp_dir, temp_dir.joinpath(src) as src_path:
         download_media_and_reencode(
             temp_dir, src, dest, ffmpeg_args, hosted_media_links, delete_src=delete_src
         )
-        src_path = pathlib.Path(temp_dir).joinpath(src)
         if delete_src:
             assert not src_path.exists()
         else:
@@ -281,7 +280,7 @@ def test_reencode_delete_src(src, dest, ffmpeg_args, delete_src, hosted_media_li
 def test_reencode_return_ffmpeg_output(
     src, dest, ffmpeg_args, return_output, hosted_media_links
 ):
-    with tempfile.TemporaryDirectory() as temp_dir:
+    with tempfile.TemporaryDirectory() as t, pathlib.Path(t) as temp_dir:
         ret = download_media_and_reencode(
             temp_dir,
             src,
@@ -291,9 +290,9 @@ def test_reencode_return_ffmpeg_output(
             with_process=return_output,
         )
         if return_output:
-            success, stdout, stderr = ret
+            success, process = ret
             assert success
-            assert stdout is not None and stderr is not None
+            assert len(process.stdout) > 0
         else:
             assert ret
 
@@ -307,9 +306,9 @@ def test_reencode_return_ffmpeg_output(
     ],
 )
 def test_reencode_failsafe(src, dest, ffmpeg_args, failsafe, hosted_media_links):
-    with tempfile.TemporaryDirectory() as temp_dir:
+    with tempfile.TemporaryDirectory() as t, pathlib.Path(t) as temp_dir:
         if not failsafe:
-            with pytest.raises(subprocess.CalledProcessError):
+            with pytest.raises(subprocess.CalledProcessError) as exc_info:
                 download_media_and_reencode(
                     temp_dir,
                     src,
@@ -318,6 +317,8 @@ def test_reencode_failsafe(src, dest, ffmpeg_args, failsafe, hosted_media_links)
                     hosted_media_links,
                     failsafe=failsafe,
                 )
+            assert len(exc_info.value.stdout) > 0
+
         else:
             success = download_media_and_reencode(
                 temp_dir, src, dest, ffmpeg_args, hosted_media_links, failsafe=failsafe
