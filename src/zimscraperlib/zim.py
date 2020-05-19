@@ -14,8 +14,6 @@ from .logging import nicer_args_join
 
 
 class ZimInfo(object):
-    zimwriterfs_path = os.getenv("ZIMWRITERFS_BINARY", "/usr/bin/zimwriterfs")
-
     def __init__(
         self,
         homepage="home.html",
@@ -101,24 +99,17 @@ class ZimInfo(object):
 
 
 def make_zim_file(build_dir, output_dir, zim_fname, zim_info, **kwargs):
-    """ runs zimwriterfs 
-    
-    The function takes in the following arguments
+    """ Creates a zim file using zimwriterfs
+
+    Arguments:
         build_dir: The directory to convert into a ZIM file
         output_dir: The directory where the ZIM file would be saved
         zim_fname: The name of the ZIM file
         zim_info: An object of class ZimInfo
-    
-    Also supports the following keyword arguments that are passed to to_zimwriterfs_args()
-        verbose: Use verbose mode while creating ZIM
-        inflateHtml: Whether try to inflate HTML files
-        uniqueNamespace: Put everything in namespace 'A'
-        withoutFTIndex: No fulltext index
-        minChunkSize: Number of bytes per ZIM cluster
-        redirects: Path to file containing redirects
-    """
+
+        **kwargs: passed directly to to_zimwriterfs_args() """
     args = (
-        [zim_info.zimwriterfs_path]
+        ["/usr/bin/env", "zimwriterfs"]
         + zim_info.to_zimwriterfs_args(**kwargs)
         + [str(build_dir), str(output_dir.joinpath(zim_fname))]
     )
