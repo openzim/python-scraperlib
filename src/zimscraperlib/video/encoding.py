@@ -4,27 +4,49 @@
 
 
 import subprocess
-from . import logger
+import tempfile
+import shutil
+import pathlib
+
+from .. import logger
 from ..logging import nicer_args_join
 
 
-def reencode(src_path, dst_path, config, delete_src=False, return_output=False):
-    """Runs ffmpeg with given config and returns back the returncode received from ffmpeg
-    
-    config - A list of ffmpeg arguments (except -threads and -max_muxing_queue_size)"""
+def reencode(
+    src_path, dst_path, ffmpeg_args, delete_src=False, with_process=False, failsafe=True
+):
+    """ Runs ffmpeg with given ffmpeg_args
 
-    tmp_path = src_path.parent.joinpath(f"video.tmp{dst_path.suffix}")
-    args = ["ffmpeg", "-y", "-i", f"file:{src_path}"] + config + [f"file:{tmp_path}"]
-    logger.info(f"Encode {src_path} -> {dst_path} video format = {dst_path.suffix}")
-    logger.debug(nicer_args_join(args))
-    ffmpeg = subprocess.run(args, stderr=subprocess.PIPE, universal_newlines=True)
-    if ffmpeg.returncode == 0:
-        if delete_src:
-            src_path.unlink()
-        tmp_path.replace(dst_path)
-    else:
-        if tmp_path.exists():
-            tmp_path.unlink()
-    if return_output:
-        return ffmpeg.stderr, ffmpeg.returncode
-    return ffmpeg.returncode
+        Arguments -
+            src_path - Path to source file
+            dst_path - Path to destination file
+            ffmpeg_args - A list of ffmpeg arguments
+            delete_src - Delete source file after convertion
+            with_process - Optionally return the output from ffmpeg (stderr and stdout)
+            failsafe - Run in failsafe mode
+    """
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        tmp_path = pathlib.Path(tmp_dir).joinpath(f"video.tmp{dst_path.suffix}")
+        args = (
+            ["ffmpeg", "-y", "-i", f"file:{src_path}"]
+            + ffmpeg_args
+            + [f"file:{tmp_path}"]
+        )
+        logger.info(f"Encode {src_path} -> {dst_path} video format = {dst_path.suffix}")
+        logger.debug(nicer_args_join(args))
+        ffmpeg = subprocess.run(
+            args,
+            stderr=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            universal_newlines=True,
+        )
+        if not failsafe:
+            ffmpeg.check_returncode()
+        if ffmpeg.returncode == 0:
+            if delete_src:
+                src_path.unlink()
+            shutil.copy(tmp_path, dst_path)
+        if with_process:
+            return ffmpeg.returncode == 0, ffmpeg.stdout, ffmpeg.stderr
+        return ffmpeg.returncode == 0

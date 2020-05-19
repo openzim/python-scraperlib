@@ -9,12 +9,11 @@ class VoiceMp3Low(Config):
     VERSION = 1
 
     options = {
+        "-vn": "",  # remove video stream
         "-codec:a": "mp3",  # audio codec
         "-ar": "44100",  # audio sampling rate
         "-b:a": "48k",  # target audio bitrate
     }
-
-    extras = ["-vn"]
 
 
 class VideoWebmLow(Config):

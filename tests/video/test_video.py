@@ -30,7 +30,7 @@ def test_config_update():
         "audio_sampling_rate": "51000",
         "video_scale": "480:trunc(ow/a/2)*2",
     }
-    config.update_config(**updates)
+    config.update_from(**updates)
     for k, v in updates.items():
         assert getattr(config, k) == v
 
@@ -47,11 +47,10 @@ def test_config_build_from():
         audio_sampling_rate="44100",
         quantizer_scale_range=(21, 35),
         video_scale="480:trunc(ow/a/2)*2",
-        threads=8,
     )
-    config.update_config(extras=["-movflags", "+faststart"])
+    config.update_from()
     args = config.to_ffmpeg_args()
-    assert len(args) == 28
+    assert len(args) == 24
     options_map = [
         ("codec:v", "video_codec"),
         ("codec:a", "audio_codec"),
@@ -61,34 +60,29 @@ def test_config_build_from():
         ("bufsize", "buffersize"),
         ("ar", "audio_sampling_rate"),
         ("b:a", "target_audio_bitrate"),
-        ("threads", "threads"),
     ]
     for option, attr in options_map:
         idx = args.index(f"-{option}")
-        assert idx >= 0
+        assert idx != -1
         assert args[idx + 1] == str(getattr(config, attr))
     video_scale = getattr(config, "video_scale")
     qmin, qmax = getattr(config, "quantizer_scale_range")
-    assert args.index("-qmin") >= 0 and args[args.index("-qmin") + 1] == str(qmin)
-    assert args.index("-qmax") >= 0 and args[args.index("-qmax") + 1] == str(qmax)
+    assert args.index("-qmin") != -1 and args[args.index("-qmin") + 1] == str(qmin)
+    assert args.index("-qmax") != -1 and args[args.index("-qmax") + 1] == str(qmax)
     assert (
-        args.index("-vf") >= 0
+        args.index("-vf") != -1
         and args[args.index("-vf") + 1] == f"scale='{video_scale}'"
     )
     assert (
-        args.index("-max_muxing_queue_size") >= 0
+        args.index("-max_muxing_queue_size") != -1
         and args[args.index("-max_muxing_queue_size") + 1] == "9999"
     )
-    extra_params = [
-        "-movflags",
-        "+faststart",
-    ]
-    assert args[-2:] == extra_params
 
     with pytest.raises(ValueError):
-        config.update_config(quantizer_scale_range=(-5, 52))
+        config.update_from(quantizer_scale_range=(-5, 52))
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize(
     "media_format,media,expected",
     [
@@ -138,7 +132,7 @@ def test_preset_video_webm_low():
     ]
     for option, val in options_map:
         idx = args.index(f"-{option}")
-        assert idx >= 0
+        assert idx != -1
         assert args[idx + 1] == val
 
     # test updating values
@@ -146,9 +140,9 @@ def test_preset_video_webm_low():
     config["-bufsize"] = "900k"
     args = config.to_ffmpeg_args()
     idx = args.index("-ar")
-    assert idx >= 0 and args[idx + 1] == "50000"
+    assert idx != -1 and args[idx + 1] == "50000"
     idx = args.index("-bufsize")
-    assert idx >= 0 and args[idx + 1] == "900k"
+    assert idx != -1 and args[idx + 1] == "900k"
 
 
 def test_preset_voice_mp3_low():
@@ -163,7 +157,7 @@ def test_preset_voice_mp3_low():
     ]
     for option, val in options_map:
         idx = args.index(f"-{option}")
-        assert idx >= 0
+        assert idx != -1
         assert args[idx + 1] == val
 
     # test updating values
@@ -171,96 +165,148 @@ def test_preset_voice_mp3_low():
     config["-b:a"] = "128k"
     args = config.to_ffmpeg_args()
     idx = args.index("-ar")
-    assert idx >= 0 and args[idx + 1] == "50000"
+    assert idx != -1 and args[idx + 1] == "50000"
     idx = args.index("-b:a")
-    assert idx >= 0 and args[idx + 1] == "128k"
+    assert idx != -1 and args[idx + 1] == "128k"
 
 
-# @pytest.mark.slow
-def test_reencode_video(hosted_media_links):
+@pytest.mark.slow
+@pytest.mark.parametrize(
+    "src,dest,ffmpeg_args,expected",
+    [
+        (
+            "video.mkv",
+            "video.mp4",
+            Config.build_from(
+                video_codec="h264",
+                audio_codec="aac",
+                max_video_bitrate="500k",
+                min_video_bitrate="500k",
+                target_video_bitrate="500k",
+                target_audio_bitrate="128k",
+                buffersize="900k",
+                audio_sampling_rate="44100",
+                quantizer_scale_range=(21, 35),
+                video_scale="480:trunc(ow/a/2)*2",
+            ).to_ffmpeg_args(),
+            {"codecs": ["h264", "aac"], "duration": 2},
+        ),
+        (
+            "video.mp4",
+            "video.webm",
+            VideoWebmLow().to_ffmpeg_args(),
+            {"codecs": ["vp8", "vorbis"], "duration": 2},
+        ),
+        (
+            "video.webm",
+            "video.mkv",
+            [
+                # video codec
+                "-codec:v",
+                "libx265",
+                # target video bitrate
+                "-b:v",
+                "300k",
+                # change output video dimensions
+                "-vf",
+                "scale='480:trunc(ow/a/2)*2'",
+                # audio codec
+                "-codec:a",
+                "libvorbis",
+                # audio sampling rate
+                "-ar",
+                "44100",
+                # target audio bitrate
+                "-b:a",
+                "128k",
+            ],
+            {"codecs": ["hevc", "vorbis"], "duration": 2},
+        ),
+        (
+            "video.mp4",
+            "audio.mp3",
+            VoiceMp3Low().to_ffmpeg_args(),
+            {"codecs": ["mp3"], "duration": 2},
+        ),
+    ],
+)
+def test_reencode_media(src, dest, ffmpeg_args, expected, hosted_media_links):
     with tempfile.TemporaryDirectory() as temp_dir:
         temp_dir = pathlib.Path(temp_dir)
-        src_video_path = temp_dir.joinpath("src_video.mp4")
-        mp4_video_path = temp_dir.joinpath("video.mp4")
-        webm_video_path = temp_dir.joinpath("video.webm")
-        mkv_video_path = temp_dir.joinpath("video.mkv")
-        mp3_audio_path = temp_dir.joinpath("audio.mp3")
-        save_large_file(hosted_media_links["mp4"], src_video_path)
-        original_details = get_media_info(src_video_path)
-        # compress the video in mp4 format
-        config = Config.build_from(
-            video_codec="h264",
-            audio_codec="aac",
-            max_video_bitrate="500k",
-            min_video_bitrate="500k",
-            target_video_bitrate="500k",
-            target_audio_bitrate="128k",
-            buffersize="900k",
-            audio_sampling_rate="44100",
-            quantizer_scale_range=(21, 35),
-            video_scale="480:trunc(ow/a/2)*2",
-            threads=8,
-        ).to_ffmpeg_args()
-        reencode(src_video_path, mp4_video_path, config)
-        mp4_converted_details = get_media_info(mp4_video_path)
-        for codec in ["h264", "aac"]:
-            assert codec in mp4_converted_details["codecs"]
-        assert original_details["duration"] == mp4_converted_details["duration"]
-        assert src_video_path.exists()
+        src_path = temp_dir.joinpath(src)
+        dest_path = temp_dir.joinpath(dest)
+        save_large_file(hosted_media_links[src_path.suffix.replace(".", "")], src_path)
+        reencode(src_path, dest_path, ffmpeg_args)
+        converted_details = get_media_info(dest_path)
+        assert expected["duration"] == converted_details["duration"]
+        assert expected["codecs"] == converted_details["codecs"]
 
-        # compress the video in webm format
-        config = VideoWebmLow().to_ffmpeg_args()
-        reencode(src_video_path, webm_video_path, config)
-        webm_converted_details = get_media_info(webm_video_path)
-        for codec in ["vp8", "vorbis"]:
-            assert codec in webm_converted_details["codecs"]
-        assert original_details["duration"] == webm_converted_details["duration"]
-        assert src_video_path.exists()
 
-        # reencode to audio using preset
-        config = VoiceMp3Low().to_ffmpeg_args()
-        ret = reencode(src_video_path, mp3_audio_path, config)
-        assert ret == 0
-        mp3_converted_details = get_media_info(mp3_audio_path)
-        assert original_details["duration"] == mp3_converted_details["duration"]
-        assert src_video_path.exists()
+@pytest.mark.slow
+@pytest.mark.parametrize(
+    "src,dest,ffmpeg_args,delete_src",
+    [
+        ("video.mp4", "video.webm", VideoWebmLow().to_ffmpeg_args(), True,),
+        ("video.mp4", "audio.mp3", VoiceMp3Low().to_ffmpeg_args(), False,),
+    ],
+)
+def test_reencode_delete_src(src, dest, ffmpeg_args, delete_src, hosted_media_links):
+    with tempfile.TemporaryDirectory() as temp_dir:
+        temp_dir = pathlib.Path(temp_dir)
+        src_path = temp_dir.joinpath(src)
+        dest_path = temp_dir.joinpath(dest)
+        save_large_file(hosted_media_links[src_path.suffix.replace(".", "")], src_path)
+        reencode(src_path, dest_path, ffmpeg_args, delete_src=delete_src)
+        if delete_src:
+            assert not src_path.exists()
+        else:
+            assert src_path.exists()
 
-        # compress in mkv with custom config as a param list
-        config = [
-            # video codec
-            "-codec:v",
-            "libx265",
-            # target video bitrate
-            "-b:v",
-            "300k",
-            # change output video dimensions
-            "-vf",
-            "scale='480:trunc(ow/a/2)*2'",
-            # audio codec
-            "-codec:a",
-            "libvorbis",
-            # audio sampling rate
-            "-ar",
-            "44100",
-            # target audio bitrate
-            "-b:a",
-            "128k",
-        ]
-        out, ret = reencode(
-            src_video_path, mkv_video_path, config, delete_src=True, return_output=True
+
+@pytest.mark.slow
+@pytest.mark.parametrize(
+    "src,dest,ffmpeg_args,return_output",
+    [
+        ("video.mp4", "video.webm", VideoWebmLow().to_ffmpeg_args(), True,),
+        ("video.mp4", "audio.mp3", VoiceMp3Low().to_ffmpeg_args(), False,),
+    ],
+)
+def test_reencode_return_ffmpeg_output(
+    src, dest, ffmpeg_args, return_output, hosted_media_links
+):
+    with tempfile.TemporaryDirectory() as temp_dir:
+        temp_dir = pathlib.Path(temp_dir)
+        src_path = temp_dir.joinpath(src)
+        dest_path = temp_dir.joinpath(dest)
+        save_large_file(hosted_media_links[src_path.suffix.replace(".", "")], src_path)
+        ret = reencode(
+            src_path, dest_path, ffmpeg_args, with_process=return_output
         )
-        assert len(out) > 0 and ret == 0
-        mkv_converted_details = get_media_info(mkv_video_path)
-        for codec in ["hevc", "vorbis"]:
-            assert codec in mkv_converted_details["codecs"]
-        assert original_details["duration"] == mkv_converted_details["duration"]
-        assert not src_video_path.exists()
+        if return_output:
+            success, stdout, stderr = ret
+            assert success
+            assert stdout is not None and stderr is not None
+        else:
+            assert ret
 
-        # check ffmpeg fail and return ffmpeg output
-        preset = VideoWebmLow()
-        preset["-qmin"] = "-10"
-        config = preset.to_ffmpeg_args()
-        out, ret = reencode(
-            mp4_video_path, webm_video_path, config, delete_src=True, return_output=True
-        )
-        assert len(out) > 0 and ret != 0
+
+@pytest.mark.slow
+@pytest.mark.parametrize(
+    "src,dest,ffmpeg_args,failsafe",
+    [
+        ("video.webm", "video.mp4", ["-qmin", "-5"], True,),
+        ("video.webm", "video.mp4", ["-qmin", "-5"], False,),
+    ],
+)
+def test_reencode_failsafe(src, dest, ffmpeg_args, failsafe, hosted_media_links):
+    with tempfile.TemporaryDirectory() as temp_dir:
+        temp_dir = pathlib.Path(temp_dir)
+        src_path = temp_dir.joinpath(src)
+        dest_path = temp_dir.joinpath(dest)
+        save_large_file(hosted_media_links[src_path.suffix.replace(".", "")], src_path)
+        if not failsafe:
+            with pytest.raises(subprocess.CalledProcessError):
+                reencode(src_path, dest_path, ffmpeg_args, failsafe=failsafe)
+        else:
+            success = reencode(src_path, dest_path, ffmpeg_args, failsafe=failsafe)
+            assert not success

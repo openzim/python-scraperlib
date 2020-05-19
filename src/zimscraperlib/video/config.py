@@ -6,7 +6,6 @@
 class Config(dict):
     VERSION = 1
     options = {}
-    extras = []
     defaults = {"-max_muxing_queue_size": "9999"}
     mapping = {
         "video_codec": "-codec:v",
@@ -17,7 +16,6 @@ class Config(dict):
         "buffersize": "-bufsize",
         "audio_sampling_rate": "-ar",
         "target_audio_bitrate": "-b:a",
-        "threads": "-threads",
     }
 
     def __init__(self, **kwargs):
@@ -25,19 +23,23 @@ class Config(dict):
         self.update(self.options)
         self.update(kwargs)
 
-    def update_config(self, **kwargs):
-        """Updates config based on shortcut params as given in build_from()"""
+    def update_from(self, **kwargs):
+        """ Updates the Config object based on shortcut params as given in build_from() """
 
         for key, value in kwargs.items():
             setattr(self, key, value)
 
     def to_ffmpeg_args(self):
-        """Convert the options dict to list of ffmpeg arguments"""
+        """ Convert the options dict to list of ffmpeg arguments """
 
         args = []
         for k, v in self.items():
-            args += [k, v]
-        args += self.extras
+            if v:
+                args += [k, v]
+            else:
+                args += [
+                    k
+                ]  # put only k in cases where it's not followed by a value (a boolean flag)
         return args
 
     @property
@@ -106,8 +108,8 @@ class Config(dict):
 
     @property
     def video_scale(self):
-        scale = self.get("-vf")
-        return scale[7:-1]
+        # remove "scale='" and "'" and return the value in between
+        return self.get("-vf")[7:-1] if self.get("-vf") else None
 
     @video_scale.setter
     def video_scale(self, value):
@@ -117,33 +119,30 @@ class Config(dict):
     def quantizer_scale_range(self):
         qmin = self.get("-qmin")
         qmax = self.get("-qmax")
-        return (int(qmin), int(qmax))
+        return (int(qmin), int(qmax)) if qmin is not None and qmax is not None else None
 
     @quantizer_scale_range.setter
     def quantizer_scale_range(self, value):
         qmin, qmax = value
-        if -1 <= qmin <= 69 and -1 <= qmax <= 1024:
+        if (
+            isinstance(qmin, int)
+            and isinstance(qmax, int)
+            and -1 <= qmin <= 69
+            and -1 <= qmax <= 1024
+        ):
             self["-qmin"] = str(qmin)
             self["-qmax"] = str(qmax)
         else:
-            raise ValueError("Quantizer scale must range from (-1, -1) to (69, 1024)")
-
-    @property
-    def threads(self):
-        return int(self.get(self.mapping["threads"]))
-
-    @threads.setter
-    def threads(self, value):
-        self[self.mapping["threads"]] = str(value)
+            raise ValueError("Quantizer scale should be a tuple of 2 ints and range from (-1, -1) to (69, 1024)")
 
     @classmethod
     def build_from(cls, **params):
         """ build a Config easily via shortcut params
 
-            video_codec: codec for output audio stream
-                values: h264 | xxx
-            audio_codec: codec for output audio stream
-                values: aac | mp3 | xxx
+            video_codec: codec for output audio stream. more info - https://ffmpeg.org/ffmpeg-codecs.html#Video-Encoders
+                values: h264 | libvpx | libx264 | libx265 | xxx
+            audio_codec: codec for output audio stream. more info - https://ffmpeg.org/ffmpeg-codecs.html#Audio-Encoders
+                values: aac | mp3 | flac | opus | libvorbis | xxx
             max_video_bitrate: maximum size per second for video stream
                 values: 128k | 1m
             min_video_bitrate: minimum size per second for video stream
@@ -158,14 +157,9 @@ class Config(dict):
                 values: 44100 | 48000
             quantizer_scale_range: tuple of min and max values of video quantizer scale (VBR)
                 values: (21, 35) | (68, 97) | (x, y)
-            video_scale: video frame scale
-                values: 480:trunc(ow/a/2)*2
-            threads: number of threads to use
-                values: 2 | 4 | 8 | x
-            extras: list of extra ffmpeg arguments. always appended at the end
-                values: ["-movflags", "+faststart"]
+            video_scale: video frame scale. more info - https://trac.ffmpeg.org/wiki/Scaling
+                values: 480:320 | 320:240 | width:height
         """
         config = cls()
-        for k, v in params.items():
-            setattr(config, k, v)
+        config.update_from(**params)
         return config
