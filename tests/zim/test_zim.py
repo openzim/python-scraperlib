@@ -85,7 +85,7 @@ def test_zimwriterfs_command(monkeypatch, ziminfo):
     extras = {"uniqueNamespace": True, "withoutFTIndex": True}
 
     def mock_subprocess_run(args, **kwargs):
-        assert len(args) == 24
+        assert len(args) == 25
         assert args[-1].endswith(".zim")
         assert args[-1] == str(output_dir.joinpath(zim_fname))
         assert args[-2] == str(build_dir)
