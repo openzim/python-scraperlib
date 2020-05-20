@@ -105,9 +105,7 @@ def get_language_details(query):
                     return babel.Locale.parse(macro_data[code_type]).get_display_name()
                 except (babel.UnknownLocaleError, TypeError, ValueError):
                     logger.debug(f"Can't find native name from {code_type} of language")
-            return lang_data["english"]
-        else:
-            return lang_data["english"]
+        return lang_data["english"]
 
     def combine_lang_and_macro_data(lang_data, macro_data):
         if macro_data:
@@ -127,9 +125,11 @@ def get_language_details(query):
         # possibility of iso-639 code
         try:
             lang_data, macro_data = get_iso_lang_data(query)
-            iso_data = combine_lang_and_macro_data(lang_data, macro_data)
-            iso_data["native"] = find_native_name(query, lang_data, macro_data)
-            iso_data["querytype"] = "purecode"
+            iso_data = {
+                "native": find_native_name(query, lang_data, macro_data),
+                "querytype": "purecode",
+            }
+            iso_data.update(combine_lang_and_macro_data(lang_data, macro_data))
         except Exception as exc:
             logger.error(str(exc))
             return None
@@ -141,11 +141,13 @@ def get_language_details(query):
         query_parts = re.split("-|_", query)
         try:
             lang_data, macro_data = get_iso_lang_data(query_parts[0])
-            iso_data = combine_lang_and_macro_data(lang_data, macro_data)
-            iso_data["native"] = find_native_name(
-                query.replace("-", "_"), lang_data, macro_data
-            )
-            iso_data["querytype"] = "locale"
+            iso_data = {
+                "native": find_native_name(
+                    query.replace("-", "_"), lang_data, macro_data
+                ),
+                "querytype": "locale",
+            }
+            iso_data.update(combine_lang_and_macro_data(lang_data, macro_data))
         except Exception as exc:
             logger.error(str(exc))
             return None
@@ -156,9 +158,11 @@ def get_language_details(query):
             lang_data, macro_data = get_iso_lang_data(
                 query.title().replace("Languages", "languages")
             )
-            iso_data = combine_lang_and_macro_data(lang_data, macro_data)
-            iso_data["native"] = find_native_name(query, lang_data, macro_data)
-            iso_data["querytype"] = "languagename"
+            iso_data = {
+                "native": find_native_name(query, lang_data, macro_data),
+                "querytype": "languagename",
+            }
+            iso_data.update(combine_lang_and_macro_data(lang_data, macro_data))
         except Exception as exc:
             logger.error(str(exc))
             return None
