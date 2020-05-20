@@ -5,6 +5,7 @@
 import locale
 import gettext
 import re
+import babel
 
 from iso639 import languages
 from . import logger
@@ -56,55 +57,21 @@ def get_language_details(query):
     def get_iso_lang_data(lang):
         """ return details if lang is a valid iso language else raises exception """
 
+        code_types = ["part1", "part2b", "part2t", "part3", "part5", "name"]
         iso_types = []
-        try:
-            languages.get(part1=lang)
-            iso_types.append("part1")
-        except KeyError:
-            logger.debug("Not a valid iso-639-1")
-        try:
-            languages.get(part2b=lang)
-            iso_types.append("part2b")
-        except KeyError:
-            logger.debug("Not a valid iso-639-2b")
-        try:
-            languages.get(part2t=lang)
-            iso_types.append("part2t")
-        except KeyError:
-            logger.debug("Not a valid iso-639-2t")
-        try:
-            languages.get(part3=lang)
-            iso_types.append("part3")
-        except KeyError:
-            logger.debug("Not a valid iso-639-3")
-        try:
-            languages.get(part5=lang)
-            iso_types.append("part5")
-        except KeyError:
-            logger.debug("Not a valid iso-639-5")
-        try:
-            languages.get(name=lang)
-            iso_types.append("name")
-        except KeyError:
-            logger.debug("Not a valid iso language name")
+
+        for code_type in code_types:
+            try:
+                languages.get(**{code_type: lang})
+                iso_types.append(code_type)
+            except KeyError:
+                logger.debug(f"Not a valid {code_type}")
 
         if not iso_types:
             raise Exception("Not a valid iso language name/code")
 
         res = languages.get(**{iso_types[0]: lang})
-        if res.macro:
-            macro_data = get_iso_lang_data(res.macro)
-            return {
-                "iso-639-1": res.part1 if res.part1 else macro_data["iso-639-1"],
-                "iso-639-2b": res.part2b if res.part2b else macro_data["iso-639-2b"],
-                "iso-639-2t": res.part2t if res.part2t else macro_data["iso-639-2t"],
-                "iso-639-3": res.part3 if res.part3 else macro_data["iso-639-3"],
-                "iso-639-5": res.part5 if res.part5 else macro_data["iso-639-5"],
-                "english": res.name,
-                "iso_types": iso_types,
-            }
-
-        return {
+        lang_data = {
             "iso-639-1": res.part1,
             "iso-639-2b": res.part2b,
             "iso-639-2t": res.part2t,
@@ -113,11 +80,55 @@ def get_language_details(query):
             "english": res.name,
             "iso_types": iso_types,
         }
+        if res.macro:
+            return (
+                lang_data,
+                get_iso_lang_data(res.macro)[0],
+            )  # first item in the returned tuple
+        return lang_data, None
+
+    def find_native_name(query, lang_data, macro_data):
+        try:
+            return babel.Locale.parse(query).get_display_name()
+        except (babel.UnknownLocaleError, TypeError, ValueError):
+            logger.debug("Can't find native name from exact query")
+        code_types = ["iso-639-5", "iso-639-3", "iso-639-2t", "iso-639-2b", "iso-639-1"]
+        for code_type in code_types:
+            try:
+                return babel.Locale.parse(lang_data[code_type]).get_display_name()
+            except (babel.UnknownLocaleError, TypeError, ValueError):
+                logger.debug(f"Can't find native name from {code_type} of language")
+        if macro_data:
+            logger.debug("Trying the macrolanguage to find native name")
+            for code_type in code_types:
+                try:
+                    return babel.Locale.parse(macro_data[code_type]).get_display_name()
+                except (babel.UnknownLocaleError, TypeError, ValueError):
+                    logger.debug(f"Can't find native name from {code_type} of language")
+            return lang_data["english"]
+        else:
+            return lang_data["english"]
+
+    def combine_lang_and_macro_data(lang_data, macro_data):
+        if macro_data:
+            code_types = [
+                "iso-639-1",
+                "iso-639-2b",
+                "iso-639-2t",
+                "iso-639-3",
+                "iso-639-5",
+            ]
+            for code_type in code_types:
+                if not lang_data[code_type]:
+                    lang_data[code_type] = macro_data[code_type]
+        return lang_data
 
     if query.isalpha() and (2 <= len(query) <= 3):
         # possibility of iso-639 code
         try:
-            iso_data = get_iso_lang_data(query)
+            lang_data, macro_data = get_iso_lang_data(query)
+            iso_data = combine_lang_and_macro_data(lang_data, macro_data)
+            iso_data["native"] = find_native_name(query, lang_data, macro_data)
             iso_data["querytype"] = "purecode"
         except Exception as exc:
             logger.error(str(exc))
@@ -129,7 +140,11 @@ def get_language_details(query):
         # possibility of locale
         query_parts = re.split("-|_", query)
         try:
-            iso_data = get_iso_lang_data(query_parts[0])
+            lang_data, macro_data = get_iso_lang_data(query_parts[0])
+            iso_data = combine_lang_and_macro_data(lang_data, macro_data)
+            iso_data["native"] = find_native_name(
+                query.replace("-", "_"), lang_data, macro_data
+            )
             iso_data["querytype"] = "locale"
         except Exception as exc:
             logger.error(str(exc))
@@ -138,9 +153,11 @@ def get_language_details(query):
     else:
         # possibility of iso language name
         try:
-            iso_data = get_iso_lang_data(
+            lang_data, macro_data = get_iso_lang_data(
                 query.title().replace("Languages", "languages")
             )
+            iso_data = combine_lang_and_macro_data(lang_data, macro_data)
+            iso_data["native"] = find_native_name(query, lang_data, macro_data)
             iso_data["querytype"] = "languagename"
         except Exception as exc:
             logger.error(str(exc))

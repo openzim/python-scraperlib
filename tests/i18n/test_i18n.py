@@ -38,6 +38,7 @@ def test_selocale_unsupported(tmp_path):
                 "iso_types": ["part1"],
                 "querytype": "locale",
                 "query": "zh-Hans",
+                "native": "中文 (简体)",
             },
         ),
         (
@@ -52,6 +53,7 @@ def test_selocale_unsupported(tmp_path):
                 "iso_types": ["part1"],
                 "querytype": "purecode",
                 "query": "hi",
+                "native": "हिन्दी",
             },
         ),
         (
@@ -66,6 +68,7 @@ def test_selocale_unsupported(tmp_path):
                 "iso_types": ["part2b", "part2t", "part3"],
                 "querytype": "purecode",
                 "query": "hin",
+                "native": "हिन्दी (भारत)",
             },
         ),
         (
@@ -80,6 +83,7 @@ def test_selocale_unsupported(tmp_path):
                 "iso_types": ["name"],
                 "querytype": "languagename",
                 "query": "Japanese",
+                "native": "日本語 (日本)",
             },
         ),
         (
@@ -94,6 +98,7 @@ def test_selocale_unsupported(tmp_path):
                 "iso_types": ["part2b", "part2t", "part5"],
                 "querytype": "purecode",
                 "query": "afa",
+                "native": "Afro-Asiatic languages",
             },
         ),
         (
@@ -108,6 +113,7 @@ def test_selocale_unsupported(tmp_path):
                 "iso_types": ["name"],
                 "querytype": "languagename",
                 "query": "afro-asiatic languages",
+                "native": "Afro-Asiatic languages",
             },
         ),
         (
@@ -122,12 +128,43 @@ def test_selocale_unsupported(tmp_path):
                 "iso_types": ["part3"],
                 "querytype": "purecode",
                 "query": "cmn",
+                "native": "中文 (简体, 中国)",
             },
         ),
         ("fake-lang", None,),
         ("fake", None,),
         ("C#", None,),
         ("fks", None,),
+        (
+            "arq",
+            {
+                "iso-639-1": "ar",
+                "iso-639-2b": "ara",
+                "iso-639-2t": "ara",
+                "iso-639-3": "arq",
+                "iso-639-5": "",
+                "english": "Algerian Arabic",
+                "iso_types": ["part3"],
+                "native": "العربية (مصر)",
+                "querytype": "purecode",
+                "query": "arq",
+            },
+        ),
+        (
+            "ar-ma",
+            {
+                "iso-639-1": "ar",
+                "iso-639-2b": "ara",
+                "iso-639-2t": "ara",
+                "iso-639-3": "ara",
+                "iso-639-5": "",
+                "english": "Arabic",
+                "iso_types": ["part1"],
+                "native": "العربية (المغرب)",
+                "querytype": "locale",
+                "query": "ar-ma",
+            },
+        ),
     ],
 )
 def test_lang_details(query, expected):
