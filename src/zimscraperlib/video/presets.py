@@ -31,5 +31,24 @@ class VideoWebmLow(Config):
         "-qmax": "42",  # max quantizer scale
         "-vf": "scale='480:trunc(ow/a/2)*2'",  # frame size
         "-ar": "44100",  # audio sampling rate
-        "-b:a": "48k",  # target audio bitrate
+        "-b:a": "128k",  # target audio bitrate
+    }
+
+
+class VideoMp4Low(Config):
+    VERSION = 1
+
+    options = {
+        "-codec:v": "h264",  # video codec
+        "-b:v": "300k",  # target video bitrate
+        "-maxrate": "300k",  # max video bitrate
+        "-bufsize": "1000k",  # buffer size
+        "-minrate": "300k",  # min video bitrate
+        "-codec:a": "aac",  # audio codec
+        "-qmin": "30",  # min quantizer scale
+        "-qmax": "42",  # max quantizer scale
+        "-vf": "scale='480:trunc(ow/a/2)*2'",  # frame size
+        "-ar": "44100",  # audio sampling rate
+        "-b:a": "128k",  # target audio bitrate
+        "-movflags": "+faststart",  # extra flag
     }
