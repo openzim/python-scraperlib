@@ -82,13 +82,14 @@ def test_zimwriterfs_command(monkeypatch, ziminfo):
     build_dir = pathlib.Path("build")
     output_dir = pathlib.Path("output")
     zim_fname = f"{ziminfo.name}.zim"
+    extras = {"uniqueNamespace": True, "withoutFTIndex": True}
 
     def mock_subprocess_run(args, **kwargs):
-        assert len(args) == 22
+        assert len(args) == 25
         assert args[-1].endswith(".zim")
         assert args[-1] == str(output_dir.joinpath(zim_fname))
         assert args[-2] == str(build_dir)
         return subprocess.CompletedProcess(args=args, returncode=0)
 
     monkeypatch.setattr(subprocess, "run", mock_subprocess_run)
-    make_zim_file(build_dir, output_dir, zim_fname, ziminfo)
+    make_zim_file(build_dir, output_dir, zim_fname, ziminfo, **extras)
