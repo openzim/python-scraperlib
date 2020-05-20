@@ -14,8 +14,6 @@ from .logging import nicer_args_join
 
 
 class ZimInfo(object):
-    zimwriterfs_path = os.getenv("ZIMWRITERFS_BINARY", "/usr/bin/zimwriterfs")
-
     def __init__(
         self,
         homepage="home.html",
@@ -100,11 +98,19 @@ class ZimInfo(object):
         return arg_list
 
 
-def make_zim_file(build_dir, output_dir, zim_fname, zim_info):
-    """ runs zimwriterfs """
+def make_zim_file(build_dir, output_dir, zim_fname, zim_info, **kwargs):
+    """ Creates a zim file using zimwriterfs
+
+    Arguments:
+        build_dir: The directory to convert into a ZIM file
+        output_dir: The directory where the ZIM file would be saved
+        zim_fname: The name of the ZIM file
+        zim_info: An object of class ZimInfo
+
+        **kwargs: passed directly to to_zimwriterfs_args() """
     args = (
-        [ZimInfo.zimwriterfs_path]
-        + zim_info.to_zimwriterfs_args()
+        ["/usr/bin/env", "zimwriterfs"]
+        + zim_info.to_zimwriterfs_args(**kwargs)
         + [str(build_dir), str(output_dir.joinpath(zim_fname))]
     )
 
