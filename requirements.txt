@@ -1,6 +1,4 @@
 iso-639==0.4.5
 requests>=2.22,<3.0
 colorthief==0.2.1
-python-resize-image==1.1.19
-jinja2==2.10.1
-babel==2.7.0
+python-resize-image==1.1.*
