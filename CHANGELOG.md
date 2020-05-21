@@ -1,4 +1,4 @@
-# 1.1.0 [WIP]
+# 1.1.0
 
 * added video module with reencode, presets, config builder and video file probing
 * `make_zim_file()` accepts extra kwargs for zimwriterfs
