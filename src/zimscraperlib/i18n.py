@@ -89,22 +89,25 @@ def get_iso_lang_data(lang):
     return lang_data, None
 
 
-def find_native_name(query, lang_data={}):
-    """ native-language name for lang in query with help from language_details dict
+def find_language_names(query, lang_data={}):
+    """ (native, english) language names for lang with help from language_details dict
 
         Falls back to English name if available or query if not """
     try:
-        return babel.Locale.parse(query).get_display_name()
+        query_locale = babel.Locale.parse(query)
+        return query_locale.get_display_name(), query_locale.get_display_name("en")
     except (babel.UnknownLocaleError, TypeError, ValueError):
         pass
 
     # ISO code lookup order matters (most qualified first)!
     for iso_level in [f"iso-639-{l}" for l in reversed(ISO_LEVELS)]:
         try:
-            return babel.Locale.parse(lang_data.get(iso_level)).get_display_name()
+            query_locale = babel.Locale.parse(lang_data.get(iso_level))
+            return query_locale.get_display_name(), query_locale.get_display_name("en")
         except (babel.UnknownLocaleError, TypeError, ValueError):
             pass
-    return lang_data.get("english", query)
+    default = lang_data.get("english", query)
+    return default, default
 
 
 def update_with_macro(lang_data, macro_data):
@@ -158,9 +161,11 @@ def get_language_details(query, failsafe=False):
         raise exc
 
     iso_data = update_with_macro(lang_data, macro_data)
+    native_name, english_name = find_language_names(native_query, iso_data)
     iso_data.update(
         {
-            "native": find_native_name(native_query, iso_data),
+            "english": english_name,
+            "native": native_name,
             "querytype": query_type,
             "query": query,
         }
