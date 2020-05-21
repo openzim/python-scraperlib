@@ -2,13 +2,18 @@
 # -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
+import re
 import locale
 import gettext
-import re
-import babel
 
-from iso639 import languages
-from . import logger
+import babel
+from iso639 import languages as iso639_languages
+
+ISO_LEVELS = ["1", "2b", "2t", "3", "5"]
+
+
+class NotFound(ValueError):
+    pass
 
 
 class Locale:
@@ -51,121 +56,113 @@ def setlocale(root_dir, locale_name):
     return Locale.setup(root_dir / "locale", locale_name)
 
 
-def get_language_details(query):
-    """ returns language details if query is a language or a locale otherwise returns None """
+def get_iso_lang_data(lang):
+    """ ISO-639-x languages details for lang. Raises NotFound
 
-    def get_iso_lang_data(lang):
-        """ return details if lang is a valid iso language else raises exception """
+        Included keys: iso-639-1, iso-639-2b, iso-639-2t, iso-639-3, iso-639-5
+                       english, iso_types
 
-        code_types = ["part1", "part2b", "part2t", "part3", "part5", "name"]
-        iso_types = []
+        See get_language_details() for details """
 
-        for code_type in code_types:
-            try:
-                languages.get(**{code_type: lang})
-                iso_types.append(code_type)
-            except KeyError:
-                logger.debug(f"Not a valid {code_type}")
+    iso_types = []
 
-        if not iso_types:
-            raise Exception("Not a valid iso language name/code")
-
-        res = languages.get(**{iso_types[0]: lang})
-        lang_data = {
-            "iso-639-1": res.part1,
-            "iso-639-2b": res.part2b,
-            "iso-639-2t": res.part2t,
-            "iso-639-3": res.part3,
-            "iso-639-5": res.part5,
-            "english": res.name,
-            "iso_types": iso_types,
-        }
-        if res.macro:
-            return (
-                lang_data,
-                get_iso_lang_data(res.macro)[0],
-            )  # first item in the returned tuple
-        return lang_data, None
-
-    def find_native_name(query, lang_data, macro_data):
+    for code_type in [f"part{l}" for l in ISO_LEVELS] + ["name"]:
         try:
-            return babel.Locale.parse(query).get_display_name()
-        except (babel.UnknownLocaleError, TypeError, ValueError):
-            logger.debug("Can't find native name from exact query")
-        code_types = ["iso-639-5", "iso-639-3", "iso-639-2t", "iso-639-2b", "iso-639-1"]
-        for code_type in code_types:
-            try:
-                return babel.Locale.parse(lang_data[code_type]).get_display_name()
-            except (babel.UnknownLocaleError, TypeError, ValueError):
-                logger.debug(f"Can't find native name from {code_type} of language")
-        if macro_data:
-            logger.debug("Trying the macrolanguage to find native name")
-            for code_type in code_types:
-                try:
-                    return babel.Locale.parse(macro_data[code_type]).get_display_name()
-                except (babel.UnknownLocaleError, TypeError, ValueError):
-                    logger.debug(f"Can't find native name from {code_type} of language")
-        return lang_data["english"]
+            iso639_languages.get(**{code_type: lang})
+            iso_types.append(code_type)
+        except KeyError:
+            pass
 
-    def combine_lang_and_macro_data(lang_data, macro_data):
-        if macro_data:
-            code_types = [
-                "iso-639-1",
-                "iso-639-2b",
-                "iso-639-2t",
-                "iso-639-3",
-                "iso-639-5",
-            ]
-            for code_type in code_types:
-                if not lang_data[code_type]:
-                    lang_data[code_type] = macro_data[code_type]
-        return lang_data
+    if not iso_types:
+        raise NotFound("Not a valid iso language name/code")
+
+    language = iso639_languages.get(**{iso_types[0]: lang})
+
+    lang_data = {f"iso-639-{l}": getattr(language, f"part{l}") for l in ISO_LEVELS}
+    lang_data.update({"english": language.name, "iso_types": iso_types})
+
+    if language.macro:
+        return (
+            lang_data,
+            get_iso_lang_data(language.macro)[0],
+        )  # first item in the returned tuple
+    return lang_data, None
+
+
+def find_native_name(query, lang_data={}):
+    """ native-language name for lang in query with help from language_details dict
+
+        Falls back to English name if available or query if not """
+    try:
+        return babel.Locale.parse(query).get_display_name()
+    except (babel.UnknownLocaleError, TypeError, ValueError):
+        pass
+
+    # ISO code lookup order matters (most qualified first)!
+    for iso_level in [f"iso-639-{l}" for l in reversed(ISO_LEVELS)]:
+        try:
+            return babel.Locale.parse(lang_data.get(iso_level)).get_display_name()
+        except (babel.UnknownLocaleError, TypeError, ValueError):
+            pass
+    return lang_data.get("english", query)
+
+
+def update_with_macro(lang_data, macro_data):
+    """ update empty keys from lang_data with ones of macro_data """
+    if macro_data:
+        for key, value in macro_data.items():
+            if key in lang_data and not lang_data[key]:
+                lang_data[key] = value
+    return lang_data
+
+
+def get_language_details(query, failsafe=False):
+    """ language details dict from query.
+
+        Raises NotFound or return `und` language details if failsafe
+
+        iso-639-1: str ISO-639-1 language code
+        iso-639-2b: str ISO-639-2b language code
+        iso-639-2t: str ISO-639-2t language code
+        iso-639-3: str ISO-639-3 language code
+        iso-639-5: str ISO-639-5 language code
+        english: str language name in English
+        native: str language name in is native language
+        iso_types: [str] list of supported iso types
+
+    """
 
     if query.isalpha() and (2 <= len(query) <= 3):
         # possibility of iso-639 code
-        try:
-            lang_data, macro_data = get_iso_lang_data(query)
-            iso_data = {
-                "native": find_native_name(query, lang_data, macro_data),
-                "querytype": "purecode",
-            }
-            iso_data.update(combine_lang_and_macro_data(lang_data, macro_data))
-        except Exception as exc:
-            logger.error(str(exc))
-            return None
-
+        adjusted_query = query
+        native_query = query
+        query_type = "purecode"
     elif all(x.isalpha() or x == "-" or x == "_" for x in query) and (
         query.count("_") + query.count("-") == 1
     ):
         # possibility of locale
-        query_parts = re.split("-|_", query)
-        try:
-            lang_data, macro_data = get_iso_lang_data(query_parts[0])
-            iso_data = {
-                "native": find_native_name(
-                    query.replace("-", "_"), lang_data, macro_data
-                ),
-                "querytype": "locale",
-            }
-            iso_data.update(combine_lang_and_macro_data(lang_data, macro_data))
-        except Exception as exc:
-            logger.error(str(exc))
-            return None
-
+        adjusted_query = re.split("-|_", query)[0]
+        native_query = query.replace("-", "_")
+        query_type = "locale"
     else:
         # possibility of iso language name
-        try:
-            lang_data, macro_data = get_iso_lang_data(
-                query.title().replace("Languages", "languages")
-            )
-            iso_data = {
-                "native": find_native_name(query, lang_data, macro_data),
-                "querytype": "languagename",
-            }
-            iso_data.update(combine_lang_and_macro_data(lang_data, macro_data))
-        except Exception as exc:
-            logger.error(str(exc))
-            return None
+        adjusted_query = query.title().replace("Languages", "languages")
+        native_query = query
+        query_type = "languagename"
 
-    iso_data["query"] = query
+    try:
+        lang_data, macro_data = get_iso_lang_data(adjusted_query)
+    except NotFound as exc:
+        if failsafe:
+            return None
+        raise exc
+
+    iso_data = update_with_macro(lang_data, macro_data)
+    iso_data.update(
+        {
+            "native": find_native_name(native_query, iso_data),
+            "querytype": query_type,
+            "query": query,
+        }
+    )
     return iso_data
