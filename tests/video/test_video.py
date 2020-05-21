@@ -123,16 +123,15 @@ def test_preset_video_webm_low():
     config = VideoWebmLow()
     assert config.VERSION == 1
     args = config.to_ffmpeg_args()
-    assert len(args) == 26
+    assert len(args) == 24
     options_map = [
         ("codec:v", "libvpx"),
         ("codec:a", "libvorbis"),
         ("maxrate", "300k"),
         ("minrate", "300k"),
         ("b:v", "300k"),
-        ("bufsize", "1000k"),
         ("ar", "44100"),
-        ("b:a", "128k"),
+        ("b:a", "48k"),
         ("quality", "best"),
         ("qmin", "30"),
         ("qmax", "42"),
@@ -157,16 +156,15 @@ def test_preset_video_mp4_low():
     config = VideoMp4Low()
     assert config.VERSION == 1
     args = config.to_ffmpeg_args()
-    assert len(args) == 26
+    assert len(args) == 24
     options_map = [
         ("codec:v", "h264"),
         ("codec:a", "aac"),
         ("maxrate", "300k"),
         ("minrate", "300k"),
         ("b:v", "300k"),
-        ("bufsize", "1000k"),
         ("ar", "44100"),
-        ("b:a", "128k"),
+        ("b:a", "48k"),
         ("movflags", "+faststart"),
         ("qmin", "30"),
         ("qmax", "42"),
