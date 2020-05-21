@@ -5,7 +5,6 @@
 
 """ zimwriterfs abstraction via ZimInfo """
 
-import os
 import subprocess
 
 from . import logger

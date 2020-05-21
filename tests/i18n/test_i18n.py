@@ -7,7 +7,7 @@ import pathlib
 
 import pytest
 
-from zimscraperlib.i18n import setlocale, get_language_details, _
+from zimscraperlib.i18n import setlocale, get_language_details, _, NotFound
 
 
 @pytest.mark.parametrize(
@@ -24,83 +24,156 @@ def test_selocale_unsupported(tmp_path):
 
 
 @pytest.mark.parametrize(
-    "iso_639_3,expected",
+    "query,expected",
     [
         (
             "zh-Hans",
             {
-                "code": "zh-Hans",
                 "iso-639-1": "zh",
-                "english": "Simplified Chinese",
-                "native": "简化字",
+                "iso-639-2b": "chi",
+                "iso-639-2t": "zho",
+                "iso-639-3": "zho",
+                "iso-639-5": "",
+                "english": "Chinese (Simplified)",
+                "iso_types": ["part1"],
+                "querytype": "locale",
+                "query": "zh-Hans",
+                "native": "中文 (简体)",
             },
         ),
         (
-            "zh-Hant",
+            "hi",
             {
-                "code": "zh-Hant",
+                "iso-639-1": "hi",
+                "iso-639-2b": "hin",
+                "iso-639-2t": "hin",
+                "iso-639-3": "hin",
+                "iso-639-5": "",
+                "english": "Hindi",
+                "iso_types": ["part1"],
+                "querytype": "purecode",
+                "query": "hi",
+                "native": "हिन्दी",
+            },
+        ),
+        (
+            "hin",
+            {
+                "iso-639-1": "hi",
+                "iso-639-2b": "hin",
+                "iso-639-2t": "hin",
+                "iso-639-3": "hin",
+                "iso-639-5": "",
+                "english": "Hindi (India)",
+                "iso_types": ["part2b", "part2t", "part3"],
+                "querytype": "purecode",
+                "query": "hin",
+                "native": "हिन्दी (भारत)",
+            },
+        ),
+        (
+            "Japanese",
+            {
+                "iso-639-1": "ja",
+                "iso-639-2b": "jpn",
+                "iso-639-2t": "jpn",
+                "iso-639-3": "jpn",
+                "iso-639-5": "",
+                "english": "Japanese (Japan)",
+                "iso_types": ["name"],
+                "querytype": "languagename",
+                "query": "Japanese",
+                "native": "日本語 (日本)",
+            },
+        ),
+        (
+            "afa",
+            {
+                "iso-639-1": "",
+                "iso-639-2b": "afa",
+                "iso-639-2t": "afa",
+                "iso-639-3": "",
+                "iso-639-5": "afa",
+                "english": "Afro-Asiatic languages",
+                "iso_types": ["part2b", "part2t", "part5"],
+                "querytype": "purecode",
+                "query": "afa",
+                "native": "Afro-Asiatic languages",
+            },
+        ),
+        (
+            "afro-asiatic languages",
+            {
+                "iso-639-1": "",
+                "iso-639-2b": "afa",
+                "iso-639-2t": "afa",
+                "iso-639-3": "",
+                "iso-639-5": "afa",
+                "english": "Afro-Asiatic languages",
+                "iso_types": ["name"],
+                "querytype": "languagename",
+                "query": "afro-asiatic languages",
+                "native": "Afro-Asiatic languages",
+            },
+        ),
+        (
+            "cmn",
+            {
                 "iso-639-1": "zh",
-                "english": "Traditional Chinese",
-                "native": "正體字",
+                "iso-639-2b": "chi",
+                "iso-639-2t": "zho",
+                "iso-639-3": "cmn",
+                "iso-639-5": "",
+                "english": "Chinese (Simplified, China)",
+                "iso_types": ["part3"],
+                "querytype": "purecode",
+                "query": "cmn",
+                "native": "中文 (简体, 中国)",
             },
         ),
+        ("fake-lang", None,),
+        ("fake", None,),
+        ("C#", None,),
+        ("fks", None,),
         (
-            "iw",
-            {"code": "iw", "iso-639-1": "he", "english": "Hebrew", "native": "עברית"},
-        ),
-        (
-            "es-419",
+            "arq",
             {
-                "code": "es-419",
-                "iso-639-1": "es-419",
-                "english": "Spanish",
-                "native": "Español",
-            },
-        ),
-        (
-            "multi",
-            {
-                "code": "mul",
-                "iso-639-1": "en",
-                "english": "Multiple Languages",
-                "native": "Multiple Languages",
-            },
-        ),
-        (
-            "fra",
-            {
-                "code": "fra",
-                "english": "French",
-                "iso-639-1": "fr",
-                "native": "français; langue française",
-            },
-        ),
-        (
-            "bam",
-            {
-                "code": "bam",
-                "english": "Bambara",
-                "iso-639-1": "bm",
-                "native": "bamanankan",
-            },
-        ),
-        (
-            "ara",
-            {
-                "code": "ara",
-                "english": "Arabic",
                 "iso-639-1": "ar",
-                "native": "العربية",
+                "iso-639-2b": "ara",
+                "iso-639-2t": "ara",
+                "iso-639-3": "arq",
+                "iso-639-5": "",
+                "english": "Arabic (Egypt)",
+                "iso_types": ["part3"],
+                "native": "العربية (مصر)",
+                "querytype": "purecode",
+                "query": "arq",
             },
         ),
         (
-            "fake",
-            {"code": "fake", "english": "fake", "iso-639-1": "fake", "native": "fake"},
+            "ar-ma",
+            {
+                "iso-639-1": "ar",
+                "iso-639-2b": "ara",
+                "iso-639-2t": "ara",
+                "iso-639-3": "ara",
+                "iso-639-5": "",
+                "english": "Arabic (Morocco)",
+                "iso_types": ["part1"],
+                "native": "العربية (المغرب)",
+                "querytype": "locale",
+                "query": "ar-ma",
+            },
         ),
     ],
 )
-def test_lang_details(iso_639_3, expected):
-    assert get_language_details(iso_639_3) == expected
+def test_lang_details(query, expected):
+    if expected is None:
+        assert get_language_details(query, failsafe=True) == expected
+        with pytest.raises(NotFound):
+            get_language_details(query)
+    else:
+        assert get_language_details(query) == expected
 
 
 @pytest.mark.parametrize(

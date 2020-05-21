@@ -2,10 +2,18 @@
 # -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
+import re
 import locale
 import gettext
 
-import iso639
+import babel
+from iso639 import languages as iso639_languages
+
+ISO_LEVELS = ["1", "2b", "2t", "3", "5"]
+
+
+class NotFound(ValueError):
+    pass
 
 
 class Locale:
@@ -48,51 +56,118 @@ def setlocale(root_dir, locale_name):
     return Locale.setup(root_dir / "locale", locale_name)
 
 
-def get_language_details(iso_639_3):
-    """ dict container iso639-2, name and native name for an iso-639-3 code """
-    non_iso_langs = {
-        "zh-Hans": {
-            "code": "zh-Hans",
-            "iso-639-1": "zh",
-            "english": "Simplified Chinese",
-            "native": "简化字",
-        },
-        "zh-Hant": {
-            "code": "zh-Hant",
-            "iso-639-1": "zh",
-            "english": "Traditional Chinese",
-            "native": "正體字",
-        },
-        "iw": {"code": "iw", "iso-639-1": "he", "english": "Hebrew", "native": "עברית"},
-        "es-419": {
-            "code": "es-419",
-            "iso-639-1": "es-419",
-            "english": "Spanish",
-            "native": "Español",
-        },
-        "multi": {
-            "code": "mul",
-            "iso-639-1": "en",
-            "english": "Multiple Languages",
-            "native": "Multiple Languages",
-        },
-    }
+def get_iso_lang_data(lang):
+    """ ISO-639-x languages details for lang. Raises NotFound
+
+        Included keys: iso-639-1, iso-639-2b, iso-639-2t, iso-639-3, iso-639-5
+                       english, iso_types
+
+        See get_language_details() for details """
+
+    iso_types = []
+
+    for code_type in [f"part{l}" for l in ISO_LEVELS] + ["name"]:
+        try:
+            iso639_languages.get(**{code_type: lang})
+            iso_types.append(code_type)
+        except KeyError:
+            pass
+
+    if not iso_types:
+        raise NotFound("Not a valid iso language name/code")
+
+    language = iso639_languages.get(**{iso_types[0]: lang})
+
+    lang_data = {f"iso-639-{l}": getattr(language, f"part{l}") for l in ISO_LEVELS}
+    lang_data.update({"english": language.name, "iso_types": iso_types})
+
+    if language.macro:
+        return (
+            lang_data,
+            get_iso_lang_data(language.macro)[0],
+        )  # first item in the returned tuple
+    return lang_data, None
+
+
+def find_language_names(query, lang_data={}):
+    """ (native, english) language names for lang with help from language_details dict
+
+        Falls back to English name if available or query if not """
+    try:
+        query_locale = babel.Locale.parse(query)
+        return query_locale.get_display_name(), query_locale.get_display_name("en")
+    except (babel.UnknownLocaleError, TypeError, ValueError):
+        pass
+
+    # ISO code lookup order matters (most qualified first)!
+    for iso_level in [f"iso-639-{l}" for l in reversed(ISO_LEVELS)]:
+        try:
+            query_locale = babel.Locale.parse(lang_data.get(iso_level))
+            return query_locale.get_display_name(), query_locale.get_display_name("en")
+        except (babel.UnknownLocaleError, TypeError, ValueError):
+            pass
+    default = lang_data.get("english", query)
+    return default, default
+
+
+def update_with_macro(lang_data, macro_data):
+    """ update empty keys from lang_data with ones of macro_data """
+    if macro_data:
+        for key, value in macro_data.items():
+            if key in lang_data and not lang_data[key]:
+                lang_data[key] = value
+    return lang_data
+
+
+def get_language_details(query, failsafe=False):
+    """ language details dict from query.
+
+        Raises NotFound or return `und` language details if failsafe
+
+        iso-639-1: str ISO-639-1 language code
+        iso-639-2b: str ISO-639-2b language code
+        iso-639-2t: str ISO-639-2t language code
+        iso-639-3: str ISO-639-3 language code
+        iso-639-5: str ISO-639-5 language code
+        english: str language name in English
+        native: str language name in is native language
+        iso_types: [str] list of supported iso types
+
+    """
+
+    if query.isalpha() and (2 <= len(query) <= 3):
+        # possibility of iso-639 code
+        adjusted_query = query
+        native_query = query
+        query_type = "purecode"
+    elif all(x.isalpha() or x == "-" or x == "_" for x in query) and (
+        query.count("_") + query.count("-") == 1
+    ):
+        # possibility of locale
+        adjusted_query = re.split("-|_", query)[0]
+        native_query = query.replace("-", "_")
+        query_type = "locale"
+    else:
+        # possibility of iso language name
+        adjusted_query = query.title().replace("Languages", "languages")
+        native_query = query
+        query_type = "languagename"
 
     try:
-        return (
-            non_iso_langs.get(iso_639_3)
-            if iso_639_3 in non_iso_langs.keys()
-            else {
-                "code": iso_639_3,
-                "iso-639-1": iso639.to_iso639_1(iso_639_3),
-                "english": iso639.to_name(iso_639_3),
-                "native": iso639.to_native(iso_639_3),
-            }
-        )
-    except iso639.NonExistentLanguageError:
-        return {
-            "code": iso_639_3,
-            "iso-639-1": iso_639_3,
-            "english": iso_639_3,
-            "native": iso_639_3,
+        lang_data, macro_data = get_iso_lang_data(adjusted_query)
+    except NotFound as exc:
+        if failsafe:
+            return None
+        raise exc
+
+    iso_data = update_with_macro(lang_data, macro_data)
+    native_name, english_name = find_language_names(native_query, iso_data)
+    iso_data.update(
+        {
+            "english": english_name,
+            "native": native_name,
+            "querytype": query_type,
+            "query": query,
         }
+    )
+    return iso_data
