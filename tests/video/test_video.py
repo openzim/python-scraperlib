@@ -6,20 +6,18 @@ import pytest
 import tempfile
 import pathlib
 import subprocess
+import shutil
 
-from zimscraperlib.download import save_large_file
 from zimscraperlib.video.config import Config
 from zimscraperlib.video.presets import VoiceMp3Low, VideoWebmLow, VideoMp4Low
 from zimscraperlib.video.encoding import reencode
 from zimscraperlib.video.probing import get_media_info
 
 
-def download_media_and_reencode(
-    temp_dir, src, dest, ffmpeg_args, download_links, **kwargs
-):
+def copy_media_and_reencode(temp_dir, src, dest, ffmpeg_args, test_files, **kwargs):
     src_path = temp_dir.joinpath(src)
     dest_path = temp_dir.joinpath(dest)
-    save_large_file(download_links[src_path.suffix[1:]], src_path)
+    shutil.copy2(test_files[src_path.suffix[1:]], src_path)
     return reencode(src_path, dest_path, ffmpeg_args, **kwargs)
 
 
@@ -113,9 +111,9 @@ def test_config_build_from():
         ("mp3", "audio.mp3", {"codecs": ["mp3"], "duration": 2, "bitrate": 129066},),
     ],
 )
-def test_get_media_info(media_format, media, expected, hosted_media_links):
+def test_get_media_info(media_format, media, expected, test_files):
     with tempfile.TemporaryDirectory() as t, pathlib.Path(t).joinpath(media) as src:
-        save_large_file(hosted_media_links[media_format], src)
+        shutil.copy2(test_files[media_format], src)
         assert get_media_info(src) == expected
 
 
@@ -270,11 +268,9 @@ def test_preset_voice_mp3_low():
         ),
     ],
 )
-def test_reencode_media(src, dest, ffmpeg_args, expected, hosted_media_links):
+def test_reencode_media(src, dest, ffmpeg_args, expected, test_files):
     with tempfile.TemporaryDirectory() as t, pathlib.Path(t) as temp_dir:
-        download_media_and_reencode(
-            temp_dir, src, dest, ffmpeg_args, hosted_media_links
-        )
+        copy_media_and_reencode(temp_dir, src, dest, ffmpeg_args, test_files)
         converted_details = get_media_info(temp_dir.joinpath(dest))
         assert expected["duration"] == converted_details["duration"]
         assert expected["codecs"] == converted_details["codecs"]
@@ -288,12 +284,12 @@ def test_reencode_media(src, dest, ffmpeg_args, expected, hosted_media_links):
         ("video.mp4", "audio.mp3", VoiceMp3Low().to_ffmpeg_args(), False,),
     ],
 )
-def test_reencode_delete_src(src, dest, ffmpeg_args, delete_src, hosted_media_links):
+def test_reencode_delete_src(src, dest, ffmpeg_args, delete_src, test_files):
     with tempfile.TemporaryDirectory() as t, pathlib.Path(
         t
     ) as temp_dir, temp_dir.joinpath(src) as src_path:
-        download_media_and_reencode(
-            temp_dir, src, dest, ffmpeg_args, hosted_media_links, delete_src=delete_src
+        copy_media_and_reencode(
+            temp_dir, src, dest, ffmpeg_args, test_files, delete_src=delete_src
         )
         if delete_src:
             assert not src_path.exists()
@@ -310,16 +306,11 @@ def test_reencode_delete_src(src, dest, ffmpeg_args, delete_src, hosted_media_li
     ],
 )
 def test_reencode_return_ffmpeg_output(
-    src, dest, ffmpeg_args, return_output, hosted_media_links
+    src, dest, ffmpeg_args, return_output, test_files
 ):
     with tempfile.TemporaryDirectory() as t, pathlib.Path(t) as temp_dir:
-        ret = download_media_and_reencode(
-            temp_dir,
-            src,
-            dest,
-            ffmpeg_args,
-            hosted_media_links,
-            with_process=return_output,
+        ret = copy_media_and_reencode(
+            temp_dir, src, dest, ffmpeg_args, test_files, with_process=return_output,
         )
         if return_output:
             success, process = ret
@@ -337,22 +328,17 @@ def test_reencode_return_ffmpeg_output(
         ("video.webm", "video.mp4", ["-qmin", "-5"], False,),
     ],
 )
-def test_reencode_failsafe(src, dest, ffmpeg_args, failsafe, hosted_media_links):
+def test_reencode_failsafe(src, dest, ffmpeg_args, failsafe, test_files):
     with tempfile.TemporaryDirectory() as t, pathlib.Path(t) as temp_dir:
         if not failsafe:
             with pytest.raises(subprocess.CalledProcessError) as exc_info:
-                download_media_and_reencode(
-                    temp_dir,
-                    src,
-                    dest,
-                    ffmpeg_args,
-                    hosted_media_links,
-                    failsafe=failsafe,
+                copy_media_and_reencode(
+                    temp_dir, src, dest, ffmpeg_args, test_files, failsafe=failsafe,
                 )
             assert len(exc_info.value.stdout) > 0
 
         else:
-            success = download_media_and_reencode(
-                temp_dir, src, dest, ffmpeg_args, hosted_media_links, failsafe=failsafe
+            success = copy_media_and_reencode(
+                temp_dir, src, dest, ffmpeg_args, test_files, failsafe=failsafe
             )
             assert not success
