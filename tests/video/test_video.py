@@ -9,7 +9,7 @@ import subprocess
 import shutil
 
 from zimscraperlib.video.config import Config
-from zimscraperlib.video.presets import VoiceMp3Low, VideoWebmLow
+from zimscraperlib.video.presets import VoiceMp3Low, VideoWebmLow, VideoMp4Low
 from zimscraperlib.video.encoding import reencode
 from zimscraperlib.video.probing import get_media_info
 
@@ -121,14 +121,13 @@ def test_preset_video_webm_low():
     config = VideoWebmLow()
     assert config.VERSION == 1
     args = config.to_ffmpeg_args()
-    assert len(args) == 26
+    assert len(args) == 24
     options_map = [
         ("codec:v", "libvpx"),
         ("codec:a", "libvorbis"),
         ("maxrate", "300k"),
         ("minrate", "300k"),
         ("b:v", "300k"),
-        ("bufsize", "1000k"),
         ("ar", "44100"),
         ("b:a", "48k"),
         ("quality", "best"),
@@ -143,6 +142,39 @@ def test_preset_video_webm_low():
 
     # test updating values
     config = VideoWebmLow(**{"-ar": "50000"})
+    config["-bufsize"] = "900k"
+    args = config.to_ffmpeg_args()
+    idx = args.index("-ar")
+    assert idx != -1 and args[idx + 1] == "50000"
+    idx = args.index("-bufsize")
+    assert idx != -1 and args[idx + 1] == "900k"
+
+
+def test_preset_video_mp4_low():
+    config = VideoMp4Low()
+    assert config.VERSION == 1
+    args = config.to_ffmpeg_args()
+    assert len(args) == 24
+    options_map = [
+        ("codec:v", "h264"),
+        ("codec:a", "aac"),
+        ("maxrate", "300k"),
+        ("minrate", "300k"),
+        ("b:v", "300k"),
+        ("ar", "44100"),
+        ("b:a", "48k"),
+        ("movflags", "+faststart"),
+        ("qmin", "30"),
+        ("qmax", "42"),
+        ("vf", "scale='480:trunc(ow/a/2)*2'"),
+    ]
+    for option, val in options_map:
+        idx = args.index(f"-{option}")
+        assert idx != -1
+        assert args[idx + 1] == val
+
+    # test updating values
+    config = VideoMp4Low(**{"-ar": "50000"})
     config["-bufsize"] = "900k"
     args = config.to_ffmpeg_args()
     idx = args.index("-ar")
