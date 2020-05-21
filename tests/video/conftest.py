@@ -3,13 +3,15 @@
 # vim: ai ts=4 sts=4 et sw=4 nu
 
 import pytest
+import pathlib
 
 
 @pytest.fixture(scope="function")
-def hosted_media_links():
+def test_files():
+    files_dir = pathlib.Path(__file__).parent.parent.joinpath("files")
     return {
-        "mp4": "https://github.com/satyamtg/test-bucket/raw/master/video.mp4",
-        "mkv": "https://github.com/satyamtg/test-bucket/raw/master/video.mkv",
-        "webm": "https://github.com/satyamtg/test-bucket/raw/master/video.webm",
-        "mp3": "https://github.com/satyamtg/test-bucket/raw/master/audio.mp3",
+        "mp4": files_dir.joinpath("video.mp4"),
+        "mkv": files_dir.joinpath("video.mkv"),
+        "webm": files_dir.joinpath("video.webm"),
+        "mp3": files_dir.joinpath("audio.mp3"),
     }
