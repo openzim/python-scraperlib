@@ -1,6 +1,6 @@
 # dev
 
-n/a
+* expose reencode, Config and get_media_info in zimscraperlib.video
 
 # 1.1.0
 
