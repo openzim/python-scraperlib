@@ -8,10 +8,8 @@ import pathlib
 import subprocess
 import shutil
 
-from zimscraperlib.video.config import Config
+from zimscraperlib.video import Config, get_media_info, reencode
 from zimscraperlib.video.presets import VoiceMp3Low, VideoWebmLow, VideoMp4Low
-from zimscraperlib.video.encoding import reencode
-from zimscraperlib.video.probing import get_media_info
 
 
 def copy_media_and_reencode(temp_dir, src, dest, ffmpeg_args, test_files, **kwargs):
