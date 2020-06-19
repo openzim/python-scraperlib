@@ -40,8 +40,27 @@ def get_colors(image_path, use_palette=True):
     return rgb_to_hex(mr, mg, mb), rgb_to_hex(sr, sg, sb)
 
 
+def alpha_not_supported():
+    """ list of PIL image formats which do not support alpha layer """
+    return ["JPEG", "BMP", "EPS", "PCX"]
+
+
+def save_image(image, dst, fmt, params=None):
+    """ saves an image with given format and default args and overrides them if params are given 
+        params: PIL params as dict (https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html) """
+    default_args = {"JPEG": {"quality": 100}, "PNG": {}}
+    args = params if params else default_args.get(fmt, {})
+    image.save(dst, fmt, **args)
+
+
 def resize_image(
-    fpath, width, height=None, to=None, method="width", allow_upscaling=True
+    fpath,
+    width,
+    height=None,
+    to=None,
+    method="width",
+    allow_upscaling=True,
+    params=None,
 ):
     """ resize an image file (dimensions)
 
@@ -69,29 +88,26 @@ def resize_image(
             resized = resizeimage.resize(method, image, [width, height])
 
     # remove alpha layer if not supported and added during resizing
-    alpha_not_supported = ["JPEG", "BMP", "EPS", "PCX"]
-    if resized.mode == "RGBA" and image_format in alpha_not_supported:
+    if resized.mode == "RGBA" and image_format in alpha_not_supported():
         resized = resized.convert(image_mode)
     # save the image
-    kwargs = {"JPEG": {"quality": 100}, "PNG": {}}
-    resized.save(
-        str(to) if to is not None else fpath,
-        image_format,
-        **kwargs.get(image_format, {}),
-    )
+    save_image(resized, str(to) if to is not None else fpath, image_format, params)
 
 
-def change_image_format(src, dst, target_format, colorspace=None):
+def convert_image(src, dst, target_format, colorspace=None, params=None):
     """ convert an image file from one format to another 
 
         colorspace: RGB, ARGB, CMYK (and other PIL colorspaces)
         target_format: JPEG, PNG, BMP (and other PIL formats) """
-    image = PIL.Image.open(src)
-    alpha_not_supported = ["JPEG", "BMP", "EPS", "PCX"]
-    if (image.mode == "RGBA" and target_format in alpha_not_supported) or colorspace:
-        image = image.convert("RGB") if not colorspace else image.convert(colorspace)
-    kwargs = {"JPEG": {"quality": 100}, "PNG": {}}
-    image.save(dst, target_format, **kwargs.get(target_format, {}))
+    with PIL.Image.open(src) as image:
+        dst_image = image
+        if (
+            image.mode == "RGBA" and target_format in alpha_not_supported()
+        ) or colorspace:
+            dst_image = (
+                image.convert("RGB") if not colorspace else image.convert(colorspace)
+            )
+    save_image(dst_image, dst, target_format, params)
 
 
 def is_hex_color(text):

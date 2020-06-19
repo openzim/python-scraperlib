@@ -3,6 +3,7 @@
 # vim: ai ts=4 sts=4 et sw=4 nu
 
 import pytest
+import pathlib
 
 from PIL import Image
 from resizeimage.imageexceptions import ImageSizeError
@@ -12,7 +13,9 @@ from zimscraperlib.imaging import (
     is_hex_color,
     resize_image,
     create_favicon,
-    change_image_format,
+    convert_image,
+    alpha_not_supported,
+    save_image,
 )
 
 
@@ -62,6 +65,20 @@ def test_colors_png_palette(png_image):
 
 def test_colors_jpg_palette(jpg_image):
     assert get_colors(jpg_image, True) == ("#221C1B", "#F4F3F1")
+
+
+def test_alpha_not_supported():
+    assert alpha_not_supported() == ["JPEG", "BMP", "EPS", "PCX"]
+
+
+@pytest.mark.parametrize(
+    "fmt,params", [("png", None), ("jpg", {"quality": 50})],
+)
+def test_save_image(png_image, jpg_image, tmp_path, fmt, params):
+    src, dst = get_src_dst(png_image, jpg_image, tmp_path, fmt)
+    img = Image.open(src)
+    save_image(img, dst, "JPEG" if fmt == "jpg" else fmt, params)
+    assert pathlib.Path(dst).exists()
 
 
 @pytest.mark.parametrize(
@@ -173,7 +190,7 @@ def test_change_image_format(
 ):
     src, _ = get_src_dst(png_image, jpg_image, tmp_path, src_fmt)
     dst = tmp_path / f"out.{dst_fmt.lower()}"
-    change_image_format(src, dst, dst_fmt, colorspace=colorspace)
+    convert_image(src, dst, dst_fmt, colorspace=colorspace)
     dst_image = Image.open(dst)
     if colorspace:
         assert dst_image.mode == colorspace
