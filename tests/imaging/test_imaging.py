@@ -14,7 +14,7 @@ from zimscraperlib.imaging import (
     resize_image,
     create_favicon,
     convert_image,
-    alpha_not_supported,
+    ALPHA_NOT_SUPPORTED,
     save_image,
 )
 
