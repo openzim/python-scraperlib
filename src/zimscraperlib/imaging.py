@@ -44,12 +44,10 @@ def get_colors(image_path, use_palette=True):
 
 
 def save_image(image, dst, fmt, **params):
-    """ saves an image with default args and overrides them if params are given 
+    """ saves an image with default args and overrides them if params are given
         params: PIL params (https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html) """
-    default_args = {"JPEG": {"quality": 100}, "PNG": {}}
-    args = default_args.get(fmt, {})
-    if params:
-        args.update(params)
+    args = {"JPEG": {"quality": 100}, "PNG": {}}.get(fmt, {})
+    args.update(params or {})
     image.save(dst, fmt, **args)
 
 
@@ -89,7 +87,7 @@ def resize_image(
 
 
 def convert_image(src, dst, target_format, colorspace=None, **params):
-    """ convert an image file from one format to another 
+    """ convert an image file from one format to another
 
         colorspace: RGB, ARGB, CMYK (and other PIL colorspaces)
         target_format: JPEG, PNG, BMP (and other PIL formats) """
