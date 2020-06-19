@@ -77,7 +77,10 @@ def test_alpha_not_supported():
 def test_save_image(png_image, jpg_image, tmp_path, fmt, params):
     src, dst = get_src_dst(png_image, jpg_image, tmp_path, fmt)
     img = Image.open(src)
-    save_image(img, dst, "JPEG" if fmt == "jpg" else fmt, params)
+    if params:
+        save_image(img, dst, "JPEG" if fmt == "jpg" else fmt, **params)
+    else:
+        save_image(img, dst, "JPEG" if fmt == "jpg" else fmt)
     assert pathlib.Path(dst).exists()
 
 

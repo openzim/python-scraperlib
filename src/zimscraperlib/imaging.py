@@ -45,22 +45,18 @@ def alpha_not_supported():
     return ["JPEG", "BMP", "EPS", "PCX"]
 
 
-def save_image(image, dst, fmt, params=None):
-    """ saves an image with given format and default args and overrides them if params are given 
-        params: PIL params as dict (https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html) """
+def save_image(image, dst, fmt, **params):
+    """ saves an image with default args and overrides them if params are given 
+        params: PIL params (https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html) """
     default_args = {"JPEG": {"quality": 100}, "PNG": {}}
-    args = params if params else default_args.get(fmt, {})
+    args = default_args.get(fmt, {})
+    if params:
+        args.update(params)
     image.save(dst, fmt, **args)
 
 
 def resize_image(
-    fpath,
-    width,
-    height=None,
-    to=None,
-    method="width",
-    allow_upscaling=True,
-    params=None,
+    fpath, width, height=None, to=None, method="width", allow_upscaling=True, **params,
 ):
     """ resize an image file (dimensions)
 
@@ -91,10 +87,10 @@ def resize_image(
     if resized.mode == "RGBA" and image_format in alpha_not_supported():
         resized = resized.convert(image_mode)
     # save the image
-    save_image(resized, str(to) if to is not None else fpath, image_format, params)
+    save_image(resized, str(to) if to is not None else fpath, image_format, **params)
 
 
-def convert_image(src, dst, target_format, colorspace=None, params=None):
+def convert_image(src, dst, target_format, colorspace=None, **params):
     """ convert an image file from one format to another 
 
         colorspace: RGB, ARGB, CMYK (and other PIL colorspaces)
@@ -107,7 +103,7 @@ def convert_image(src, dst, target_format, colorspace=None, params=None):
             dst_image = (
                 image.convert("RGB") if not colorspace else image.convert(colorspace)
             )
-    save_image(dst_image, dst, target_format, params)
+    save_image(dst_image, dst, target_format, **params)
 
 
 def is_hex_color(text):
