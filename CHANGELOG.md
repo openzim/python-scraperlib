@@ -1,6 +1,10 @@
 # dev
 
-* expose reencode, Config and get_media_info in zimscraperlib.video
+* exposed reencode, Config and get_media_info in zimscraperlib.video
+* added save_image() and convert_image() in zimscraperlib.imaging
+* added support for upscaling in resize_image() via allow_upscaling
+* resize_image() now supports params given by user and preservs image colorspace
+* fixed tests for zimscraperlib.imaging
 
 # 1.1.0
 
