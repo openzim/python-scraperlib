@@ -7,7 +7,13 @@ import pytest
 from PIL import Image
 from resizeimage.imageexceptions import ImageSizeError
 
-from zimscraperlib.imaging import get_colors, is_hex_color, resize_image, create_favicon
+from zimscraperlib.imaging import (
+    get_colors,
+    is_hex_color,
+    resize_image,
+    create_favicon,
+    change_image_format,
+)
 
 
 def get_image_size(fpath):
@@ -156,6 +162,22 @@ def test_resize_small_image_error(png_image, jpg_image, tmp_path, fmt):
     width, height = 500, 1000
     with pytest.raises(ImageSizeError):
         resize_image(src, width, height, to=dst, method="cover", allow_upscaling=False)
+
+
+@pytest.mark.parametrize(
+    "src_fmt,dst_fmt,colorspace",
+    [("png", "JPEG", "RGB"), ("png", "BMP", None), ("jpg", "JPEG", "CMYK")],
+)
+def test_change_image_format(
+    png_image, jpg_image, tmp_path, src_fmt, dst_fmt, colorspace
+):
+    src, _ = get_src_dst(png_image, jpg_image, tmp_path, src_fmt)
+    dst = tmp_path / f"out.{dst_fmt.lower()}"
+    change_image_format(src, dst, dst_fmt, colorspace=colorspace)
+    dst_image = Image.open(dst)
+    if colorspace:
+        assert dst_image.mode == colorspace
+    assert dst_image.format == dst_fmt
 
 
 @pytest.mark.parametrize(

@@ -47,10 +47,10 @@ def resize_image(
 
         methods: width, height, cover
         allow upscaling: upscale image preserving aspect ratio if required before resizing """
-    with open(str(fpath), "rb") as fp:
-        image = PIL.Image.open(fp)
-        # prserve image format
+    with PIL.Image.open(fpath) as image:
+        # preserve image format as resize() does not transmit it into new object
         image_format = image.format
+        image_mode = image.mode
 
         # upscale if required preserving the aspect ratio
         if allow_upscaling:
@@ -68,13 +68,30 @@ def resize_image(
         else:
             resized = resizeimage.resize(method, image, [width, height])
 
+    # remove alpha layer if not supported and added during resizing
+    alpha_not_supported = ["JPEG", "BMP", "EPS", "PCX"]
+    if resized.mode == "RGBA" and image_format in alpha_not_supported:
+        resized = resized.convert(image_mode)
     # save the image
-    if resized.mode == "RGBA" and image_format == "JPEG":
-        resized = resized.convert("RGB")
     kwargs = {"JPEG": {"quality": 100}, "PNG": {}}
     resized.save(
-        str(to) if to is not None else fpath, image_format, **kwargs.get(image_format)
+        str(to) if to is not None else fpath,
+        image_format,
+        **kwargs.get(image_format, {}),
     )
+
+
+def change_image_format(src, dst, target_format, colorspace=None):
+    """ convert an image file from one format to another 
+
+        colorspace: RGB, ARGB, CMYK (and other PIL colorspaces)
+        target_format: JPEG, PNG, BMP (and other PIL formats) """
+    image = PIL.Image.open(src)
+    alpha_not_supported = ["JPEG", "BMP", "EPS", "PCX"]
+    if (image.mode == "RGBA" and target_format in alpha_not_supported) or colorspace:
+        image = image.convert("RGB") if not colorspace else image.convert(colorspace)
+    kwargs = {"JPEG": {"quality": 100}, "PNG": {}}
+    image.save(dst, target_format, **kwargs.get(target_format, {}))
 
 
 def is_hex_color(text):
