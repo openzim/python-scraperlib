@@ -10,6 +10,9 @@ import colorthief
 from resizeimage import resizeimage
 
 
+alpha_not_supported = ["JPEG", "BMP", "EPS", "PCX"]
+
+
 def get_colors(image_path, use_palette=True):
     """ (main, secondary) HTML color codes from an image path """
 
@@ -38,11 +41,6 @@ def get_colors(image_path, use_palette=True):
         sr, sg, sb = solarize(mr, mg, mb)
 
     return rgb_to_hex(mr, mg, mb), rgb_to_hex(sr, sg, sb)
-
-
-def alpha_not_supported():
-    """ list of PIL image formats which do not support alpha layer """
-    return ["JPEG", "BMP", "EPS", "PCX"]
 
 
 def save_image(image, dst, fmt, **params):
@@ -84,7 +82,7 @@ def resize_image(
             resized = resizeimage.resize(method, image, [width, height])
 
     # remove alpha layer if not supported and added during resizing
-    if resized.mode == "RGBA" and image_format in alpha_not_supported():
+    if resized.mode == "RGBA" and image_format in alpha_not_supported:
         resized = resized.convert(image_mode)
     # save the image
     save_image(resized, str(to) if to is not None else fpath, image_format, **params)
@@ -98,7 +96,7 @@ def convert_image(src, dst, target_format, colorspace=None, **params):
     with PIL.Image.open(src) as image:
         dst_image = image
         if (
-            image.mode == "RGBA" and target_format in alpha_not_supported()
+            image.mode == "RGBA" and target_format in alpha_not_supported
         ) or colorspace:
             dst_image = (
                 image.convert("RGB") if not colorspace else image.convert(colorspace)

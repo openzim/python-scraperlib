@@ -67,10 +67,6 @@ def test_colors_jpg_palette(jpg_image):
     assert get_colors(jpg_image, True) == ("#221C1B", "#F4F3F1")
 
 
-def test_alpha_not_supported():
-    assert alpha_not_supported() == ["JPEG", "BMP", "EPS", "PCX"]
-
-
 @pytest.mark.parametrize(
     "fmt,params", [("png", None), ("jpg", {"quality": 50})],
 )
