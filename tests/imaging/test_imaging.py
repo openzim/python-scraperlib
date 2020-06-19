@@ -5,6 +5,7 @@
 import pytest
 
 from PIL import Image
+from resizeimage.imageexceptions import ImageSizeError
 
 from zimscraperlib.imaging import get_colors, is_hex_color, resize_image, create_favicon
 
@@ -64,7 +65,7 @@ def test_resize_thumbnail(png_image, jpg_image, tmp_path, fmt):
     src, dst = get_src_dst(png_image, jpg_image, tmp_path, fmt)
 
     width, height = 100, 50
-    resize_image(png_image, width, height, to=dst, method="thumbnail")
+    resize_image(src, width, height, to=dst, method="thumbnail")
     tw, th = get_image_size(dst)
     assert tw <= width
     assert th <= height
@@ -77,8 +78,8 @@ def test_resize_width(png_image, jpg_image, tmp_path, fmt):
     src, dst = get_src_dst(png_image, jpg_image, tmp_path, fmt)
 
     width, height = 100, 50
-    resize_image(png_image, width, height, to=dst, method="width")
-    tw, th = get_image_size(dst)
+    resize_image(src, width, height, to=dst, method="width")
+    tw, _ = get_image_size(dst)
     assert tw == width
 
 
@@ -89,8 +90,8 @@ def test_resize_height(png_image, jpg_image, tmp_path, fmt):
     src, dst = get_src_dst(png_image, jpg_image, tmp_path, fmt)
 
     width, height = 100, 50
-    resize_image(png_image, width, height, to=dst, method="height")
-    tw, th = get_image_size(dst)
+    resize_image(src, width, height, to=dst, method="height")
+    _, th = get_image_size(dst)
     assert th == height
 
 
@@ -101,10 +102,10 @@ def test_resize_crop(png_image, jpg_image, tmp_path, fmt):
     src, dst = get_src_dst(png_image, jpg_image, tmp_path, fmt)
 
     width, height = 5, 50
-    resize_image(png_image, width, height, to=dst, method="crop")
+    resize_image(src, width, height, to=dst, method="crop")
     tw, th = get_image_size(dst)
-    assert tw <= width
-    assert th <= height
+    assert tw == width
+    assert th == height
 
 
 @pytest.mark.parametrize(
@@ -114,10 +115,10 @@ def test_resize_cover(png_image, jpg_image, tmp_path, fmt):
     src, dst = get_src_dst(png_image, jpg_image, tmp_path, fmt)
 
     width, height = 5, 50
-    resize_image(png_image, width, height, to=dst, method="cover")
+    resize_image(src, width, height, to=dst, method="cover")
     tw, th = get_image_size(dst)
-    assert tw <= width
-    assert th <= height
+    assert tw == width
+    assert th == height
 
 
 @pytest.mark.parametrize(
@@ -127,10 +128,34 @@ def test_resize_contain(png_image, jpg_image, tmp_path, fmt):
     src, dst = get_src_dst(png_image, jpg_image, tmp_path, fmt)
 
     width, height = 5, 50
-    resize_image(png_image, width, height, to=dst, method="contain")
+    resize_image(src, width, height, to=dst, method="contain")
     tw, th = get_image_size(dst)
     assert tw <= width
     assert th <= height
+
+
+@pytest.mark.parametrize(
+    "fmt", ["png", "jpg"],
+)
+def test_resize_upscale(png_image, jpg_image, tmp_path, fmt):
+    src, dst = get_src_dst(png_image, jpg_image, tmp_path, fmt)
+
+    width, height = 500, 1000
+    resize_image(src, width, height, to=dst, method="cover")
+    tw, th = get_image_size(dst)
+    assert tw == width
+    assert th == height
+
+
+@pytest.mark.parametrize(
+    "fmt", ["png", "jpg"],
+)
+def test_resize_small_image_error(png_image, jpg_image, tmp_path, fmt):
+    src, dst = get_src_dst(png_image, jpg_image, tmp_path, fmt)
+
+    width, height = 500, 1000
+    with pytest.raises(ImageSizeError):
+        resize_image(src, width, height, to=dst, method="cover", allow_upscaling=False)
 
 
 @pytest.mark.parametrize(
