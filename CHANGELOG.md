@@ -1,4 +1,4 @@
-# dev
+# 1.1.1
 
 * exposed reencode, Config and get_media_info in zimscraperlib.video
 * added save_image() and convert_image() in zimscraperlib.imaging
