@@ -99,7 +99,7 @@ def convert_image(src, dst, target_format, colorspace=None, **params):
             dst_image = (
                 image.convert("RGB") if not colorspace else image.convert(colorspace)
             )
-    save_image(dst_image, dst, target_format, **params)
+        save_image(dst_image, dst, target_format, **params)
 
 
 def is_hex_color(text):
