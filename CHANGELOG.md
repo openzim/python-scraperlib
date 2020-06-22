@@ -1,3 +1,7 @@
+# 1.1.3.dev0
+
+* n/a
+
 # 1.1.2
 
 * fixed `convert_image()` which tried to use a closed file
