@@ -1,4 +1,4 @@
-# 1.1.3.dev0
+# 1.2.0.dev0
 
 * added UTF8 to constants
 * added mime_type discovery via magic (filesystem)
@@ -9,6 +9,7 @@
   * Added zim.filesystem: zimwriterfs-like creation from a build folder
   * Added zim.creator: create files by manually adding each article
   * Added zim.rewriting: tools to rewrite links/urls in HTML/CSS
+* add timeout and retries to save_file() and make it return headers
 
 # 1.1.2
 
