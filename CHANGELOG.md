@@ -1,6 +1,7 @@
 # 1.1.3.dev0
 
-* n/a
+* added UTF8 to constants
+* added mime_type discovery via magic (filesystem)
 
 # 1.1.2
 
