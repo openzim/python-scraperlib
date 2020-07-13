@@ -9,3 +9,5 @@ NAME = pathlib.Path(__file__).parent.name
 with open(ROOT_DIR.joinpath("VERSION"), "r") as fh:
     VERSION = fh.read().strip()
 SCRAPER = f"{NAME} {VERSION}"
+
+UTF8 = "UTF-8"

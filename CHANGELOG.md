@@ -1,6 +1,14 @@
 # 1.1.3.dev0
 
-* n/a
+* added UTF8 to constants
+* added mime_type discovery via magic (filesystem)
+* Added types: mime types guessing from file names
+* Revamped zim API
+  * Removed ZimInfo which role was tu hold metadata for zimwriterfs call
+  * Removed calling zimwriterfs binary but kept function name
+  * Added zim.filesystem: zimwriterfs-like creation from a build folder
+  * Added zim.creator: create files by manually adding each article
+  * Added zim.rewriting: tools to rewrite links/urls in HTML/CSS
 
 # 1.1.2
 

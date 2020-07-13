@@ -74,3 +74,8 @@ def square_png_image():
 @pytest.fixture(scope="module")
 def square_jpg_image():
     return src_image("square.jpg")
+
+
+@pytest.fixture(scope="module")
+def font():
+    return src_image("DroidSans.ttf")
