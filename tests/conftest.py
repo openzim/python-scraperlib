@@ -52,6 +52,18 @@ def invalid_url():
     return "http://nodomain.notld/nofile.noext"
 
 
+@pytest.fixture(scope="module")
+def http_error_url():
+    return "https://github.com/satyamtg/404_error"
+
+
+@pytest.fixture(scope="module")
+def timeout_url():
+    # Should always fail with a connection timeout (nothing listening on that port)
+    # taken from request's own tests
+    return "http://10.255.255.1"
+
+
 def src_image(fname):
     return pathlib.Path(__file__).parent.joinpath("files", fname)
 

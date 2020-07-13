@@ -7,17 +7,29 @@ import subprocess
 
 import requests
 
+from . import logger
+
 WGET_BINARY = os.getenv("WGET_BINARY", "/usr/bin/wget")
 
 
-def save_file(url, fpath):
-    """ download a binary file from its URL """
-    req = requests.get(url)
-    req.raise_for_status()
-    if not fpath.parent.exists():
-        fpath.parent.mkdir(exist_ok=True)
-    with open(fpath, "wb") as fp:
-        fp.write(req.content)
+def save_file(url, fpath, timeout=30, retries=5):
+    """ download a file from its URL, and return headers
+
+        Only recommended to be used with small files/HTMLs """
+
+    for left_attempts in range(retries, -1, -1):
+        try:
+            resp = requests.get(url, timeout=timeout)
+            resp.raise_for_status()
+            with open(fpath, "wb") as fp:
+                fp.write(resp.content)
+            return resp.headers
+        except requests.exceptions.RequestException as exc:
+            logger.debug(
+                f"Request for {url} failed ({left_attempts} attempts left)\n{exc}"
+            )
+            if left_attempts == 0:
+                raise exc
 
 
 def save_large_file(url, fpath):
