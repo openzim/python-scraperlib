@@ -1,3 +1,7 @@
+# 1.2.1.dev0
+
+* n/a
+
 # 1.2.0
 
 * added UTF8 to constants
