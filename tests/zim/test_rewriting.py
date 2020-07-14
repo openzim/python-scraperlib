@@ -121,7 +121,7 @@ def test_relative_dots(tmp_path, root, path, expected_relative):
         assert relative_dots(tmp_path, tmp_path.joinpath(path)) == expected_relative
 
 
-def test_fix_target_for(tmp_path):
+def test_fix_target_for(tmp_path, monkeypatch):
     # make sure target in dangling source is correctly fixed
     assert (
         fix_target_for(Path("."), Path("A/welcome"), Path("files/dl.pdf"))
@@ -144,6 +144,12 @@ def test_fix_target_for(tmp_path):
     assert (
         fix_file_target_for(tmp_path, "home.html", "files/dl.pdf", True)
         == "../I/files/dl.pdf"
+    )
+    # special behavior when CWD is /
+    monkeypatch.chdir("/")
+    assert (
+        fix_target_for(Path("."), Path("A/home.html"), Path("assets/chosen/chosen.min.css"))
+        == "../-/assets/chosen/chosen.min.css"
     )
 
 

@@ -87,12 +87,14 @@ def fix_target_for(
 ) -> str:
     """ Fixed link from source to target: relative and namespace aware """
 
-    flat_target = (
-        pathlib.Path(*source.parts[1:])  # remove namespace from source
-        .parent.joinpath(target)  # joined it with target
-        .resolve()  # resolve relative links
-        .relative_to(root.resolve())  # back to relative from resolved
-    )
+    # remove namespace from source ; and join it with target
+    flat_target = pathlib.Path(*source.parts[1:]).parent.joinpath(target)
+    if str(root.resolve()) == "/":
+        flat_target = flat_target.relative_to(root)
+    else:
+        # resolve relative links and back to relative from resolved
+        flat_target = flat_target.resolve().relative_to(root.resolve())
+
     return relative_dots(root, source) + find_url(
         root, flat_target, get_mime_for_name(target)
     )

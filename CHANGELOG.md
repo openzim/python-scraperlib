@@ -1,6 +1,6 @@
 # 1.2.1.dev0
 
-* n/a
+* fixed URL rewriting when running from /
 
 # 1.2.0
 
