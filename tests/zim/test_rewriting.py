@@ -148,7 +148,9 @@ def test_fix_target_for(tmp_path, monkeypatch):
     # special behavior when CWD is /
     monkeypatch.chdir("/")
     assert (
-        fix_target_for(Path("."), Path("A/home.html"), Path("assets/chosen/chosen.min.css"))
+        fix_target_for(
+            Path("."), Path("A/home.html"), Path("assets/chosen/chosen.min.css")
+        )
         == "../-/assets/chosen/chosen.min.css"
     )
 
