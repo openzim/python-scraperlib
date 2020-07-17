@@ -96,7 +96,7 @@ def test_zim_creator(tmp_path, png_image, css_file, html_file, css_str, html_str
         assert count_links(reader.get_article("A/welcome"), r"../A") == 2
         assert count_links(reader.get_article("A/welcome"), r"../-") == 2
         assert count_links(reader.get_article("A/welcome"), r"dest.html") == 1
-        assert count_links(reader.get_article("A/welcome3"), r"../I") == 1
+        assert count_links(reader.get_article("A/welcome3"), r"../I") == 2
         assert count_links(reader.get_article("A/welcome3"), r"../-") == 2
         assert count_links(reader.get_article("A/welcome3"), r"../A") == 2
         assert count_links(reader.get_article("A/welcome3"), r"dest.html") == 1

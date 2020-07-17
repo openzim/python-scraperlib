@@ -130,10 +130,16 @@ def fix_links_in_html(url: str, content: str) -> str:
         "img": "src",
         "track": "src",
         "video": "poster",
+        "object": "data",
     }
     soup = BeautifulSoup(content, "html.parser")
     for nodename, key in mapping.items():
         for node in soup.find_all(nodename):
+
+            # do nothing if the required attribute is not found in the tag
+            if not node.has_attr(key):
+                continue
+
             html_link = node.attrs[key]
 
             # parse as a URL to extract querystring and fragment

@@ -1,6 +1,8 @@
 # 1.2.1.dev0
 
 * fixed URL rewriting when running from /
+* added support for link rewriting in <object> element
+* prevent from raising error if element doesn't have the attribute with url
 
 # 1.2.0
 
