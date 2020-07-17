@@ -156,7 +156,7 @@ def test_fix_target_for(tmp_path, monkeypatch):
 
 
 @pytest.mark.parametrize(
-    "pattern, expected_count", [("../A/", 2), ("../I/", 1), ("../-/", 2)],
+    "pattern, expected_count", [("../A/", 2), ("../I/", 2), ("../-/", 2)],
 )
 def test_fix_links_in_html(html_str, pattern, expected_count):
     assert fix_links_in_html("A/welcome", html_str).count(pattern) == expected_count
@@ -193,7 +193,7 @@ def test_fix_links_in_html_file(tmp_path, html_str):
 
 
 @pytest.mark.parametrize(
-    "pattern, expected_count", [("../A/", 2), ("../I/", 1), ("../-/", 2)],
+    "pattern, expected_count", [("../A/", 2), ("../I/", 2), ("../-/", 2)],
 )
 def test_fix_links_in_html_file2(html_file, pattern, expected_count):
     # make sure not-in place rewrites properly

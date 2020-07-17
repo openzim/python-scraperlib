@@ -34,6 +34,7 @@ def html_str():
     <li><a href="dest.html">HTML link</a></li>
     <li><a href="no-extension">no ext link</a></li>
     <li><a media="">no href link</a></li>
+<object data="download/toto.jpg" width="300" height="200"></object>
 <script src="assets/js/bootstrap/bootsrap.css?v=20190101"></script>
 </body>
 </html>
