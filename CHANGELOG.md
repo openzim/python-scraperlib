@@ -1,6 +1,8 @@
 # 1.2.1.dev0
 
 * fixed URL rewriting when running from /
+* added compression support on Creator
+* using pylibzim 0.0.4
 
 # 1.2.0
 

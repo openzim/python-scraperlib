@@ -26,6 +26,7 @@ import datetime
 from typing import Callable, Dict, Union, Optional
 
 import libzim.writer
+from libzim.writer import Compression
 
 from ..types import ARTICLE_MIME
 from ..filesystem import get_content_mimetype, get_file_mimetype
@@ -127,14 +128,17 @@ class Creator(libzim.writer.Creator):
         main_page: str,
         language: Optional[str] = "eng",
         workaround_nocancel: Optional[bool] = True,
+        compression: Optional[Union[Compression, str]] = None,
         min_chunk_size: Optional[int] = None,
         **metadata: Dict[str, Union[str, datetime.date, datetime.datetime]]
     ):
+        kwargs = {}
+        if min_chunk_size is not None:
+            kwargs["min_chunk_size"] = min_chunk_size
+        if compression is not None:
+            kwargs["compression"] = compression
         super().__init__(
-            filename=filename,
-            main_page=main_page,
-            index_language=language,
-            **{"min_chunk_size": min_chunk_size} if min_chunk_size is not None else {}
+            filename=filename, main_page=main_page, index_language=language, **kwargs
         )
         self.update_metadata(**metadata)
         self.workaround_nocancel = workaround_nocancel

@@ -9,10 +9,11 @@
     zim.rewriting: tools to rewrite links/urls in HTML/CSS
     zim.types: mime types guessing from file names """
 
+# flake8: noqa
 from libzim.reader import File
 from libzim.writer import Blob
 
-from .creator import Creator
+from .creator import Creator, Compression
 from .filesystem import make_zim_file
 
-__all__ = ["Creator", "Blob", "File", "make_zim_file"]
+__all__ = ["Creator", "Blob", "File", "make_zim_file", "add_to_zim"]

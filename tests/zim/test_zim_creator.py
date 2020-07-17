@@ -8,7 +8,7 @@ import pytest
 import libzim.reader
 
 from zimscraperlib.constants import UTF8
-from zimscraperlib.zim.creator import Creator, StaticArticle
+from zimscraperlib.zim.creator import Creator, StaticArticle, Compression
 
 
 def count_links(article, pattern):
@@ -139,3 +139,23 @@ def test_double_close(tmp_path):
 
     # ensure we can close an already closed creator
     creator.close()
+
+
+@pytest.mark.parametrize(
+    "compression", list(Compression.__members__) + [None],
+)
+def test_compression(tmp_path, html_str, compression):
+    with Creator(
+        tmp_path / "test.zim", "welcome", "", "My Title", compression=compression
+    ) as creator:
+        creator.add_article("welcome", "Welcome", content=html_str, rewrite_links=True)
+
+
+@pytest.mark.parametrize(
+    "min_chunk_size", [512, 1024, 2048, 4096, None],
+)
+def test_min_chunk_size(tmp_path, html_str, min_chunk_size):
+    with Creator(
+        tmp_path / "test.zim", "welcome", "", "", min_chunk_size=min_chunk_size
+    ) as creator:
+        creator.add_article("welcome", "Welcome", content=html_str, rewrite_links=True)
