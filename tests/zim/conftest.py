@@ -120,6 +120,13 @@ def css_str_with_fonts():
     background-image: url("font/DroidSans.ttf#toto");
     background-image: url("font/DroidSans.ttf?yolo#toto");
 }
+@font-face {
+    font-family: 'Open Sans';
+    font-style: normal;
+    font-weight: 400;
+    src: local('Open Sans Regular'), local('OpenSans-Regular'),
+        url('font/DroidSans.ttf') format('truetype'), /* Test non greedy URL extraction */
+}
 """
 
 
