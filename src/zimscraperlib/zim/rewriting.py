@@ -144,7 +144,11 @@ def fix_links_in_html(url: str, content: str) -> str:
             html_link = node.attrs[key]
 
             # parse as a URL to extract querystring and fragment
-            _, _, target, query, fragment = urllib.parse.urlsplit(html_link)
+            _, netloc, target, query, fragment = urllib.parse.urlsplit(html_link)
+
+            # do nothing for links with netloc
+            if netloc:
+                continue
 
             # use source as target if there's none
             if not target:

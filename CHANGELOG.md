@@ -4,6 +4,7 @@
 * added support for link rewriting in <object> element
 * prevent from raising error if element doesn't have the attribute with url
 * use non greedy match for CSS URL links (shortest string matching `url()` format)
+* fix namespace of target only if link doesn't have a netloc
 
 # 1.2.0
 
