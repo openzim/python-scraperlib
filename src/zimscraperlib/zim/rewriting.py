@@ -89,6 +89,7 @@ def fix_target_for(
 
     # remove namespace from source ; and join it with target
     flat_target = pathlib.Path(*source.parts[1:]).parent.joinpath(target)
+
     if str(root.resolve()) == "/":
         flat_target = flat_target.relative_to(root)
     else:
@@ -143,7 +144,11 @@ def fix_links_in_html(url: str, content: str) -> str:
             html_link = node.attrs[key]
 
             # parse as a URL to extract querystring and fragment
-            _, _, target, query, fragment = urllib.parse.urlsplit(html_link)
+            _, netloc, target, query, fragment = urllib.parse.urlsplit(html_link)
+
+            # do nothing for links with netloc
+            if netloc:
+                continue
 
             # use source as target if there's none
             if not target:
@@ -199,7 +204,7 @@ def fix_urls_in_css(
 
     # split whole content on `url()` pattern to retrieve a list composed of
     # alternatively pre-pattern text and inside url() –– actual target text
-    parts = re.split(r"url\((.+)\)", content)
+    parts = re.split(r"url\((.+?)\)", content)
     for index, _ in enumerate(parts):
         if index % 2 == 0:  # skip even lines (0, 2, ..) as those are CSS code
             continue

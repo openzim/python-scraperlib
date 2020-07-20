@@ -129,12 +129,12 @@ def test_fix_target_for(tmp_path, monkeypatch):
     )
     # make sure target to a file is fixed when not checking existence
     assert (
-        fix_file_target_for(tmp_path, "home.html", "files/dl.pdf", False)
+        fix_file_target_for(tmp_path, Path("home.html"), Path("files/dl.pdf"), False)
         == "../I/files/dl.pdf"
     )
     # make sure target is NOT fixed when target is not present and we requested it to
     assert (
-        fix_file_target_for(tmp_path, "home.html", "files/dl.pdf", True)
+        fix_file_target_for(tmp_path, Path("home.html"), Path("files/dl.pdf"), True)
         == "files/dl.pdf"
     )
     # make sure target to a file is fixed when checking existence and is present
@@ -142,7 +142,7 @@ def test_fix_target_for(tmp_path, monkeypatch):
     ff.mkdir()
     ff.joinpath("dl.pdf").touch()
     assert (
-        fix_file_target_for(tmp_path, "home.html", "files/dl.pdf", True)
+        fix_file_target_for(tmp_path, Path("home.html"), Path("files/dl.pdf"), True)
         == "../I/files/dl.pdf"
     )
     # special behavior when CWD is /
@@ -256,7 +256,7 @@ def test_fix_urls_in_css_file(tmp_path, css_str, font, css_str_with_fonts):
     with open(fpath, "r") as fh:
         content = fh.read()
         assert content != css_str
-        assert content.count("data:") == 12
+        assert content.count("data:") == 13
 
 
 @pytest.mark.parametrize(
