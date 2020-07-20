@@ -1,4 +1,4 @@
-# 1.2.1.dev0
+# 1.2.1
 
 * fixed URL rewriting when running from /
 * added support for link rewriting in <object> element
