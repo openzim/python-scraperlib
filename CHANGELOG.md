@@ -9,6 +9,11 @@
   * `target_format` positional argument removed. Replaced with optionnal `fmt` key of keyword arguments.
   * `colorspace` optionnal positional argument removed. Replaced with optionnal `colorspace` key of keyword arguments.
 * prevent rewriting of links with special schemes `mailto`, 'tel', etc. in HTML links rewriting
+* replaced `imaging` module with exploded `image` module (`convertion`, `probing`, `transformation`)
+* changed `create_favicon()` param names (`source_image` -> `src`, `dest_ico` -> `dst`)
+* changed `save_image()` param names (`image` -> `src`)
+* changed `get_colors()` param names (`image_path` -> `src`)
+* changed `resize_image()` param names (`fpath` -> `src`)
 
 # 1.2.1
 
