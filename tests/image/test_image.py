@@ -4,6 +4,8 @@
 
 import pytest
 import pathlib
+import os
+import shutil
 
 from PIL import Image
 from resizeimage.imageexceptions import ImageSizeError
@@ -11,6 +13,7 @@ from resizeimage.imageexceptions import ImageSizeError
 from zimscraperlib.image.probing import get_colors, is_hex_color
 from zimscraperlib.image.transformation import resize_image
 from zimscraperlib.image.convertion import create_favicon, convert_image
+from zimscraperlib.image.optimization import ImageOptimizer
 from zimscraperlib.image import save_image
 
 
@@ -251,3 +254,46 @@ def test_wrong_extension(square_png_image, square_jpg_image, tmp_path, fmt):
     src, dst = get_src_dst(square_png_image, square_jpg_image, tmp_path, fmt)
     with pytest.raises(ValueError):
         create_favicon(src, dst)
+
+
+@pytest.mark.parametrize(
+    "fmt", ["png", "jpg"],
+)
+def test_optimize_png_jpg(png_image, jpg_image, tmp_path, fmt):
+    optimizer = ImageOptimizer()
+    src, dst = get_src_dst(png_image, jpg_image, tmp_path, fmt)
+    optimizer.optimize_png_jpg(src, dst, image_format=fmt)
+    assert os.path.getsize(dst) < os.path.getsize(src)
+
+
+@pytest.mark.parametrize(
+    "fmt", ["png", "jpg"],
+)
+def test_optimize_image(png_image, jpg_image, tmp_path, fmt):
+    optimizer = ImageOptimizer()
+    src, dst = get_src_dst(png_image, jpg_image, tmp_path, fmt)
+    optimizer.optimize_image(src, dst, delete_src=False)
+    assert os.path.getsize(dst) < os.path.getsize(src)
+
+
+def test_optimize_image_del_src(png_image, tmp_path):
+    optimizer = ImageOptimizer()
+    shutil.copy(png_image, tmp_path)
+    src = tmp_path / png_image.name
+    dst = tmp_path / "out.png"
+    org_size = os.path.getsize(src)
+    optimizer.optimize_image(src, dst, delete_src=True)
+    assert os.path.getsize(dst) < org_size
+    assert not src.exists()
+
+
+def test_optimize_image_file_not_found(tmp_path):
+    optimizer = ImageOptimizer()
+    with pytest.raises(FileNotFoundError, match="image is not present"):
+        optimizer.optimize_image(pathlib.Path("apple.png"), tmp_path / "out.png")
+
+
+def test_optimize_image_unsupported_format(font, tmp_path):
+    optimizer = ImageOptimizer()
+    with pytest.raises(Exception, match="not supported for optimization"):
+        optimizer.optimize_image(font, tmp_path / "out.png")
