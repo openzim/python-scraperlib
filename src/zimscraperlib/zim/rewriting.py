@@ -64,6 +64,39 @@ def find_title_in_file(fpath: pathlib.Path, mime_type: str) -> str:
         return ""
 
 
+def find_language_in(content: Union[str, BinaryIO, TextIO], mime_type: str) -> str:
+    """ Extracted language from HTML content
+
+        blank on failure to extract and non-HTML files """
+    if mime_type != ARTICLE_MIME:
+        return ""
+    mapping = {"html": ["lang", "xml:lang"], "body": ["lang"], "meta": ["content"]}
+    soup = BeautifulSoup(content, "html.parser")
+    for nodename, keylist in mapping.items():
+        for key in keylist:
+            node = soup.find(nodename)
+            if node:
+                if not node.has_attr(key):
+                    continue
+                if (
+                    nodename == "meta"
+                    and not node.attrs.get("http-equiv", "").lower()
+                    == "content-language"
+                ):
+                    continue
+                return node.attrs[key]
+    return ""
+
+
+def find_language_in_file(fpath: pathlib.Path, mime_type: str) -> str:
+    """ Extracted language from an HTML file """
+    try:
+        with open(fpath, "r") as fh:
+            return find_language_in(fh, mime_type)
+    except Exception:
+        return ""
+
+
 def get_base64_src_of(fpath: pathlib.Path, mime_type: Optional[str] = None) -> str:
     """ HTML/CSS source data string representing fpath (data:{type};base64,xxx) """
     if not mime_type:
