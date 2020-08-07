@@ -66,7 +66,7 @@ class FileArticle(libzim.writer.Article):
         # first look inside the file's magic headers
         self.mime_type = get_file_mimetype(self.fpath)
         # most web-specific files are plain text. In this case, use extension
-        if self.mime_type == "text/plain":
+        if self.mime_type.startswith("text/"):
             self.mime_type = get_mime_for_name(self.fpath)
 
     def get_url(self) -> str:
