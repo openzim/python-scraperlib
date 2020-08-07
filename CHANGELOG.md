@@ -1,6 +1,6 @@
 # 1.2.2.dev0
 
-* n/a
+* detect mimetypes from filenames for all text files
 
 # 1.2.1
 
