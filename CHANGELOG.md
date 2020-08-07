@@ -1,6 +1,7 @@
 # 1.2.2.dev0
 
 * detect mimetypes from filenames for all text files
+* fixed non-filename based StaticArticle
 
 # 1.2.1
 
