@@ -2,6 +2,8 @@
 
 * detect mimetypes from filenames for all text files
 * fixed non-filename based StaticArticle
+* enable rewriting of links in poster attribute of audio element
+* added find_language_in() and find_language_in_file() to get language from HTML content and HTML file respectively
 
 # 1.2.1
 
