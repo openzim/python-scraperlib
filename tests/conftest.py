@@ -64,30 +64,35 @@ def timeout_url():
     return "http://10.255.255.1"
 
 
-def src_image(fname):
+def file_src(fname):
     return pathlib.Path(__file__).parent.joinpath("files", fname)
 
 
 @pytest.fixture(scope="module")
 def png_image():
-    return src_image("commons.png")
+    return file_src("commons.png")
 
 
 @pytest.fixture(scope="module")
 def jpg_image():
-    return src_image("pluto.jpg")
+    return file_src("pluto.jpg")
 
 
 @pytest.fixture(scope="module")
 def square_png_image():
-    return src_image("square.png")
+    return file_src("square.png")
 
 
 @pytest.fixture(scope="module")
 def square_jpg_image():
-    return src_image("square.jpg")
+    return file_src("square.jpg")
 
 
 @pytest.fixture(scope="module")
 def font():
-    return src_image("DroidSans.ttf")
+    return file_src("DroidSans.ttf")
+
+
+@pytest.fixture(scope="module")
+def svg_image():
+    return file_src("star.svg")

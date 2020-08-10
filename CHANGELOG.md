@@ -4,6 +4,7 @@
 * fixed non-filename based StaticArticle
 * enable rewriting of links in poster attribute of audio element
 * added find_language_in() and find_language_in_file() to get language from HTML content and HTML file respectively
+* add a mime mapping to deal with inconsistencies in mimetypes detected by magic on different platforms
 
 # 1.2.1
 
