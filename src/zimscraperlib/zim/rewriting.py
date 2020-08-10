@@ -164,6 +164,7 @@ def fix_links_in_html(url: str, content: str) -> str:
         "img": "src",
         "track": "src",
         "video": "poster",
+        "audio": "poster",
         "object": "data",
     }
     soup = BeautifulSoup(content, "html.parser")
