@@ -195,6 +195,21 @@ def test_change_image_format(
     assert dst_image.format == dst_fmt
 
 
+def test_change_image_format_defaults(png_image, jpg_image, tmp_path):
+    # PNG to JPEG (loosing alpha)
+    dst = tmp_path.joinpath(png_image.with_suffix(".jpg"))
+    convert_image(png_image, dst)
+    dst_image = Image.open(dst)
+    assert dst_image.mode == "RGB"
+    assert dst_image.format == "JPEG"
+    # PNG to WebP (keeping alpha)
+    dst = tmp_path.joinpath(png_image.with_suffix(".webp"))
+    convert_image(png_image, dst)
+    dst_image = Image.open(dst)
+    assert dst_image.mode == "RGBA"
+    assert dst_image.format == "WEBP"
+
+
 @pytest.mark.parametrize(
     "fmt,exp_size", [("png", 128), ("jpg", 128)],
 )
