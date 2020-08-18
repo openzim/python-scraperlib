@@ -86,20 +86,29 @@ def resize_image(
     save_image(resized, str(to) if to is not None else fpath, image_format, **params)
 
 
-def convert_image(src, dst, target_format, colorspace=None, **params):
+def convert_image(src, dst, **params):
     """ convert an image file from one format to another
 
-        colorspace: RGB, ARGB, CMYK (and other PIL colorspaces)
-        target_format: JPEG, PNG, BMP (and other PIL formats) """
+        params: Image.save() parameters. Depends on dest format.
+
+        params can include the following keys:
+         - fmt: specify the dest format (otherwise guessed from extension)
+                ex: JPEG, PNG, BMP (and other PIL formats)
+         - colorspace: convert to this colorspace. Otherwise not converted unless
+         target format has no halpha channel while source had. In this case converted
+         to RGB. ex: RGB, ARGB, CMYK (and other PIL colorspaces) """
+
+    colorspace = params.get("colorspace")  # requested colorspace
+    fmt = params.pop("fmt").upper() if "fmt" in params else None  # requested format
+    if not fmt:
+        from PIL.Image import EXTENSION as ext_fmt_map, init as init_pil
+
+        init_pil()
+        fmt = ext_fmt_map[dst.suffix]  # might raise KeyError on unknown extension
     with PIL.Image.open(src) as image:
-        dst_image = image
-        if (
-            image.mode == "RGBA" and target_format in ALPHA_NOT_SUPPORTED
-        ) or colorspace:
-            dst_image = (
-                image.convert("RGB") if not colorspace else image.convert(colorspace)
-            )
-        save_image(dst_image, dst, target_format, **params)
+        if image.mode == "RGBA" and fmt in ALPHA_NOT_SUPPORTED or colorspace:
+            image = image.convert(colorspace or "RGB")
+        save_image(image, dst, fmt, **params)
 
 
 def is_hex_color(text):

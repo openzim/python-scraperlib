@@ -188,7 +188,7 @@ def test_change_image_format(
 ):
     src, _ = get_src_dst(png_image, jpg_image, tmp_path, src_fmt)
     dst = tmp_path / f"out.{dst_fmt.lower()}"
-    convert_image(src, dst, dst_fmt, colorspace=colorspace)
+    convert_image(src, dst, fmt=dst_fmt, colorspace=colorspace)
     dst_image = Image.open(dst)
     if colorspace:
         assert dst_image.mode == colorspace

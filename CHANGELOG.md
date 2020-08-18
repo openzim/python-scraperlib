@@ -5,6 +5,9 @@
 * enable rewriting of links in poster attribute of audio element
 * added find_language_in() and find_language_in_file() to get language from HTML content and HTML file respectively
 * add a mime mapping to deal with inconsistencies in mimetypes detected by magic on different platforms
+* convert_image signature changed:
+  * `target_format` positional argument removed. Replaced with optionnal `fmt` key of keyword arguments.
+  * `colorspace` optionnal positional argument removed. Replaced with optionnal `colorspace` key of keyword arguments.
 
 # 1.2.1
 
