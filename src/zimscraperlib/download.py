@@ -2,14 +2,11 @@
 # -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
-import os
 import subprocess
 
 import requests
 
 from . import logger
-
-WGET_BINARY = os.getenv("WGET_BINARY", "/usr/bin/wget")
 
 
 def save_file(url, fpath, timeout=30, retries=5):
@@ -36,7 +33,8 @@ def save_large_file(url, fpath):
     """ download a binary file from its URL, using wget """
     subprocess.run(
         [
-            WGET_BINARY,
+            "/usr/bin/env",
+            "wget",
             "-t",
             "5",
             "--retry-connrefused",

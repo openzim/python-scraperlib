@@ -188,11 +188,26 @@ def test_change_image_format(
 ):
     src, _ = get_src_dst(png_image, jpg_image, tmp_path, src_fmt)
     dst = tmp_path / f"out.{dst_fmt.lower()}"
-    convert_image(src, dst, dst_fmt, colorspace=colorspace)
+    convert_image(src, dst, fmt=dst_fmt, colorspace=colorspace)
     dst_image = Image.open(dst)
     if colorspace:
         assert dst_image.mode == colorspace
     assert dst_image.format == dst_fmt
+
+
+def test_change_image_format_defaults(png_image, jpg_image, tmp_path):
+    # PNG to JPEG (loosing alpha)
+    dst = tmp_path.joinpath(png_image.with_suffix(".jpg"))
+    convert_image(png_image, dst)
+    dst_image = Image.open(dst)
+    assert dst_image.mode == "RGB"
+    assert dst_image.format == "JPEG"
+    # PNG to WebP (keeping alpha)
+    dst = tmp_path.joinpath(png_image.with_suffix(".webp"))
+    convert_image(png_image, dst)
+    dst_image = Image.open(dst)
+    assert dst_image.mode == "RGBA"
+    assert dst_image.format == "WEBP"
 
 
 @pytest.mark.parametrize(
