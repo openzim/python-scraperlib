@@ -177,6 +177,10 @@ def fix_links_in_html(url: str, content: str) -> str:
 
             html_link = node.attrs[key]
 
+            # do not parse mailto: links
+            if html_link.startswith("mailto:"):
+                continue
+
             # parse as a URL to extract querystring and fragment
             _, netloc, target, query, fragment = urllib.parse.urlsplit(html_link)
 
