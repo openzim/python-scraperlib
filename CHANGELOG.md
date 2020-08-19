@@ -8,7 +8,7 @@
 * convert_image signature changed:
   * `target_format` positional argument removed. Replaced with optionnal `fmt` key of keyword arguments.
   * `colorspace` optionnal positional argument removed. Replaced with optionnal `colorspace` key of keyword arguments.
-* prevent rewriting of `mailto:` links in rewriting.py
+* prevent rewriting of `mailto:` links in HTML links rewriting
 
 # 1.2.1
 
