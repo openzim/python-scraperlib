@@ -1,4 +1,4 @@
-# 1.2.2.dev0
+# 1.3.0
 
 * detect mimetypes from filenames for all text files
 * fixed non-filename based StaticArticle
