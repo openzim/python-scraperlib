@@ -11,3 +11,5 @@ with open(ROOT_DIR.joinpath("VERSION"), "r") as fh:
 SCRAPER = f"{NAME} {VERSION}"
 
 UTF8 = "UTF-8"
+
+ALPHA_NOT_SUPPORTED = ["JPEG", "BMP", "EPS", "PCX"]
