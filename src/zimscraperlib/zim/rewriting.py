@@ -50,7 +50,7 @@ def find_title_in(content: Union[str, BinaryIO, TextIO], mime_type: str) -> str:
     if mime_type != ARTICLE_MIME:
         return ""
     try:
-        return BeautifulSoup(content, "html.parser").find("title").text
+        return BeautifulSoup(content, "lxml").find("title").text
     except Exception:
         return ""
 
@@ -71,7 +71,7 @@ def find_language_in(content: Union[str, BinaryIO, TextIO], mime_type: str) -> s
     if mime_type != ARTICLE_MIME:
         return ""
     mapping = {"html": ["lang", "xml:lang"], "body": ["lang"], "meta": ["content"]}
-    soup = BeautifulSoup(content, "html.parser")
+    soup = BeautifulSoup(content, "lxml")
     for nodename, keylist in mapping.items():
         for key in keylist:
             node = soup.find(nodename)
@@ -167,7 +167,7 @@ def fix_links_in_html(url: str, content: str) -> str:
         "audio": "poster",
         "object": "data",
     }
-    soup = BeautifulSoup(content, "html.parser")
+    soup = BeautifulSoup(content, "lxml")
     for nodename, key in mapping.items():
         for node in soup.find_all(nodename):
 
