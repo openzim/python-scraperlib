@@ -1,6 +1,6 @@
 #1.3.1.dev0
 
-* n/a
+* use `lxml` parser with BeautifulSoup instead of `html.parser`
 
 # 1.3.0
 
