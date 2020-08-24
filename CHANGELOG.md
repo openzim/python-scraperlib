@@ -1,3 +1,7 @@
+# 1.3.2.dev0
+
+* n/a
+
 # 1.3.1
 
 * replaced BeautifoulSoup parser in rewriting (`html.parser` –> `lxml`)
