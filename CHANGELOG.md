@@ -1,6 +1,6 @@
-#1.3.1.dev0
+# 1.3.1
 
-* use `lxml` parser with BeautifulSoup instead of `html.parser`
+* replaced BeautifoulSoup parser in rewriting (`html.parser` –> `lxml`)
 
 # 1.3.0
 
@@ -22,7 +22,7 @@
 # 1.2.1
 
 * fixed URL rewriting when running from /
-* added support for link rewriting in <object> element
+* added support for link rewriting in `<object>` element
 * prevent from raising error if element doesn't have the attribute with url
 * use non greedy match for CSS URL links (shortest string matching `url()` format)
 * fix namespace of target only if link doesn't have a netloc
