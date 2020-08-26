@@ -215,6 +215,16 @@ def test_fix_links_in_html(html_str, pattern, expected_count):
     assert fix_links_in_html("A/welcome", html_str).count(pattern) == expected_count
 
 
+def test_fix_links_in_html_no_target():
+    # ensure that when no target is present, correct redirection is made
+    assert (
+        fix_links_in_html(
+            "A/hello/question", '<html><head></head><body><img src=""/></body></html>'
+        )
+        == '<html><head></head><body><img src="../../A/hello/question"/></body></html>'
+    )
+
+
 def test_fix_links_in_html_file(tmp_path, html_str):
     # make sure we raise on missing param (url or root mandatory)
     with pytest.raises(ValueError):

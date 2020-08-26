@@ -1,6 +1,6 @@
 # 1.3.2.dev0
 
-* n/a
+* fixed rewriting of links with empty target
 
 # 1.3.1
 
