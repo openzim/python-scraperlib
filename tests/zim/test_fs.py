@@ -148,5 +148,5 @@ finally:
     # returncode will be either 0 or -11, depending on garbage collection
     # in scrapers, we want to be able to fail on errors and absolutely don't want to
     # create a ZIM file, so SEGFAULT on exit it (somewhat) OK
-    assert py.returncode in (0, 11, -11)  # SIGSEV is 11
+    assert py.returncode in (0, 11, -6, -11)  # SIGSEV is 11
     assert not build_data["fpath"].exists()
