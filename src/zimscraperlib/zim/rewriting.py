@@ -186,7 +186,7 @@ def fix_links_in_html(url: str, content: str) -> str:
 
             # use source as target if there's none
             if not target:
-                target = str(url)[2:]  # without namespace
+                target = pathlib.Path(url).name  # only the filename
 
             fixed = fix_target_for(
                 pathlib.Path("."), pathlib.Path(url), pathlib.Path(target)
