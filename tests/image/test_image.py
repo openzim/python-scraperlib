@@ -193,13 +193,13 @@ def test_change_image_format(
 
 def test_change_image_format_defaults(png_image, jpg_image, tmp_path):
     # PNG to JPEG (loosing alpha)
-    dst = tmp_path.joinpath(png_image.with_suffix(".jpg"))
+    dst = tmp_path.joinpath(f"{png_image.stem}.jpg")
     convert_image(png_image, dst)
     dst_image = Image.open(dst)
     assert dst_image.mode == "RGB"
     assert dst_image.format == "JPEG"
     # PNG to WebP (keeping alpha)
-    dst = tmp_path.joinpath(png_image.with_suffix(".webp"))
+    dst = tmp_path.joinpath(f"{png_image.stem}.webp")
     convert_image(png_image, dst)
     dst_image = Image.open(dst)
     assert dst_image.mode == "RGBA"
