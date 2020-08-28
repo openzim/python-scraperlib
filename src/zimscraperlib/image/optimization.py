@@ -5,19 +5,38 @@
 import shutil
 import tempfile
 import pathlib
+import subprocess
+from typing import Optional
 
+from PIL import Image
 from optimize_images.data_structures import Task
 from optimize_images.do_optimization import do_optimization
 
+from . import save_image
 from .. import logger
+from ..logging import nicer_args_join
 
 
 class ImageOptimizer:
-    def __init__(self, png_options={}, jpeg_options={}):
+    def __init__(
+        self,
+        png_options: Optional[dict] = {},
+        jpeg_options: Optional[dict] = {},
+        webp_options: Optional[dict] = {},
+        gif_options: Optional[dict] = {},
+    ) -> None:
         self.png_options = png_options
         self.jpeg_options = jpeg_options
+        self.gif_options = gif_options
+        self.webp_options = webp_options
 
-    def optimize_png_jpg(self, src, dst, image_format, override_options={}):
+    def optimize_png_jpg(
+        self,
+        src: pathlib.Path,
+        dst: pathlib.Path,
+        image_format: str,
+        override_options: dict,
+    ) -> bool:
         # use a temporary file as source as optimization is done destructively
         tmp_fh = tempfile.NamedTemporaryFile(delete=False, suffix=src.suffix)
         tmp_fh.close()
@@ -103,7 +122,85 @@ class ImageOptimizer:
             tmp_path.unlink()
         return result.was_optimized
 
-    def optimize_image(self, src, dst, delete_src=True, override_options={}):
+    def optimize_webp(
+        self, src: pathlib.Path, dst: pathlib.Path, override_options: dict
+    ) -> bool:
+        lossless = self.webp_options.get(
+            "lossless", override_options.get("lossless", None)
+        )
+        quality = self.webp_options.get(
+            "quality", override_options.get("quality", None)
+        )
+        method = self.webp_options.get("method", override_options.get("method", None))
+        webp_image = Image.open(src)
+        params = {
+            "lossless": lossless if lossless is not None else False,
+            "quality": quality if quality is not None else 80,
+            "method": method if method is not None else 0,
+        }
+        try:
+            save_image(webp_image, dst, params=params)
+            return True
+        except Exception as exc:
+            logger.error(f"Could not optimize image {src} - {exc}")
+            return False
+
+    def optimize_gif(
+        self, src: pathlib.Path, dst: pathlib.Path, override_options: dict
+    ) -> bool:
+        optimized = False
+        optimize_level = self.gif_options.get(
+            "optimize_level", override_options.get("optimize_level", None)
+        )
+        max_colors = self.gif_options.get(
+            "max_colors", override_options.get("max_colors", None)
+        )
+        lossiness = self.gif_options.get(
+            "lossiness", override_options.get("lossiness", None)
+        )
+        no_extensions = self.gif_options.get(
+            "no_extensions", override_options.get("no_extensions", None)
+        )
+        interlace = self.gif_options.get(
+            "interlace", override_options.get("interlace", None)
+        )
+        if not any([optimize_level, max_colors, lossiness, no_extensions]):
+            # use the pure python default mode
+            gif_image = Image.open(src)
+            params = {
+                "save_all": True,
+                "interlace": interlace if interlace is not None else True,
+                "optimize": True,
+                "include_color_table": False,
+            }
+            save_image(gif_image, dst, params=params)
+            optimized = True
+        else:
+            # use gifsicle
+            args = ["gifsicle"]
+            if optimize_level:
+                args += [f"--O{optimize_level}"]
+            if max_colors:
+                args += [f"--colors={max_colors}"]
+            if lossiness:
+                args += [f"--lossy={lossiness}"]
+            if no_extensions:
+                args += ["--no-extensions"]
+            if interlace:
+                args += ["--interlace"]
+            args += [str(src), ">", str(dst)]
+            logger.debug(nicer_args_join(args))
+            gifsicle = subprocess.run(args)
+            optimized = gifsicle.returncode == 0
+        return optimized
+
+    def optimize_image(
+        self,
+        src: pathlib.Path,
+        dst: pathlib.Path,
+        delete_src: Optional[bool] = True,
+        override_options: Optional[dict] = {},
+    ) -> None:
         # optimize the image with the correct optimizer
         if not src.is_file():
             raise FileNotFoundError("The requested image is not present")
@@ -116,6 +213,10 @@ class ImageOptimizer:
             optimized = self.optimize_png_jpg(
                 src, dst, image_format="png", override_options=override_options
             )
+        elif src.suffix == ".webp":
+            optimized = self.optimize_webp(src, dst, override_options=override_options)
+        elif src.suffix == ".gif":
+            optimized = self.optimize_gif(src, dst, override_options=override_options)
         else:
             raise Exception("File not supported for optimization as an image")
 
