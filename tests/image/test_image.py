@@ -21,8 +21,15 @@ def get_image_size(fpath):
     return Image.open(fpath).size
 
 
-def get_src_dst(png_image, jpg_image, tmp_path, fmt):
-    return {"png": png_image, "jpg": jpg_image}.get(fmt), tmp_path / f"out.{fmt}"
+def get_src_dst(
+    tmp_path, fmt, png_image=None, jpg_image=None, gif_image=None, webp_image=None
+):
+    return (
+        {"png": png_image, "jpg": jpg_image, "webp": webp_image, "gif": gif_image}.get(
+            fmt
+        ),
+        tmp_path / f"out.{fmt}",
+    )
 
 
 @pytest.mark.parametrize(
@@ -70,7 +77,7 @@ def test_colors_jpg_palette(jpg_image):
     [("png", None), ("jpg", {"quality": 50})],
 )
 def test_save_image(png_image, jpg_image, tmp_path, fmt, params):
-    src, dst = get_src_dst(png_image, jpg_image, tmp_path, fmt)
+    src, dst = get_src_dst(tmp_path, fmt, png_image=png_image, jpg_image=jpg_image)
     img = Image.open(src)
     if params:
         save_image(img, dst, "JPEG" if fmt == "jpg" else fmt, **params)
@@ -84,7 +91,7 @@ def test_save_image(png_image, jpg_image, tmp_path, fmt, params):
     ["png", "jpg"],
 )
 def test_resize_thumbnail(png_image, jpg_image, tmp_path, fmt):
-    src, dst = get_src_dst(png_image, jpg_image, tmp_path, fmt)
+    src, dst = get_src_dst(tmp_path, fmt, png_image=png_image, jpg_image=jpg_image)
 
     width, height = 100, 50
     resize_image(src, width, height, dst=dst, method="thumbnail")
@@ -98,7 +105,7 @@ def test_resize_thumbnail(png_image, jpg_image, tmp_path, fmt):
     ["png", "jpg"],
 )
 def test_resize_width(png_image, jpg_image, tmp_path, fmt):
-    src, dst = get_src_dst(png_image, jpg_image, tmp_path, fmt)
+    src, dst = get_src_dst(tmp_path, fmt, png_image=png_image, jpg_image=jpg_image)
 
     width, height = 100, 50
     resize_image(src, width, height, dst=dst, method="width")
@@ -111,7 +118,7 @@ def test_resize_width(png_image, jpg_image, tmp_path, fmt):
     ["png", "jpg"],
 )
 def test_resize_height(png_image, jpg_image, tmp_path, fmt):
-    src, dst = get_src_dst(png_image, jpg_image, tmp_path, fmt)
+    src, dst = get_src_dst(tmp_path, fmt, png_image=png_image, jpg_image=jpg_image)
 
     width, height = 100, 50
     resize_image(src, width, height, dst=dst, method="height")
@@ -124,7 +131,7 @@ def test_resize_height(png_image, jpg_image, tmp_path, fmt):
     ["png", "jpg"],
 )
 def test_resize_crop(png_image, jpg_image, tmp_path, fmt):
-    src, dst = get_src_dst(png_image, jpg_image, tmp_path, fmt)
+    src, dst = get_src_dst(tmp_path, fmt, png_image=png_image, jpg_image=jpg_image)
 
     width, height = 5, 50
     resize_image(src, width, height, dst=dst, method="crop")
@@ -138,7 +145,7 @@ def test_resize_crop(png_image, jpg_image, tmp_path, fmt):
     ["png", "jpg"],
 )
 def test_resize_cover(png_image, jpg_image, tmp_path, fmt):
-    src, dst = get_src_dst(png_image, jpg_image, tmp_path, fmt)
+    src, dst = get_src_dst(tmp_path, fmt, png_image=png_image, jpg_image=jpg_image)
 
     width, height = 5, 50
     resize_image(src, width, height, dst=dst, method="cover")
@@ -152,7 +159,7 @@ def test_resize_cover(png_image, jpg_image, tmp_path, fmt):
     ["png", "jpg"],
 )
 def test_resize_contain(png_image, jpg_image, tmp_path, fmt):
-    src, dst = get_src_dst(png_image, jpg_image, tmp_path, fmt)
+    src, dst = get_src_dst(tmp_path, fmt, png_image=png_image, jpg_image=jpg_image)
 
     width, height = 5, 50
     resize_image(src, width, height, dst=dst, method="contain")
@@ -166,7 +173,7 @@ def test_resize_contain(png_image, jpg_image, tmp_path, fmt):
     ["png", "jpg"],
 )
 def test_resize_upscale(png_image, jpg_image, tmp_path, fmt):
-    src, dst = get_src_dst(png_image, jpg_image, tmp_path, fmt)
+    src, dst = get_src_dst(tmp_path, fmt, png_image=png_image, jpg_image=jpg_image)
 
     width, height = 500, 1000
     resize_image(src, width, height, dst=dst, method="cover")
@@ -180,7 +187,7 @@ def test_resize_upscale(png_image, jpg_image, tmp_path, fmt):
     ["png", "jpg"],
 )
 def test_resize_small_image_error(png_image, jpg_image, tmp_path, fmt):
-    src, dst = get_src_dst(png_image, jpg_image, tmp_path, fmt)
+    src, dst = get_src_dst(tmp_path, fmt, png_image=png_image, jpg_image=jpg_image)
 
     width, height = 500, 1000
     with pytest.raises(ImageSizeError):
@@ -194,7 +201,7 @@ def test_resize_small_image_error(png_image, jpg_image, tmp_path, fmt):
 def test_change_image_format(
     png_image, jpg_image, tmp_path, src_fmt, dst_fmt, colorspace
 ):
-    src, _ = get_src_dst(png_image, jpg_image, tmp_path, src_fmt)
+    src, _ = get_src_dst(tmp_path, src_fmt, png_image=png_image, jpg_image=jpg_image)
     dst = tmp_path / f"out.{dst_fmt.lower()}"
     convert_image(src, dst, fmt=dst_fmt, colorspace=colorspace)
     dst_image = Image.open(dst)
@@ -223,7 +230,7 @@ def test_change_image_format_defaults(png_image, jpg_image, tmp_path):
     [("png", 128), ("jpg", 128)],
 )
 def test_create_favicon(png_image, jpg_image, tmp_path, fmt, exp_size):
-    src, dst = get_src_dst(png_image, jpg_image, tmp_path, fmt)
+    src, dst = get_src_dst(tmp_path, fmt, png_image=png_image, jpg_image=jpg_image)
     dst = dst.parent.joinpath("favicon.ico")
     create_favicon(src, dst)
 
@@ -237,7 +244,9 @@ def test_create_favicon(png_image, jpg_image, tmp_path, fmt, exp_size):
     ["png", "jpg"],
 )
 def test_create_favicon_square(square_png_image, square_jpg_image, tmp_path, fmt):
-    src, dst = get_src_dst(square_png_image, square_jpg_image, tmp_path, fmt)
+    src, dst = get_src_dst(
+        tmp_path, fmt, png_image=square_png_image, jpg_image=square_jpg_image
+    )
     dst = dst.parent.joinpath("favicon.ico")
     create_favicon(src, dst)
 
@@ -251,7 +260,9 @@ def test_create_favicon_square(square_png_image, square_jpg_image, tmp_path, fmt
     ["png", "jpg"],
 )
 def test_wrong_extension(square_png_image, square_jpg_image, tmp_path, fmt):
-    src, dst = get_src_dst(square_png_image, square_jpg_image, tmp_path, fmt)
+    src, dst = get_src_dst(
+        tmp_path, fmt, png_image=square_png_image, jpg_image=square_jpg_image
+    )
     with pytest.raises(ValueError):
         create_favicon(src, dst)
 
@@ -261,17 +272,48 @@ def test_wrong_extension(square_png_image, square_jpg_image, tmp_path, fmt):
 )
 def test_optimize_png_jpg(png_image, jpg_image, tmp_path, fmt):
     optimizer = ImageOptimizer()
-    src, dst = get_src_dst(png_image, jpg_image, tmp_path, fmt)
-    optimizer.optimize_png_jpg(src, dst, image_format=fmt)
+    src, dst = get_src_dst(tmp_path, fmt, png_image=png_image, jpg_image=jpg_image)
+    optimizer.optimize_png_jpg(src, dst, image_format=fmt, override_options={})
+    assert os.path.getsize(dst) < os.path.getsize(src)
+
+
+def test_optimize_gif(gif_image, tmp_path):
+    optimizer = ImageOptimizer()
+    src = gif_image
+    dst = tmp_path / "out.gif"
+    override_options = {
+        "optimize_level": 3,
+        "max_colors": 256,
+        "lossiness": 80,
+        "no_extensions": True,
+        "interlace": True,
+    }
+    optimizer.optimize_gif(src, dst, override_options=override_options)
+    assert os.path.getsize(dst) < os.path.getsize(src)
+
+
+def test_optimize_webp(webp_image, tmp_path):
+    optimizer = ImageOptimizer()
+    src = webp_image
+    dst = tmp_path / "out.webp"
+    override_options = {"lossless": False, "quality": 50, "method": 1}
+    optimizer.optimize_webp(src, dst, override_options=override_options)
     assert os.path.getsize(dst) < os.path.getsize(src)
 
 
 @pytest.mark.parametrize(
-    "fmt", ["png", "jpg"],
+    "fmt", ["png", "jpg", "gif", "webp"],
 )
-def test_optimize_image(png_image, jpg_image, tmp_path, fmt):
+def test_optimize_image(png_image, jpg_image, gif_image, webp_image, tmp_path, fmt):
     optimizer = ImageOptimizer()
-    src, dst = get_src_dst(png_image, jpg_image, tmp_path, fmt)
+    src, dst = get_src_dst(
+        tmp_path,
+        fmt,
+        png_image=png_image,
+        jpg_image=jpg_image,
+        gif_image=gif_image,
+        webp_image=webp_image,
+    )
     optimizer.optimize_image(src, dst, delete_src=False)
     assert os.path.getsize(dst) < os.path.getsize(src)
 

@@ -96,3 +96,13 @@ def font():
 @pytest.fixture(scope="module")
 def svg_image():
     return file_src("star.svg")
+
+
+@pytest.fixture(scope="module")
+def gif_image():
+    return file_src("mail.gif")
+
+
+@pytest.fixture(scope="module")
+def webp_image():
+    return file_src("whitewater.webp")

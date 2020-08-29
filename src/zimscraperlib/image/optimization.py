@@ -88,9 +88,7 @@ class ImageOptimizer:
                     "remove_transparency",
                     self.png_options.get("remove_transparency", False),
                 ),
-                reduce_colors=override_options.get(
-                    "reduce_colors", self.png_options.get("reduce_colors", True)
-                ),
+                reduce_colors=True,
                 max_colors=override_options.get(
                     "max_colors", self.png_options.get("max_colors", 256)
                 ),
@@ -135,20 +133,15 @@ class ImageOptimizer:
         webp_image = Image.open(src)
         params = {
             "lossless": lossless if lossless is not None else False,
-            "quality": quality if quality is not None else 80,
-            "method": method if method is not None else 0,
+            "quality": quality if quality is not None else 55,
+            "method": method if method is not None else 5,
         }
-        try:
-            save_image(webp_image, dst, params=params)
-            return True
-        except Exception as exc:
-            logger.error(f"Could not optimize image {src} - {exc}")
-            return False
+        save_image(webp_image, dst, fmt="WEBP", **params)
+        return True
 
     def optimize_gif(
         self, src: pathlib.Path, dst: pathlib.Path, override_options: dict
     ) -> bool:
-        optimized = False
         optimize_level = self.gif_options.get(
             "optimize_level", override_options.get("optimize_level", None)
         )
@@ -164,35 +157,24 @@ class ImageOptimizer:
         interlace = self.gif_options.get(
             "interlace", override_options.get("interlace", None)
         )
-        if not any([optimize_level, max_colors, lossiness, no_extensions]):
-            # use the pure python default mode
-            gif_image = Image.open(src)
-            params = {
-                "save_all": True,
-                "interlace": interlace if interlace is not None else True,
-                "optimize": True,
-                "include_color_table": False,
-            }
-            save_image(gif_image, dst, params=params)
-            optimized = True
-        else:
-            # use gifsicle
-            args = ["gifsicle"]
-            if optimize_level:
-                args += [f"--O{optimize_level}"]
-            if max_colors:
-                args += [f"--colors={max_colors}"]
-            if lossiness:
-                args += [f"--lossy={lossiness}"]
-            if no_extensions:
-                args += ["--no-extensions"]
-            if interlace:
-                args += ["--interlace"]
-            args += [str(src), ">", str(dst)]
-            logger.debug(nicer_args_join(args))
-            gifsicle = subprocess.run(args)
-            optimized = gifsicle.returncode == 0
-        return optimized
+        # use gifsicle
+        args = ["gifsicle"]
+        if optimize_level:
+            args += [f"-O{optimize_level}"]
+        if max_colors:
+            args += ["--colors", str(max_colors)]
+        if lossiness:
+            args += [f"--lossy={lossiness}"]
+        if no_extensions:
+            args += ["--no-extensions"]
+        if interlace:
+            args += ["--interlace"]
+        args += [str(src)]
+        logger.debug(nicer_args_join(args))
+        with open(dst, "w") as out_file:
+            gifsicle = subprocess.run(args, stdout=out_file)
+        gifsicle.check_returncode()
+        return True
 
     def optimize_image(
         self,
