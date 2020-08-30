@@ -88,7 +88,9 @@ class ImageOptimizer:
                     "remove_transparency",
                     self.png_options.get("remove_transparency", False),
                 ),
-                reduce_colors=True,
+                reduce_colors=override_options.get(
+                    "reduce_colors", self.png_options.get("reduce_colors", True)
+                ),
                 max_colors=override_options.get(
                     "max_colors", self.png_options.get("max_colors", 256)
                 ),
