@@ -15,8 +15,16 @@ from zimscraperlib.image.transformation import resize_image
 from zimscraperlib.image.convertion import create_favicon, convert_image
 from zimscraperlib.image.optimization import ImageOptimizer
 from zimscraperlib.image import save_image
-from zimscraperlib.image.presets import WebpLow, WebpHigh, GifLow, GifHigh, PngLow, PngHigh, JpegLow, JpegHigh
-
+from zimscraperlib.image.presets import (
+    WebpLow,
+    WebpHigh,
+    GifLow,
+    GifHigh,
+    PngLow,
+    PngHigh,
+    JpegLow,
+    JpegHigh,
+)
 
 
 def get_image_size(fpath):
@@ -344,13 +352,46 @@ def test_optimize_image_unsupported_format(font, tmp_path):
 
 
 @pytest.mark.parametrize(
-    "preset,expected_version,options", [
+    "preset,expected_version,options",
+    [
         (WebpLow(), 1, {"lossless": False, "quality": 40, "method": 6}),
         (WebpHigh(), 1, {"lossless": False, "quality": 65, "method": 6}),
-        (GifLow(), 1, {"optimize_level": 3, "max_colors": 256, "lossiness": 90, "no_extensions": True, "interlace": True}),
-        (GifHigh(), 1, {"optimize_level": 1, "lossiness": 50, "no_extensions": True, "interlace": True}),
-        (PngLow(), 1, {"reduce_colors": True, "remove_transparency": False, "max_colors": 256, "fast_mode": False}),
-        (PngHigh(), 1, {"reduce_colors": False, "remove_transparency": False, "fast_mode": True}),
+        (
+            GifLow(),
+            1,
+            {
+                "optimize_level": 3,
+                "max_colors": 256,
+                "lossiness": 90,
+                "no_extensions": True,
+                "interlace": True,
+            },
+        ),
+        (
+            GifHigh(),
+            1,
+            {
+                "optimize_level": 1,
+                "lossiness": 50,
+                "no_extensions": True,
+                "interlace": True,
+            },
+        ),
+        (
+            PngLow(),
+            1,
+            {
+                "reduce_colors": True,
+                "remove_transparency": False,
+                "max_colors": 256,
+                "fast_mode": False,
+            },
+        ),
+        (
+            PngHigh(),
+            1,
+            {"reduce_colors": False, "remove_transparency": False, "fast_mode": True},
+        ),
         (JpegLow(), 1, {"quality": 40, "keep_exif": False, "fast_mode": False}),
         (JpegHigh(), 1, {"quality": 70, "keep_exif": False, "fast_mode": True}),
     ],

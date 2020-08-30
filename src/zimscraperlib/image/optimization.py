@@ -277,9 +277,13 @@ class ImageOptimizer:
                 src, dst, image_format="png", override_options=png_override_options
             )
         elif src.suffix == ".webp":
-            optimized = self.optimize_webp(src, dst, override_options=webp_override_options)
+            optimized = self.optimize_webp(
+                src, dst, override_options=webp_override_options
+            )
         elif src.suffix == ".gif":
-            optimized = self.optimize_gif(src, dst, override_options=gif_override_options)
+            optimized = self.optimize_gif(
+                src, dst, override_options=gif_override_options
+            )
         else:
             raise Exception("File not supported for optimization as an image")
 
