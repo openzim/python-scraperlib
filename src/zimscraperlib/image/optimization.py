@@ -2,6 +2,69 @@
 # -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
+""" An image optimization module to optimize the following image formats:
+
+    - JPEG (using optimize-images)
+    - PNG (using optimize-images)
+    - GIF (using gifsicle with lossy optimization)
+    - WebP (using Pillow)
+
+    The following options are available to tune in for each of the formats -
+
+    JPEG:
+        quality: JPEG quality (integer between 1 and 100)
+            values: 50 | 55 | 35 | 100 | XX
+        keep_exif: Whether to keep EXIF data in JPEG (boolean)
+            values: True | False
+        grayscale: Whether to convert image to grayscale (boolean)
+            values: True | False
+        fast_mode: Whether to use faster but weaker compression (boolean)
+            values: True | False
+
+    PNG:
+        remove_transparency: Whether to remove transparency (boolean)
+            values: True | False
+        reduce_colors: Whether to reduce colors using adaptive color pallette (boolean)
+            values: True | False
+        max_colors: Maximum number of colors if reduce_colors is True (integer between 1 and 256)
+            values: 35 | 64 | 256 | 128 | XX
+        background_color: Background color if remove_transparency is True (tuple containing RGB values)
+            values: (255, 255, 255) | (221, 121, 108) | (XX, YY, ZZ)
+        fast_mode: Whether to use faster but weaker compression (boolean)
+            values: True | False
+
+    WebP (refer to the link for more details - https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html#webp):
+        lossless: Whether to use lossless compression (boolean)
+            values: True | False
+        quality: WebP quality for lossy, effort put into compression for lossless (integer between 0 to 100)
+            values: 30 | 45 | 100 | XX
+        method: Quality/speed trade-off; higher values give better compression (integer between 1 and 6)
+            values: 1 | 2 | 3 | 4 | 5 | 6 
+
+    GIF (refer to the link for more details - https://www.lcdf.org/gifsicle/man.html):
+        optimize_level: Optimization level; higher values give better compression (integer between 1 and 3)
+            values: 1 | 2 | 3
+        lossiness: Level of lossy optimization to use; higher values give better compression (integer)
+            values: 20 | 45 | 80 | XX
+        interlace: Whether to interlace the frames (boolean)
+            values: True | False
+        no_extensions: Whether to remove all extension options from GIF (boolean)
+            values: True | False
+        max_colors: Maximum number of colors in the resultant GIF (integer between 2 and 256)
+            values: 2 | 86 | 128 | 256 | XX
+
+    Some important notes: 
+    - This makes use of the --lossy option from gifsicle which is present only in versions above 1.92.
+      If the package manager has a lower version, you can build gifsicle from source and install or
+      do not use the lossiness option.
+
+    - The ImageOptimizer class takes a dict consisting the aforementioned options and values while initialization.
+      A dict in the same format can also be passed to other methods via the override_options argument to override any
+      option set while initlization. Presets for the optimizer are available in zimscraperlib.image.presets.
+
+    - If no options for an image format is passed, the optimizer can still run on default settings which give
+      a bit less size than the original images (probably a balance between the High and Low presets). """
+
 import shutil
 import tempfile
 import pathlib
@@ -18,6 +81,8 @@ from ..logging import nicer_args_join
 
 
 class ImageOptimizer:
+    """ ImageOptimizer class to optimize various images using various optimizers """
+
     def __init__(
         self,
         png_options: Optional[dict] = {},
@@ -37,6 +102,9 @@ class ImageOptimizer:
         image_format: str,
         override_options: dict,
     ) -> bool:
+
+        """ method to optimize PNG or JPEG files using a pure python external optimizer """
+
         # use a temporary file as source as optimization is done destructively
         tmp_fh = tempfile.NamedTemporaryFile(delete=False, suffix=src.suffix)
         tmp_fh.close()
@@ -125,13 +193,15 @@ class ImageOptimizer:
     def optimize_webp(
         self, src: pathlib.Path, dst: pathlib.Path, override_options: dict
     ) -> bool:
-        lossless = self.webp_options.get(
-            "lossless", override_options.get("lossless", None)
+        """ method to optimize WebP using Pillow options """
+
+        lossless = override_options.get(
+            "lossless", self.webp_options.get("lossless", None)
         )
-        quality = self.webp_options.get(
-            "quality", override_options.get("quality", None)
+        quality = override_options.get(
+            "quality", self.webp_options.get("quality", None)
         )
-        method = self.webp_options.get("method", override_options.get("method", None))
+        method = override_options.get("method", self.webp_options.get("method", None))
         webp_image = Image.open(src)
         params = {
             "lossless": lossless if lossless is not None else False,
@@ -144,20 +214,22 @@ class ImageOptimizer:
     def optimize_gif(
         self, src: pathlib.Path, dst: pathlib.Path, override_options: dict
     ) -> bool:
-        optimize_level = self.gif_options.get(
-            "optimize_level", override_options.get("optimize_level", None)
+        """ method to optimize GIFs using gifsicle >= 1.92 """
+
+        optimize_level = override_options.get(
+            "optimize_level", self.gif_options.get("optimize_level", None)
         )
-        max_colors = self.gif_options.get(
-            "max_colors", override_options.get("max_colors", None)
+        max_colors = override_options.get(
+            "max_colors", self.gif_options.get("max_colors", None)
         )
-        lossiness = self.gif_options.get(
-            "lossiness", override_options.get("lossiness", None)
+        lossiness = override_options.get(
+            "lossiness", self.gif_options.get("lossiness", None)
         )
-        no_extensions = self.gif_options.get(
-            "no_extensions", override_options.get("no_extensions", None)
+        no_extensions = override_options.get(
+            "no_extensions", self.gif_options.get("no_extensions", None)
         )
-        interlace = self.gif_options.get(
-            "interlace", override_options.get("interlace", None)
+        interlace = override_options.get(
+            "interlace", self.gif_options.get("interlace", None)
         )
         # use gifsicle
         args = ["gifsicle"]
@@ -183,24 +255,31 @@ class ImageOptimizer:
         src: pathlib.Path,
         dst: pathlib.Path,
         delete_src: Optional[bool] = True,
-        override_options: Optional[dict] = {},
+        png_override_options: Optional[dict] = {},
+        jpeg_override_options: Optional[dict] = {},
+        gif_override_options: Optional[dict] = {},
+        webp_override_options: Optional[dict] = {},
     ) -> None:
-        # optimize the image with the correct optimizer
+        """ method to select optimizer and optimize images based on extension """
+
+        # check if file is present
         if not src.is_file():
             raise FileNotFoundError("The requested image is not present")
         optimized = False
+
+        # check extension and optimize
         if src.suffix in [".jpeg", ".jpg"]:
             optimized = self.optimize_png_jpg(
-                src, dst, image_format="jpg", override_options=override_options
+                src, dst, image_format="jpg", override_options=jpeg_override_options
             )
         elif src.suffix == ".png":
             optimized = self.optimize_png_jpg(
-                src, dst, image_format="png", override_options=override_options
+                src, dst, image_format="png", override_options=png_override_options
             )
         elif src.suffix == ".webp":
-            optimized = self.optimize_webp(src, dst, override_options=override_options)
+            optimized = self.optimize_webp(src, dst, override_options=webp_override_options)
         elif src.suffix == ".gif":
-            optimized = self.optimize_gif(src, dst, override_options=override_options)
+            optimized = self.optimize_gif(src, dst, override_options=gif_override_options)
         else:
             raise Exception("File not supported for optimization as an image")
 
