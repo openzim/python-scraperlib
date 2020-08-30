@@ -278,7 +278,8 @@ def test_wrong_extension(square_png_image, square_jpg_image, tmp_path, fmt):
 
 
 @pytest.mark.parametrize(
-    "fmt", ["png", "jpg"],
+    "fmt",
+    ["png", "jpg"],
 )
 def test_optimize_png_jpg(png_image, jpg_image, tmp_path, fmt):
     optimizer = ImageOptimizer()
@@ -312,7 +313,8 @@ def test_optimize_webp(webp_image, tmp_path):
 
 
 @pytest.mark.parametrize(
-    "fmt", ["png", "jpg", "gif", "webp"],
+    "fmt",
+    ["png", "jpg", "gif", "webp"],
 )
 def test_optimize_image(png_image, jpg_image, gif_image, webp_image, tmp_path, fmt):
     optimizer = ImageOptimizer()

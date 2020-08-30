@@ -6,11 +6,11 @@
 
 
 class WebpLow:
-    """ Low quality WebP image
+    """Low quality WebP image
 
-        Lossy compression
-        Low quality (Pillow quality is 40)
-        Quality/Speed tradeoff is High """
+    Lossy compression
+    Low quality (Pillow quality is 40)
+    Quality/Speed tradeoff is High"""
 
     VERSION = 1
 
@@ -22,11 +22,11 @@ class WebpLow:
 
 
 class WebpHigh:
-    """ High quality WebP image
+    """High quality WebP image
 
-        Lossy compression
-        High quality (Pillow quality is 65)
-        Quality/Speed tradeoff is High """
+    Lossy compression
+    High quality (Pillow quality is 65)
+    Quality/Speed tradeoff is High"""
 
     VERSION = 1
 
@@ -38,13 +38,13 @@ class WebpHigh:
 
 
 class GifLow:
-    """ Low quality GIF image
+    """Low quality GIF image
 
-        Strongest optimization level
-        Colors limited to 256
-        High Lossiness
-        No extensions in GIF
-        Interlaced frames """
+    Strongest optimization level
+    Colors limited to 256
+    High Lossiness
+    No extensions in GIF
+    Interlaced frames"""
 
     VERSION = 1
 
@@ -58,13 +58,13 @@ class GifLow:
 
 
 class GifHigh:
-    """ High quality GIF image
+    """High quality GIF image
 
-        Weak optimization level
-        Colors not limited
-        Moderate lossiness
-        No extensions in GIF
-        Interlaced frames """
+    Weak optimization level
+    Colors not limited
+    Moderate lossiness
+    No extensions in GIF
+    Interlaced frames"""
 
     VERSION = 1
 
@@ -77,10 +77,10 @@ class GifHigh:
 
 
 class PngLow:
-    """ Low quality PNG image
+    """Low quality PNG image
 
-        Reduce colors to 256
-        Slower and better compression """
+    Reduce colors to 256
+    Slower and better compression"""
 
     VERSION = 1
 
@@ -93,10 +93,10 @@ class PngLow:
 
 
 class PngHigh:
-    """ High quality PNG image
+    """High quality PNG image
 
-        Do not reduce colors
-        Weaker and faster compression """
+    Do not reduce colors
+    Weaker and faster compression"""
 
     VERSION = 1
 
@@ -108,11 +108,11 @@ class PngHigh:
 
 
 class JpegLow:
-    """ Low quality JPEG image
+    """Low quality JPEG image
 
-        Low quality (40)
-        Strip out exif data
-        Slower and better compression """
+    Low quality (40)
+    Strip out exif data
+    Slower and better compression"""
 
     VERSION = 1
 
@@ -124,11 +124,11 @@ class JpegLow:
 
 
 class JpegHigh:
-    """ High quality JPEG image
+    """High quality JPEG image
 
-        High quality (70)
-        Strip out exif data
-        Weaker and faster compression """
+    High quality (70)
+    Strip out exif data
+    Weaker and faster compression"""
 
     VERSION = 1
 
