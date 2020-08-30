@@ -38,11 +38,11 @@ from .rewriting import (
 
 
 class StaticArticle(libzim.writer.Article):
-    """ libzim.writer.Article holding it's data (except content when using filename)
+    """libzim.writer.Article holding it's data (except content when using filename)
 
-        Easy shortcut to subclassing Article when data's already at hand.
-        `content` can be set (bytes); then stored in object and returned on get_data()
-        If `filename` is set, get_data() returns it's content """
+    Easy shortcut to subclassing Article when data's already at hand.
+    `content` can be set (bytes); then stored in object and returned on get_data()
+    If `filename` is set, get_data() returns it's content"""
 
     def __init__(self, **kwargs: Dict[str, Union[str, bool, bytes]]):
         super().__init__()
@@ -106,7 +106,7 @@ class RedirectArticle(libzim.writer.Article):
 
 class Creator(libzim.writer.Creator):
 
-    """ libzim.writer.Creator subclass
+    """libzim.writer.Creator subclass
 
     Note: due to the lack of a cancel() method in the libzim itself, it is not possible
     to stop a zim creation process. Should an error occur in your code, a Zim file
@@ -119,7 +119,7 @@ class Creator(libzim.writer.Creator):
     a segmentation fault at garbage collection (on exit mostly).
 
     Meaning you should exit right after an exception in your code (during zim creation)
-    Use workaround_nocancel=False to disable the workaround. """
+    Use workaround_nocancel=False to disable the workaround."""
 
     def __init__(
         self,
@@ -158,13 +158,13 @@ class Creator(libzim.writer.Creator):
         should_compress: Optional[bool] = False,
         should_index: Optional[bool] = False,
     ):
-        """ Add a File or conent at a specified url and get its longurl
+        """Add a File or conent at a specified url and get its longurl
 
-            mime_type is retrieved from content (magic) if not specified
-            namespace is computed from mime_type if not specified
+        mime_type is retrieved from content (magic) if not specified
+        namespace is computed from mime_type if not specified
 
-            Content specified either from content (str|bytes) arg or read from fpath
-            Source file can be safely deleted after this call. """
+        Content specified either from content (str|bytes) arg or read from fpath
+        Source file can be safely deleted after this call."""
         if fpath is None and content is None:
             raise ValueError("One of fpath or content is required")
 
@@ -197,13 +197,13 @@ class Creator(libzim.writer.Creator):
         should_compress: Optional[bool] = True,
         rewrite_links: Optional[bool] = False,
     ):
-        """ Add an HTML file or content into A/ namespace (url is without namespace)
+        """Add an HTML file or content into A/ namespace (url is without namespace)
 
-            Saves specifying the namespace and MIME-type and also provides easy access
-            to links rewriting and HTML-friendly defaults (compress, index)
+        Saves specifying the namespace and MIME-type and also provides easy access
+        to links rewriting and HTML-friendly defaults (compress, index)
 
-            Content specified either from content (str) argument or read from fpath
-            Source file can be safely deleted after this call. """
+        Content specified either from content (str) argument or read from fpath
+        Source file can be safely deleted after this call."""
 
         return self._add_rewriten(
             namespace="A",
@@ -227,13 +227,13 @@ class Creator(libzim.writer.Creator):
         should_index: Optional[bool] = False,
         rewrite_links: Optional[bool] = False,
     ):
-        """ Add a CSS file or content to - namespace (url is without namespace)
+        """Add a CSS file or content to - namespace (url is without namespace)
 
-            Saves specifying the namespace and MIME-type and also provides easy access
-            to links rewriting and CSS-friendly defaults (compress, no index)
+        Saves specifying the namespace and MIME-type and also provides easy access
+        to links rewriting and CSS-friendly defaults (compress, no index)
 
-            Content specified either from content (str) argument or read from fpath
-            Source file can be safely deleted after this call. """
+        Content specified either from content (str) argument or read from fpath
+        Source file can be safely deleted after this call."""
         return self._add_rewriten(
             namespace="-",
             url=url,
@@ -260,15 +260,15 @@ class Creator(libzim.writer.Creator):
         fpath: Optional[pathlib.Path] = None,
         content: Optional[str] = None,
     ):
-        """ Add a text article after rewriting its content with custom rewriter
+        """Add a text article after rewriting its content with custom rewriter
 
-            Generic function not intended for direct access.
+        Generic function not intended for direct access.
 
-            Allows adding an article while automatically rewriting its content using
-            the specified rewriter (text only)
+        Allows adding an article while automatically rewriting its content using
+        the specified rewriter (text only)
 
-            Content specified either from content (str) argument or read from fpath
-            Source file can be safely deleted after this call. """
+        Content specified either from content (str) argument or read from fpath
+        Source file can be safely deleted after this call."""
         if fpath is None and content is None:
             raise ValueError("One of fpath or content is required")
         if fpath and not content:
@@ -290,13 +290,13 @@ class Creator(libzim.writer.Creator):
         return to_longurl(namespace, url)
 
     def add_redirect(self, url: str, redirect_url: str, title: Optional[str] = ""):
-        """ Add a redirect from (full) url to (full) redirect_url
+        """Add a redirect from (full) url to (full) redirect_url
 
-            Both url and redirect_url should include namespace.
-            Cross-namespace redirects are allowed.
+        Both url and redirect_url should include namespace.
+        Cross-namespace redirects are allowed.
 
-            title is optional. when set, the redirect itself
-            can be found on suggestions (indexed) """
+        title is optional. when set, the redirect itself
+        can be found on suggestions (indexed)"""
         self.add_zim_article(RedirectArticle(url, redirect_url, title))
         return url
 

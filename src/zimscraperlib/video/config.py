@@ -139,28 +139,28 @@ class Config(dict):
 
     @classmethod
     def build_from(cls, **params):
-        """ build a Config easily via shortcut params
+        """build a Config easily via shortcut params
 
-            video_codec: codec for output audio stream. more info - https://ffmpeg.org/ffmpeg-codecs.html#Video-Encoders
-                values: h264 | libvpx | libx264 | libx265 | xxx
-            audio_codec: codec for output audio stream. more info - https://ffmpeg.org/ffmpeg-codecs.html#Audio-Encoders
-                values: aac | mp3 | flac | opus | libvorbis | xxx
-            max_video_bitrate: maximum size per second for video stream
-                values: 128k | 1m
-            min_video_bitrate: minimum size per second for video stream
-                values: 128k | 1m
-            target_video_bitrate: tentative size per second for video stream
-                values: 384k | 1m
-            target_audio_bitrate: tentative size per second for audio stream
-                values: 48k | 128k
-            buffersize: decoder buffer size
-                values: 1000k | 1m
-            audio_sampling_rate: number of audio samples per second
-                values: 44100 | 48000
-            quantizer_scale_range: tuple of min and max values of video quantizer scale (VBR)
-                values: (21, 35) | (68, 97) | (x, y)
-            video_scale: video frame scale. more info - https://trac.ffmpeg.org/wiki/Scaling
-                values: 480:320 | 320:240 | width:height
+        video_codec: codec for output audio stream. more info - https://ffmpeg.org/ffmpeg-codecs.html#Video-Encoders
+            values: h264 | libvpx | libx264 | libx265 | xxx
+        audio_codec: codec for output audio stream. more info - https://ffmpeg.org/ffmpeg-codecs.html#Audio-Encoders
+            values: aac | mp3 | flac | opus | libvorbis | xxx
+        max_video_bitrate: maximum size per second for video stream
+            values: 128k | 1m
+        min_video_bitrate: minimum size per second for video stream
+            values: 128k | 1m
+        target_video_bitrate: tentative size per second for video stream
+            values: 384k | 1m
+        target_audio_bitrate: tentative size per second for audio stream
+            values: 48k | 128k
+        buffersize: decoder buffer size
+            values: 1000k | 1m
+        audio_sampling_rate: number of audio samples per second
+            values: 44100 | 48000
+        quantizer_scale_range: tuple of min and max values of video quantizer scale (VBR)
+            values: (21, 35) | (68, 97) | (x, y)
+        video_scale: video frame scale. more info - https://trac.ffmpeg.org/wiki/Scaling
+            values: 480:320 | 320:240 | width:height
         """
         config = cls()
         config.update_from(**params)

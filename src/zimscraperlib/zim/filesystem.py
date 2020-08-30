@@ -114,9 +114,9 @@ class FileArticle(libzim.writer.Article):
 
 
 class FaviconArticle(FileArticle):
-    """ -/favicon is an expected Article that'd be a redirect to a real image
+    """-/favicon is an expected Article that'd be a redirect to a real image
 
-        Instanciate it with root foler and fpath of the actual image """
+    Instanciate it with root foler and fpath of the actual image"""
 
     def get_url(self) -> str:
         return "-/favicon"
@@ -143,16 +143,16 @@ def add_to_zim(
     fpath: pathlib.Path,
     rewrite_links: Optional[bool],
 ):
-    """ recursively add a path to a zim file
+    """recursively add a path to a zim file
 
-        root:
-            main folder containing all content
-        zim_file:
-            zim Creator
-        fpath:
-            path to the file/folder to add to the ZIM
-        rewrite_links:
-            whether HTML and CSS files should have their links fixed for namespaces """
+    root:
+        main folder containing all content
+    zim_file:
+        zim Creator
+    fpath:
+        path to the file/folder to add to the ZIM
+    rewrite_links:
+        whether HTML and CSS files should have their links fixed for namespaces"""
     if fpath.is_dir():
         for leaf in fpath.iterdir():
             add_to_zim(root, zim_file, leaf, rewrite_links)
@@ -201,15 +201,15 @@ def make_zim_file(
     rewrite_links: bool = True,
     workaround_nocancel: bool = True,
 ):
-    """ Creates a zimwriterfs-like ZIM file at {fpath} from {build_dir}
+    """Creates a zimwriterfs-like ZIM file at {fpath} from {build_dir}
 
-        main_page: url (without A/ ns) or article to serve as main_page (must be in A/)
-        favicon: relative path to favicon file in build_dir
-        tags: list of str tags to add to meta
-        redirects: list of (src, dst, title) tuple to create redirects from
-        rewrite_links controls whether to rewrite HTML/CSS content
-          -> add namespaces to relative links
-        workaround_nocancel: disable workaround to prevent ZIM creation on error """
+    main_page: url (without A/ ns) or article to serve as main_page (must be in A/)
+    favicon: relative path to favicon file in build_dir
+    tags: list of str tags to add to meta
+    redirects: list of (src, dst, title) tuple to create redirects from
+    rewrite_links controls whether to rewrite HTML/CSS content
+      -> add namespaces to relative links
+    workaround_nocancel: disable workaround to prevent ZIM creation on error"""
 
     # sanity checks
     if not build_dir.exists() or not build_dir.is_dir():

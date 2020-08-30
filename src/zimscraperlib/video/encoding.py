@@ -15,15 +15,15 @@ from ..logging import nicer_args_join
 def reencode(
     src_path, dst_path, ffmpeg_args, delete_src=False, with_process=False, failsafe=True
 ):
-    """ Runs ffmpeg with given ffmpeg_args
+    """Runs ffmpeg with given ffmpeg_args
 
-        Arguments -
-            src_path - Path to source file
-            dst_path - Path to destination file
-            ffmpeg_args - A list of ffmpeg arguments
-            delete_src - Delete source file after convertion
-            with_process - Optionally return the output from ffmpeg (stderr and stdout)
-            failsafe - Run in failsafe mode
+    Arguments -
+        src_path - Path to source file
+        dst_path - Path to destination file
+        ffmpeg_args - A list of ffmpeg arguments
+        delete_src - Delete source file after convertion
+        with_process - Optionally return the output from ffmpeg (stderr and stdout)
+        failsafe - Run in failsafe mode
     """
 
     with tempfile.TemporaryDirectory() as tmp_dir:

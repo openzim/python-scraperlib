@@ -15,14 +15,14 @@ from ..constants import ALPHA_NOT_SUPPORTED
 def convert_image(
     src: pathlib.Path, dst: pathlib.Path, **params: Optional[dict]
 ) -> None:
-    """ convert an image file from one format to another
-        params: Image.save() parameters. Depends on dest format.
-        params can include the following keys:
-         - fmt: specify the dest format (otherwise guessed from extension)
-                ex: JPEG, PNG, BMP (and other PIL formats)
-         - colorspace: convert to this colorspace. Otherwise not converted unless
-         target format has no halpha channel while source had. In this case converted
-         to RGB. ex: RGB, ARGB, CMYK (and other PIL colorspaces) """
+    """convert an image file from one format to another
+    params: Image.save() parameters. Depends on dest format.
+    params can include the following keys:
+     - fmt: specify the dest format (otherwise guessed from extension)
+            ex: JPEG, PNG, BMP (and other PIL formats)
+     - colorspace: convert to this colorspace. Otherwise not converted unless
+     target format has no halpha channel while source had. In this case converted
+     to RGB. ex: RGB, ARGB, CMYK (and other PIL colorspaces)"""
 
     colorspace = params.get("colorspace")  # requested colorspace
     fmt = params.pop("fmt").upper() if "fmt" in params else None  # requested format

@@ -55,7 +55,13 @@ def test_installed_script():
 
 
 def test_missing_param():
-    script = subprocess.run([sys.executable, "-m", "zimscraperlib.fix_ogvjs_dist",])
+    script = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "zimscraperlib.fix_ogvjs_dist",
+        ]
+    )
     assert script.returncode == 1
 
 

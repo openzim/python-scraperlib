@@ -6,11 +6,11 @@ from .config import Config
 
 
 class VoiceMp3Low(Config):
-    """ Low quality mp3 audio
+    """Low quality mp3 audio
 
-        44Khz audio sampling
-        48k audio bitrate
-        audio-only """
+    44Khz audio sampling
+    48k audio bitrate
+    audio-only"""
 
     VERSION = 1
 
@@ -23,12 +23,12 @@ class VoiceMp3Low(Config):
 
 
 class VideoWebmLow(Config):
-    """ Low Quality webm video
+    """Low Quality webm video
 
-        480:h format with height adjusted to keep aspect ratio
-        300k video bitrate
-        48k audio bitrate
-        highly degraded quality (30, 42) """
+    480:h format with height adjusted to keep aspect ratio
+    300k video bitrate
+    48k audio bitrate
+    highly degraded quality (30, 42)"""
 
     VERSION = 1
 
@@ -48,12 +48,12 @@ class VideoWebmLow(Config):
 
 
 class VideoMp4Low(Config):
-    """ Low Quality mp4 video
+    """Low Quality mp4 video
 
-        480:h format with height adjusted to keep aspect ratio
-        300k video bitrate
-        48k audio bitrate
-        highly degraded quality (30, 42) """
+    480:h format with height adjusted to keep aspect ratio
+    300k video bitrate
+    48k audio bitrate
+    highly degraded quality (30, 42)"""
 
     VERSION = 1
 

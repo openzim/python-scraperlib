@@ -50,19 +50,19 @@ def _(text):
 
 
 def setlocale(root_dir, locale_name):
-    """ set the desired locale for gettext.
+    """set the desired locale for gettext.
 
-        call this early """
+    call this early"""
     return Locale.setup(root_dir / "locale", locale_name)
 
 
 def get_iso_lang_data(lang):
-    """ ISO-639-x languages details for lang. Raises NotFound
+    """ISO-639-x languages details for lang. Raises NotFound
 
-        Included keys: iso-639-1, iso-639-2b, iso-639-2t, iso-639-3, iso-639-5
-                       english, iso_types
+    Included keys: iso-639-1, iso-639-2b, iso-639-2t, iso-639-3, iso-639-5
+                   english, iso_types
 
-        See get_language_details() for details """
+    See get_language_details() for details"""
 
     iso_types = []
 
@@ -90,9 +90,9 @@ def get_iso_lang_data(lang):
 
 
 def find_language_names(query, lang_data={}):
-    """ (native, english) language names for lang with help from language_details dict
+    """(native, english) language names for lang with help from language_details dict
 
-        Falls back to English name if available or query if not """
+    Falls back to English name if available or query if not"""
     try:
         query_locale = babel.Locale.parse(query)
         return query_locale.get_display_name(), query_locale.get_display_name("en")
@@ -120,18 +120,18 @@ def update_with_macro(lang_data, macro_data):
 
 
 def get_language_details(query, failsafe=False):
-    """ language details dict from query.
+    """language details dict from query.
 
-        Raises NotFound or return `und` language details if failsafe
+    Raises NotFound or return `und` language details if failsafe
 
-        iso-639-1: str ISO-639-1 language code
-        iso-639-2b: str ISO-639-2b language code
-        iso-639-2t: str ISO-639-2t language code
-        iso-639-3: str ISO-639-3 language code
-        iso-639-5: str ISO-639-5 language code
-        english: str language name in English
-        native: str language name in is native language
-        iso_types: [str] list of supported iso types
+    iso-639-1: str ISO-639-1 language code
+    iso-639-2b: str ISO-639-2b language code
+    iso-639-2t: str ISO-639-2t language code
+    iso-639-3: str ISO-639-3 language code
+    iso-639-5: str ISO-639-5 language code
+    english: str language name in English
+    native: str language name in is native language
+    iso_types: [str] list of supported iso types
 
     """
 

@@ -21,10 +21,10 @@ def resize_image(
     allow_upscaling: Optional[bool] = True,
     **params: Optional[dict],
 ) -> None:
-    """ resize an image file to requested dimensions
+    """resize an image file to requested dimensions
 
-        methods: width, height, cover
-        allow upscaling: upscale image first, preserving aspect ratio if required """
+    methods: width, height, cover
+    allow upscaling: upscale image first, preserving aspect ratio if required"""
     with PIL.Image.open(src) as image:
         # preserve image format as resize() does not transmit it into new object
         image_format = image.format
