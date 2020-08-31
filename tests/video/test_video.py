@@ -106,7 +106,11 @@ def test_config_build_from():
             "video.webm",
             {"codecs": ["vp9", "opus"], "duration": 2, "bitrate": 336650},
         ),
-        ("mp3", "audio.mp3", {"codecs": ["mp3"], "duration": 2, "bitrate": 129066},),
+        (
+            "mp3",
+            "audio.mp3",
+            {"codecs": ["mp3"], "duration": 2, "bitrate": 129066},
+        ),
     ],
 )
 def test_get_media_info(media_format, media, expected, test_files):
@@ -278,8 +282,18 @@ def test_reencode_media(src, dest, ffmpeg_args, expected, test_files):
 @pytest.mark.parametrize(
     "src,dest,ffmpeg_args,delete_src",
     [
-        ("video.mp4", "video.webm", VideoWebmLow().to_ffmpeg_args(), True,),
-        ("video.mp4", "audio.mp3", VoiceMp3Low().to_ffmpeg_args(), False,),
+        (
+            "video.mp4",
+            "video.webm",
+            VideoWebmLow().to_ffmpeg_args(),
+            True,
+        ),
+        (
+            "video.mp4",
+            "audio.mp3",
+            VoiceMp3Low().to_ffmpeg_args(),
+            False,
+        ),
     ],
 )
 def test_reencode_delete_src(src, dest, ffmpeg_args, delete_src, test_files):
@@ -299,8 +313,18 @@ def test_reencode_delete_src(src, dest, ffmpeg_args, delete_src, test_files):
 @pytest.mark.parametrize(
     "src,dest,ffmpeg_args,return_output",
     [
-        ("video.mp4", "video.webm", VideoWebmLow().to_ffmpeg_args(), True,),
-        ("video.mp4", "audio.mp3", VoiceMp3Low().to_ffmpeg_args(), False,),
+        (
+            "video.mp4",
+            "video.webm",
+            VideoWebmLow().to_ffmpeg_args(),
+            True,
+        ),
+        (
+            "video.mp4",
+            "audio.mp3",
+            VoiceMp3Low().to_ffmpeg_args(),
+            False,
+        ),
     ],
 )
 def test_reencode_return_ffmpeg_output(
@@ -308,7 +332,12 @@ def test_reencode_return_ffmpeg_output(
 ):
     with tempfile.TemporaryDirectory() as t, pathlib.Path(t) as temp_dir:
         ret = copy_media_and_reencode(
-            temp_dir, src, dest, ffmpeg_args, test_files, with_process=return_output,
+            temp_dir,
+            src,
+            dest,
+            ffmpeg_args,
+            test_files,
+            with_process=return_output,
         )
         if return_output:
             success, process = ret
@@ -322,8 +351,18 @@ def test_reencode_return_ffmpeg_output(
 @pytest.mark.parametrize(
     "src,dest,ffmpeg_args,failsafe",
     [
-        ("video.webm", "video.mp4", ["-qmin", "-5"], True,),
-        ("video.webm", "video.mp4", ["-qmin", "-5"], False,),
+        (
+            "video.webm",
+            "video.mp4",
+            ["-qmin", "-5"],
+            True,
+        ),
+        (
+            "video.webm",
+            "video.mp4",
+            ["-qmin", "-5"],
+            False,
+        ),
     ],
 )
 def test_reencode_failsafe(src, dest, ffmpeg_args, failsafe, test_files):
@@ -331,7 +370,12 @@ def test_reencode_failsafe(src, dest, ffmpeg_args, failsafe, test_files):
         if not failsafe:
             with pytest.raises(subprocess.CalledProcessError) as exc_info:
                 copy_media_and_reencode(
-                    temp_dir, src, dest, ffmpeg_args, test_files, failsafe=failsafe,
+                    temp_dir,
+                    src,
+                    dest,
+                    ffmpeg_args,
+                    test_files,
+                    failsafe=failsafe,
                 )
             assert len(exc_info.value.stdout) > 0
 

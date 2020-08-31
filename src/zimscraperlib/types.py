@@ -41,12 +41,12 @@ def get_mime_for_name(
     fallback: Optional[str] = FALLBACK_MIME,
     no_ext_to=ARTICLE_MIME,
 ) -> str:
-    """ MIME-Type string from a filename
+    """MIME-Type string from a filename
 
-        filename is a string, not a path (doesn't need to exist)
-        MIME only guessed from file extension and not actual content.
+    filename is a string, not a path (doesn't need to exist)
+    MIME only guessed from file extension and not actual content.
 
-        Filename with no extension are mapped to `no_ext_to` """
+    Filename with no extension are mapped to `no_ext_to`"""
     try:
         filename = pathlib.Path(filename)
         if not filename.suffix:

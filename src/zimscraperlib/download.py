@@ -10,9 +10,9 @@ from . import logger
 
 
 def save_file(url, fpath, timeout=30, retries=5):
-    """ download a file from its URL, and return headers
+    """download a file from its URL, and return headers
 
-        Only recommended to be used with small files/HTMLs """
+    Only recommended to be used with small files/HTMLs"""
 
     for left_attempts in range(retries, -1, -1):
         try:

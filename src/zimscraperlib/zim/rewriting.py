@@ -44,9 +44,9 @@ def find_url(root: pathlib.Path, fpath: pathlib.Path, mime_type: str) -> str:
 
 
 def find_title_in(content: Union[str, BinaryIO, TextIO], mime_type: str) -> str:
-    """ Extracted title from HTML content
+    """Extracted title from HTML content
 
-        blank on failure to extract and non-HTML files """
+    blank on failure to extract and non-HTML files"""
     if mime_type != ARTICLE_MIME:
         return ""
     try:
@@ -65,9 +65,9 @@ def find_title_in_file(fpath: pathlib.Path, mime_type: str) -> str:
 
 
 def find_language_in(content: Union[str, BinaryIO, TextIO], mime_type: str) -> str:
-    """ Extracted language from HTML content
+    """Extracted language from HTML content
 
-        blank on failure to extract and non-HTML files """
+    blank on failure to extract and non-HTML files"""
     if mime_type != ARTICLE_MIME:
         return ""
     mapping = {"html": ["lang", "xml:lang"], "body": ["lang"], "meta": ["content"]}
@@ -137,9 +137,9 @@ def fix_target_for(
 def fix_file_target_for(
     root: pathlib.Path, source: pathlib.Path, target: pathlib.Path, require_target: bool
 ) -> str:
-    """ fixed link from source to target: relative and namespace aware
+    """fixed link from source to target: relative and namespace aware
 
-        Links to non-local file targets are kept as-is if require_target is set """
+    Links to non-local file targets are kept as-is if require_target is set"""
     fpath = root / target
     if require_target and not fpath.exists():
         return str(target)
@@ -152,10 +152,10 @@ def fix_file_target_for(
 
 
 def fix_links_in_html(url: str, content: str) -> str:
-    """ HTML with all links fixed to namespace-aware ones
+    """HTML with all links fixed to namespace-aware ones
 
-        - url: target URL of this HTML in ZIM (with namespace)
-        - content: HTML text to rewrite """
+    - url: target URL of this HTML in ZIM (with namespace)
+    - content: HTML text to rewrite"""
     mapping = {
         "link": "href",
         "a": "href",
@@ -205,12 +205,12 @@ def fix_links_in_html_file(
     root: Optional[pathlib.Path] = None,
     in_place: Optional[bool] = False,
 ) -> Union[str, None]:
-    """ HTML with all links fixed to namespace-aware ones
+    """HTML with all links fixed to namespace-aware ones
 
-        - url: target URL of this HTML in ZIM (with namespace)
-        - root: root folder of content (to guess url from)
-        One of `url` or `root` is required
-        - in_place: overwrite fpath with the fixed version. cannot be undone """
+    - url: target URL of this HTML in ZIM (with namespace)
+    - root: root folder of content (to guess url from)
+    One of `url` or `root` is required
+    - in_place: overwrite fpath with the fixed version. cannot be undone"""
     if not url and not root:
         raise ValueError("one of url or root is required")
 
@@ -227,11 +227,11 @@ def fix_links_in_html_file(
 def fix_urls_in_css(
     url: str, content: str, folder: Optional[pathlib.Path] = None
 ) -> str:
-    """ CSS text with all url() fixed to namespace-aware ones (and fonts as data:)
+    """CSS text with all url() fixed to namespace-aware ones (and fonts as data:)
 
-        - url: target URL of this CSS in ZIM (no namespace)
-        - content: CSS text to rewrite
-        - folder: “parent” folder of CSS to find font files from """
+    - url: target URL of this CSS in ZIM (no namespace)
+    - content: CSS text to rewrite
+    - folder: “parent” folder of CSS to find font files from"""
 
     def encapsulate(url):
         return f"url({url})"
@@ -280,13 +280,13 @@ def fix_urls_in_css_file(
     root: Optional[pathlib.Path] = None,
     in_place: Optional[bool] = False,
 ) -> Union[str, None]:
-    """ Fix CSS links from a file. Multiple behaviors
+    """Fix CSS links from a file. Multiple behaviors
 
-        - fpath: path to CSS file on disk
-        - url: target URL of this CSS in ZIM (no namespace)
-        - root: root folder of content (to guess url from)
-        One of `url` or `root` is required
-        - in_place: overwrite fpath with the fixed version. cannot be undone """
+    - fpath: path to CSS file on disk
+    - url: target URL of this CSS in ZIM (no namespace)
+    - root: root folder of content (to guess url from)
+    One of `url` or `root` is required
+    - in_place: overwrite fpath with the fixed version. cannot be undone"""
     if not url and not root:
         raise ValueError("one of url or root is required")
 

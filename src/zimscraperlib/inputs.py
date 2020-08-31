@@ -11,18 +11,18 @@ from .download import save_file
 
 
 def handle_user_provided_file(source=None, dest=None, in_dir=None, nocopy=False):
-    """ downloads or copies a user provided file (URL or path)
+    """downloads or copies a user provided file (URL or path)
 
-        args:
-            source: URL or path to a file (or None)
-            dest:   pathlib.Path where to save the resulting file
-                    using temp filename if None
-            in_dir: pathlib.Path to gen dest within if specified
-            nocopy: don't make a copy of source if a path was provided.
-                    return source value instead
-        return:
-            pathlib.Path to handled file (or None)
-        """
+    args:
+        source: URL or path to a file (or None)
+        dest:   pathlib.Path where to save the resulting file
+                using temp filename if None
+        in_dir: pathlib.Path to gen dest within if specified
+        nocopy: don't make a copy of source if a path was provided.
+                return source value instead
+    return:
+        pathlib.Path to handled file (or None)
+    """
     if not source or not source.strip():
         return None
 

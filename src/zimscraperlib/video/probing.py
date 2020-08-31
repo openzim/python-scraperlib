@@ -7,11 +7,11 @@ import subprocess
 
 
 def get_media_info(src_path):
-    """ dict of file's details from ffprobe
+    """dict of file's details from ffprobe
 
     codecs: list of codecs in use
     duration: file duration in seconds
-    bitrate: file's main bitrate """
+    bitrate: file's main bitrate"""
 
     args = [
         "ffprobe",

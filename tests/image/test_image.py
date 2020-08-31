@@ -63,7 +63,8 @@ def test_colors_jpg_palette(jpg_image):
 
 
 @pytest.mark.parametrize(
-    "fmt,params", [("png", None), ("jpg", {"quality": 50})],
+    "fmt,params",
+    [("png", None), ("jpg", {"quality": 50})],
 )
 def test_save_image(png_image, jpg_image, tmp_path, fmt, params):
     src, dst = get_src_dst(png_image, jpg_image, tmp_path, fmt)
@@ -76,7 +77,8 @@ def test_save_image(png_image, jpg_image, tmp_path, fmt, params):
 
 
 @pytest.mark.parametrize(
-    "fmt", ["png", "jpg"],
+    "fmt",
+    ["png", "jpg"],
 )
 def test_resize_thumbnail(png_image, jpg_image, tmp_path, fmt):
     src, dst = get_src_dst(png_image, jpg_image, tmp_path, fmt)
@@ -89,7 +91,8 @@ def test_resize_thumbnail(png_image, jpg_image, tmp_path, fmt):
 
 
 @pytest.mark.parametrize(
-    "fmt", ["png", "jpg"],
+    "fmt",
+    ["png", "jpg"],
 )
 def test_resize_width(png_image, jpg_image, tmp_path, fmt):
     src, dst = get_src_dst(png_image, jpg_image, tmp_path, fmt)
@@ -101,7 +104,8 @@ def test_resize_width(png_image, jpg_image, tmp_path, fmt):
 
 
 @pytest.mark.parametrize(
-    "fmt", ["png", "jpg"],
+    "fmt",
+    ["png", "jpg"],
 )
 def test_resize_height(png_image, jpg_image, tmp_path, fmt):
     src, dst = get_src_dst(png_image, jpg_image, tmp_path, fmt)
@@ -113,7 +117,8 @@ def test_resize_height(png_image, jpg_image, tmp_path, fmt):
 
 
 @pytest.mark.parametrize(
-    "fmt", ["png", "jpg"],
+    "fmt",
+    ["png", "jpg"],
 )
 def test_resize_crop(png_image, jpg_image, tmp_path, fmt):
     src, dst = get_src_dst(png_image, jpg_image, tmp_path, fmt)
@@ -126,7 +131,8 @@ def test_resize_crop(png_image, jpg_image, tmp_path, fmt):
 
 
 @pytest.mark.parametrize(
-    "fmt", ["png", "jpg"],
+    "fmt",
+    ["png", "jpg"],
 )
 def test_resize_cover(png_image, jpg_image, tmp_path, fmt):
     src, dst = get_src_dst(png_image, jpg_image, tmp_path, fmt)
@@ -139,7 +145,8 @@ def test_resize_cover(png_image, jpg_image, tmp_path, fmt):
 
 
 @pytest.mark.parametrize(
-    "fmt", ["png", "jpg"],
+    "fmt",
+    ["png", "jpg"],
 )
 def test_resize_contain(png_image, jpg_image, tmp_path, fmt):
     src, dst = get_src_dst(png_image, jpg_image, tmp_path, fmt)
@@ -152,7 +159,8 @@ def test_resize_contain(png_image, jpg_image, tmp_path, fmt):
 
 
 @pytest.mark.parametrize(
-    "fmt", ["png", "jpg"],
+    "fmt",
+    ["png", "jpg"],
 )
 def test_resize_upscale(png_image, jpg_image, tmp_path, fmt):
     src, dst = get_src_dst(png_image, jpg_image, tmp_path, fmt)
@@ -165,7 +173,8 @@ def test_resize_upscale(png_image, jpg_image, tmp_path, fmt):
 
 
 @pytest.mark.parametrize(
-    "fmt", ["png", "jpg"],
+    "fmt",
+    ["png", "jpg"],
 )
 def test_resize_small_image_error(png_image, jpg_image, tmp_path, fmt):
     src, dst = get_src_dst(png_image, jpg_image, tmp_path, fmt)
@@ -207,7 +216,8 @@ def test_change_image_format_defaults(png_image, jpg_image, tmp_path):
 
 
 @pytest.mark.parametrize(
-    "fmt,exp_size", [("png", 128), ("jpg", 128)],
+    "fmt,exp_size",
+    [("png", 128), ("jpg", 128)],
 )
 def test_create_favicon(png_image, jpg_image, tmp_path, fmt, exp_size):
     src, dst = get_src_dst(png_image, jpg_image, tmp_path, fmt)
@@ -220,7 +230,8 @@ def test_create_favicon(png_image, jpg_image, tmp_path, fmt, exp_size):
 
 
 @pytest.mark.parametrize(
-    "fmt", ["png", "jpg"],
+    "fmt",
+    ["png", "jpg"],
 )
 def test_create_favicon_square(square_png_image, square_jpg_image, tmp_path, fmt):
     src, dst = get_src_dst(square_png_image, square_jpg_image, tmp_path, fmt)
@@ -233,7 +244,8 @@ def test_create_favicon_square(square_png_image, square_jpg_image, tmp_path, fmt
 
 
 @pytest.mark.parametrize(
-    "fmt", ["png", "jpg"],
+    "fmt",
+    ["png", "jpg"],
 )
 def test_wrong_extension(square_png_image, square_jpg_image, tmp_path, fmt):
     src, dst = get_src_dst(square_png_image, square_jpg_image, tmp_path, fmt)

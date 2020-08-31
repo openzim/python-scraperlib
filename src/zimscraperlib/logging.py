@@ -25,18 +25,18 @@ def getLogger(
     deps_level=logging.WARNING,
     additional_deps=[],
 ):
-    """ configured logger for most usages
+    """configured logger for most usages
 
-        - name: name of your logger
-        - level: console level
-        - log_format: format string
-        - console: False | True (sys.stdout) | sys.stdout | sys.stderr
-        - file: False | pathlib.Path
-        - file_level: log level for file or console_level
-        - file_format: format string for file or log_format
-        - deps_level: log level for idendified verbose dependencies
-        - additional_deps: additional modules names of verbose dependencies
-            to assign deps_level to """
+    - name: name of your logger
+    - level: console level
+    - log_format: format string
+    - console: False | True (sys.stdout) | sys.stdout | sys.stderr
+    - file: False | pathlib.Path
+    - file_level: log level for file or console_level
+    - file_format: format string for file or log_format
+    - deps_level: log level for idendified verbose dependencies
+    - additional_deps: additional modules names of verbose dependencies
+        to assign deps_level to"""
 
     # align zimscraperlib logging level to that of scraper
     logging.Logger(NAME).setLevel(level)

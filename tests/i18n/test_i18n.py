@@ -131,10 +131,22 @@ def test_selocale_unsupported(tmp_path):
                 "native": "中文 (简体, 中国)",
             },
         ),
-        ("fake-lang", None,),
-        ("fake", None,),
-        ("C#", None,),
-        ("fks", None,),
+        (
+            "fake-lang",
+            None,
+        ),
+        (
+            "fake",
+            None,
+        ),
+        (
+            "C#",
+            None,
+        ),
+        (
+            "fks",
+            None,
+        ),
         (
             "arq",
             {
