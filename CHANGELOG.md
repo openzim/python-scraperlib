@@ -1,6 +1,8 @@
 # 1.3.2.dev0
 
 * fixed rewriting of links with empty target
+* added support for image optimization using `zimscraperlib.image.optimization` for webp, gif, jpeg and png formats
+* added `format_for()` in `zimscraperlib.image.probing` to get PIL image format from the suffix
 
 # 1.3.1
 

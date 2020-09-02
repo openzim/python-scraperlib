@@ -10,19 +10,23 @@ import shutil
 from PIL import Image
 from resizeimage.imageexceptions import ImageSizeError
 
-from zimscraperlib.image.probing import get_colors, is_hex_color
+from zimscraperlib.image.probing import get_colors, is_hex_color, format_for
 from zimscraperlib.image.transformation import resize_image
 from zimscraperlib.image.convertion import create_favicon, convert_image
-from zimscraperlib.image.optimization import ImageOptimizer
+from zimscraperlib.image.optimization import optimize_image, ensure_matches
 from zimscraperlib.image import save_image
 from zimscraperlib.image.presets import (
     WebpLow,
+    WebpMedium,
     WebpHigh,
     GifLow,
+    GifMedium,
     GifHigh,
     PngLow,
+    PngMedium,
     PngHigh,
     JpegLow,
+    JpegMedium,
     JpegHigh,
 )
 
@@ -279,45 +283,11 @@ def test_wrong_extension(square_png_image, square_jpg_image, tmp_path, fmt):
 
 @pytest.mark.parametrize(
     "fmt",
-    ["png", "jpg"],
-)
-def test_optimize_png_jpg(png_image, jpg_image, tmp_path, fmt):
-    optimizer = ImageOptimizer()
-    src, dst = get_src_dst(tmp_path, fmt, png_image=png_image, jpg_image=jpg_image)
-    optimizer.optimize_png_jpg(src, dst, image_format=fmt, override_options={})
-    assert os.path.getsize(dst) < os.path.getsize(src)
-
-
-def test_optimize_gif(gif_image, tmp_path):
-    optimizer = ImageOptimizer()
-    src = gif_image
-    dst = tmp_path / "out.gif"
-    override_options = {
-        "optimize_level": 3,
-        "max_colors": 256,
-        "lossiness": 80,
-        "no_extensions": True,
-        "interlace": True,
-    }
-    optimizer.optimize_gif(src, dst, override_options=override_options)
-    assert os.path.getsize(dst) < os.path.getsize(src)
-
-
-def test_optimize_webp(webp_image, tmp_path):
-    optimizer = ImageOptimizer()
-    src = webp_image
-    dst = tmp_path / "out.webp"
-    override_options = {"lossless": False, "quality": 50, "method": 1}
-    optimizer.optimize_webp(src, dst, override_options=override_options)
-    assert os.path.getsize(dst) < os.path.getsize(src)
-
-
-@pytest.mark.parametrize(
-    "fmt",
     ["png", "jpg", "gif", "webp"],
 )
-def test_optimize_image(png_image, jpg_image, gif_image, webp_image, tmp_path, fmt):
-    optimizer = ImageOptimizer()
+def test_optimize_image_default(
+    png_image, jpg_image, gif_image, webp_image, tmp_path, fmt
+):
     src, dst = get_src_dst(
         tmp_path,
         fmt,
@@ -326,58 +296,68 @@ def test_optimize_image(png_image, jpg_image, gif_image, webp_image, tmp_path, f
         gif_image=gif_image,
         webp_image=webp_image,
     )
-    optimizer.optimize_image(src, dst, delete_src=False)
+    optimize_image(src, dst, delete_src=False)
     assert os.path.getsize(dst) < os.path.getsize(src)
 
 
 def test_optimize_image_del_src(png_image, tmp_path):
-    optimizer = ImageOptimizer()
     shutil.copy(png_image, tmp_path)
     src = tmp_path / png_image.name
     dst = tmp_path / "out.png"
     org_size = os.path.getsize(src)
-    optimizer.optimize_image(src, dst, delete_src=True)
+    optimize_image(src, dst, delete_src=True)
     assert os.path.getsize(dst) < org_size
     assert not src.exists()
 
 
-def test_optimize_image_file_not_found(tmp_path):
-    optimizer = ImageOptimizer()
-    with pytest.raises(FileNotFoundError, match="image is not present"):
-        optimizer.optimize_image(pathlib.Path("apple.png"), tmp_path / "out.png")
-
-
-def test_optimize_image_unsupported_format(font, tmp_path):
-    optimizer = ImageOptimizer()
-    with pytest.raises(Exception, match="not supported for optimization"):
-        optimizer.optimize_image(font, tmp_path / "out.png")
+def test_optimize_image_allow_convert(png_image, tmp_path):
+    shutil.copy(png_image, tmp_path)
+    src = tmp_path / png_image.name
+    dst = tmp_path / "out.webp"
+    optimize_image(src, dst, delete_src=True, allow_convert=True)
+    assert not src.exists()
+    assert dst.exists() and os.path.getsize(dst) > 0
 
 
 @pytest.mark.parametrize(
-    "preset,expected_version,options",
+    "preset,expected_version,options,fmt",
     [
-        (WebpLow(), 1, {"lossless": False, "quality": 40, "method": 6}),
-        (WebpHigh(), 1, {"lossless": False, "quality": 65, "method": 6}),
+        (WebpLow(), 1, {"lossless": False, "quality": 40, "method": 6}, "webp"),
+        (WebpMedium(), 1, {"lossless": False, "quality": 50, "method": 6}, "webp"),
+        (WebpHigh(), 1, {"lossless": False, "quality": 60, "method": 6}, "webp"),
         (
             GifLow(),
             1,
             {
                 "optimize_level": 3,
                 "max_colors": 256,
-                "lossiness": 90,
+                "lossiness": 80,
                 "no_extensions": True,
                 "interlace": True,
             },
+            "gif",
+        ),
+        (
+            GifMedium(),
+            1,
+            {
+                "optimize_level": 3,
+                "lossiness": 20,
+                "no_extensions": True,
+                "interlace": True,
+            },
+            "gif",
         ),
         (
             GifHigh(),
             1,
             {
-                "optimize_level": 1,
-                "lossiness": 50,
+                "optimize_level": 2,
+                "lossiness": None,
                 "no_extensions": True,
                 "interlace": True,
             },
+            "gif",
         ),
         (
             PngLow(),
@@ -388,16 +368,73 @@ def test_optimize_image_unsupported_format(font, tmp_path):
                 "max_colors": 256,
                 "fast_mode": False,
             },
+            "png",
+        ),
+        (
+            PngMedium(),
+            1,
+            {"reduce_colors": True, "remove_transparency": False, "fast_mode": False},
+            "png",
         ),
         (
             PngHigh(),
             1,
             {"reduce_colors": False, "remove_transparency": False, "fast_mode": True},
+            "png",
         ),
-        (JpegLow(), 1, {"quality": 40, "keep_exif": False, "fast_mode": False}),
-        (JpegHigh(), 1, {"quality": 70, "keep_exif": False, "fast_mode": True}),
+        (JpegLow(), 1, {"quality": 45, "keep_exif": False, "fast_mode": False}, "jpg"),
+        (
+            JpegMedium(),
+            1,
+            {"quality": 65, "keep_exif": False, "fast_mode": False},
+            "jpg",
+        ),
+        (JpegHigh(), 1, {"quality": 80, "keep_exif": True, "fast_mode": True}, "jpg"),
     ],
 )
-def test_preset(preset, expected_version, options):
+def test_preset(
+    preset,
+    expected_version,
+    options,
+    fmt,
+    png_image,
+    jpg_image,
+    gif_image,
+    webp_image,
+    tmp_path,
+):
     assert preset.VERSION == expected_version
     assert preset.options == options
+    src, dst = get_src_dst(
+        tmp_path,
+        fmt,
+        png_image=png_image,
+        jpg_image=jpg_image,
+        gif_image=gif_image,
+        webp_image=webp_image,
+    )
+    optimize_image(src, dst, delete_src=False, **preset.options)
+    assert os.path.getsize(dst) < os.path.getsize(src)
+
+
+def test_ensure_matches(webp_image):
+    with pytest.raises(ValueError, match="is not of format"):
+        ensure_matches(webp_image, "PNG")
+
+
+@pytest.mark.parametrize(
+    "fmt,expected",
+    [("png", "PNG"), ("jpg", "JPEG"), ("gif", "GIF"), ("webp", "WEBP")],
+)
+def test_format_for(
+    png_image, jpg_image, gif_image, webp_image, tmp_path, fmt, expected
+):
+    src, _ = get_src_dst(
+        tmp_path,
+        fmt,
+        png_image=png_image,
+        jpg_image=jpg_image,
+        gif_image=gif_image,
+        webp_image=webp_image,
+    )
+    assert format_for(src) == expected

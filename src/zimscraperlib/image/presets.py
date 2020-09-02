@@ -21,8 +21,8 @@ class WebpLow:
     }
 
 
-class WebpHigh:
-    """High quality WebP image
+class WebpMedium:
+    """Medium quality WebP image
 
     Lossy compression
     High quality (Pillow quality is 65)
@@ -32,7 +32,23 @@ class WebpHigh:
 
     options = {
         "lossless": False,
-        "quality": 65,
+        "quality": 50,
+        "method": 6,
+    }
+
+
+class WebpHigh:
+    """High quality WebP image
+
+    Lossy compression
+    High quality (Pillow quality is 60)
+    Quality/Speed tradeoff is High"""
+
+    VERSION = 1
+
+    options = {
+        "lossless": False,
+        "quality": 60,
         "method": 6,
     }
 
@@ -51,7 +67,26 @@ class GifLow:
     options = {
         "optimize_level": 3,
         "max_colors": 256,
-        "lossiness": 90,
+        "lossiness": 80,
+        "no_extensions": True,
+        "interlace": True,
+    }
+
+
+class GifMedium:
+    """Medium quality GIF image
+
+    Strong optimization level
+    Colors not limited
+    Low lossiness
+    No extensions in GIF
+    Interlaced frames"""
+
+    VERSION = 1
+
+    options = {
+        "optimize_level": 3,
+        "lossiness": 20,
         "no_extensions": True,
         "interlace": True,
     }
@@ -62,15 +97,15 @@ class GifHigh:
 
     Weak optimization level
     Colors not limited
-    Moderate lossiness
+    Lossless compression
     No extensions in GIF
     Interlaced frames"""
 
     VERSION = 1
 
     options = {
-        "optimize_level": 1,
-        "lossiness": 50,
+        "optimize_level": 2,
+        "lossiness": None,
         "no_extensions": True,
         "interlace": True,
     }
@@ -88,6 +123,21 @@ class PngLow:
         "reduce_colors": True,
         "remove_transparency": False,
         "max_colors": 256,
+        "fast_mode": False,
+    }
+
+
+class PngMedium:
+    """Medium quality PNG image
+
+    Reduce colors
+    Slower and better compression"""
+
+    VERSION = 1
+
+    options = {
+        "reduce_colors": True,
+        "remove_transparency": False,
         "fast_mode": False,
     }
 
@@ -117,7 +167,23 @@ class JpegLow:
     VERSION = 1
 
     options = {
-        "quality": 40,
+        "quality": 45,
+        "keep_exif": False,
+        "fast_mode": False,
+    }
+
+
+class JpegMedium:
+    """Medium quality JPEG image
+
+    Average quality (65)
+    Strip out exif data
+    Slower and better compression"""
+
+    VERSION = 1
+
+    options = {
+        "quality": 65,
         "keep_exif": False,
         "fast_mode": False,
     }
@@ -126,14 +192,14 @@ class JpegLow:
 class JpegHigh:
     """High quality JPEG image
 
-    High quality (70)
-    Strip out exif data
+    High quality (80)
+    Do not strip out exif data
     Weaker and faster compression"""
 
     VERSION = 1
 
     options = {
-        "quality": 70,
-        "keep_exif": False,
+        "quality": 80,
+        "keep_exif": True,
         "fast_mode": True,
     }
