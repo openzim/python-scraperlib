@@ -9,6 +9,7 @@ import PIL
 
 from . import save_image
 from .transformation import resize_image
+from .probing import format_for
 from ..constants import ALPHA_NOT_SUPPORTED
 
 
@@ -27,10 +28,7 @@ def convert_image(
     colorspace = params.get("colorspace")  # requested colorspace
     fmt = params.pop("fmt").upper() if "fmt" in params else None  # requested format
     if not fmt:
-        from PIL.Image import EXTENSION as ext_fmt_map, init as init_pil
-
-        init_pil()
-        fmt = ext_fmt_map[dst.suffix]  # might raise KeyError on unknown extension
+        fmt = format_for(dst)
     with PIL.Image.open(src) as image:
         if image.mode == "RGBA" and fmt in ALPHA_NOT_SUPPORTED or colorspace:
             image = image.convert(colorspace or "RGB")

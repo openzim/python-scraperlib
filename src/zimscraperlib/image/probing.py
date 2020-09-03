@@ -7,6 +7,7 @@ import pathlib
 import colorsys
 from typing import Tuple, Optional
 
+import PIL.Image
 import colorthief
 
 
@@ -45,3 +46,15 @@ def get_colors(
 def is_hex_color(text: str) -> bool:
     """ whether supplied text is a valid hex-formated color code """
     return re.search(r"^#(?:[0-9a-fA-F]{3}){1,2}$", text)
+
+
+def format_for(src: pathlib.Path, from_suffix: bool = True) -> str:
+    """ Pillow format of a given filename, either Pillow-detected or from suffix """
+    if not from_suffix:
+        with PIL.Image.open(src) as img:
+            return img.format
+
+    from PIL.Image import EXTENSION as ext_fmt_map, init as init_pil
+
+    init_pil()
+    return ext_fmt_map[src.suffix]  # might raise KeyError on unknown extension

@@ -28,11 +28,12 @@ zimscraperlib>=1.1,<1.2
 * libzim (auto-installed, not available on Windows)
 * Pillow
 * FFmpeg
+* gifsicle (>=1.92)
 
 ## macOS
 
 ```sh
-brew install libmagic wget libtiff libjpeg webp little-cms2 ffmpeg
+brew install libmagic wget libtiff libjpeg webp little-cms2 ffmpeg gifsicle
 ```
 
 ## Linux
@@ -41,7 +42,7 @@ brew install libmagic wget libtiff libjpeg webp little-cms2 ffmpeg
 sudo apt install libmagic1 wget ffmpeg \
     libtiff5-dev libjpeg8-dev libopenjp2-7-dev zlib1g-dev \
     libfreetype6-dev liblcms2-dev libwebp-dev tcl8.6-dev tk8.6-dev python3-tk \
-    libharfbuzz-dev libfribidi-dev libxcb1-dev
+    libharfbuzz-dev libfribidi-dev libxcb1-dev gifsicle
 ```
 
 # Users

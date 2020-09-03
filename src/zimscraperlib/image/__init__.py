@@ -18,3 +18,7 @@ def save_image(
     args = {"JPEG": {"quality": 100}, "PNG": {}}.get(fmt, {})
     args.update(params or {})
     src.save(str(dst), fmt, **args)
+
+
+# flake8: noqa
+from .optimization import optimize_image
