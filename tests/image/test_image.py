@@ -314,7 +314,7 @@ def test_optimize_image_allow_convert(png_image, tmp_path):
     shutil.copy(png_image, tmp_path)
     src = tmp_path / png_image.name
     dst = tmp_path / "out.webp"
-    optimize_image(src, dst, delete_src=True, allow_convert=True)
+    optimize_image(src, dst, delete_src=True, convert=True)
     assert not src.exists()
     assert dst.exists() and os.path.getsize(dst) > 0
 

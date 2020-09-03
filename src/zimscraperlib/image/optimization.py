@@ -10,7 +10,7 @@
     - GIF (using gifsicle with lossy optimization)
     - WebP (using Pillow)
 
-    Some important notes: 
+    Some important notes:
     - This makes use of the --lossy option from gifsicle which is present only in versions above 1.92.
       If the package manager has a lower version, you can build gifsicle from source and install or
       do not use the lossiness option.
@@ -25,7 +25,7 @@ import pathlib
 import shutil
 import subprocess
 import tempfile
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Union
 
 from optimize_images.data_structures import Task
 from optimize_images.do_optimization import do_optimization
@@ -269,32 +269,36 @@ def optimize_image(
     src: pathlib.Path,
     dst: pathlib.Path,
     delete_src: Optional[bool] = False,
-    allow_convert: Optional[bool] = False,
+    convert: Optional[Union[bool, str]] = False,
     **options,
 ) -> bool:
-    """ Optimize image by automatically selecting the correct optimizer """
+    """Optimize image, automatically selecting correct optimizer
 
-    converted = False
-    img_to_optimize = src
+    delete_src: whether to remove src file upon success (boolean)
+        values: True | False
+    convert: whether/how to convert from source before optimizing (str or boolean)
+        values: False: don't convert
+                True: convert to format implied by dst suffix
+                "FMT": convert to format FMT (use Pillow names)"""
 
-    if allow_convert and format_for(src) != format_for(dst):
-        tmp_path = src.with_suffix(dst.suffix)
-        convert_image(src, tmp_path)
-        img_to_optimize = tmp_path
-        converted = True
+    src_format, dst_format = format_for(src, from_suffix=False), format_for(dst)
+    # if requested, convert src to requested format into dst path
+    if convert and src_format != dst_format:
+        src_format = dst_format = convert if isinstance(convert, str) else dst_format
+        convert_image(src, dst, fmt=src_format)
+        src_img = pathlib.Path(dst)
+    else:
+        src_img = pathlib.Path(src)
 
-    func = {
+    optimized = {
         "JPEG": optimize_jpeg,
         "PNG": optimize_png,
         "GIF": optimize_gif,
         "WEBP": optimize_webp,
-    }.get(format_for(img_to_optimize))
-    optimized = func(img_to_optimize, dst, **options)
-
-    # delete converted temporary image
-    if converted:
-        tmp_path.unlink()
+    }.get(src_format)(src_img, dst, **options)
 
     # delete src image if requested
-    if src.resolve() != dst.resolve() and src.exists() and delete_src and optimized:
+    if delete_src and optimized and src.exists() and src.resolve() != dst.resolve():
         src.unlink()
+
+    return optimized
