@@ -9,11 +9,20 @@ import shutil
 
 from PIL import Image
 from resizeimage.imageexceptions import ImageSizeError
+from optimize_images.data_structures import Task
 
 from zimscraperlib.image.probing import get_colors, is_hex_color, format_for
 from zimscraperlib.image.transformation import resize_image
 from zimscraperlib.image.convertion import create_favicon, convert_image
-from zimscraperlib.image.optimization import optimize_image, ensure_matches
+from zimscraperlib.image.optimization import (
+    optimize_image,
+    ensure_matches,
+    optimize_webp,
+    optimize_png,
+    optimize_jpeg,
+    optimize_gif,
+    run_optimize_images_task,
+)
 from zimscraperlib.image import save_image
 from zimscraperlib.image.presets import (
     WebpLow,
@@ -438,3 +447,52 @@ def test_format_for(
         webp_image=webp_image,
     )
     assert format_for(src) == expected
+
+
+def test_optimize_images_task_failure(tmp_path, font):
+    tmp_fl = tmp_path / "tmp.jpg"
+    dst = tmp_path / "out.jpg"
+
+    # send an unreadable file
+
+    tmp_fl.touch(mode=0o377)
+    task = Task(
+        src_path=str(tmp_fl.resolve()),
+        quality=50,
+        remove_transparency=False,
+        reduce_colors=False,
+        max_colors=256,
+        max_w=0,
+        max_h=0,
+        keep_exif=False,
+        convert_all=False,
+        conv_big=False,
+        force_del=False,
+        bg_color=(255, 255, 255),
+        grayscale=False,
+        no_size_comparison=True,
+        fast_mode=False,
+    )
+    with pytest.raises(Exception):
+        run_optimize_images_task(task, tmp_fl, dst)
+
+    assert not tmp_fl.exists()
+    assert not dst.exists()
+
+
+@pytest.mark.parametrize(
+    "suffix,func",
+    [(".webp", optimize_webp), (".gif", optimize_gif)],
+)
+def test_optimize_webp_gif_failure(tmp_path, suffix, func):
+    # send an file which does not exist
+    src = tmp_path / f"src{suffix}"
+    dst = tmp_path / f"out{suffix}"
+
+    # make dummy dst to simulate dst being made and
+    # after exception dst cleanup code running properly
+    dst.touch()
+
+    with pytest.raises(Exception):
+        func(src, dst)
+    assert not dst.exists()

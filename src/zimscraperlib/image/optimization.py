@@ -31,8 +31,6 @@ from optimize_images.data_structures import Task
 from optimize_images.do_optimization import do_optimization
 from PIL import Image
 
-from .. import logger
-from ..logging import nicer_args_join
 from . import save_image
 from .convertion import convert_image
 from .probing import format_for
@@ -46,14 +44,23 @@ def get_temporary_copy(src: pathlib.Path) -> pathlib.Path:
     return tmp_path
 
 
-def run_external_optimizer(
+def run_optimize_images_task(
     optimization_task: Task, tmp_path: pathlib.Path, dst: pathlib.Path
 ) -> bool:
-    result = do_optimization(optimization_task)
-    if result.was_optimized:
-        shutil.copy(tmp_path, dst)
-    if tmp_path.exists():
-        tmp_path.unlink()
+    def cleanup(tmp: pathlib.Path) -> None:
+        if tmp.exists():
+            tmp.unlink()
+
+    try:
+        result = do_optimization(optimization_task)
+        if result.was_optimized:
+            shutil.move(tmp_path, dst)
+    except Exception as exc:
+        cleanup(tmp_path)
+        cleanup(dst)
+        raise exc
+
+    cleanup(tmp_path)
     return result.was_optimized
 
 
@@ -101,7 +108,6 @@ def optimize_png(
     tmp_path = get_temporary_copy(src)
 
     # generate PNG task for optimize_images
-    # max_w and max_h is 0 because we have a better image resizing function in scraperlib already
 
     optimization_task = Task(
         src_path=str(tmp_path.resolve()),
@@ -111,6 +117,7 @@ def optimize_png(
         reduce_colors=reduce_colors,
         # max_colors is ignored if reduce_colors is False, but we need to provide a default value
         max_colors=max_colors,
+        # max_w and max_h is 0 because we have a better image resizing function in scraperlib already
         max_w=0,
         max_h=0,
         # keep_exif is specific to JPEG and hence is ignored, but we need to supply the default value
@@ -129,7 +136,7 @@ def optimize_png(
     )
 
     # optimize the image
-    return run_external_optimizer(optimization_task, tmp_path, dst)
+    return run_optimize_images_task(optimization_task, tmp_path, dst)
 
 
 def optimize_jpeg(
@@ -158,7 +165,6 @@ def optimize_jpeg(
     tmp_path = get_temporary_copy(src)
 
     # generate JPEG task for optimize_images
-    # max_w and max_h is 0 because we have a better image resizing function in scraperlib already
 
     optimization_task = Task(
         src_path=str(tmp_path.resolve()),
@@ -169,6 +175,7 @@ def optimize_jpeg(
         reduce_colors=False,
         # max_colors is specific to PNG and hence is ignored, but we need to supply the default value
         max_colors=256,
+        # max_w and max_h is 0 because we have a better image resizing function in scraperlib already
         max_w=0,
         max_h=0,
         keep_exif=keep_exif,
@@ -186,7 +193,7 @@ def optimize_jpeg(
     )
 
     # optimize the image
-    return run_external_optimizer(optimization_task, tmp_path, dst)
+    return run_optimize_images_task(optimization_task, tmp_path, dst)
 
 
 def optimize_webp(
@@ -208,14 +215,19 @@ def optimize_webp(
     refer to the link for more details - https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html#webp"""
 
     ensure_matches(src, "WEBP")
-
-    webp_image = Image.open(src)
     params = {
         "lossless": lossless,
         "quality": quality,
         "method": method,
     }
-    save_image(webp_image, dst, fmt="WEBP", **params)
+
+    try:
+        webp_image = Image.open(src)
+        save_image(webp_image, dst, fmt="WEBP", **params)
+    except Exception as exc:
+        if src.resolve() != dst.resolve() and dst.exists():
+            dst.unlink()
+        raise exc
     return True
 
 
@@ -258,9 +270,14 @@ def optimize_gif(
     if interlace:
         args += ["--interlace"]
     args += [str(src)]
-    logger.debug(nicer_args_join(args))
     with open(dst, "w") as out_file:
         gifsicle = subprocess.run(args, stdout=out_file)
+
+    # remove dst if gifsicle failed and src is different from dst
+    if gifsicle.returncode != 0 and src.resolve() != dst.resolve() and dst.exists():
+        dst.unlink()
+
+    # raise error if unsuccessful
     gifsicle.check_returncode()
     return True
 
