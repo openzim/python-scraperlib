@@ -4,8 +4,9 @@
 
 import pytest
 import requests
+import concurrent.futures
 
-from zimscraperlib.download import save_file, save_large_file
+from zimscraperlib.download import save_file, save_large_file, YoutubeDownloader
 
 
 def assert_downloaded_file(url, file):
@@ -85,3 +86,57 @@ def test_large_download_https(tmp_path, valid_https_url):
     dest_file = tmp_path / "favicon.ico"
     save_large_file(valid_https_url, dest_file)
     assert_downloaded_file(valid_https_url, dest_file)
+
+
+@pytest.mark.slow
+@pytest.mark.parametrize(
+    "url,filename",
+    [
+        ("Bc5QSUhL6co", "video1.mp4"),
+        ("www.youtube.com/watch?v=Bc5QSUhL6co", "video2.mp4"),
+        ("https://www.youtube.com/watch?v=Bc5QSUhL6co", "video3.mp4"),
+    ],
+)
+def test_youtube_download_serial(url, filename, tmp_path):
+    yt_downloader = YoutubeDownloader(threads=1)
+    fpath = tmp_path / filename
+    downloaded, downloaded_file = yt_downloader.download(url, fpath)
+    assert downloaded is True
+    assert downloaded_file.exists()
+    yt_downloader.shutdown()
+
+
+@pytest.mark.slow
+def test_youtube_download_parallel(tmp_path):
+    def download_and_assert(url, video_path, yt_downloader):
+        downloaded, downloaded_file = yt_downloader.download(url, video_path)
+        assert downloaded is True
+        assert downloaded_file.exists()
+
+    yt_downloader = YoutubeDownloader(threads=2)
+    videos = {
+        "Bc5QSUhL6co": tmp_path / "video1.mp4",
+        "a3HZ8S2H-GQ": tmp_path / "video2.mp4",
+        "3HFBR0UQPes": tmp_path / "video3.mp4",
+        "oiWWKumrLH8": tmp_path / "video4.mp4",
+    }
+    with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
+        fs = [
+            executor.submit(download_and_assert, key, val, yt_downloader)
+            for key, val in videos.items()
+        ]
+        done, not_done = concurrent.futures.wait(
+            fs, return_when=concurrent.futures.ALL_COMPLETED
+        )
+        assert len(done) == 4
+        for future in done:
+            assert future.exception() is None
+    yt_downloader.shutdown()
+
+
+@pytest.mark.slow
+def test_youtube_download_error(tmp_path):
+    yt_downloader = YoutubeDownloader(threads=1)
+    with pytest.raises(Exception):
+        yt_downloader.download("11", tmp_path / "video.mp4")
+    yt_downloader.shutdown()
