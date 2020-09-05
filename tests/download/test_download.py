@@ -100,8 +100,7 @@ def test_large_download_https(tmp_path, valid_https_url):
 def test_youtube_download_serial(url, filename, tmp_path):
     yt_downloader = YoutubeDownloader(threads=1)
     fpath = tmp_path / filename
-    downloaded, downloaded_file = yt_downloader.download(url, fpath)
-    assert downloaded is True
+    downloaded_file = yt_downloader.download(url, fpath)
     assert downloaded_file.exists()
     yt_downloader.shutdown()
 
@@ -109,8 +108,7 @@ def test_youtube_download_serial(url, filename, tmp_path):
 @pytest.mark.slow
 def test_youtube_download_parallel(tmp_path):
     def download_and_assert(url, video_path, yt_downloader):
-        downloaded, downloaded_file = yt_downloader.download(url, video_path)
-        assert downloaded is True
+        downloaded_file = yt_downloader.download(url, video_path)
         assert downloaded_file.exists()
 
     yt_downloader = YoutubeDownloader(threads=2)

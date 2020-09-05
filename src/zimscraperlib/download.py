@@ -5,7 +5,7 @@
 import subprocess
 import pathlib
 from concurrent.futures import ThreadPoolExecutor
-from typing import Optional, Tuple
+from typing import Optional
 
 import requests
 import youtube_dl
@@ -40,7 +40,7 @@ class YoutubeDownloader:
 
     def run_youtube_dl(
         self, url: str, fpath: pathlib.Path, extra_options: Optional[dict] = {}
-    ) -> Tuple[bool, pathlib.Path]:
+    ) -> pathlib.Path:
         audext, vidext = {"webm": ("webm", "webm"), "mp4": ("m4a", "mp4")}[
             self.video_format
         ]
@@ -59,7 +59,7 @@ class YoutubeDownloader:
                 if content.is_file() and content.name.startswith(
                     f"{output_file_name}."
                 ):
-                    return True, content
+                    return content
 
     def download(
         self,
@@ -67,8 +67,7 @@ class YoutubeDownloader:
         preferred_fpath: pathlib.Path,
         extra_options: Optional[dict] = {},
     ) -> bool:
-        """Downloads a video using run_youtube_dl on the initialized executor and returns whether downloaded
-        and the path to the downloaded file.
+        """Downloads a video using run_youtube_dl on the initialized executor and returns the path to the downloaded file.
 
         Arguments:
         video: The url/video ID of the video to download.
