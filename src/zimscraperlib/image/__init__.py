@@ -5,14 +5,11 @@
 import pathlib
 from typing import Optional
 
-import PIL
+from PIL import Image
 
 
 def save_image(
-    src: PIL.Image,
-    dst: pathlib.Path,
-    fmt: Optional[str] = None,
-    **params: Optional[dict]
+    src: Image, dst: pathlib.Path, fmt: Optional[str] = None, **params: Optional[dict]
 ) -> None:
     """ PIL.Image.save() wrapper setting default parameters """
     args = {"JPEG": {"quality": 100}, "PNG": {}}.get(fmt, {})
