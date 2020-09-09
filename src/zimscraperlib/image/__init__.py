@@ -5,11 +5,11 @@
 import pathlib
 from typing import Optional
 
-import PIL
+from PIL import Image
 
 
 def save_image(
-    src: PIL.Image,
+    src: Image,
     dst: pathlib.Path,
     fmt: Optional[str] = None,
     **params: Optional[dict]
