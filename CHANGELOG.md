@@ -1,4 +1,4 @@
-# 1.3.2.dev0
+# 1.3.2
 
 * fixed rewriting of links with empty target
 * added support for image optimization using `zimscraperlib.image.optimization` for webp, gif, jpeg and png formats
