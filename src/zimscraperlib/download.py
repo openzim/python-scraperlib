@@ -20,82 +20,96 @@ class YoutubeDownloader:
     free any occupied resources"""
 
     executor = None
-    video_format = None
 
-    def __init__(
-        self, video_format: Optional[str] = "mp4", threads: Optional[int] = 2
-    ) -> None:
+    def __init__(self, threads: Optional[int] = 2) -> None:
         """Initialize the class
         Arguments:
-        video_format : One of the video formats used by the scraper (used to generate youtube_dl options)
         threads: The max number of workers for the executor"""
 
         self.executor = ThreadPoolExecutor(max_workers=threads)
-        self.video_format = video_format
 
     def shutdown(self) -> None:
         """ shuts down the executor """
 
         self.executor.shutdown(wait=True)
 
-    def run_youtube_dl(
-        self, url: str, fpath: pathlib.Path, extra_options: Optional[dict] = {}
-    ) -> pathlib.Path:
-        audext, vidext = {"webm": ("webm", "webm"), "mp4": ("m4a", "mp4")}[
-            self.video_format
-        ]
-        output_file_name = fpath.name.replace(fpath.suffix, "")
-        options = {
-            "outtmpl": str(fpath.parent.joinpath(f"{output_file_name}.%(ext)s")),
-            "preferredcodec": self.video_format,
-            "format": f"best[ext={vidext}]/bestvideo[ext={vidext}]+bestaudio[ext={audext}]/best",
-            "retries": 20,
-            "fragment-retries": 50,
-        }
-        options.update(extra_options)
+    def __run_youtube_dl(self, url: str, options: dict) -> None:
         with youtube_dl.YoutubeDL(options) as ydl:
             ydl.download([url])
-            for content in fpath.parent.iterdir():
-                if content.is_file() and content.name.startswith(
-                    f"{output_file_name}."
-                ):
-                    return content
 
     def download(
         self,
-        video: str,
-        preferred_fpath: pathlib.Path,
-        extra_options: Optional[dict] = {},
+        url: str,
+        options: Optional[dict] = {},
     ) -> bool:
-        """Downloads a video using run_youtube_dl on the initialized executor and returns the path to the downloaded file.
+        """Downloads a video using run_youtube_dl on the initialized executor.
 
         Arguments:
-        video: The url/video ID of the video to download.
-        preferred_path: The preferred path to save the videos to. Note that the actual
-            downloaded path may be different (due to unavailability of video in certain formats)
-            and the actual downloaded path is returned by the method if the download is successful
-        extra_options: A dict containing any extra options that you want to pass directly to youtube_dl"""
+        url: The url/video ID of the video to download.
+        options: A dict containing any options that you want to pass directly to youtube_dl"""
 
-        url = video
-
-        # ensure url is in correct format
-        if not video.startswith("https://"):
-            if "youtube.com" in video or "youtu.be" in video:
-                url = f"https://{video}"
-            else:
-                url = f"https://youtube.com/watch?v={video}"
-
-        # run youtube_dl on the executor
-        print(url)
-        print(preferred_fpath)
-        future = self.executor.submit(
-            self.run_youtube_dl, url, preferred_fpath, extra_options
-        )
+        future = self.executor.submit(self.__run_youtube_dl, url, options)
         if not future.exception():
             # return the result
             return future.result()
         # raise the exception
         raise future.exception()
+
+
+class YoutubeConfig(dict):
+    options = {}
+    defaults = {
+        "writethumbnail": True,
+        "write_all_thumbnails": True,
+        "writesubtitles": True,
+        "allsubtitles": True,
+        "subtitlesformat": "vtt",
+        "keepvideo": False,
+        "ignoreerrors": False,
+        "retries": 20,
+        "fragment-retries": 50,
+        "skip-unavailable-fragments": True,
+        "outtmpl": "video.%(ext)s",
+    }
+
+    def __init__(self, **kwargs):
+        super().__init__(self, **type(self).defaults)
+        self.update(self.options)
+        self.update(kwargs)
+
+    @classmethod
+    def get_options(
+        cls,
+        target_dir: Optional[pathlib.Path] = None,
+        filepath: Optional[pathlib.Path] = None,
+        **options,
+    ):
+        if "outtmpl" not in options:
+            outtmpl = cls.options.get("outtmpl", cls.defaults["outtmpl"])
+            if filepath:
+                outtmpl = str(filepath)
+            # send output to target_dir
+            if target_dir:
+                outtmpl = str(target_dir.joinpath(outtmpl))
+            options["outtmpl"] = outtmpl
+
+        config = cls()
+        config.update(options)
+        return config
+
+
+class BestWebm(YoutubeConfig):
+    options = {
+        "preferredcodec": "webm",
+        "format": "best[ext=webm]/bestvideo[ext=webm]+bestaudio[ext=webm]/best",
+    }
+
+
+class BestMp4(YoutubeConfig):
+    options = {
+        "preferredcodec": "mp4",
+        "format": "best[ext=mp4]/bestvideo[ext=mp4]+bestaudio[ext=m4a]/best",
+    }
 
 
 def save_file(
