@@ -1,13 +1,12 @@
-# 1.3.3.dev0
+# 1.3.3
 
-* n/a
+* added `YoutubeDownloader` to `download` to download YT videos using a capped nb of threads
 
 # 1.3.2
 
 * fixed rewriting of links with empty target
 * added support for image optimization using `zimscraperlib.image.optimization` for webp, gif, jpeg and png formats
 * added `format_for()` in `zimscraperlib.image.probing` to get PIL image format from the suffix
-* added `YoutubeDownloader` in `download.py` for downloading youtube videos with a constant number of threads
 
 # 1.3.1
 
