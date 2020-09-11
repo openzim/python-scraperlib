@@ -1,3 +1,7 @@
+# 1.3.4.dev0
+
+* n/a
+
 # 1.3.3
 
 * added `YoutubeDownloader` to `download` to download YT videos using a capped nb of threads
