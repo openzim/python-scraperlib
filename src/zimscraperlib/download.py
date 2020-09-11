@@ -19,8 +19,6 @@ class YoutubeDownloader:
     a higher number of workers. The shutdown method must be run explicitly to
     free any occupied resources"""
 
-    executor = None
-
     def __init__(self, threads: Optional[int] = 2) -> None:
         """Initialize the class
         Arguments:
@@ -33,14 +31,14 @@ class YoutubeDownloader:
 
         self.executor.shutdown(wait=True)
 
-    def __run_youtube_dl(self, url: str, options: dict) -> None:
+    def _run_youtube_dl(self, url: str, options: dict) -> None:
         with youtube_dl.YoutubeDL(options) as ydl:
             ydl.download([url])
 
     def download(
         self,
         url: str,
-        options: Optional[dict] = {},
+        options: Optional[dict],
     ) -> bool:
         """Downloads a video using run_youtube_dl on the initialized executor.
 
@@ -48,7 +46,7 @@ class YoutubeDownloader:
         url: The url/video ID of the video to download.
         options: A dict containing any options that you want to pass directly to youtube_dl"""
 
-        future = self.executor.submit(self.__run_youtube_dl, url, options)
+        future = self.executor.submit(self._run_youtube_dl, url, options)
         if not future.exception():
             # return the result
             return future.result()
