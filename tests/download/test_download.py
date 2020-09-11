@@ -151,3 +151,17 @@ def test_youtube_download_error(tmp_path):
     with pytest.raises(Exception):
         yt_downloader.download("11", BestMp4.get_options())
     yt_downloader.shutdown()
+
+
+@pytest.mark.slow
+@pytest.mark.parametrize(
+    "nb_workers",
+    [
+        1,
+        2,
+    ],
+)
+def test_youtube_download_contextmanager(nb_workers):
+    with YoutubeDownloader(threads=nb_workers) as yt_downloader:
+        assert yt_downloader.executor._max_workers == nb_workers
+        yt_downloader.download("Bc5QSUhL6co", BestMp4.get_options())

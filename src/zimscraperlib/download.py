@@ -26,6 +26,12 @@ class YoutubeDownloader:
 
         self.executor = ThreadPoolExecutor(max_workers=threads)
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        self.shutdown()
+
     def shutdown(self) -> None:
         """ shuts down the executor """
 
