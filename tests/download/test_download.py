@@ -4,8 +4,16 @@
 
 import pytest
 import requests
+import pathlib
+import concurrent.futures
 
-from zimscraperlib.download import save_file, save_large_file
+from zimscraperlib.download import (
+    save_file,
+    save_large_file,
+    YoutubeDownloader,
+    BestWebm,
+    BestMp4,
+)
 
 
 def assert_downloaded_file(url, file):
@@ -85,3 +93,75 @@ def test_large_download_https(tmp_path, valid_https_url):
     dest_file = tmp_path / "favicon.ico"
     save_large_file(valid_https_url, dest_file)
     assert_downloaded_file(valid_https_url, dest_file)
+
+
+@pytest.mark.slow
+@pytest.mark.parametrize(
+    "url,video_id",
+    [
+        ("Bc5QSUhL6co", "Bc5QSUhL6co"),
+        ("www.youtube.com/watch?v=Bc5QSUhL6co", "Bc5QSUhL6co"),
+        ("https://www.youtube.com/watch?v=Bc5QSUhL6co", "Bc5QSUhL6co"),
+    ],
+)
+def test_youtube_download_serial(url, video_id, tmp_path):
+    yt_downloader = YoutubeDownloader(threads=1)
+    options = BestWebm.get_options(
+        target_dir=tmp_path,
+        filepath=pathlib.Path("%(id)s/video.%(ext)s"),
+    )
+    yt_downloader.download(url, options)
+    assert tmp_path.joinpath(video_id).joinpath("video.webm").exists()
+    yt_downloader.shutdown()
+
+
+@pytest.mark.slow
+def test_youtube_download_parallel(tmp_path):
+    def download_and_assert(url, outtmpl, yt_downloader):
+        options = BestMp4.get_options(
+            filepath=outtmpl,
+        )
+        yt_downloader.download(url, options)
+        assert outtmpl.with_suffix(".mp4").exists()
+
+    yt_downloader = YoutubeDownloader(threads=2)
+    videos = {
+        "Bc5QSUhL6co": tmp_path / "video1.%(ext)s",
+        "a3HZ8S2H-GQ": tmp_path / "video2.%(ext)s",
+        "3HFBR0UQPes": tmp_path / "video3.%(ext)s",
+        "oiWWKumrLH8": tmp_path / "video4.%(ext)s",
+    }
+    with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
+        fs = [
+            executor.submit(download_and_assert, key, val, yt_downloader)
+            for key, val in videos.items()
+        ]
+        done, not_done = concurrent.futures.wait(
+            fs, return_when=concurrent.futures.ALL_COMPLETED
+        )
+        assert len(done) == 4
+        for future in done:
+            assert future.exception() is None
+    yt_downloader.shutdown()
+
+
+@pytest.mark.slow
+def test_youtube_download_error(tmp_path):
+    yt_downloader = YoutubeDownloader(threads=1)
+    with pytest.raises(Exception):
+        yt_downloader.download("11", BestMp4.get_options())
+    yt_downloader.shutdown()
+
+
+@pytest.mark.slow
+@pytest.mark.parametrize(
+    "nb_workers",
+    [
+        1,
+        2,
+    ],
+)
+def test_youtube_download_contextmanager(nb_workers):
+    with YoutubeDownloader(threads=nb_workers) as yt_downloader:
+        assert yt_downloader.executor._max_workers == nb_workers
+        yt_downloader.download("Bc5QSUhL6co", BestMp4.get_options())
