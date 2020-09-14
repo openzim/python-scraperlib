@@ -155,13 +155,22 @@ def test_youtube_download_error(tmp_path):
 
 @pytest.mark.slow
 @pytest.mark.parametrize(
-    "nb_workers",
+    "nb_workers,videos",
     [
-        1,
-        2,
+        (1, ["Bc5QSUhL6co"]),
+        (2, ["Bc5QSUhL6co", "a3HZ8S2H-GQ"]),
     ],
 )
-def test_youtube_download_contextmanager(nb_workers):
+def test_youtube_download_contextmanager(nb_workers, videos, tmp_path):
     with YoutubeDownloader(threads=nb_workers) as yt_downloader:
         assert yt_downloader.executor._max_workers == nb_workers
-        yt_downloader.download("Bc5QSUhL6co", BestMp4.get_options())
+        fs = [
+            yt_downloader.download(
+                video, BestMp4.get_options(target_dir=tmp_path), wait=False
+            )
+            for video in videos
+        ]
+        done, not_done = concurrent.futures.wait(
+            fs, return_when=concurrent.futures.ALL_COMPLETED
+        )
+        assert len(done) == len(videos) and len(not_done) == 0
