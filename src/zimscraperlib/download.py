@@ -4,8 +4,8 @@
 
 import subprocess
 import pathlib
-from concurrent.futures import ThreadPoolExecutor
-from typing import Optional
+from concurrent.futures import ThreadPoolExecutor, Future
+from typing import Optional, Union
 
 import requests
 import youtube_dl
@@ -45,14 +45,18 @@ class YoutubeDownloader:
         self,
         url: str,
         options: Optional[dict],
-    ) -> bool:
+        wait: Optional[bool] = True,
+    ) -> Union[bool, Future]:
         """Downloads a video using run_youtube_dl on the initialized executor.
 
         Arguments:
         url: The url/video ID of the video to download.
-        options: A dict containing any options that you want to pass directly to youtube_dl"""
+        options: A dict containing any options that you want to pass directly to youtube_dl
+        wait: A boolean to specify whether to wait for completion. In case wait is False, the method would return a Future object"""
 
         future = self.executor.submit(self._run_youtube_dl, url, options)
+        if not wait:
+            return future
         if not future.exception():
             # return the result
             return future.result()
