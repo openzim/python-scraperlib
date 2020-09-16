@@ -1,6 +1,7 @@
 # 1.3.4.dev0
 
 * added `wait` option in `YoutubeDownloader` to allow parallelism while using context manager
+- do not use extension for finding format in `ensure_matches()` in `image.optimization` module
 
 # 1.3.3
 

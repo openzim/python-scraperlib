@@ -491,6 +491,7 @@ def test_optimize_webp_gif_failure(tmp_path, suffix, func):
 
     # make dummy dst to simulate dst being made and
     # after exception dst cleanup code running properly
+    src.touch()
     dst.touch()
 
     with pytest.raises(Exception):
