@@ -9,7 +9,13 @@ import subprocess
 import shutil
 
 from zimscraperlib.video import Config, get_media_info, reencode
-from zimscraperlib.video.presets import VoiceMp3Low, VideoWebmLow, VideoMp4Low
+from zimscraperlib.video.presets import (
+    VoiceMp3Low,
+    VideoWebmLow,
+    VideoMp4Low,
+    VideoWebmHigh,
+    VideoMp4High,
+)
 
 
 def copy_media_and_reencode(temp_dir, src, dest, ffmpeg_args, test_files, **kwargs):
@@ -152,6 +158,32 @@ def test_preset_video_webm_low():
     assert idx != -1 and args[idx + 1] == "900k"
 
 
+def test_preset_video_webm_high():
+    config = VideoWebmHigh()
+    assert config.VERSION == 1
+    args = config.to_ffmpeg_args()
+    assert len(args) == 10
+    options_map = [
+        ("codec:v", "libvpx"),
+        ("codec:a", "libvorbis"),
+        ("b:v", "0"),
+        ("crf", "25"),
+    ]
+    for option, val in options_map:
+        idx = args.index(f"-{option}")
+        assert idx != -1
+        assert args[idx + 1] == val
+
+    # test updating values
+    config = VideoWebmHigh(**{"-crf": "51"})
+    config["-b:v"] = "300k"
+    args = config.to_ffmpeg_args()
+    idx = args.index("-crf")
+    assert idx != -1 and args[idx + 1] == "51"
+    idx = args.index("-b:v")
+    assert idx != -1 and args[idx + 1] == "300k"
+
+
 def test_preset_video_mp4_low():
     config = VideoMp4Low()
     assert config.VERSION == 1
@@ -183,6 +215,31 @@ def test_preset_video_mp4_low():
     assert idx != -1 and args[idx + 1] == "50000"
     idx = args.index("-bufsize")
     assert idx != -1 and args[idx + 1] == "900k"
+
+
+def test_preset_video_mp4_high():
+    config = VideoMp4High()
+    assert config.VERSION == 1
+    args = config.to_ffmpeg_args()
+    assert len(args) == 8
+    options_map = [
+        ("codec:v", "h264"),
+        ("codec:a", "aac"),
+        ("crf", "20"),
+    ]
+    for option, val in options_map:
+        idx = args.index(f"-{option}")
+        assert idx != -1
+        assert args[idx + 1] == val
+
+    # test updating values
+    config = VideoMp4Low(**{"-codec:v": "libx264"})
+    config["-crf"] = "11"
+    args = config.to_ffmpeg_args()
+    idx = args.index("-codec:v")
+    assert idx != -1 and args[idx + 1] == "libx264"
+    idx = args.index("-crf")
+    assert idx != -1 and args[idx + 1] == "11"
 
 
 def test_preset_voice_mp3_low():
