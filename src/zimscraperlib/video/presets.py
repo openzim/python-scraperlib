@@ -70,3 +70,32 @@ class VideoMp4Low(Config):
         "-b:a": "48k",  # target audio bitrate
         "-movflags": "+faststart",  # extra flag
     }
+
+
+class VideoWebmHigh(Config):
+    """High Quality webm video
+
+    25 constant quality"""
+
+    VERSION = 1
+
+    options = {
+        "-codec:v": "libvpx",  # video codec
+        "-codec:a": "libvorbis",  # audio codec
+        "-crf": "25",  # constant quality, lower value gives better quality and larger files
+        "-b:v": "0",  # must be passed for using constant quality mode via -cbr for this codec
+    }
+
+
+class VideoMp4High(Config):
+    """Low Quality mp4 video
+
+    20 constant quality"""
+
+    VERSION = 1
+
+    options = {
+        "-codec:v": "h264",  # video codec
+        "-codec:a": "aac",  # audio codec
+        "-crf": "20",  # constant quality, lower value gives better quality and larger files
+    }
