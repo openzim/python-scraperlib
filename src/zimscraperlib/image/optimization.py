@@ -29,7 +29,7 @@ from typing import Optional, Tuple, Union
 
 from optimize_images.data_structures import Task
 from optimize_images.do_optimization import do_optimization
-from PIL import Image, UnidentifiedImageError
+from PIL import Image
 
 from . import save_image
 from .convertion import convert_image
@@ -70,13 +70,7 @@ def ensure_matches(
 ) -> None:
     """ Raise ValueError if src is not of image type `fmt` """
 
-    detected_fmt = None
-    try:
-        detected_fmt = format_for(src, from_suffix=False)
-    except UnidentifiedImageError:
-        # fall back on suffix checking if can't determine format
-        detected_fmt = format_for(src)
-    if detected_fmt != fmt:
+    if format_for(src, from_suffix=False) != fmt:
         raise ValueError(f"{src} is not of format {fmt}")
 
 
