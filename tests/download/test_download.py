@@ -164,7 +164,7 @@ def test_youtube_download_error(tmp_path):
 def test_youtube_download_contextmanager(nb_workers, videos, tmp_path):
     with YoutubeDownloader(threads=nb_workers) as yt_downloader:
         assert yt_downloader.executor._max_workers == nb_workers
-        yt_downloader.download("Bc5QSUhL6co", BestMp4.get_options())
+        yt_downloader.download("Bc5QSUhL6co", BestMp4.get_options(target_dir=tmp_path))
         fs = [
             yt_downloader.download(
                 video, BestMp4.get_options(target_dir=tmp_path), wait=False

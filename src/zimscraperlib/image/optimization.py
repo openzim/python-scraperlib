@@ -70,7 +70,7 @@ def ensure_matches(
 ) -> None:
     """ Raise ValueError if src is not of image type `fmt` """
 
-    if format_for(src) != fmt:
+    if format_for(src, from_suffix=False) != fmt:
         raise ValueError(f"{src} is not of format {fmt}")
 
 

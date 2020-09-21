@@ -480,19 +480,23 @@ def test_optimize_images_task_failure(tmp_path, font):
     assert not dst.exists()
 
 
-@pytest.mark.parametrize(
-    "suffix,func",
-    [(".webp", optimize_webp), (".gif", optimize_gif)],
-)
-def test_optimize_webp_gif_failure(tmp_path, suffix, func):
-    # send an file which does not exist
-    src = tmp_path / f"src{suffix}"
-    dst = tmp_path / f"out{suffix}"
+def test_optimize_webp_gif_failure(tmp_path, webp_image, gif_image):
+    dst = tmp_path.joinpath("image.img")
 
-    # make dummy dst to simulate dst being made and
-    # after exception dst cleanup code running properly
-    dst.touch()
-
+    # webp
     with pytest.raises(Exception):
-        func(src, dst)
+        optimize_webp(webp_image, dst, lossless="bad")
     assert not dst.exists()
+
+    # gif
+    dst.touch()  # fake temp file created during optim (actually fails before)
+    with pytest.raises(Exception):
+        optimize_gif(gif_image, dst, optimize_level="bad")
+    assert not dst.exists()
+
+
+def test_wrong_extension_optim(tmp_path, png_image):
+    dst = tmp_path.joinpath("image.jpg")
+    shutil.copy(png_image, dst)
+    with pytest.raises(Exception):
+        optimize_jpeg(dst, dst)
