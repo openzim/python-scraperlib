@@ -3,6 +3,7 @@
 * added `wait` option in `YoutubeDownloader` to allow parallelism while using context manager
 * do not use extension for finding format in `ensure_matches()` in `image.optimization` module
 * added `VideoWebmHigh` and `VideoMp4High` presets for high quality WebM and Mp4 convertion respectively
+* updated presets `WebpHigh`, `JpegMedium`, `JpegLow` and `PngMedium` in `image.presets`
 
 # 1.3.3
 
