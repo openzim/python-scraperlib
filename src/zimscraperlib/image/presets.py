@@ -48,7 +48,7 @@ class WebpHigh:
 
     options = {
         "lossless": False,
-        "quality": 60,
+        "quality": 90,
         "method": 6,
     }
 
@@ -136,7 +136,7 @@ class PngMedium:
     VERSION = 1
 
     options = {
-        "reduce_colors": True,
+        "reduce_colors": False,
         "remove_transparency": False,
         "fast_mode": False,
     }
@@ -169,7 +169,7 @@ class JpegLow:
     options = {
         "quality": 45,
         "keep_exif": False,
-        "fast_mode": False,
+        "fast_mode": True,
     }
 
 
@@ -185,7 +185,7 @@ class JpegMedium:
     options = {
         "quality": 65,
         "keep_exif": False,
-        "fast_mode": False,
+        "fast_mode": True,
     }
 
 

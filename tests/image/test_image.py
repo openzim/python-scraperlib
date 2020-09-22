@@ -333,7 +333,7 @@ def test_optimize_image_allow_convert(png_image, tmp_path):
     [
         (WebpLow(), 1, {"lossless": False, "quality": 40, "method": 6}, "webp"),
         (WebpMedium(), 1, {"lossless": False, "quality": 50, "method": 6}, "webp"),
-        (WebpHigh(), 1, {"lossless": False, "quality": 60, "method": 6}, "webp"),
+        (WebpHigh(), 1, {"lossless": False, "quality": 90, "method": 6}, "webp"),
         (
             GifLow(),
             1,
@@ -382,7 +382,7 @@ def test_optimize_image_allow_convert(png_image, tmp_path):
         (
             PngMedium(),
             1,
-            {"reduce_colors": True, "remove_transparency": False, "fast_mode": False},
+            {"reduce_colors": False, "remove_transparency": False, "fast_mode": False},
             "png",
         ),
         (
@@ -391,11 +391,11 @@ def test_optimize_image_allow_convert(png_image, tmp_path):
             {"reduce_colors": False, "remove_transparency": False, "fast_mode": True},
             "png",
         ),
-        (JpegLow(), 1, {"quality": 45, "keep_exif": False, "fast_mode": False}, "jpg"),
+        (JpegLow(), 1, {"quality": 45, "keep_exif": False, "fast_mode": True}, "jpg"),
         (
             JpegMedium(),
             1,
-            {"quality": 65, "keep_exif": False, "fast_mode": False},
+            {"quality": 65, "keep_exif": False, "fast_mode": True},
             "jpg",
         ),
         (JpegHigh(), 1, {"quality": 80, "keep_exif": True, "fast_mode": True}, "jpg"),

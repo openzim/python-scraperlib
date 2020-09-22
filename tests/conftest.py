@@ -105,4 +105,4 @@ def gif_image():
 
 @pytest.fixture(scope="module")
 def webp_image():
-    return file_src("whitewater.webp")
+    return file_src("ninja.webp")
