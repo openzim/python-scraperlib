@@ -1,3 +1,7 @@
+# 1.3.5.dev0
+
+* n/a
+
 # 1.3.4
 
 * added `wait` option in `YoutubeDownloader` to allow parallelism while using context manager
