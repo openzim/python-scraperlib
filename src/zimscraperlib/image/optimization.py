@@ -31,7 +31,7 @@ from optimize_images.data_structures import Task
 from optimize_images.do_optimization import do_optimization
 from PIL import Image
 
-from . import save_image
+from .utils import save_image
 from .convertion import convert_image
 from .probing import format_for
 

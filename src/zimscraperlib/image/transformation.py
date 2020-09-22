@@ -8,7 +8,7 @@ from typing import Optional
 import PIL
 from resizeimage import resizeimage
 
-from . import save_image
+from .utils import save_image
 from ..constants import ALPHA_NOT_SUPPORTED
 
 

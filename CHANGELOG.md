@@ -4,6 +4,8 @@
 * do not use extension for finding format in `ensure_matches()` in `image.optimization` module
 * added `VideoWebmHigh` and `VideoMp4High` presets for high quality WebM and Mp4 convertion respectively
 * updated presets `WebpHigh`, `JpegMedium`, `JpegLow` and `PngMedium` in `image.presets`
+* `save_image` moved from `image` to `image.utils`
+* added `convert_image` `optimize_image` `resize_image` functions to `image` module
 
 # 1.3.3
 
