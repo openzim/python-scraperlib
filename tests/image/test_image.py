@@ -18,12 +18,11 @@ from zimscraperlib.image.optimization import (
     optimize_image,
     ensure_matches,
     optimize_webp,
-    optimize_png,
     optimize_jpeg,
     optimize_gif,
     run_optimize_images_task,
 )
-from zimscraperlib.image import save_image
+from zimscraperlib.image.utils import save_image
 from zimscraperlib.image.presets import (
     WebpLow,
     WebpMedium,

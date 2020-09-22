@@ -7,7 +7,7 @@ from typing import Optional
 
 import PIL
 
-from . import save_image
+from .utils import save_image
 from .transformation import resize_image
 from .probing import format_for
 from ..constants import ALPHA_NOT_SUPPORTED
