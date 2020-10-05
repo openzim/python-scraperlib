@@ -16,6 +16,7 @@ from typing import Union, BinaryIO, TextIO, Optional
 
 from bs4 import BeautifulSoup
 
+from .. import logger
 from ..filesystem import get_file_mimetype
 from ..types import get_mime_for_name, ARTICLE_MIME, FONT_MIMES
 
@@ -140,6 +141,7 @@ def fix_file_target_for(
     """fixed link from source to target: relative and namespace aware
 
     Links to non-local file targets are kept as-is if require_target is set"""
+    logger.debug(f"..fix_target_for {root}, {source}, {target}, {require_target}")
     fpath = root / target
     if require_target and not fpath.exists():
         return str(target)

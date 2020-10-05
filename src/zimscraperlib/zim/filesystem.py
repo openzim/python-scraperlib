@@ -157,6 +157,7 @@ def add_to_zim(
         for leaf in fpath.iterdir():
             add_to_zim(root, zim_file, leaf, rewrite_links)
     else:
+        logger.debug(f"Creating FileArticle from {root} -- {fpath} -- {rewrite_links}")
         art = FileArticle(root, fpath, rewrite_links)
         zim_file.add_zim_article(art)
 
