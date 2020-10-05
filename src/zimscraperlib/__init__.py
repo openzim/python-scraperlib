@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
-import logging
+import logging as std_logging
 
 from .constants import NAME
 from .logging import getLogger
 
-logger = getLogger(NAME, logging.DEBUG)
+logger = getLogger(NAME, level=std_logging.DEBUG)
