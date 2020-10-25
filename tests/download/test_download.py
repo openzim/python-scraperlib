@@ -96,6 +96,12 @@ def test_large_download_https(tmp_path, valid_https_url):
 
 
 @pytest.mark.slow
+def test_large_download_to_memory(valid_https_url):
+    downloaded_content = save_large_file(valid_https_url)
+    assert len(downloaded_content) == 5430
+
+
+@pytest.mark.slow
 @pytest.mark.parametrize(
     "url,video_id",
     [

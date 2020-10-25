@@ -145,9 +145,14 @@ def save_file(
                 raise exc
 
 
-def save_large_file(url: str, fpath: pathlib.Path) -> None:
-    """ download a binary file from its URL, using wget """
-    subprocess.run(
+def save_large_file(
+    url: str, fpath: Optional[pathlib.Path] = None
+) -> Union[None, bytes]:
+    """download a binary file from its URL, using wget
+
+    If fpath is supplied, file gets written to the supplied path
+    If not, a byte-string is returned containing contents of the file"""
+    wget = subprocess.run(
         [
             "/usr/bin/env",
             "wget",
@@ -156,9 +161,13 @@ def save_large_file(url: str, fpath: pathlib.Path) -> None:
             "--retry-connrefused",
             "--random-wait",
             "-O",
-            str(fpath),
+            str(fpath) if fpath else "-",
             "-c",
             url,
         ],
         check=True,
+        stdout=subprocess.PIPE,
     )
+
+    if not fpath:
+        return wget.stdout

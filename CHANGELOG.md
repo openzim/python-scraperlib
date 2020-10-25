@@ -1,6 +1,6 @@
 # 1.3.5.dev0
 
-* n/a
+* make `fpath` optional in `save_large_file` and return the downloaded content as `bytes` if no `fpath` is supplied
 
 # 1.3.4
 
