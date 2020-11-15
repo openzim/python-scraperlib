@@ -35,8 +35,8 @@ def get_dest_file(tmp_path):
 
 
 def test_missing_dest(tmp_path):
-    with pytest.raises(TypeError):
-        stream_file(url="http://some_url", byte_stream=io.BytesIO)
+    with pytest.raises(requests.exceptions.ConnectionError):
+        stream_file(url="http://some_url", byte_stream=io.BytesIO())
 
 
 def test_invalid_url(tmp_path, invalid_url):
@@ -45,10 +45,23 @@ def test_invalid_url(tmp_path, invalid_url):
         stream_file(url=invalid_url, fpath=dest_file)
 
 
+def test_no_output_supplied(valid_http_url):
+    with pytest.raises(ValueError, match="Either file path or a bytesIO object is needed"):
+        stream_file(url=valid_http_url)
+
+
+# @pytest.mark.slow
+# def test_show_progress(tmp_path, valid_http_url):
+#     dest_file = tmp_path / "favicon.ico"
+#     local_logger = getLogger()
+#     stream_file(url=valid_http_url, fpath=dest_file, logger_obj=local_logger)
+
+
+
 @pytest.mark.slow
 def test_save_http(tmp_path, valid_http_url):
     dest_file = tmp_path / "favicon.ico"
-    size, ret = stream_file(valid_http_url, dest_file)
+    size, ret = stream_file(url=valid_http_url, fpath=dest_file)
     assert_headers(ret)
     assert_downloaded_file(valid_http_url, dest_file)
 
@@ -59,6 +72,14 @@ def test_save_https(tmp_path, valid_https_url):
     size, ret = stream_file(url=valid_https_url, fpath=dest_file)
     assert_headers(ret)
     assert_downloaded_file(valid_https_url, dest_file)
+
+
+@pytest.mark.slow
+def test_stream_to_bytes(tmp_path, valid_https_url):
+    byte_stream = io.BytesIO()
+    size, ret = stream_file(url=valid_https_url, byte_stream=byte_stream)
+    assert_headers(ret)
+    assert byte_stream.read() == requests.get(valid_https_url).content
 
 
 @pytest.mark.slow

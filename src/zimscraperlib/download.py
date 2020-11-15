@@ -141,71 +141,46 @@ def save_large_file(url: str, fpath: pathlib.Path) -> None:
     )
 
 
-class ProgressReporter:
-    def __init__(self, writter):
-        self._current_size = 0
-        self.width = 60
-        self._last_line = None
-        self._writter = writter
-        self.reporthook(0, 0, 100)  # display empty bar as we start
+# class ProgressReporter:
+#     def __init__(self, writter):
+#         self._current_size = 0
+#         self.width = 60
+#         self._last_line = None
+#         self._writter = writter
+#         self.reporthook(0, 0, 100)  # display empty bar as we start
 
-    def reporthook(self, chunk, chunk_size, total_size):
-        if chunk != 0:
-            self._current_size += chunk_size
+#     def reporthook(self, chunk, chunk_size, total_size):
+#         if chunk != 0:
+#             self._current_size += chunk_size
 
-        avail_dots = self.width - 2
-        if total_size == -1:
-            line = "unknown size"
-        elif self._current_size >= total_size:
-            line = "[" + "." * avail_dots + "] 100%\n"
-        else:
-            ratio = min(float(self._current_size) / total_size, 1.0)
-            shaded_dots = min(int(ratio * avail_dots), avail_dots)
-            percent = min(int(ratio * 100), 100)
-            line = (
-                "["
-                + "." * shaded_dots
-                + " " * (avail_dots - shaded_dots)
-                + "] "
-                + str(percent)
-                + "%\r"
-            )
+#         avail_dots = self.width - 2
+#         if total_size == -1:
+#             line = "unknown size"
+#         elif self._current_size >= total_size:
+#             line = "[" + "." * avail_dots + "] 100%\n"
+#         else:
+#             ratio = min(float(self._current_size) / total_size, 1.0)
+#             shaded_dots = min(int(ratio * avail_dots), avail_dots)
+#             percent = min(int(ratio * 100), 100)
+#             line = (
+#                 "["
+#                 + "." * shaded_dots
+#                 + " " * (avail_dots - shaded_dots)
+#                 + "] "
+#                 + str(percent)
+#                 + "%\r"
+#             )
 
-        if line != self._last_line:
-            self._last_line = line
-            self._writter(line)
-
-
-
-def save_file(
-    url: str,
-    fpath: pathlib.Path,
-    timeout: Optional[int] = 30,
-    retries: Optional[int] = 5,
-) -> requests.structures.CaseInsensitiveDict:
-    """download a file from its URL, and return headers
-    Only recommended to be used with small files/HTMLs"""
-
-    for left_attempts in range(retries, -1, -1):
-        try:
-            resp = requests.get(url, timeout=timeout)
-            resp.raise_for_status()
-            with open(fpath, "wb") as fp:
-                fp.write(resp.content)
-            return resp.headers
-        except requests.exceptions.RequestException as exc:
-            logger.debug(
-                f"Request for {url} failed ({left_attempts} attempts left)\n{exc}"
-            )
-            if left_attempts == 0:
-                raise exc
+#         if line != self._last_line:
+#             self._last_line = line
+#             self._writter(line)
 
 
 def stream_file(
     url: str,
     fpath: Optional[pathlib.Path] = None,
     byte_stream: Optional[io.BytesIO] = None,
-    logger_obj: Optional[Logger] = None,
+    # logger_obj: Optional[Logger] = None,
     block_size: Optional[int] = 1024,
     proxies: Optional[dict] = None,
     only_first_block: Optional[bool] = False,
@@ -215,12 +190,12 @@ def stream_file(
     - retries download on failure (with increasing wait delay)
     - writes progress information to the logger"""
 
-    # if nothing provided
-    if not fpath and not byte_stream:
-        raise AttributeError("Either file path or a bytesIO object is needed")
+    # if no output option is supplied
+    if fpath is None and byte_stream is None:
+        raise ValueError("Either file path or a bytesIO object is needed")
 
-    if logger_obj is not None:
-        progress_reporter = ProgressReporter(logger.raw_std)
+    # if logger_obj is not None:
+    #     progress_reporter = ProgressReporter(logger)
 
     # prepare adapter so it retries on failure
     session = requests.Session()
@@ -232,7 +207,7 @@ def stream_file(
         status=2,  # failure HTTP status (only those bellow)
         redirect=False,  # don't fail on redirections
         backoff_factor=30,  # sleep factor between retries
-        status_forcelist=[413, 429, 500, 502, 503, 504],
+        status_forcelist=[413, 429, 500, 502, 503, 504], # force retry on the following codes
     )
 
     retry_adapter = requests.adapters.HTTPAdapter(max_retries=retries)
@@ -240,7 +215,7 @@ def stream_file(
     resp = session.get(
         url, stream=True, proxies=proxies,
     )
-
+    resp.raise_for_status()
     total_size = int(resp.headers.get("content-length", 0))
     # adjust if we are only requesting first block
     if only_first_block and total_size > block_size:
@@ -253,8 +228,8 @@ def stream_file(
         fp = byte_stream
 
     for data in resp.iter_content(block_size):
-        if logger_obj is not None:
-            progress_reporter.reporthook(data, block_size, total_size)
+        # if logger_obj is not None:
+        #     progress_reporter.reporthook(data, block_size, total_size)
         total_downloaded += len(data)
         fp.write(data)
 
