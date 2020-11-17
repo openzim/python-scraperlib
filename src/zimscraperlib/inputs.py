@@ -7,7 +7,7 @@ import pathlib
 import tempfile
 
 from . import logger
-from .download import save_file
+from .download import stream_file
 
 
 def handle_user_provided_file(source=None, dest=None, in_dir=None, nocopy=False):
@@ -35,7 +35,7 @@ def handle_user_provided_file(source=None, dest=None, in_dir=None, nocopy=False)
 
     if source.startswith("http"):
         logger.debug(f"download {source} -> {dest}")
-        save_file(source, dest)
+        stream_file(url=source, fpath=dest)
     else:
         source = pathlib.Path(source).expanduser().resolve()
         if not source.exists():
