@@ -7,7 +7,6 @@ import pathlib
 import subprocess
 from concurrent.futures import Future, ThreadPoolExecutor
 from typing import Optional, Union
-from logging import Logger
 
 import requests
 import youtube_dl
@@ -141,61 +140,28 @@ def save_large_file(url: str, fpath: pathlib.Path) -> None:
     )
 
 
-# class ProgressReporter:
-#     def __init__(self, writter):
-#         self._current_size = 0
-#         self.width = 60
-#         self._last_line = None
-#         self._writter = writter
-#         self.reporthook(0, 0, 100)  # display empty bar as we start
-
-#     def reporthook(self, chunk, chunk_size, total_size):
-#         if chunk != 0:
-#             self._current_size += chunk_size
-
-#         avail_dots = self.width - 2
-#         if total_size == -1:
-#             line = "unknown size"
-#         elif self._current_size >= total_size:
-#             line = "[" + "." * avail_dots + "] 100%\n"
-#         else:
-#             ratio = min(float(self._current_size) / total_size, 1.0)
-#             shaded_dots = min(int(ratio * avail_dots), avail_dots)
-#             percent = min(int(ratio * 100), 100)
-#             line = (
-#                 "["
-#                 + "." * shaded_dots
-#                 + " " * (avail_dots - shaded_dots)
-#                 + "] "
-#                 + str(percent)
-#                 + "%\r"
-#             )
-
-#         if line != self._last_line:
-#             self._last_line = line
-#             self._writter(line)
-
-
 def stream_file(
     url: str,
     fpath: Optional[pathlib.Path] = None,
     byte_stream: Optional[io.BytesIO] = None,
-    # logger_obj: Optional[Logger] = None,
     block_size: Optional[int] = 1024,
     proxies: Optional[dict] = None,
     only_first_block: Optional[bool] = False,
     max_retries: Optional[int] = 5,
 ) -> Union[int, requests.structures.CaseInsensitiveDict]:
-    """download an URL without blocking
-    - retries download on failure (with increasing wait delay)
-    - writes progress information to the logger"""
+    """Stream data from a URL to either a BytesIO object or a file
+    Arguments -
+        fpath - Path of the file where data is sent
+        byte_stream - The BytesIO object where data is sent
+        block_size - Size of each chunk of data read in one iteration
+        proxies - A dict of proxies to be used (More here - https://requests.readthedocs.io/en/master/user/advanced/#proxies)
+        only_first_block - Whether to download only one (first) block
+        max_retries - Maximum number of retries after which error is raised
+    Returns the total number of bytes downloaded and the response headers"""
 
     # if no output option is supplied
     if fpath is None and byte_stream is None:
         raise ValueError("Either file path or a bytesIO object is needed")
-
-    # if logger_obj is not None:
-    #     progress_reporter = ProgressReporter(logger)
 
     # prepare adapter so it retries on failure
     session = requests.Session()
@@ -207,19 +173,24 @@ def stream_file(
         status=2,  # failure HTTP status (only those bellow)
         redirect=False,  # don't fail on redirections
         backoff_factor=30,  # sleep factor between retries
-        status_forcelist=[413, 429, 500, 502, 503, 504], # force retry on the following codes
+        status_forcelist=[
+            413,
+            429,
+            500,
+            502,
+            503,
+            504,
+        ],  # force retry on the following codes
     )
 
     retry_adapter = requests.adapters.HTTPAdapter(max_retries=retries)
     session.mount("http", retry_adapter)  # tied to http and https
     resp = session.get(
-        url, stream=True, proxies=proxies,
+        url,
+        stream=True,
+        proxies=proxies,
     )
     resp.raise_for_status()
-    total_size = int(resp.headers.get("content-length", 0))
-    # adjust if we are only requesting first block
-    if only_first_block and total_size > block_size:
-        total_size = block_size
 
     total_downloaded = 0
     if fpath is not None:
@@ -228,14 +199,14 @@ def stream_file(
         fp = byte_stream
 
     for data in resp.iter_content(block_size):
-        # if logger_obj is not None:
-        #     progress_reporter.reporthook(data, block_size, total_size)
         total_downloaded += len(data)
         fp.write(data)
 
         # stop downloading/reading if we're just testing first block
         if only_first_block:
             break
+
+    logger.info(f"Downloaded {total_downloaded} bytes from {url}")
 
     if fpath:
         fp.close()

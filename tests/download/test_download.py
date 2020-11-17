@@ -46,16 +46,19 @@ def test_invalid_url(tmp_path, invalid_url):
 
 
 def test_no_output_supplied(valid_http_url):
-    with pytest.raises(ValueError, match="Either file path or a bytesIO object is needed"):
+    with pytest.raises(
+        ValueError, match="Either file path or a bytesIO object is needed"
+    ):
         stream_file(url=valid_http_url)
 
 
-# @pytest.mark.slow
-# def test_show_progress(tmp_path, valid_http_url):
-#     dest_file = tmp_path / "favicon.ico"
-#     local_logger = getLogger()
-#     stream_file(url=valid_http_url, fpath=dest_file, logger_obj=local_logger)
-
+def test_first_block_download(valid_http_url):
+    byte_stream = io.BytesIO()
+    size, ret = stream_file(
+        url=valid_http_url, byte_stream=byte_stream, only_first_block=True
+    )
+    assert_headers(ret)
+    assert len(byte_stream.read()) == 3062
 
 
 @pytest.mark.slow
@@ -75,7 +78,7 @@ def test_save_https(tmp_path, valid_https_url):
 
 
 @pytest.mark.slow
-def test_stream_to_bytes(tmp_path, valid_https_url):
+def test_stream_to_bytes(valid_https_url):
     byte_stream = io.BytesIO()
     size, ret = stream_file(url=valid_https_url, byte_stream=byte_stream)
     assert_headers(ret)
