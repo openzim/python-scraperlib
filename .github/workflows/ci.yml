@@ -19,8 +19,10 @@ jobs:
         uses: actions/setup-python@v1
         with:
           python-version: ${{ matrix.python-version }}
+      - name: pyvar
+        run: echo "pyversion=${{ matrix.python-version }}" >> $GITHUB_ENV
       - name: set image name
-        run: echo ::set-env name=toxpyv::py$(echo "${matrix.python-version//\./}")
+        run: echo "toxpyv=py${pyversion//\./}" >> $GITHUB_ENV
       - name: verify envname
         run : echo $toxpyv
       - name: Install dependencies
