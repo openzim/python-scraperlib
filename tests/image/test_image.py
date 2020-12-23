@@ -20,7 +20,6 @@ from zimscraperlib.image.optimization import (
     optimize_webp,
     optimize_jpeg,
     optimize_gif,
-    run_optimize_images_task,
 )
 from zimscraperlib.image.utils import save_image
 from zimscraperlib.image.presets import (
@@ -446,37 +445,6 @@ def test_format_for(
         webp_image=webp_image,
     )
     assert format_for(src) == expected
-
-
-def test_optimize_images_task_failure(tmp_path, font):
-    tmp_fl = tmp_path / "tmp.jpg"
-    dst = tmp_path / "out.jpg"
-
-    # send an unreadable file
-
-    tmp_fl.touch(mode=0o377)
-    task = Task(
-        src_path=str(tmp_fl.resolve()),
-        quality=50,
-        remove_transparency=False,
-        reduce_colors=False,
-        max_colors=256,
-        max_w=0,
-        max_h=0,
-        keep_exif=False,
-        convert_all=False,
-        conv_big=False,
-        force_del=False,
-        bg_color=(255, 255, 255),
-        grayscale=False,
-        no_size_comparison=True,
-        fast_mode=False,
-    )
-    with pytest.raises(Exception):
-        run_optimize_images_task(task, tmp_fl, dst)
-
-    assert not tmp_fl.exists()
-    assert not dst.exists()
 
 
 def test_optimize_webp_gif_failure(tmp_path, webp_image, gif_image):
