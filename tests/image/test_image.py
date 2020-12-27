@@ -6,10 +6,10 @@ import pytest
 import pathlib
 import os
 import shutil
+import io
 
 from PIL import Image
 from resizeimage.imageexceptions import ImageSizeError
-from optimize_images.data_structures import Task
 
 from zimscraperlib.image.probing import get_colors, is_hex_color, format_for
 from zimscraperlib.image.transformation import resize_image
@@ -20,6 +20,7 @@ from zimscraperlib.image.optimization import (
     optimize_webp,
     optimize_jpeg,
     optimize_gif,
+    optimize_png,
 )
 from zimscraperlib.image.utils import save_image
 from zimscraperlib.image.presets import (
@@ -40,6 +41,15 @@ from zimscraperlib.image.presets import (
 
 def get_image_size(fpath):
     return Image.open(fpath).size
+
+
+def get_optimization_method(fmt):
+    return {
+        "gif": optimize_gif,
+        "jpg": optimize_jpeg,
+        "webp": optimize_webp,
+        "png": optimize_png,
+    }.get(fmt)
 
 
 def get_src_dst(
@@ -422,6 +432,14 @@ def test_preset(
     )
     optimize_image(src, dst, delete_src=False, **preset.options)
     assert os.path.getsize(dst) < os.path.getsize(src)
+
+    if fmt in ["jpg", "webp", "png"]:
+        image_bytes = ""
+        with open(src, "rb") as fl:
+            image_bytes = fl.read()
+        byte_stream = io.BytesIO(image_bytes)
+        _, dst_bytes = get_optimization_method(fmt)(src=byte_stream, **preset.options)
+        assert dst_bytes.getbuffer().nbytes < byte_stream.getbuffer().nbytes
 
 
 def test_ensure_matches(webp_image):
