@@ -24,15 +24,12 @@
 import io
 import os
 import pathlib
-import shutil
 import subprocess
-import tempfile
 from typing import Optional, Tuple, Union
 
 import piexif
 from optimize_images.img_aux_processing import (
     do_reduce_colors,
-    make_grayscale,
     rebuild_palette,
 )
 from optimize_images.img_aux_processing import remove_transparency as remove_alpha
@@ -62,7 +59,6 @@ def optimize_png(
     fast_mode: Optional[bool] = True,
     remove_transparency: Optional[bool] = False,
     background_color: Optional[Tuple[int, int, int]] = (255, 255, 255),
-    grayscale: Optional[bool] = False,
     **options,
 ) -> Tuple[bool, Union[pathlib.Path, io.BytesIO]]:
 
@@ -78,34 +74,24 @@ def optimize_png(
         remove_transparency: Whether to remove transparency (boolean)
             values: True | False
         background_color: Background color if remove_transparency is True (tuple containing RGB values)
-            values: (255, 255, 255) | (221, 121, 108) | (XX, YY, ZZ)
-        grayscale: Whether to convert image to grayscale (boolean)
-            values: True | False"""
+            values: (255, 255, 255) | (221, 121, 108) | (XX, YY, ZZ)"""
 
     ensure_matches(src, "PNG")
 
     img = Image.open(src)
-    orig_mode = img.mode
 
-    if orig_mode == "P":
-        final_colors = orig_colors = len(img.getcolors())
-
-    result_format = "PNG"
     if remove_transparency:
         img = remove_alpha(img, background_color)
 
     if reduce_colors:
-        img, orig_colors, final_colors = do_reduce_colors(img, max_colors)
-
-    if grayscale:
-        img = make_grayscale(img)
+        img, _, _ = do_reduce_colors(img, max_colors)
 
     if not fast_mode and img.mode == "P":
-        img, final_colors = rebuild_palette(img)
+        img, _ = rebuild_palette(img)
 
     if dst is None:
         dst = io.BytesIO()
-    img.save(dst, optimize=True, format=result_format)
+    img.save(dst, optimize=True, format="PNG")
     if isinstance(dst, io.BytesIO):
         dst.seek(0)
     return True, dst
@@ -117,7 +103,6 @@ def optimize_jpeg(
     quality: Optional[int] = 85,
     fast_mode: Optional[bool] = True,
     keep_exif: Optional[bool] = True,
-    grayscale: Optional[bool] = False,
     **options,
 ) -> Tuple[bool, Union[pathlib.Path, io.BytesIO]]:
 
@@ -126,9 +111,8 @@ def optimize_jpeg(
         values: 50 | 55 | 35 | 100 | XX
     keep_exif: Whether to keep EXIF data in JPEG (boolean)
         values: True | False
-    grayscale: Whether to convert image to grayscale (boolean)
-        values: True | False
-    fast_mode: Whether to use faster but weaker compression (boolean)
+    fast_mode: Use the supplied quality value. If turned off, optimizer will
+               get dynamic quality value to ensure better compression
         values: True | False"""
 
     ensure_matches(src, "JPEG")
@@ -140,18 +124,11 @@ def optimize_jpeg(
         else src.getbuffer().nbytes
     )
 
-    result_format = "JPEG"
-    try:
-        had_exif = True if piexif.load(src)["Exif"] else False
-    except piexif.InvalidImageDataError:  # Not a supported format
-        had_exif = False
-    except ValueError:
-        had_exif = False
-    except Exception:
-        had_exif = False
-
-    if grayscale:
-        img = make_grayscale(img)
+    had_exif = False
+    if isinstance(src, io.BytesIO) and piexif.load(src.getvalue())["Exif"]:
+        had_exif = True
+    elif isinstance(src, pathlib.Path) and piexif.load(str(src))["Exif"]:
+        had_exif = True
 
     # only use progressive if file size is bigger
     use_progressive_jpg = orig_size > 10000
@@ -159,7 +136,7 @@ def optimize_jpeg(
     if fast_mode:
         quality_setting = quality
     else:
-        quality_setting, jpgdiff = jpeg_dynamic_quality(img)
+        quality_setting, _ = jpeg_dynamic_quality(img)
 
     if dst is None:
         dst = io.BytesIO()
@@ -169,16 +146,27 @@ def optimize_jpeg(
         quality=quality_setting,
         optimize=True,
         progressive=use_progressive_jpg,
-        format=result_format,
+        format="JPEG",
     )
 
     if isinstance(dst, io.BytesIO):
         dst.seek(0)
 
+    dst_with_exif = io.BytesIO() if isinstance(dst, io.BytesIO) else None
     if keep_exif and had_exif:
-        piexif.transplant(os.path.expanduser(src), dst)
+        piexif.transplant(
+            exif_src=str(src.resolve())
+            if isinstance(src, pathlib.Path)
+            else src.getvalue(),
+            image=str(dst.resolve())
+            if isinstance(dst, pathlib.Path)
+            else dst.getvalue(),
+            new_file=dst_with_exif,
+        )
+        if dst_with_exif:
+            dst_with_exif.seek(0)
 
-    return True, dst
+    return True, dst_with_exif or dst
 
 
 def optimize_webp(

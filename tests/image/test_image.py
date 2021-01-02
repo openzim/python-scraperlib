@@ -2,41 +2,26 @@
 # -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
-import pytest
-import pathlib
-import os
-import shutil
 import io
+import os
+import pathlib
+import shutil
 
+import piexif
+import pytest
 from PIL import Image
 from resizeimage.imageexceptions import ImageSizeError
-
-from zimscraperlib.image.probing import get_colors, is_hex_color, format_for
+from zimscraperlib.image.convertion import convert_image, create_favicon
+from zimscraperlib.image.optimization import (ensure_matches, optimize_gif,
+                                              optimize_image, optimize_jpeg,
+                                              optimize_png, optimize_webp)
+from zimscraperlib.image.presets import (GifHigh, GifLow, GifMedium, JpegHigh,
+                                         JpegLow, JpegMedium, PngHigh, PngLow,
+                                         PngMedium, WebpHigh, WebpLow,
+                                         WebpMedium)
+from zimscraperlib.image.probing import format_for, get_colors, is_hex_color
 from zimscraperlib.image.transformation import resize_image
-from zimscraperlib.image.convertion import create_favicon, convert_image
-from zimscraperlib.image.optimization import (
-    optimize_image,
-    ensure_matches,
-    optimize_webp,
-    optimize_jpeg,
-    optimize_gif,
-    optimize_png,
-)
 from zimscraperlib.image.utils import save_image
-from zimscraperlib.image.presets import (
-    WebpLow,
-    WebpMedium,
-    WebpHigh,
-    GifLow,
-    GifMedium,
-    GifHigh,
-    PngLow,
-    PngMedium,
-    PngHigh,
-    JpegLow,
-    JpegMedium,
-    JpegHigh,
-)
 
 
 def get_image_size(fpath):
@@ -440,6 +425,37 @@ def test_preset(
         byte_stream = io.BytesIO(image_bytes)
         _, dst_bytes = get_optimization_method(fmt)(src=byte_stream, **preset.options)
         assert dst_bytes.getbuffer().nbytes < byte_stream.getbuffer().nbytes
+
+
+def test_remove_png_transparency(png_image, tmp_path):
+    dst = tmp_path / "out.png"
+    optimize_png(src=png_image, dst=dst, remove_transparency=True)
+    assert os.path.getsize(dst) == 10686
+
+
+def test_jpeg_exif_preserve(jpg_exif_image, tmp_path):
+    # in filesystem
+    dst = tmp_path / "out.jpg"
+    optimize_jpeg(src=jpg_exif_image, dst=dst)
+    assert piexif.load(str(dst))["Exif"] and (
+        piexif.load(str(dst))["Exif"]
+        == piexif.load(str(jpg_exif_image.resolve()))["Exif"]
+    )
+
+    # in memory
+    with open(jpg_exif_image, "rb") as fl:
+        src_bytes = fl.read()
+    _, optimized_img = optimize_jpeg(src=io.BytesIO(src_bytes))
+    assert piexif.load(optimized_img.getvalue())["Exif"] and (
+        piexif.load(src_bytes)["Exif"] == piexif.load(optimized_img.getvalue())["Exif"]
+    )
+
+
+def test_dynamic_jpeg_quality(jpg_image, tmp_path):
+    # check optimization without fast mode
+    dst = tmp_path / "out.jpg"
+    optimize_jpeg(src=jpg_image, dst=dst, fast_mode=False)
+    assert os.path.getsize(dst) < os.path.getsize(jpg_image)
 
 
 def test_ensure_matches(webp_image):

@@ -3,6 +3,8 @@
 * add `stream_file()` to stream content from a URL into a file or a `BytesIO` object
 * deprecated `save_file()`
 * fixed `add_binary` when used without an fpath (#69)
+* deprecated `make_grayscale` option in image optimization
+* Added support for in-memory optimization for PNG, JPEG, and WebP images
 
 # 1.3.4
 
