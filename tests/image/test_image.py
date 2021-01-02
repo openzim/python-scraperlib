@@ -12,13 +12,28 @@ import pytest
 from PIL import Image
 from resizeimage.imageexceptions import ImageSizeError
 from zimscraperlib.image.convertion import convert_image, create_favicon
-from zimscraperlib.image.optimization import (ensure_matches, optimize_gif,
-                                              optimize_image, optimize_jpeg,
-                                              optimize_png, optimize_webp)
-from zimscraperlib.image.presets import (GifHigh, GifLow, GifMedium, JpegHigh,
-                                         JpegLow, JpegMedium, PngHigh, PngLow,
-                                         PngMedium, WebpHigh, WebpLow,
-                                         WebpMedium)
+from zimscraperlib.image.optimization import (
+    ensure_matches,
+    optimize_gif,
+    optimize_image,
+    optimize_jpeg,
+    optimize_png,
+    optimize_webp,
+)
+from zimscraperlib.image.presets import (
+    GifHigh,
+    GifLow,
+    GifMedium,
+    JpegHigh,
+    JpegLow,
+    JpegMedium,
+    PngHigh,
+    PngLow,
+    PngMedium,
+    WebpHigh,
+    WebpLow,
+    WebpMedium,
+)
 from zimscraperlib.image.probing import format_for, get_colors, is_hex_color
 from zimscraperlib.image.transformation import resize_image
 from zimscraperlib.image.utils import save_image

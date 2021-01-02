@@ -125,9 +125,9 @@ def optimize_jpeg(
     )
 
     had_exif = False
-    if isinstance(src, io.BytesIO) and piexif.load(src.getvalue())["Exif"]:
-        had_exif = True
-    elif isinstance(src, pathlib.Path) and piexif.load(str(src))["Exif"]:
+    if (isinstance(src, io.BytesIO) and piexif.load(src.getvalue())["Exif"]) or (
+        isinstance(src, pathlib.Path) and piexif.load(str(src))["Exif"]
+    ):
         had_exif = True
 
     # only use progressive if file size is bigger
@@ -149,11 +149,8 @@ def optimize_jpeg(
         format="JPEG",
     )
 
-    if isinstance(dst, io.BytesIO):
-        dst.seek(0)
-
-    dst_with_exif = io.BytesIO() if isinstance(dst, io.BytesIO) else None
     if keep_exif and had_exif:
+        dst_with_exif = io.BytesIO() if isinstance(dst, io.BytesIO) else None
         piexif.transplant(
             exif_src=str(src.resolve())
             if isinstance(src, pathlib.Path)
@@ -163,10 +160,12 @@ def optimize_jpeg(
             else dst.getvalue(),
             new_file=dst_with_exif,
         )
-        if dst_with_exif:
-            dst_with_exif.seek(0)
+        if dst_with_exif is not None:
+            dst = dst_with_exif
 
-    return True, dst_with_exif or dst
+    if isinstance(dst, io.BytesIO):
+        dst.seek(0)
+    return True, dst
 
 
 def optimize_webp(
