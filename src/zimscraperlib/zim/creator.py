@@ -178,7 +178,7 @@ class Creator(libzim.writer.Creator):
             StaticArticle(
                 url=to_longurl(namespace, url),
                 mime_type=mime_type,
-                filename=str(fpath) if fpath is not None else None,
+                filename=str(fpath) if fpath is not None else "",
                 content=content,
                 index=should_index,
                 compress=should_compress,

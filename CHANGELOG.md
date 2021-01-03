@@ -2,6 +2,7 @@
 
 * add `stream_file()` to stream content from a URL into a file or a `BytesIO` object
 * deprecated `save_file()`
+* ensure return type is string for filename in `StaticArticle`
 
 # 1.3.4
 
