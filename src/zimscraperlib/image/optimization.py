@@ -131,7 +131,7 @@ def optimize_jpeg(
         had_exif = True
 
     # only use progressive if file size is bigger
-    use_progressive_jpg = orig_size > 10000
+    use_progressive_jpg = orig_size > 10240  # 10KiB
 
     if fast_mode:
         quality_setting = quality
