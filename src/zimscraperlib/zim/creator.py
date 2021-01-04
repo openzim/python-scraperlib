@@ -50,7 +50,7 @@ class StaticArticle(libzim.writer.Article):
             setattr(self, k, v)
 
     def get_url(self) -> str:
-        return getattr(self, "url")
+        return getattr(self, "url", "")
 
     def get_title(self) -> str:
         return getattr(self, "title", "")
