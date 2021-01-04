@@ -149,8 +149,11 @@ def optimize_jpeg(
         format="JPEG",
     )
 
+    if isinstance(dst, io.BytesIO):
+        dst.seek(0)
+
     if keep_exif and had_exif:
-        dst_with_exif = io.BytesIO() if isinstance(dst, io.BytesIO) else None
+
         piexif.transplant(
             exif_src=str(src.resolve())
             if isinstance(src, pathlib.Path)
@@ -158,13 +161,9 @@ def optimize_jpeg(
             image=str(dst.resolve())
             if isinstance(dst, pathlib.Path)
             else dst.getvalue(),
-            new_file=dst_with_exif,
+            new_file=dst,
         )
-        if dst_with_exif is not None:
-            dst = dst_with_exif
 
-    if isinstance(dst, io.BytesIO):
-        dst.seek(0)
     return True, dst
 
 
