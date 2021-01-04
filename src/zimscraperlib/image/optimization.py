@@ -21,47 +21,24 @@
       a bit less size than the original images but maintain a high quality. """
 
 
+import io
+import os
 import pathlib
-import shutil
 import subprocess
-import tempfile
 from typing import Optional, Tuple, Union
 
-from optimize_images.data_structures import Task
-from optimize_images.do_optimization import do_optimization
+import piexif
+from optimize_images.img_aux_processing import (
+    do_reduce_colors,
+    rebuild_palette,
+)
+from optimize_images.img_aux_processing import remove_transparency as remove_alpha
+from optimize_images.img_dynamic_quality import jpeg_dynamic_quality
 from PIL import Image
 
-from .utils import save_image
 from .convertion import convert_image
 from .probing import format_for
-
-
-def get_temporary_copy(src: pathlib.Path) -> pathlib.Path:
-    tmp_fh = tempfile.NamedTemporaryFile(delete=False, suffix=src.suffix)
-    tmp_fh.close()
-    tmp_path = pathlib.Path(tmp_fh.name)
-    shutil.copy(src, tmp_path)
-    return tmp_path
-
-
-def run_optimize_images_task(
-    optimization_task: Task, tmp_path: pathlib.Path, dst: pathlib.Path
-) -> bool:
-    def cleanup(tmp: pathlib.Path) -> None:
-        if tmp.exists():
-            tmp.unlink()
-
-    try:
-        result = do_optimization(optimization_task)
-        if result.was_optimized:
-            shutil.move(tmp_path, dst)
-    except Exception as exc:
-        cleanup(tmp_path)
-        cleanup(dst)
-        raise exc
-
-    cleanup(tmp_path)
-    return result.was_optimized
+from .utils import save_image
 
 
 def ensure_matches(
@@ -75,16 +52,15 @@ def ensure_matches(
 
 
 def optimize_png(
-    src: pathlib.Path,
-    dst: pathlib.Path,
+    src: Union[pathlib.Path, io.BytesIO],
+    dst: Optional[pathlib.Path] = None,
     reduce_colors: Optional[bool] = False,
     max_colors: Optional[int] = 256,
     fast_mode: Optional[bool] = True,
     remove_transparency: Optional[bool] = False,
     background_color: Optional[Tuple[int, int, int]] = (255, 255, 255),
-    grayscale: Optional[bool] = False,
     **options,
-) -> bool:
+) -> Union[pathlib.Path, io.BytesIO]:
 
     """method to optimize PNG files using a pure python external optimizer
 
@@ -98,112 +74,107 @@ def optimize_png(
         remove_transparency: Whether to remove transparency (boolean)
             values: True | False
         background_color: Background color if remove_transparency is True (tuple containing RGB values)
-            values: (255, 255, 255) | (221, 121, 108) | (XX, YY, ZZ)
-        grayscale: Whether to convert image to grayscale (boolean)
-            values: True | False"""
+            values: (255, 255, 255) | (221, 121, 108) | (XX, YY, ZZ)"""
 
     ensure_matches(src, "PNG")
 
-    # use a temporary file as source as optimization is done destructively
-    tmp_path = get_temporary_copy(src)
+    img = Image.open(src)
 
-    # generate PNG task for optimize_images
+    if remove_transparency:
+        img = remove_alpha(img, background_color)
 
-    optimization_task = Task(
-        src_path=str(tmp_path.resolve()),
-        # quality is specific to JPEG and hence is ignored, but we need to supply the default value
-        quality=90,
-        remove_transparency=remove_transparency,
-        reduce_colors=reduce_colors,
-        # max_colors is ignored if reduce_colors is False, but we need to provide a default value
-        max_colors=max_colors,
-        # max_w and max_h is 0 because we have a better image resizing function in scraperlib already
-        max_w=0,
-        max_h=0,
-        # keep_exif is specific to JPEG and hence is ignored, but we need to supply the default value
-        keep_exif=False,
-        # convert_all converts all PNG to JPEG, hence set to False
-        convert_all=False,
-        # conv_big converts big PNG images to JPEG, hence set to False
-        conv_big=False,
-        # force_del deletes the original PNG after convertion to JPEG if the above two options are used, hence kept False
-        force_del=False,
-        # bg_color is only used if remove_transparency is True, but we need to supply a default value always
-        bg_color=background_color,
-        grayscale=grayscale,
-        no_size_comparison=True,
-        fast_mode=fast_mode,
-    )
+    if reduce_colors:
+        img, _, _ = do_reduce_colors(img, max_colors)
 
-    # optimize the image
-    return run_optimize_images_task(optimization_task, tmp_path, dst)
+    if not fast_mode and img.mode == "P":
+        img, _ = rebuild_palette(img)
+
+    if dst is None:
+        dst = io.BytesIO()
+    img.save(dst, optimize=True, format="PNG")
+    if isinstance(dst, io.BytesIO):
+        dst.seek(0)
+    return dst
 
 
 def optimize_jpeg(
-    src: pathlib.Path,
-    dst: pathlib.Path,
+    src: Union[pathlib.Path, io.BytesIO],
+    dst: Optional[pathlib.Path] = None,
     quality: Optional[int] = 85,
     fast_mode: Optional[bool] = True,
     keep_exif: Optional[bool] = True,
-    grayscale: Optional[bool] = False,
     **options,
-) -> bool:
+) -> Union[pathlib.Path, io.BytesIO]:
 
     """method to optimize JPEG files using a pure python external optimizer
     quality: JPEG quality (integer between 1 and 100)
         values: 50 | 55 | 35 | 100 | XX
     keep_exif: Whether to keep EXIF data in JPEG (boolean)
         values: True | False
-    grayscale: Whether to convert image to grayscale (boolean)
-        values: True | False
-    fast_mode: Whether to use faster but weaker compression (boolean)
+    fast_mode: Use the supplied quality value. If turned off, optimizer will
+               get dynamic quality value to ensure better compression
         values: True | False"""
 
     ensure_matches(src, "JPEG")
 
-    # use a temporary file as source as optimization is done destructively
-    tmp_path = get_temporary_copy(src)
-
-    # generate JPEG task for optimize_images
-
-    optimization_task = Task(
-        src_path=str(tmp_path.resolve()),
-        quality=quality,
-        # remove_transparency is specific to PNG and hence is ignored, but we need to supply the default value
-        remove_transparency=False,
-        # reduce_colors is specific to PNG and hence is ignored, but we need to supply the default value
-        reduce_colors=False,
-        # max_colors is specific to PNG and hence is ignored, but we need to supply the default value
-        max_colors=256,
-        # max_w and max_h is 0 because we have a better image resizing function in scraperlib already
-        max_w=0,
-        max_h=0,
-        keep_exif=keep_exif,
-        # convert_all is specific to PNG and hence is ignored, but we need to supply the default value
-        convert_all=False,
-        # convert_big is specific to PNG and hence is ignored, but we need to supply the default value
-        conv_big=False,
-        # force_del is specific to PNG and hence is ignored, but we need to supply the default value
-        force_del=False,
-        # bg_color is specific to PNG and hence is ignored, but we need to supply the default value
-        bg_color=(255, 255, 255),
-        grayscale=grayscale,
-        no_size_comparison=True,
-        fast_mode=fast_mode,
+    img = Image.open(src)
+    orig_size = (
+        os.path.getsize(src)
+        if isinstance(src, pathlib.Path)
+        else src.getbuffer().nbytes
     )
 
-    # optimize the image
-    return run_optimize_images_task(optimization_task, tmp_path, dst)
+    had_exif = False
+    if (isinstance(src, io.BytesIO) and piexif.load(src.getvalue())["Exif"]) or (
+        isinstance(src, pathlib.Path) and piexif.load(str(src))["Exif"]
+    ):
+        had_exif = True
+
+    # only use progressive if file size is bigger
+    use_progressive_jpg = orig_size > 10240  # 10KiB
+
+    if fast_mode:
+        quality_setting = quality
+    else:
+        quality_setting, _ = jpeg_dynamic_quality(img)
+
+    if dst is None:
+        dst = io.BytesIO()
+
+    img.save(
+        dst,
+        quality=quality_setting,
+        optimize=True,
+        progressive=use_progressive_jpg,
+        format="JPEG",
+    )
+
+    if isinstance(dst, io.BytesIO):
+        dst.seek(0)
+
+    if keep_exif and had_exif:
+
+        piexif.transplant(
+            exif_src=str(src.resolve())
+            if isinstance(src, pathlib.Path)
+            else src.getvalue(),
+            image=str(dst.resolve())
+            if isinstance(dst, pathlib.Path)
+            else dst.getvalue(),
+            new_file=dst,
+        )
+
+    return dst
 
 
 def optimize_webp(
-    src: pathlib.Path,
-    dst: pathlib.Path,
+    src: Union[pathlib.Path, io.BytesIO],
+    dst: Optional[pathlib.Path] = None,
     lossless: Optional[bool] = False,
     quality: Optional[int] = 60,
     method: Optional[int] = 6,
     **options,
-) -> bool:
+) -> Union[pathlib.Path, io.BytesIO]:
     """method to optimize WebP using Pillow options
     lossless: Whether to use lossless compression (boolean)
         values: True | False
@@ -221,14 +192,19 @@ def optimize_webp(
         "method": method,
     }
 
-    try:
-        webp_image = Image.open(src)
-        save_image(webp_image, dst, fmt="WEBP", **params)
-    except Exception as exc:
-        if src.resolve() != dst.resolve() and dst.exists():
-            dst.unlink()
-        raise exc
-    return True
+    webp_image = Image.open(src)
+    if dst is None:
+        dst = io.BytesIO()
+        webp_image.save(dst, format="WEBP", **params)
+        dst.seek(0)
+    else:
+        try:
+            save_image(webp_image, dst, fmt="WEBP", **params)
+        except Exception as exc:
+            if src.resolve() != dst.resolve() and dst.exists():
+                dst.unlink()
+            raise exc
+    return dst
 
 
 def optimize_gif(
@@ -240,7 +216,7 @@ def optimize_gif(
     no_extensions: Optional[bool] = True,
     max_colors: Optional[int] = None,
     **options,
-) -> bool:
+) -> pathlib.Path:
     """method to optimize GIFs using gifsicle >= 1.92
     optimize_level: Optimization level; higher values give better compression (integer between 1 and 3)
         values: 1 | 2 | 3
@@ -279,7 +255,7 @@ def optimize_gif(
 
     # raise error if unsuccessful
     gifsicle.check_returncode()
-    return True
+    return dst
 
 
 def optimize_image(
@@ -307,7 +283,7 @@ def optimize_image(
     else:
         src_img = pathlib.Path(src)
 
-    optimized = {
+    {
         "JPEG": optimize_jpeg,
         "PNG": optimize_png,
         "GIF": optimize_gif,
@@ -315,7 +291,5 @@ def optimize_image(
     }.get(src_format)(src_img, dst, **options)
 
     # delete src image if requested
-    if delete_src and optimized and src.exists() and src.resolve() != dst.resolve():
+    if delete_src and src.exists() and src.resolve() != dst.resolve():
         src.unlink()
-
-    return optimized

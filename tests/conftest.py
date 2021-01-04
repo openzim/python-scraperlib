@@ -79,6 +79,11 @@ def jpg_image():
 
 
 @pytest.fixture(scope="module")
+def jpg_exif_image():
+    return file_src("blue.jpg")
+
+
+@pytest.fixture(scope="module")
 def square_png_image():
     return file_src("square.png")
 
