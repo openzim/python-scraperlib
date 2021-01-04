@@ -60,7 +60,7 @@ def optimize_png(
     remove_transparency: Optional[bool] = False,
     background_color: Optional[Tuple[int, int, int]] = (255, 255, 255),
     **options,
-) -> Tuple[bool, Union[pathlib.Path, io.BytesIO]]:
+) -> Union[pathlib.Path, io.BytesIO]:
 
     """method to optimize PNG files using a pure python external optimizer
 
@@ -94,7 +94,7 @@ def optimize_png(
     img.save(dst, optimize=True, format="PNG")
     if isinstance(dst, io.BytesIO):
         dst.seek(0)
-    return True, dst
+    return dst
 
 
 def optimize_jpeg(
@@ -104,7 +104,7 @@ def optimize_jpeg(
     fast_mode: Optional[bool] = True,
     keep_exif: Optional[bool] = True,
     **options,
-) -> Tuple[bool, Union[pathlib.Path, io.BytesIO]]:
+) -> Union[pathlib.Path, io.BytesIO]:
 
     """method to optimize JPEG files using a pure python external optimizer
     quality: JPEG quality (integer between 1 and 100)
@@ -164,7 +164,7 @@ def optimize_jpeg(
             new_file=dst,
         )
 
-    return True, dst
+    return dst
 
 
 def optimize_webp(
@@ -174,7 +174,7 @@ def optimize_webp(
     quality: Optional[int] = 60,
     method: Optional[int] = 6,
     **options,
-) -> Tuple[bool, Union[pathlib.Path, io.BytesIO]]:
+) -> Union[pathlib.Path, io.BytesIO]:
     """method to optimize WebP using Pillow options
     lossless: Whether to use lossless compression (boolean)
         values: True | False
@@ -204,7 +204,7 @@ def optimize_webp(
             if src.resolve() != dst.resolve() and dst.exists():
                 dst.unlink()
             raise exc
-    return True, dst
+    return dst
 
 
 def optimize_gif(
@@ -216,7 +216,7 @@ def optimize_gif(
     no_extensions: Optional[bool] = True,
     max_colors: Optional[int] = None,
     **options,
-) -> Tuple[bool, pathlib.Path]:
+) -> pathlib.Path:
     """method to optimize GIFs using gifsicle >= 1.92
     optimize_level: Optimization level; higher values give better compression (integer between 1 and 3)
         values: 1 | 2 | 3
@@ -255,7 +255,7 @@ def optimize_gif(
 
     # raise error if unsuccessful
     gifsicle.check_returncode()
-    return True, dst
+    return dst
 
 
 def optimize_image(
@@ -283,7 +283,7 @@ def optimize_image(
     else:
         src_img = pathlib.Path(src)
 
-    optimized, _ = {
+    {
         "JPEG": optimize_jpeg,
         "PNG": optimize_png,
         "GIF": optimize_gif,
@@ -291,7 +291,5 @@ def optimize_image(
     }.get(src_format)(src_img, dst, **options)
 
     # delete src image if requested
-    if delete_src and optimized and src.exists() and src.resolve() != dst.resolve():
+    if delete_src and src.exists() and src.resolve() != dst.resolve():
         src.unlink()
-
-    return optimized

@@ -438,7 +438,7 @@ def test_preset(
         with open(src, "rb") as fl:
             image_bytes = fl.read()
         byte_stream = io.BytesIO(image_bytes)
-        _, dst_bytes = get_optimization_method(fmt)(src=byte_stream, **preset.options)
+        dst_bytes = get_optimization_method(fmt)(src=byte_stream, **preset.options)
         assert dst_bytes.getbuffer().nbytes < byte_stream.getbuffer().nbytes
 
 
@@ -460,7 +460,7 @@ def test_jpeg_exif_preserve(jpg_exif_image, tmp_path):
     # in memory
     with open(jpg_exif_image, "rb") as fl:
         src_bytes = fl.read()
-    _, optimized_img = optimize_jpeg(src=io.BytesIO(src_bytes))
+    optimized_img = optimize_jpeg(src=io.BytesIO(src_bytes))
     assert piexif.load(optimized_img.getvalue())["Exif"] and (
         piexif.load(src_bytes)["Exif"] == piexif.load(optimized_img.getvalue())["Exif"]
     )
