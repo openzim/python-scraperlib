@@ -23,7 +23,7 @@ def getLogger(
     file_max=2 ** 20,
     file_nb_backup=1,
     deps_level=logging.WARNING,
-    additional_deps=[],
+    additional_deps=None,
 ):
     """configured logger for most usages
 
@@ -37,6 +37,8 @@ def getLogger(
     - deps_level: log level for idendified verbose dependencies
     - additional_deps: additional modules names of verbose dependencies
         to assign deps_level to"""
+    if additional_deps is None:
+        additional_deps = []
 
     # align zimscraperlib logging level to that of scraper
     logging.Logger(NAME).setLevel(level)

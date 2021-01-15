@@ -5,6 +5,7 @@
 * fixed `add_binary` when used without an fpath (#69)
 * deprecated `make_grayscale` option in image optimization
 * Added support for in-memory optimization for PNG, JPEG, and WebP images
+* allows enabling debug logs via ZIMSCRAPERLIB_DEBUG environ
 
 # 1.3.4
 

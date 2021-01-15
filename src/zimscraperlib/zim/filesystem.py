@@ -154,19 +154,24 @@ def add_to_zim(
     rewrite_links:
         whether HTML and CSS files should have their links fixed for namespaces"""
     if fpath.is_dir():
+        logger.debug(f".. [DIR] {fpath}")
         for leaf in fpath.iterdir():
+            logger.debug(f"... [FILE] {leaf}")
             add_to_zim(root, zim_file, leaf, rewrite_links)
     else:
+        logger.debug(f".. [FILE] {fpath}")
         art = FileArticle(root, fpath, rewrite_links)
         zim_file.add_zim_article(art)
 
 
 def add_redirects_to_zim(
     zim_file: Creator,
-    redirects: Optional[Sequence[Tuple[str, str, Optional[str]]]] = [],
+    redirects: Optional[Sequence[Tuple[str, str, Optional[str]]]] = None,
     redirects_file: Optional[pathlib.Path] = None,
 ):
     """ add redirects from list of source/target or redirects file to zim """
+    if redirects is None:
+        redirects = []
     for source_url, target_url, title in redirects:
         zim_file.add_redirect(source_url, target_url, title)
 
@@ -191,12 +196,12 @@ def make_zim_file(
     language: str = "eng",
     creator: str = "-",
     publisher="-",
-    tags: Sequence[str] = [],
+    tags: Sequence[str] = None,
     source: str = None,
     flavour: str = None,
     scraper: str = None,
     without_fulltext_index: bool = False,
-    redirects: Sequence[Tuple[str, str, str]] = [],
+    redirects: Sequence[Tuple[str, str, str]] = None,
     redirects_file: pathlib.Path = None,
     rewrite_links: bool = True,
     workaround_nocancel: bool = True,
@@ -241,7 +246,7 @@ def make_zim_file(
                     "creator": creator,
                     "publisher": publisher,
                     # optional
-                    "tags": ";".join(tags) or None,
+                    "tags": ";".join(tags) if tags else None,
                     "source": source,
                     "flavour": flavour,
                     "scraper": scraper,
