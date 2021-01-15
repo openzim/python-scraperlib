@@ -1,3 +1,7 @@
+# 1.3.6.dev0
+
+* n/a
+
 # 1.3.5.dev0
 
 * add `stream_file()` to stream content from a URL into a file or a `BytesIO` object
