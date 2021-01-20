@@ -58,7 +58,10 @@ def test_first_block_download(valid_http_url):
         url=valid_http_url, byte_stream=byte_stream, only_first_block=True
     )
     assert_headers(ret)
-    assert len(byte_stream.read()) == 3062
+    # valid_http_url randomly returns gzip-encoded content.
+    # otherwise, expected size is default block size
+    expected = 3062 if ret.get("Content-Encoding") == "gzip" else 1024
+    assert len(byte_stream.read()) <= expected
 
 
 @pytest.mark.slow
