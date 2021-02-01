@@ -33,7 +33,7 @@ def fix_source_dir(source_vendors_path):
 
 
 def run():
-    if len(sys.argv < 2):
+    if len(sys.argv) < 2:
         print(f"Usage: {sys.argv[0]} <source_vendors_path>")
         print(
             "\t<source_vendors_path>\tpath to your folder containing "

@@ -1,6 +1,13 @@
-# 1.3.6.dev0
+# 1.4.0.dev0
 
-* n/a
+* Using new python-libzim based on libzim v7
+  * New Creator API
+  * Removed all namespace references
+  * Renamed `url` mentions to `path`
+  * Removed all links rewriting
+  * Removed Article/CSS/Binary seggreation
+  * Kept zimwriterfs mode (except it doesn't rewrite for namespaces)
+  * New `html` module for HTML document manipulations
 
 # 1.3.5.dev0
 

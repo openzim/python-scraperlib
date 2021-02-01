@@ -5,103 +5,27 @@
 """ Zim Creator helper
 
     Convenient subclass of libzim.writer.Creator with:
-    - direct method to add an HTML Article from file or content
-    - direct method to add a CSS Article from file or content
-    - direct method to add binary content (works for any type) from file or content
-    - direct method to add redirects
+    - easier configuration of commonly set props during init
+    - start/stop methods to bypass the contextmanager
+    - method to create an entry directly from args
+    - direct method to add redirects without title
     - prevent exeption on double call to close()
-    - optional rewriting of HTML links
-    - optional rewriting of URLs in CSS
 
-    Convenient subclass of libzim.writer.Article with:
+    Convenient subclasses of libzim.writer.Item with:
     - metadata set on initialization
     - metadata stored on object
+    Sister subclass StaticItem (inheriting from it) with:
     - content stored on object
-    - can be used to store a filepath and content read from it (not stored)
-
-    Convenient suclass of libzim.writer.Article for Redirects """
+    - can be used to store a filepath and content read from it (not stored) """
 
 import pathlib
 import datetime
-from typing import Callable, Dict, Union, Optional
+from typing import Dict, Union, Optional
 
 import libzim.writer
 
-from ..types import ARTICLE_MIME
 from ..filesystem import get_content_mimetype, get_file_mimetype
-from .rewriting import (
-    find_namespace_for,
-    fix_links_in_html,
-    fix_urls_in_css,
-    to_longurl,
-)
-
-
-class StaticArticle(libzim.writer.Article):
-    """libzim.writer.Article holding it's data (except content when using filename)
-
-    Easy shortcut to subclassing Article when data's already at hand.
-    `content` can be set (bytes); then stored in object and returned on get_data()
-    If `filename` is set, get_data() returns it's content"""
-
-    def __init__(self, **kwargs: Dict[str, Union[str, bool, bytes]]):
-        super().__init__()
-        for k, v in kwargs.items():
-            setattr(self, k, v)
-
-    def get_url(self) -> str:
-        return getattr(self, "url", "")
-
-    def get_title(self) -> str:
-        return getattr(self, "title", "")
-
-    def is_redirect(self) -> bool:
-        return getattr(self, "redirect_url", None) is not None
-
-    def get_mime_type(self) -> str:
-        return getattr(self, "mime_type", "")
-
-    def get_filename(self) -> str:
-        return getattr(self, "filename", "")
-
-    def should_compress(self) -> bool:
-        return getattr(self, "compress", False)
-
-    def should_index(self) -> bool:
-        return getattr(self, "index", False)
-
-    def get_redirect_url(self) -> str:
-        return getattr(self, "redirect_url", "")
-
-    def get_data(self) -> bytes:
-        if self.get_filename():
-            with open(self.get_filename(), "rb") as fh:
-                return libzim.writer.Blob(fh.read())
-        return libzim.writer.Blob(getattr(self, "content", b""))
-
-
-class RedirectArticle(libzim.writer.Article):
-    """ libzim.writer.Article representing a simple from/to redirect """
-
-    def __init__(self, longurl: str, redirect_url: str, title: Optional[str] = ""):
-        self.longurl = longurl
-        self.redirect_url = redirect_url
-        self.title = title
-
-    def get_url(self) -> str:
-        return self.longurl
-
-    def get_title(self) -> str:
-        return self.title
-
-    def is_redirect(self) -> bool:
-        return True
-
-    def should_index(self) -> bool:
-        return bool(self.title)
-
-    def get_redirect_url(self) -> str:
-        return self.redirect_url
+from .items import StaticItem
 
 
 class Creator(libzim.writer.Creator):
@@ -124,185 +48,122 @@ class Creator(libzim.writer.Creator):
     def __init__(
         self,
         filename: pathlib.Path,
-        main_page: str,
+        main_path: str = None,
         language: Optional[str] = "eng",
+        favicon_path: str = None,
+        compression: Optional[str] = None,
         workaround_nocancel: Optional[bool] = True,
-        min_chunk_size: Optional[int] = None,
         **metadata: Dict[str, Union[str, datetime.date, datetime.datetime]]
     ):
-        super().__init__(
-            filename=filename,
-            main_page=main_page,
-            index_language=language,
-            **{"min_chunk_size": min_chunk_size} if min_chunk_size is not None else {}
-        )
-        self.update_metadata(**metadata)
+        super().__init__(filename=filename)
+        self.can_finish = True
+
+        if main_path:
+            self.main_path = main_path
+
+        if favicon_path:
+            self.favicon_path = favicon_path
+
+        if language:
+            self.config_indexing(True, language)
+            ld = {"Language": language}
+            if metadata:
+                metadata.update(ld)
+            else:
+                metadata = ld
+
+        if compression:
+            self.config_compression(
+                getattr(libzim.writer.Compression, compression.lower())
+                if isinstance(compression, str)
+                else compression
+            )
+
+        if metadata:
+            self.metadata = metadata
+
         self.workaround_nocancel = workaround_nocancel
 
-    def add_zim_article(self, article: libzim.writer.Article):
-        """ Add a libzim.writer Article """
-        try:
-            super().add_article(article)
-        except Exception:
-            if self.workaround_nocancel:
-                self._closed = True  # pragma: no cover
-            raise
+    def start(self):
+        super().__enter__()
 
-    def add_binary(
+        if getattr(self, "main_path", None):
+            self.set_mainpath(self.main_path)
+
+        if getattr(self, "favicon_path", None):
+            self.set_faviconpath(self.favicon_path)
+
+        if getattr(self, "metadata", None):
+            self.update_metadata(**self.metadata)
+        return self
+
+    def update_metadata(self, **kwargs):
+        if kwargs:
+            for name, value in kwargs.items():
+                self.add_metadata(name, value)
+
+    def add_item_for(
         self,
-        url: str,
+        path: str,
+        title: Optional[str] = None,
         fpath: Optional[pathlib.Path] = None,
         content: Optional[bytes] = None,
-        namespace: Optional[str] = None,
-        mime_type: Optional[str] = None,
+        mimetype: Optional[str] = None,
         should_compress: Optional[bool] = False,
         should_index: Optional[bool] = False,
     ):
-        """Add a File or conent at a specified url and get its longurl
+        """Add a File or content at a specified path and get its path
 
-        mime_type is retrieved from content (magic) if not specified
-        namespace is computed from mime_type if not specified
+        mimetype is retrieved from content (magic) if not specified
 
         Content specified either from content (str|bytes) arg or read from fpath
         Source file can be safely deleted after this call."""
         if fpath is None and content is None:
             raise ValueError("One of fpath or content is required")
 
-        if not mime_type:
-            mime_type = (
+        if not mimetype:
+            mimetype = (
                 get_file_mimetype(fpath) if fpath else get_content_mimetype(content[:8])
             )
-        if not namespace:
-            namespace = find_namespace_for(mime_type)
-        self.add_zim_article(
-            StaticArticle(
-                url=to_longurl(namespace, url),
-                mime_type=mime_type,
-                filename=str(fpath) if fpath is not None else "",
+        self.add_item(
+            StaticItem(
+                path=path,
+                title=title or "",
+                mimetype=mimetype,
+                filepath=str(fpath) if fpath is not None else "",
                 content=content,
-                index=should_index,
-                compress=should_compress,
             )
         )
-        return to_longurl(namespace, url)
+        return path
 
-    def add_article(
-        self,
-        url: str,
-        title: str,
-        fpath: Optional[pathlib.Path] = None,
-        content: Optional[str] = None,
-        mime_type: Optional[str] = ARTICLE_MIME,
-        should_index: Optional[bool] = True,
-        should_compress: Optional[bool] = True,
-        rewrite_links: Optional[bool] = False,
-    ):
-        """Add an HTML file or content into A/ namespace (url is without namespace)
+    def add_item(self, item: libzim.writer.Item):
+        """ Add a libzim.writer.Item """
+        try:
+            super().add_item(item)
+        except Exception:
+            if self.workaround_nocancel:
+                self.can_finish = False  # pragma: no cover
+            raise
 
-        Saves specifying the namespace and MIME-type and also provides easy access
-        to links rewriting and HTML-friendly defaults (compress, index)
-
-        Content specified either from content (str) argument or read from fpath
-        Source file can be safely deleted after this call."""
-
-        return self._add_rewriten(
-            namespace="A",
-            url=url,
-            title=title,
-            mime_type=mime_type,
-            should_index=should_index,
-            should_compress=should_compress,
-            rewrite_links=rewrite_links,
-            rewriter=fix_links_in_html,
-            fpath=fpath,
-            content=content,
-        )
-
-    def add_css(
-        self,
-        url: str,
-        fpath: Optional[pathlib.Path] = None,
-        content: Optional[str] = None,
-        should_compress: Optional[bool] = True,
-        should_index: Optional[bool] = False,
-        rewrite_links: Optional[bool] = False,
-    ):
-        """Add a CSS file or content to - namespace (url is without namespace)
-
-        Saves specifying the namespace and MIME-type and also provides easy access
-        to links rewriting and CSS-friendly defaults (compress, no index)
-
-        Content specified either from content (str) argument or read from fpath
-        Source file can be safely deleted after this call."""
-        return self._add_rewriten(
-            namespace="-",
-            url=url,
-            title="",
-            mime_type="text/css",
-            should_index=should_index,
-            should_compress=should_compress,
-            rewrite_links=rewrite_links,
-            rewriter=fix_urls_in_css,
-            fpath=fpath,
-            content=content,
-        )
-
-    def _add_rewriten(
-        self,
-        namespace: str,
-        url: str,
-        title: str,
-        mime_type,
-        should_index,
-        should_compress,
-        rewrite_links,
-        rewriter: Callable[[str, str], str],
-        fpath: Optional[pathlib.Path] = None,
-        content: Optional[str] = None,
-    ):
-        """Add a text article after rewriting its content with custom rewriter
-
-        Generic function not intended for direct access.
-
-        Allows adding an article while automatically rewriting its content using
-        the specified rewriter (text only)
-
-        Content specified either from content (str) argument or read from fpath
-        Source file can be safely deleted after this call."""
-        if fpath is None and content is None:
-            raise ValueError("One of fpath or content is required")
-        if fpath and not content:
-            with open(fpath, "r") as fh:
-                content = fh.read()
-
-        if rewrite_links:
-            content = rewriter(to_longurl(namespace, url), content)
-        self.add_zim_article(
-            StaticArticle(
-                url=to_longurl(namespace, url),
-                mime_type=mime_type,
-                title=title,
-                content=content.encode("UTF-8"),
-                index=should_index,
-                compress=should_compress,
-            )
-        )
-        return to_longurl(namespace, url)
-
-    def add_redirect(self, url: str, redirect_url: str, title: Optional[str] = ""):
-        """Add a redirect from (full) url to (full) redirect_url
-
-        Both url and redirect_url should include namespace.
-        Cross-namespace redirects are allowed.
+    def add_redirect(self, path: str, target_path: str, title: Optional[str] = ""):
+        """Add a redirect from path to target_path
 
         title is optional. when set, the redirect itself
         can be found on suggestions (indexed)"""
-        self.add_zim_article(RedirectArticle(url, redirect_url, title))
-        return url
+        super().add_redirection(path, title, target_path)
 
-    def close(self):
+    def finish(self, exc_type=None, exc_val=None, exc_tb=None):
         """ Triggers finalization of ZIM creation and create final ZIM file. """
+        if not getattr(self, "can_finish", False):
+            return
         try:
-            super().close()
+            super().__exit__(None, None, None)
         except RuntimeError:
             pass
+
+    def __enter__(self):
+        self.start()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.finish(exc_type, exc_val, exc_tb)

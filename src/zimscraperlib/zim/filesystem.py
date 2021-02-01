@@ -8,14 +8,11 @@
 
     - Guesses file mime-type from filenames
     - Add all files to respective namespaces based on mime type
-    - Rewrites all links in HTML and CSS files
-    - Add redirects from a zimwriterfs-compativle redirects TSV
+    - Add redirects from a zimwriterfs-compatible redirects TSV
     - Adds common metadata
-    - Add a -/favicon redirect to specified favicon
 
     Also included:
     - Add redirect from a list of (source, destination, title) strings
-    - Ability to disable links rewriting (rewrite_links=False)
 
     Note: due to the lack of a cancel() method in the libzim itself, it is not possible
     to stop a zim creation process. Should an error occur in your code, a Zim file
@@ -35,113 +32,40 @@ import pathlib
 import datetime
 from typing import Tuple, Optional, Sequence
 
-import libzim.writer
-
 from .. import logger
 from ..filesystem import get_file_mimetype
-from ..types import ARTICLE_MIME, get_mime_for_name
+from ..types import get_mime_for_name
+from ..html import find_title_in_file
 from .creator import Creator
-from .rewriting import (
-    fix_links_in_html_file,
-    fix_urls_in_css_file,
-    find_url,
-    find_title_in_file,
-    to_longurl,
-)
+from .items import StaticItem
 
 
-class FileArticle(libzim.writer.Article):
+class FileItem(StaticItem):
     """ libzim.writer.Article reflecting a local file within a root folder """
 
     def __init__(
         self,
         root: pathlib.Path,
-        fpath: pathlib.Path,
-        rewrite_links: Optional[bool] = False,
+        filepath: pathlib.Path,
     ):
-        super().__init__()
-        self.root = root
-        self.fpath = fpath
-        self.rewrite_links = rewrite_links
+        super().__init__(root=root, filepath=filepath)
         # first look inside the file's magic headers
-        self.mime_type = get_file_mimetype(self.fpath)
+        self.mimetype = get_file_mimetype(self.filepath)
         # most web-specific files are plain text. In this case, use extension
-        if self.mime_type.startswith("text/"):
-            self.mime_type = get_mime_for_name(self.fpath)
+        if self.mimetype.startswith("text/"):
+            self.mimetype = get_mime_for_name(self.filepath)
 
-    def get_url(self) -> str:
-        return find_url(self.root, self.fpath, self.mime_type)
-
-    def get_title(self) -> str:
-        return find_title_in_file(self.fpath, self.mime_type)
-
-    def is_redirect(self) -> bool:
-        return False
-
-    def get_mime_type(self) -> str:
-        return self.mime_type
-
-    def get_filename(self) -> str:
-        return ""
-
-    def should_compress(self) -> bool:
-        return self.mime_type.startswith("text/") or self.mime_type in (
-            "application/javascript",
-            "application/json",
-            "image/svg+xml",
-        )
-
-    def should_index(self) -> bool:
-        return self.mime_type == ARTICLE_MIME
-
-    def get_redirect_url(self) -> str:
-        raise NotImplementedError
-
-    def get_data(self) -> libzim.writer.Blob:
-        if self.rewrite_links:
-            mime = self.get_mime_type()
-            if mime in (ARTICLE_MIME, "text/css"):
-                rewriter = (
-                    fix_links_in_html_file
-                    if mime == ARTICLE_MIME
-                    else fix_urls_in_css_file
-                )
-                return libzim.writer.Blob(
-                    rewriter(self.fpath, root=self.root).encode("utf-8")
-                )
-        with open(self.fpath, "rb") as fh:
-            return libzim.writer.Blob(fh.read())
-
-
-class FaviconArticle(FileArticle):
-    """-/favicon is an expected Article that'd be a redirect to a real image
-
-    Instanciate it with root foler and fpath of the actual image"""
-
-    def get_url(self) -> str:
-        return "-/favicon"
+    def get_path(self) -> str:
+        return str(self.filepath.relative_to(self.root))
 
     def get_title(self) -> str:
-        return ""
-
-    def is_redirect(self) -> bool:
-        return True
-
-    def get_mime_type(self) -> str:
-        return ""
-
-    def get_redirect_url(self) -> str:
-        return find_url(self.root, self.fpath, get_file_mimetype(self.fpath))
-
-    def get_data(self) -> str:
-        return ""
+        return find_title_in_file(self.filepath, self.mimetype)
 
 
 def add_to_zim(
     root: pathlib.Path,
     zim_file: Creator,
     fpath: pathlib.Path,
-    rewrite_links: Optional[bool],
 ):
     """recursively add a path to a zim file
 
@@ -157,11 +81,10 @@ def add_to_zim(
         logger.debug(f".. [DIR] {fpath}")
         for leaf in fpath.iterdir():
             logger.debug(f"... [FILE] {leaf}")
-            add_to_zim(root, zim_file, leaf, rewrite_links)
+            add_to_zim(root, zim_file, leaf)
     else:
         logger.debug(f".. [FILE] {fpath}")
-        art = FileArticle(root, fpath, rewrite_links)
-        zim_file.add_zim_article(art)
+        zim_file.add_item(FileItem(root, fpath))
 
 
 def add_redirects_to_zim(
@@ -178,10 +101,12 @@ def add_redirects_to_zim(
     if redirects_file:
         with open(redirects_file, "r") as fh:
             for line in fh.readlines():
-                namespace, url, title, target_url = re.match(
+                namespace, path, title, target_url = re.match(
                     r"^(.)\t(.+)\t(.*)\t(.+)$", line
                 ).groups()
-                zim_file.add_redirect(to_longurl(namespace, url), target_url, title)
+                if namespace.strip():
+                    path = f"{namespace.strip()}/{path}"
+                zim_file.add_redirect(path, target_url, title)
 
 
 def make_zim_file(
@@ -208,7 +133,7 @@ def make_zim_file(
 ):
     """Creates a zimwriterfs-like ZIM file at {fpath} from {build_dir}
 
-    main_page: url (without A/ ns) or article to serve as main_page (must be in A/)
+    main_page: path of item to serve as main page
     favicon: relative path to favicon file in build_dir
     tags: list of str tags to add to meta
     redirects: list of (src, dst, title) tuple to create redirects from
@@ -225,56 +150,50 @@ def make_zim_file(
         raise IOError(f"Incorrect favicon: {favicon} ({favicon_path})")
 
     zim_file = Creator(
-        fpath,
-        main_page=main_page,
+        filename=fpath,
+        main_path=main_page,
+        favicon_path=favicon,
         index_language="" if without_fulltext_index else language,
+        **{
+            k: v
+            for k, v in {
+                # (somewhat) mandatory
+                "name": name,
+                "title": title,
+                "description": description,
+                "date": date or datetime.date.today(),
+                "language": language,
+                "creator": creator,
+                "publisher": publisher,
+                # optional
+                "tags": ";".join(tags) if tags else None,
+                "source": source,
+                "flavour": flavour,
+                "scraper": scraper,
+            }.items()
+            if v is not None
+        },
     )
+    zim_file.start()
     try:
         logger.debug(f"Preparing zimfile at {zim_file.filename}")
-        # set metadata
-        logger.debug(f"Recording metadata")
-        zim_file.update_metadata(
-            **{
-                k: v
-                for k, v in {
-                    # (somewhat) mandatory
-                    "name": name,
-                    "title": title,
-                    "description": description,
-                    "date": date or datetime.date.today(),
-                    "language": language,
-                    "creator": creator,
-                    "publisher": publisher,
-                    # optional
-                    "tags": ";".join(tags) if tags else None,
-                    "source": source,
-                    "flavour": flavour,
-                    "scraper": scraper,
-                }.items()
-                if v is not None
-            }
-        )
-
-        # add favicon redirect
-        logger.debug(f"Adding favicon from {favicon}")
-        zim_file.add_zim_article(FaviconArticle(build_dir, favicon_path))
 
         # recursively add content from build_dir
         logger.debug(f"Recursively adding files from {build_dir}")
-        add_to_zim(build_dir, zim_file, build_dir, rewrite_links)
+        add_to_zim(build_dir, zim_file, build_dir)
 
         if redirects or redirects_file:
-            logger.debug(f"Creating redirects")
+            logger.debug("Creating redirects")
             add_redirects_to_zim(
                 zim_file, redirects=redirects, redirects_file=redirects_file
             )
 
-    # prevents .close() on __del__ which would create an incomplete .zim file
+    # prevents .finish() which would create an incomplete .zim file
     # this would leave a .zim.tmp folder behind.
     # UPSTREAM: wait until a proper cancel() is provided
     except Exception:
         if workaround_nocancel:
-            zim_file._closed = True  # pragma: no cover
+            zim_file.can_finish = False  # pragma: no cover
         raise
     finally:
-        zim_file.close()
+        zim_file.finish()
