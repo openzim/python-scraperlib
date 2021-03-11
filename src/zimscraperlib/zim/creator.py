@@ -25,6 +25,7 @@ from typing import Dict, Union, Optional
 import libzim.writer
 
 from ..filesystem import get_content_mimetype, get_file_mimetype
+from ..types import get_mime_for_name
 from .items import StaticItem
 
 
@@ -115,6 +116,8 @@ class Creator(libzim.writer.Creator):
         """Add a File or content at a specified path and get its path
 
         mimetype is retrieved from content (magic) if not specified
+        if magic finds it to be text/*, guesses the mimetype from the source
+        filename (if using a file) or the destination path
 
         Content specified either from content (str|bytes) arg or read from fpath
         Source file can be safely deleted after this call."""
@@ -125,6 +128,11 @@ class Creator(libzim.writer.Creator):
             mimetype = (
                 get_file_mimetype(fpath) if fpath else get_content_mimetype(content[:8])
             )
+            # try to guess more-defined mime if it's text
+            if not mimetype or mimetype.startswith("text/"):
+                mimetype = get_mime_for_name(
+                    fpath if fpath else path, mimetype, mimetype
+                )
         self.add_item(
             StaticItem(
                 path=path,
