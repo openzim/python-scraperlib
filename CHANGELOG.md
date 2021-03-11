@@ -8,6 +8,7 @@
   * Removed Article/CSS/Binary seggreation
   * Kept zimwriterfs mode (except it doesn't rewrite for namespaces)
   * New `html` module for HTML document manipulations
+* Changed download log level to DEBUG (was INFO)
 
 # 1.3.5.dev0
 

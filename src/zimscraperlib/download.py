@@ -208,7 +208,7 @@ def stream_file(
         if only_first_block:
             break
 
-    logger.info(f"Downloaded {total_downloaded} bytes from {url}")
+    logger.debug(f"Downloaded {total_downloaded} bytes from {url}")
 
     if fpath:
         fp.close()
