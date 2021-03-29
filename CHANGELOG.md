@@ -9,7 +9,8 @@
   * Kept zimwriterfs mode (except it doesn't rewrite for namespaces)
   * New `html` module for HTML document manipulations
 * Changed download log level to DEBUG (was INFO)
-* filesystem.get_file_mimetype now passes bytes to libmagic instead of filename due to release issue in libmagic
+* `filesystem.get_file_mimetype` now passes bytes to libmagic instead of filename due to release issue in libmagic
+* safer `inputs.handle_user_provided_file` regarding input as str instead of Path
 
 # 1.3.5.dev0
 
