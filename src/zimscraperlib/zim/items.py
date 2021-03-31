@@ -54,7 +54,7 @@ class StaticItem(Item):
 
     def get_contentprovider(self) -> libzim.writer.ContentProvider:
         # content was set manually
-        if getattr(self, "content", None):
+        if getattr(self, "content", None) is not None:
             return StringProvider(content=self.content, ref=self)
 
         # using a file-like object
