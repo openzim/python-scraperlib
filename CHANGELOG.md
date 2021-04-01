@@ -12,6 +12,7 @@
 * `filesystem.get_file_mimetype` now passes bytes to libmagic instead of filename due to release issue in libmagic
 * safer `inputs.handle_user_provided_file` regarding input as str instead of Path
 * `image.presets` and `video.presets` now all includes `ext` and `mimetype` properties
+* Video convert log now DEBUG instead of INFO
 
 # 1.3.5.dev0
 
