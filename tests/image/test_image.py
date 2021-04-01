@@ -6,6 +6,7 @@ import io
 import os
 import pathlib
 import shutil
+import inspect
 
 import piexif
 import pytest
@@ -20,6 +21,7 @@ from zimscraperlib.image.optimization import (
     optimize_png,
     optimize_webp,
 )
+from zimscraperlib.image import presets
 from zimscraperlib.image.presets import (
     GifHigh,
     GifLow,
@@ -37,6 +39,8 @@ from zimscraperlib.image.presets import (
 from zimscraperlib.image.probing import format_for, get_colors, is_hex_color
 from zimscraperlib.image.transformation import resize_image
 from zimscraperlib.image.utils import save_image
+
+ALL_PRESETS = [(n, p) for n, p in inspect.getmembers(presets) if inspect.isclass(p)]
 
 
 def get_image_size(fpath):
@@ -440,6 +444,12 @@ def test_preset(
         byte_stream = io.BytesIO(image_bytes)
         dst_bytes = get_optimization_method(fmt)(src=byte_stream, **preset.options)
         assert dst_bytes.getbuffer().nbytes < byte_stream.getbuffer().nbytes
+
+
+def test_preset_has_mime_and_ext():
+    for _, preset in ALL_PRESETS:
+        assert preset().ext
+        assert preset().mimetype.startswith("image/")
 
 
 def test_remove_png_transparency(png_image, tmp_path):

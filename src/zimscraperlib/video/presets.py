@@ -5,6 +5,9 @@
 from .config import Config
 
 
+preset_type = "video"
+
+
 class VoiceMp3Low(Config):
     """Low quality mp3 audio
 
@@ -13,6 +16,9 @@ class VoiceMp3Low(Config):
     audio-only"""
 
     VERSION = 1
+
+    ext = "mp3"
+    mimetype = "audio/mp3"
 
     options = {
         "-vn": "",  # remove video stream
@@ -31,6 +37,9 @@ class VideoWebmLow(Config):
     highly degraded quality (30, 42)"""
 
     VERSION = 1
+
+    ext = "webm"
+    mimetype = f"{preset_type}/webm"
 
     options = {
         "-codec:v": "libvpx",  # video codec
@@ -57,6 +66,9 @@ class VideoMp4Low(Config):
 
     VERSION = 1
 
+    ext = "mp4"
+    mimetype = f"{preset_type}/mp4"
+
     options = {
         "-codec:v": "h264",  # video codec
         "-b:v": "300k",  # target video bitrate
@@ -79,11 +91,14 @@ class VideoWebmHigh(Config):
 
     VERSION = 1
 
+    ext = "webm"
+    mimetype = f"{preset_type}/webm"
+
     options = {
         "-codec:v": "libvpx",  # video codec
         "-codec:a": "libvorbis",  # audio codec
-        "-crf": "25",  # constant quality, lower value gives better quality and larger files
-        "-b:v": "0",  # must be passed for using constant quality mode via -cbr for this codec
+        "-crf": "25",  # constant quality, lower value gives better qual and larger size
+        "-b:v": "0",  # must be passed if using constant quality mode via -cbr for codec
     }
 
 
@@ -94,8 +109,11 @@ class VideoMp4High(Config):
 
     VERSION = 1
 
+    ext = "mp4"
+    mimetype = f"{preset_type}/mp4"
+
     options = {
         "-codec:v": "h264",  # video codec
         "-codec:a": "aac",  # audio codec
-        "-crf": "20",  # constant quality, lower value gives better quality and larger files
+        "-crf": "20",  # constant quality, lower value gives better qual and larger size
     }
