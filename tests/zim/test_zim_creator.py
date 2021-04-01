@@ -3,6 +3,7 @@
 # vim: ai ts=4 sts=4 et sw=4 nu
 
 import io
+import os
 import sys
 import time
 import shutil
@@ -114,6 +115,45 @@ def test_add_item_for(tmp_path):
     with Creator(fpath, "welcome", "", "My Title") as creator:
         with pytest.raises(ValueError):
             creator.add_item_for(path="welcome", title="hello")
+
+
+def test_add_item_for_delete(tmp_path, html_file):
+    fpath = tmp_path / "test.zim"
+    local_path = pathlib.Path(tmp_path / "somefile.html")
+
+    # copy file to local path
+    shutil.copyfile(html_file, local_path)
+
+    with Creator(fpath, "welcome", "", "My Title") as creator:
+        creator.add_item_for(fpath=local_path, path="index", delete_fpath=True)
+
+    assert not local_path.exists()
+
+    reader = Archive(fpath)
+    assert reader.get_item("index")
+
+
+def test_add_item_for_delete_fail(tmp_path, png_image):
+    fpath = tmp_path / "test.zim"
+    local_path = pathlib.Path(tmp_path / "somefile.png")
+
+    # copy file to local path
+    shutil.copyfile(png_image, local_path)
+
+    def remove_source(item):
+        print("##########", "remove_source")
+        os.remove(item.filepath)
+
+    with Creator(fpath, "welcome", "", "My Title") as creator:
+        creator.add_item(
+            StaticItem(
+                filepath=local_path, path="index", remove=True, callback=remove_source
+            )
+        )
+    assert not local_path.exists()
+
+    reader = Archive(fpath)
+    assert reader.get_item("index")
 
 
 def test_compression(tmp_path):

@@ -110,8 +110,7 @@ class Creator(libzim.writer.Creator):
         fpath: Optional[pathlib.Path] = None,
         content: Optional[bytes] = None,
         mimetype: Optional[str] = None,
-        should_compress: Optional[bool] = False,
-        should_index: Optional[bool] = False,
+        delete_fpath: Optional[bool] = False,
     ):
         """Add a File or content at a specified path and get its path
 
@@ -133,15 +132,17 @@ class Creator(libzim.writer.Creator):
                 mimetype = get_mime_for_name(
                     fpath if fpath else path, mimetype, mimetype
                 )
-        self.add_item(
-            StaticItem(
-                path=path,
-                title=title or "",
-                mimetype=mimetype,
-                filepath=str(fpath) if fpath is not None else "",
-                content=content,
-            )
-        )
+        kwargs = {
+            "path": path,
+            "title": title or "",
+            "mimetype": mimetype,
+            "filepath": fpath if fpath is not None else "",
+            "content": content,
+        }
+        if delete_fpath and fpath:
+            kwargs.update({"remove": True})
+
+        self.add_item(StaticItem(**kwargs))
         return path
 
     def add_item(self, item: libzim.writer.Item):

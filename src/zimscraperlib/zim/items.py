@@ -6,6 +6,7 @@
 """ libzim Item helpers """
 
 import io
+import os
 import re
 import tempfile
 import pathlib
@@ -14,6 +15,7 @@ from typing import Dict, Union
 
 import libzim.writer
 
+from .. import logger
 from ..download import stream_file
 from .providers import FileProvider, StringProvider, FileLikeProvider, URLProvider
 
@@ -73,10 +75,11 @@ class StaticItem(Item):
 
     def __del__(self):
         super().__del__()
-        if getattr(self, "remove", False) and isinstance(
-            getattr(self, "filepath", ""), pathlib.Path
-        ):
-            self.filepath.unlink()  # pragma: nocover
+        if getattr(self, "remove", False) and getattr(self, "filepath", ""):
+            try:  # pragma: nocover
+                os.remove(self.filepath)
+            except Exception as exc:  # pragma: nocover
+                logger.error(f"unable to remove {self.filepath}: {exc}")
 
 
 class URLItem(StaticItem):
