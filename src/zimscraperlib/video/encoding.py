@@ -33,7 +33,9 @@ def reencode(
             + ffmpeg_args
             + [f"file:{tmp_path}"]
         )
-        logger.info(f"Encode {src_path} -> {dst_path} video format = {dst_path.suffix}")
+        logger.debug(
+            f"Encode {src_path} -> {dst_path} " f"video format = {dst_path.suffix}"
+        )
         logger.debug(nicer_args_join(args))
         ffmpeg = subprocess.run(
             args,

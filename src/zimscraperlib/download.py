@@ -140,6 +140,27 @@ def save_large_file(url: str, fpath: pathlib.Path) -> None:
     )
 
 
+def _get_retry_adapter(max_retries: Optional[int] = 5):
+    retries = requests.packages.urllib3.util.retry.Retry(
+        total=max_retries,  # total number of retries
+        connect=max_retries,  # connection errors
+        read=max_retries,  # read errors
+        status=2,  # failure HTTP status (only those bellow)
+        redirect=False,  # don't fail on redirections
+        backoff_factor=30,  # sleep factor between retries
+        status_forcelist=[
+            413,
+            429,
+            500,
+            502,
+            503,
+            504,
+        ],  # force retry on the following codes
+    )
+
+    return requests.adapters.HTTPAdapter(max_retries=retries)
+
+
 def stream_file(
     url: str,
     fpath: Optional[pathlib.Path] = None,
@@ -163,27 +184,8 @@ def stream_file(
     if fpath is None and byte_stream is None:
         raise ValueError("Either file path or a bytesIO object is needed")
 
-    # prepare adapter so it retries on failure
     session = requests.Session()
-    # retries up-to FAILURE_RETRIES whichever kind of listed error
-    retries = requests.packages.urllib3.util.retry.Retry(
-        total=max_retries,  # total number of retries
-        connect=max_retries,  # connection errors
-        read=max_retries,  # read errors
-        status=2,  # failure HTTP status (only those bellow)
-        redirect=False,  # don't fail on redirections
-        backoff_factor=30,  # sleep factor between retries
-        status_forcelist=[
-            413,
-            429,
-            500,
-            502,
-            503,
-            504,
-        ],  # force retry on the following codes
-    )
-
-    retry_adapter = requests.adapters.HTTPAdapter(max_retries=retries)
+    retry_adapter = _get_retry_adapter(max_retries)
     session.mount("http", retry_adapter)  # tied to http and https
     resp = session.get(
         url,
@@ -206,7 +208,7 @@ def stream_file(
         if only_first_block:
             break
 
-    logger.info(f"Downloaded {total_downloaded} bytes from {url}")
+    logger.debug(f"Downloaded {total_downloaded} bytes from {url}")
 
     if fpath:
         fp.close()

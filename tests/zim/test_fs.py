@@ -7,61 +7,41 @@ import shutil
 import subprocess
 
 import pytest
-import libzim.reader
 
-from zimscraperlib.zim import Blob
-from zimscraperlib.zim.filesystem import FileArticle, FaviconArticle, make_zim_file
+from zimscraperlib.zim import Archive
+from zimscraperlib.zim.filesystem import FileItem, make_zim_file
 
 
-def test_filearticle(tmp_path, png_image):
+def test_fileitem(tmp_path, png_image):
     fpath = tmp_path / png_image.name
     shutil.copyfile(png_image, fpath)
 
-    # ensure all properties of a FileArticle representing a binary are correct
-    article = FileArticle(tmp_path, fpath, False)
-    assert article.get_url() == "I/commons.png"
+    # ensure all properties of a FileItem representing a binary are correct
+    article = FileItem(tmp_path, fpath)
+    assert article.get_path() == "commons.png"
     assert article.get_title() == ""
-    assert article.is_redirect() is False
-    assert article.get_mime_type() == "image/png"
-    assert article.get_filename() == ""
-    assert article.should_compress() is False
-    assert article.should_index() is False
-    assert isinstance(article.get_data(), Blob)
-    with pytest.raises(NotImplementedError):
-        article.get_redirect_url()
+    assert article.get_mimetype() == "image/png"
 
 
-def test_filearticle2(tmp_path, html_page):
-    fpath = tmp_path / "test.html"
-    with open(fpath, "w") as fh:
-        fh.write(html_page)
+def test_redirects_file(tmp_path, png_image, build_data):
+    build_data["build_dir"].mkdir()
+    shutil.copyfile(png_image, build_data["build_dir"] / png_image.name)
+    build_data["redirects_file"] = tmp_path / "toto.tsv"
+    with open(build_data["redirects_file"], "w") as fh:
+        # write a redirect with a namespace (old ns scheme)
+        fh.write("A\tAccueil\t\tcommons.png\n")
 
-    # ensure all properties of a FileArticle representing an article are correct
-    article = FileArticle(tmp_path, fpath, True)
-    assert article.get_url() == "A/test.html"
-    assert article.get_title() == "Kiwix lets you access free knowledge – even offline"
-    assert article.is_redirect() is False
-    assert article.get_mime_type() == "text/html"
-    assert article.get_filename() == ""
-    assert article.should_compress() is True
-    assert article.should_index() is True
-    assert isinstance(article.get_data(), Blob)
-    with pytest.raises(NotImplementedError):
-        article.get_redirect_url()
-
-
-def test_faviconarticle(tmp_path, png_image):
-    # ensure FaviconArticle are proper redirect to the image article
-    article = FaviconArticle(png_image.parent, png_image)
-    assert article.get_url() == "-/favicon"
-    assert article.get_title() == ""
-    assert article.is_redirect() is True
-    assert article.get_mime_type() == ""
-    assert article.get_filename() == ""
-    assert article.should_compress() is False
-    assert article.should_index() is False
-    assert article.get_data() == ""
-    assert article.get_redirect_url() == f"I/{png_image.name}"
+    # call make_zim_file with redirects_file
+    make_zim_file(
+        build_dir=build_data["build_dir"],
+        fpath=build_data["fpath"],
+        name="test-zim",
+        main_page="welcome",
+        favicon=png_image.name,
+        title="Test ZIM",
+        description="A test ZIM",
+        redirects_file=build_data["redirects_file"],
+    )
 
 
 def test_make_zim_file_fail_nobuildir(build_data):
@@ -96,19 +76,15 @@ def test_make_zim_file_working(build_data, png_image):
 
     make_zim_file(**build_data)
     assert build_data["fpath"].exists()
-    with libzim.reader.File(build_data["fpath"]) as reader:
-        # A/welcome (actual) and two redirs
-        assert reader.get_namespace_count("A") == 3
-        # I/commons.png (actual) and two redirs
-        assert reader.get_namespace_count("I") == 3
-        # 1 x CSS, 1x JS and -/favicon redirect
-        assert reader.get_namespace_count("-") == 3
+    reader = Archive(build_data["fpath"])
+    # welcome (actual) and two redirs
+    assert reader.entry_count == 7  # includes redirect
 
-        assert reader.get_article("-/style.css").mimetype == "text/css"
-        assert reader.get_article("-/app.js").mimetype == "application/javascript"
-        assert reader.get_suggestions_results_count("bienvenue") == 2
-        assert reader.get_suggestions_results_count("coucou") == 2
-        assert "A/Accueil" in list(reader.suggest("bienvenue"))
+    assert reader.get_item("style.css").mimetype == "text/css"
+    assert reader.get_item("app.js").mimetype == "application/javascript"
+    assert reader.get_estimated_suggestions_results_count("bienvenue") == 2
+    assert reader.get_estimated_suggestions_results_count("coucou") == 2
+    assert "Accueil" in list(reader.suggest("bienvenue"))
 
 
 def test_make_zim_file_exceptions_while_building(tmp_path, png_image, build_data):

@@ -20,8 +20,11 @@ MIME_OVERRIDES = {
 def get_file_mimetype(fpath: pathlib.Path) -> str:
     """ MIME Type of file retrieved from magic headers """
 
-    detected_mime = magic.detect_from_filename(fpath).mime_type
-    return MIME_OVERRIDES.get(detected_mime, detected_mime)
+    # detected_mime = magic.detect_from_filename(fpath).mime_type
+    # return MIME_OVERRIDES.get(detected_mime, detected_mime)
+
+    with open(fpath, "rb") as fh:
+        return get_content_mimetype(fh.read(2048))
 
 
 def get_content_mimetype(content: bytes) -> str:

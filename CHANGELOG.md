@@ -1,6 +1,18 @@
-# 1.3.6.dev0
+# 1.4.0.dev0
 
-* n/a
+* Using new python-libzim based on libzim v7
+  * New Creator API
+  * Removed all namespace references
+  * Renamed `url` mentions to `path`
+  * Removed all links rewriting
+  * Removed Article/CSS/Binary seggreation
+  * Kept zimwriterfs mode (except it doesn't rewrite for namespaces)
+  * New `html` module for HTML document manipulations
+* Changed download log level to DEBUG (was INFO)
+* `filesystem.get_file_mimetype` now passes bytes to libmagic instead of filename due to release issue in libmagic
+* safer `inputs.handle_user_provided_file` regarding input as str instead of Path
+* `image.presets` and `video.presets` now all includes `ext` and `mimetype` properties
+* Video convert log now DEBUG instead of INFO
 
 # 1.3.5.dev0
 

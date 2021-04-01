@@ -64,6 +64,21 @@ def timeout_url():
     return "http://10.255.255.1"
 
 
+@pytest.fixture(scope="module")
+def png_image_url():
+    return "https://commons.wikimedia.org/static/images/project-logos/commonswiki.png"
+
+
+@pytest.fixture(scope="module")
+def gzip_html_url():
+    return "https://en.wikipedia.org/wiki/Main_Page"
+
+
+@pytest.fixture(scope="module")
+def gzip_nonhtml_url():
+    return "http://mirror.download.kiwix.org/robots.txt"
+
+
 def file_src(fname):
     return pathlib.Path(__file__).parent.joinpath("files", fname)
 

@@ -7,7 +7,9 @@ import tempfile
 import pathlib
 import subprocess
 import shutil
+import inspect
 
+from zimscraperlib.video import presets
 from zimscraperlib.video import Config, get_media_info, reencode
 from zimscraperlib.video.presets import (
     VoiceMp3Low,
@@ -16,6 +18,12 @@ from zimscraperlib.video.presets import (
     VideoWebmHigh,
     VideoMp4High,
 )
+
+ALL_PRESETS = [
+    (n, p)
+    for n, p in inspect.getmembers(presets)
+    if inspect.isclass(p) and n != "Config"
+]
 
 
 def copy_media_and_reencode(temp_dir, src, dest, ffmpeg_args, test_files, **kwargs):
@@ -123,6 +131,12 @@ def test_get_media_info(media_format, media, expected, test_files):
     with tempfile.TemporaryDirectory() as t, pathlib.Path(t).joinpath(media) as src:
         shutil.copy2(test_files[media_format], src)
         assert get_media_info(src) == expected
+
+
+def test_preset_has_mime_and_ext():
+    for _, preset in ALL_PRESETS:
+        assert preset().ext
+        assert preset().mimetype.split("/")[0] in ("audio", "video")
 
 
 def test_preset_video_webm_low():

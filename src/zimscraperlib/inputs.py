@@ -5,25 +5,27 @@
 import shutil
 import pathlib
 import tempfile
+from typing import Union, Optional
 
 from . import logger
 from .download import stream_file
 
 
-def handle_user_provided_file(source=None, dest=None, in_dir=None, nocopy=False):
-    """downloads or copies a user provided file (URL or path)
+def handle_user_provided_file(
+    source: Optional[Union[pathlib.Path, str]] = None,
+    dest: Optional[pathlib.Path] = None,
+    in_dir: pathlib.Path = None,
+    nocopy: bool = False,
+) -> Union[pathlib.Path, None]:
+    """path to downloaded or copied a user provided file (URL or path)
 
     args:
         source: URL or path to a file (or None)
-        dest:   pathlib.Path where to save the resulting file
-                using temp filename if None
-        in_dir: pathlib.Path to gen dest within if specified
+        dest:   pwhere to save the resulting file using temp filename if None
+        in_dir: where to generate dest within if specified
         nocopy: don't make a copy of source if a path was provided.
-                return source value instead
-    return:
-        pathlib.Path to handled file (or None)
-    """
-    if not source or not source.strip():
+                return source value instead"""
+    if not source or not str(source).strip():
         return None
 
     if not dest:
@@ -33,9 +35,9 @@ def handle_user_provided_file(source=None, dest=None, in_dir=None, nocopy=False)
             ).name
         )
 
-    if source.startswith("http"):
+    if str(source).startswith("http"):
         logger.debug(f"download {source} -> {dest}")
-        stream_file(url=source, fpath=dest)
+        stream_file(url=str(source), fpath=dest)
     else:
         source = pathlib.Path(source).expanduser().resolve()
         if not source.exists():

@@ -76,27 +76,12 @@ def test_fix_ogvjs_dist(tmp_path, videojs_url, ogvjs_url, videojs_ogvjs_url):
             "-m",
             "zimscraperlib.fix_ogvjs_dist",
             str(tmp_path),
-            "vendors",
         ],
         universal_newlines=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
     )
     assert script.returncode == 0
-    assert script.stdout.count("needs to be fixed.") == 8
 
-    # run a second time to make sure it's fixed (using bare script)
-    script = subprocess.run(
-        [
-            sys.executable,
-            "-m",
-            "zimscraperlib.fix_ogvjs_dist",
-            str(tmp_path),
-            "vendors",
-        ],
-        universal_newlines=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-    )
-    assert script.returncode == 0
-    assert script.stdout.count("is already fixed!") == 8
+    with open(tmp_path / "videojs-ogvjs.js", "r") as fh:
+        assert "webm" in fh.read()

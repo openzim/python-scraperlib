@@ -5,6 +5,8 @@
 
 class Config(dict):
     VERSION = 1
+    ext = "dat"
+    mimetype = "application/data"
     options = {}
     defaults = {"-max_muxing_queue_size": "9999"}
     mapping = {
@@ -24,7 +26,7 @@ class Config(dict):
         self.update(kwargs)
 
     def update_from(self, **kwargs):
-        """ Updates the Config object based on shortcut params as given in build_from() """
+        """ Updates Config object based on shortcut params as given in build_from() """
 
         for key, value in kwargs.items():
             setattr(self, key, value)
@@ -39,7 +41,7 @@ class Config(dict):
             else:
                 args += [
                     k
-                ]  # put only k in cases where it's not followed by a value (a boolean flag)
+                ]  # put only k in cases it's not followed by a value (boolean flag)
         return args
 
     @property
@@ -134,16 +136,18 @@ class Config(dict):
             self["-qmax"] = str(qmax)
         else:
             raise ValueError(
-                "Quantizer scale should be a tuple of 2 ints and range from (-1, -1) to (69, 1024)"
+                "Quantizer scale should be 2-int tuple ranging (-1, -1) to (69, 1024)"
             )
 
     @classmethod
     def build_from(cls, **params):
         """build a Config easily via shortcut params
 
-        video_codec: codec for output audio stream. more info - https://ffmpeg.org/ffmpeg-codecs.html#Video-Encoders
+        video_codec: codec for output audio stream. more info
+        https://ffmpeg.org/ffmpeg-codecs.html#Video-Encoders
             values: h264 | libvpx | libx264 | libx265 | xxx
-        audio_codec: codec for output audio stream. more info - https://ffmpeg.org/ffmpeg-codecs.html#Audio-Encoders
+        audio_codec: codec for output audio stream. more info
+        https://ffmpeg.org/ffmpeg-codecs.html#Audio-Encoders
             values: aac | mp3 | flac | opus | libvorbis | xxx
         max_video_bitrate: maximum size per second for video stream
             values: 128k | 1m
@@ -157,7 +161,7 @@ class Config(dict):
             values: 1000k | 1m
         audio_sampling_rate: number of audio samples per second
             values: 44100 | 48000
-        quantizer_scale_range: tuple of min and max values of video quantizer scale (VBR)
+        quantizer_scale_range: tuple of min / max values of video quantizer scale (VBR)
             values: (21, 35) | (68, 97) | (x, y)
         video_scale: video frame scale. more info - https://trac.ffmpeg.org/wiki/Scaling
             values: 480:320 | 320:240 | width:height

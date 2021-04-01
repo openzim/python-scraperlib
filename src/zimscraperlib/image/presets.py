@@ -4,6 +4,8 @@
 
 """ presets for ImageOptimizer in zimscraperlib.image.optimization module """
 
+preset_type = "image"
+
 
 class WebpLow:
     """Low quality WebP image
@@ -13,6 +15,9 @@ class WebpLow:
     Quality/Speed tradeoff is High"""
 
     VERSION = 1
+
+    ext = "webp"
+    mimetype = f"{preset_type}/webp"
 
     options = {
         "lossless": False,
@@ -30,6 +35,9 @@ class WebpMedium:
 
     VERSION = 1
 
+    ext = "webp"
+    mimetype = f"{preset_type}/webp"
+
     options = {
         "lossless": False,
         "quality": 50,
@@ -45,6 +53,9 @@ class WebpHigh:
     Quality/Speed tradeoff is High"""
 
     VERSION = 1
+
+    ext = "webp"
+    mimetype = f"{preset_type}/webp"
 
     options = {
         "lossless": False,
@@ -63,6 +74,9 @@ class GifLow:
     Interlaced frames"""
 
     VERSION = 1
+
+    ext = "gif"
+    mimetype = f"{preset_type}/gif"
 
     options = {
         "optimize_level": 3,
@@ -84,6 +98,9 @@ class GifMedium:
 
     VERSION = 1
 
+    ext = "gif"
+    mimetype = f"{preset_type}/gif"
+
     options = {
         "optimize_level": 3,
         "lossiness": 20,
@@ -103,6 +120,9 @@ class GifHigh:
 
     VERSION = 1
 
+    ext = "gif"
+    mimetype = f"{preset_type}/gif"
+
     options = {
         "optimize_level": 2,
         "lossiness": None,
@@ -118,6 +138,9 @@ class PngLow:
     Slower and better compression"""
 
     VERSION = 1
+
+    ext = "png"
+    mimetype = f"{preset_type}/png"
 
     options = {
         "reduce_colors": True,
@@ -135,6 +158,9 @@ class PngMedium:
 
     VERSION = 1
 
+    ext = "png"
+    mimetype = f"{preset_type}/png"
+
     options = {
         "reduce_colors": False,
         "remove_transparency": False,
@@ -149,6 +175,9 @@ class PngHigh:
     Weaker and faster compression"""
 
     VERSION = 1
+
+    ext = "png"
+    mimetype = f"{preset_type}/png"
 
     options = {
         "reduce_colors": False,
@@ -166,6 +195,9 @@ class JpegLow:
 
     VERSION = 1
 
+    ext = "png"
+    mimetype = f"{preset_type}/png"
+
     options = {
         "quality": 45,
         "keep_exif": False,
@@ -182,6 +214,9 @@ class JpegMedium:
 
     VERSION = 1
 
+    ext = "jpg"
+    mimetype = f"{preset_type}/jpeg"
+
     options = {
         "quality": 65,
         "keep_exif": False,
@@ -197,6 +232,9 @@ class JpegHigh:
     Weaker and faster compression"""
 
     VERSION = 1
+
+    ext = "jpg"
+    mimetype = f"{preset_type}/jpeg"
 
     options = {
         "quality": 80,
