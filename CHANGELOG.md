@@ -1,4 +1,8 @@
-# 1.3.5.dev0
+# 1.3.6
+
+* using libzim 0.1 which changes ZIM compression
+
+# 1.3.5
 
 * add `stream_file()` to stream content from a URL into a file or a `BytesIO` object
 * deprecated `save_file()`
