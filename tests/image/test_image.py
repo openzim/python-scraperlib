@@ -139,6 +139,26 @@ def test_resize_thumbnail(png_image, jpg_image, tmp_path, fmt):
     "fmt",
     ["png", "jpg"],
 )
+def test_resize_bytestream(png_image, jpg_image, tmp_path, fmt):
+    src, dst = get_src_dst(tmp_path, fmt, png_image=png_image, jpg_image=jpg_image)
+
+    # copy image content into a bytes stream
+    img = io.BytesIO()
+    with open(src, "rb") as srch:
+        img.write(srch.read())
+
+    # resize in place (no dst)
+    width, height = 100, 50
+    resize_image(img, width, height, method="thumbnail")
+    tw, th = get_image_size(img)
+    assert tw <= width
+    assert th <= height
+
+
+@pytest.mark.parametrize(
+    "fmt",
+    ["png", "jpg"],
+)
 def test_resize_width(png_image, jpg_image, tmp_path, fmt):
     src, dst = get_src_dst(tmp_path, fmt, png_image=png_image, jpg_image=jpg_image)
 
