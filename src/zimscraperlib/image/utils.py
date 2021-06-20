@@ -14,4 +14,4 @@ def save_image(
     """ PIL.Image.save() wrapper setting default parameters """
     args = {"JPEG": {"quality": 100}, "PNG": {}}.get(fmt, {})
     args.update(params or {})
-    src.save(str(dst), fmt, **args)
+    src.save(dst, fmt, **args)

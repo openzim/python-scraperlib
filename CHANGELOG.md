@@ -13,6 +13,8 @@
 * safer `inputs.handle_user_provided_file` regarding input as str instead of Path
 * `image.presets` and `video.presets` now all includes `ext` and `mimetype` properties
 * Video convert log now DEBUG instead of INFO
+* Fixed `image.save_image()` saving to disk even when using a bytes stream
+* Fixed `image.transformation.resize_image()` when resizing a byte stream without a dst
 
 # 1.3.5.dev0
 
