@@ -34,5 +34,5 @@ __all__ = [
 
 class Archive(_Archive):
     def get_item(self, path) -> Item:
-        """ Item from a path """
+        """Item from a path"""
         return self.get_entry_by_path(path).get_item()

@@ -26,13 +26,13 @@ class Config(dict):
         self.update(kwargs)
 
     def update_from(self, **kwargs):
-        """ Updates Config object based on shortcut params as given in build_from() """
+        """Updates Config object based on shortcut params as given in build_from()"""
 
         for key, value in kwargs.items():
             setattr(self, key, value)
 
     def to_ffmpeg_args(self):
-        """ Convert the options dict to list of ffmpeg arguments """
+        """Convert the options dict to list of ffmpeg arguments"""
 
         args = []
         for k, v in self.items():

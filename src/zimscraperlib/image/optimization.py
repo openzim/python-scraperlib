@@ -45,7 +45,7 @@ def ensure_matches(
     src: pathlib.Path,
     fmt: str,
 ) -> None:
-    """ Raise ValueError if src is not of image type `fmt` """
+    """Raise ValueError if src is not of image type `fmt`"""
 
     if format_for(src, from_suffix=False) != fmt:
         raise ValueError(f"{src} is not of format {fmt}")

@@ -7,7 +7,7 @@ import pytest
 
 @pytest.fixture(scope="function")
 def html_str():
-    """ sample HTML content with various links """
+    """sample HTML content with various links"""
     return """<html>
 <body>
 <ul>

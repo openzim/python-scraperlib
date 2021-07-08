@@ -139,7 +139,7 @@ class Creator(libzim.writer.Creator):
         return path
 
     def add_item(self, item: libzim.writer.Item):
-        """ Add a libzim.writer.Item """
+        """Add a libzim.writer.Item"""
         try:
             super().add_item(item)
         except Exception:
@@ -158,7 +158,7 @@ class Creator(libzim.writer.Creator):
         self.add_illustration(48, content)
 
     def finish(self, exc_type=None, exc_val=None, exc_tb=None):
-        """ Triggers finalization of ZIM creation and create final ZIM file. """
+        """Triggers finalization of ZIM creation and create final ZIM file."""
         if not getattr(self, "can_finish", False):
             return
         try:

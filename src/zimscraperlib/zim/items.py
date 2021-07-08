@@ -97,7 +97,7 @@ class URLItem(StaticItem):
 
     @staticmethod
     def download_for_size(url, on_disk, tmp_dir=None):
-        """ Download URL to a temp file and return its tempfile and size """
+        """Download URL to a temp file and return its tempfile and size"""
         fpath = stream = None
         if on_disk:
             suffix = pathlib.Path(re.sub(r"^/", "", url.path)).suffix

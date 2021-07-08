@@ -41,7 +41,7 @@ from .items import StaticItem
 
 
 class FileItem(StaticItem):
-    """ libzim.writer.Article reflecting a local file within a root folder """
+    """libzim.writer.Article reflecting a local file within a root folder"""
 
     def __init__(
         self,
@@ -92,7 +92,7 @@ def add_redirects_to_zim(
     redirects: Optional[Sequence[Tuple[str, str, Optional[str]]]] = None,
     redirects_file: Optional[pathlib.Path] = None,
 ):
-    """ add redirects from list of source/target or redirects file to zim """
+    """add redirects from list of source/target or redirects file to zim"""
     if redirects is None:
         redirects = []
     for source_url, target_url, title in redirects:

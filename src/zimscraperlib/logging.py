@@ -70,7 +70,7 @@ def getLogger(
 
 
 def nicer_args_join(args):
-    """ slightly better concateated list of subprocess args for display """
+    """slightly better concateated list of subprocess args for display"""
     nargs = args[0:1]
     for arg in args[1:]:
         nargs.append(arg if arg.startswith("-") else '"{}"'.format(arg))

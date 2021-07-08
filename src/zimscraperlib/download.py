@@ -34,7 +34,7 @@ class YoutubeDownloader:
         self.shutdown()
 
     def shutdown(self) -> None:
-        """ shuts down the executor """
+        """shuts down the executor"""
 
         self.executor.shutdown(wait=True)
 
@@ -122,7 +122,7 @@ class BestMp4(YoutubeConfig):
 
 
 def save_large_file(url: str, fpath: pathlib.Path) -> None:
-    """ download a binary file from its URL, using wget """
+    """download a binary file from its URL, using wget"""
     subprocess.run(
         [
             "/usr/bin/env",

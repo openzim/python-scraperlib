@@ -7,7 +7,7 @@ import pytest
 
 @pytest.fixture(scope="function")
 def html_page():
-    """ sample HTML content with title """
+    """sample HTML content with title"""
     return """
 <!DOCTYPE html>
 <html lang="en-US">

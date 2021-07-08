@@ -36,7 +36,7 @@ def convert_image(
 
 
 def create_favicon(src: pathlib.Path, dst: pathlib.Path) -> None:
-    """ generate a squared favicon from a source image """
+    """generate a squared favicon from a source image"""
     if dst.suffix != ".ico":
         raise ValueError("favicon extension must be ICO")
 

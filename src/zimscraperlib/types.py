@@ -57,7 +57,7 @@ def get_mime_for_name(
 
 
 def init_types():
-    """ supplement mimetypes with custom mapping """
+    """supplement mimetypes with custom mapping"""
     for ext, mime in [
         (".vtt", "text/vtt"),
         # py36, py37

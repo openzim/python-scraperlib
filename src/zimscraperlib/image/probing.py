@@ -15,10 +15,10 @@ import colorthief
 def get_colors(
     src: pathlib.Path, use_palette: Optional[bool] = True
 ) -> Tuple[str, str]:
-    """ (main, secondary) HTML color codes from an image path """
+    """(main, secondary) HTML color codes from an image path"""
 
     def rgb_to_hex(r: int, g: int, b: int) -> str:
-        """ hexadecimal HTML-friendly color code for RGB tuple """
+        """hexadecimal HTML-friendly color code for RGB tuple"""
         return "#{}{}{}".format(*[str(hex(x)[2:]).zfill(2) for x in (r, g, b)]).upper()
 
     def solarize(r: int, g: int, b: int) -> Tuple[int, int, int]:
@@ -45,12 +45,12 @@ def get_colors(
 
 
 def is_hex_color(text: str) -> bool:
-    """ whether supplied text is a valid hex-formated color code """
+    """whether supplied text is a valid hex-formated color code"""
     return re.search(r"^#(?:[0-9a-fA-F]{3}){1,2}$", text)
 
 
 def format_for(src: Union[pathlib.Path, io.BytesIO], from_suffix: bool = True) -> str:
-    """ Pillow format of a given filename, either Pillow-detected or from suffix """
+    """Pillow format of a given filename, either Pillow-detected or from suffix"""
     if not from_suffix:
         with PIL.Image.open(src) as img:
             return img.format

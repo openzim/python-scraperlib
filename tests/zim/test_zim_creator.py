@@ -24,7 +24,7 @@ from zimscraperlib.zim.providers import URLProvider, FileLikeProvider
 
 
 class SpecialURLProvider(URLProvider):
-    """ prevents crash on invalid size """
+    """prevents crash on invalid size"""
 
     def get_size(self) -> int:
         return self.size or 0

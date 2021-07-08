@@ -45,7 +45,7 @@ class Locale:
 
 
 def _(text):
-    """ translates text according to setup'd locale """
+    """translates text according to setup'd locale"""
     return Locale.translation.gettext(text)
 
 
@@ -111,7 +111,7 @@ def find_language_names(query, lang_data={}):
 
 
 def update_with_macro(lang_data, macro_data):
-    """ update empty keys from lang_data with ones of macro_data """
+    """update empty keys from lang_data with ones of macro_data"""
     if macro_data:
         for key, value in macro_data.items():
             if key in lang_data and not lang_data[key]:

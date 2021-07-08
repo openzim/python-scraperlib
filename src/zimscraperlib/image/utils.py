@@ -11,7 +11,7 @@ from PIL import Image
 def save_image(
     src: Image, dst: pathlib.Path, fmt: Optional[str] = None, **params: Optional[dict]
 ) -> None:
-    """ PIL.Image.save() wrapper setting default parameters """
+    """PIL.Image.save() wrapper setting default parameters"""
     args = {"JPEG": {"quality": 100}, "PNG": {}}.get(fmt, {})
     args.update(params or {})
     src.save(dst, fmt, **args)
