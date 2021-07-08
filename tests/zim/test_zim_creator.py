@@ -45,6 +45,9 @@ def test_zim_creator(tmp_path, png_image, html_file, html_str):
     main_path, language, title = "welcome", "fra", "My Title"
     tags = ";".join(["toto", "tata"])
 
+    with open(png_image, "rb") as fh:
+        png_data = fh.read()
+
     with Creator(fpath, main_path, language, title=title, tags=tags) as creator:
         # verbatim HTML from string
         creator.add_item_for("welcome", "wel", content=html_str)
@@ -60,6 +63,9 @@ def test_zim_creator(tmp_path, png_image, html_file, html_str):
         # ensure args requirement are checked
         with pytest.raises(ValueError, match="One of fpath or content is required"):
             creator.add_item_for("images/yahoo.png")
+
+        with open(png_image, "rb") as fh:
+            creator.add_default_illustration(png_data)
 
     assert fpath.exists()
 
@@ -82,6 +88,10 @@ def test_zim_creator(tmp_path, png_image, html_file, html_str):
     assert bytes(reader.get_item("welcome").content).decode(UTF8) == html_str
     assert bytes(reader.get_item("welcome3").content).decode(UTF8) == html_str
 
+    # ensure illustration is present and corrext
+    assert reader.has_illustration()
+    assert bytes(reader.get_illustration_item().content) == png_data
+
 
 def test_create_without_workaround(tmp_path):
     fpath = tmp_path / "test.zim"
@@ -95,7 +105,7 @@ def test_create_without_workaround(tmp_path):
 
 def test_noindexlanguage(tmp_path):
     fpath = tmp_path / "test.zim"
-    with Creator(fpath, "welcome", "", "My Title") as creator:
+    with Creator(fpath, "welcome", "") as creator:
         creator.add_item(StaticItem(path="welcome", content="hello"))
         creator.update_metadata(language="bam")
 
@@ -108,11 +118,11 @@ def test_noindexlanguage(tmp_path):
 def test_add_item_for(tmp_path):
     fpath = tmp_path / "test.zim"
     # test without mimetype
-    with Creator(fpath, "welcome", "", "My Title") as creator:
+    with Creator(fpath, "welcome", "") as creator:
         creator.add_item_for(path="welcome", title="hello", content="hello")
 
     # test missing fpath and content
-    with Creator(fpath, "welcome", "", "My Title") as creator:
+    with Creator(fpath, "welcome", "") as creator:
         with pytest.raises(ValueError):
             creator.add_item_for(path="welcome", title="hello")
 
@@ -124,7 +134,7 @@ def test_add_item_for_delete(tmp_path, html_file):
     # copy file to local path
     shutil.copyfile(html_file, local_path)
 
-    with Creator(fpath, "welcome", "", "My Title") as creator:
+    with Creator(fpath, "welcome", "") as creator:
         creator.add_item_for(fpath=local_path, path="index", delete_fpath=True)
 
     assert not local_path.exists()
@@ -144,7 +154,7 @@ def test_add_item_for_delete_fail(tmp_path, png_image):
         print("##########", "remove_source")
         os.remove(item.filepath)
 
-    with Creator(fpath, "welcome", "", "My Title") as creator:
+    with Creator(fpath, "welcome", "") as creator:
         creator.add_item(
             StaticItem(
                 filepath=local_path, path="index", remove=True, callback=remove_source
@@ -158,20 +168,16 @@ def test_add_item_for_delete_fail(tmp_path, png_image):
 
 def test_compression(tmp_path):
     fpath = tmp_path / "test.zim"
-    with Creator(
-        tmp_path / "test.zim", "welcome", "", "My Title", compression="lzma"
-    ) as creator:
+    with Creator(tmp_path / "test.zim", "welcome", "", compression="lzma") as creator:
         creator.add_item(StaticItem(path="welcome", content="hello"))
 
-    with Creator(
-        fpath, "welcome", "", "My Title", compression=Compression.lzma
-    ) as creator:
+    with Creator(fpath, "welcome", "", compression=Compression.lzma) as creator:
         creator.add_item(StaticItem(path="welcome", content="hello"))
 
 
 def test_double_finish(tmp_path):
     fpath = tmp_path / "test.zim"
-    with Creator(fpath, "welcome", "fra", "My Title") as creator:
+    with Creator(fpath, "welcome", "fra") as creator:
         creator.add_item(StaticItem(path="welcome", content="hello"))
 
     # ensure we can finish an already finished creator

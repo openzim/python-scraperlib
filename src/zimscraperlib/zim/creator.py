@@ -51,7 +51,6 @@ class Creator(libzim.writer.Creator):
         filename: pathlib.Path,
         main_path: str = None,
         language: Optional[str] = "eng",
-        favicon_path: str = None,
         compression: Optional[str] = None,
         workaround_nocancel: Optional[bool] = True,
         **metadata: Dict[str, Union[str, datetime.date, datetime.datetime]]
@@ -61,9 +60,6 @@ class Creator(libzim.writer.Creator):
 
         if main_path:
             self.main_path = main_path
-
-        if favicon_path:
-            self.favicon_path = favicon_path
 
         if language:
             self.config_indexing(True, language)
@@ -90,9 +86,6 @@ class Creator(libzim.writer.Creator):
 
         if getattr(self, "main_path", None):
             self.set_mainpath(self.main_path)
-
-        if getattr(self, "favicon_path", None):
-            self.set_faviconpath(self.favicon_path)
 
         if getattr(self, "metadata", None):
             self.update_metadata(**self.metadata)
@@ -160,6 +153,9 @@ class Creator(libzim.writer.Creator):
         title is optional. when set, the redirect itself
         can be found on suggestions (indexed)"""
         super().add_redirection(path, title, target_path)
+
+    def add_default_illustration(self, content: bytes):
+        self.add_illustration(48, content)
 
     def finish(self, exc_type=None, exc_val=None, exc_tb=None):
         """ Triggers finalization of ZIM creation and create final ZIM file. """

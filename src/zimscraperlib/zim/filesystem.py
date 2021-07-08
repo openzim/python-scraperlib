@@ -152,7 +152,6 @@ def make_zim_file(
     zim_file = Creator(
         filename=fpath,
         main_path=main_page,
-        favicon_path=favicon,
         index_language="" if without_fulltext_index else language,
         **{
             k: v
@@ -174,9 +173,14 @@ def make_zim_file(
             if v is not None
         },
     )
+
     zim_file.start()
     try:
         logger.debug(f"Preparing zimfile at {zim_file.filename}")
+
+        # add favicon as illustration
+        with open(favicon_path, "rb") as fh:
+            zim_file.add_default_illustration(fh.read())
 
         # recursively add content from build_dir
         logger.debug(f"Recursively adding files from {build_dir}")
