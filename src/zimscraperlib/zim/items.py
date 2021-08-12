@@ -43,6 +43,9 @@ class Item(libzim.writer.Item):
     def get_mimetype(self) -> str:
         return getattr(self, "mimetype", "")
 
+    def get_hints(self) -> dict:
+        return getattr(self, "hints", dict())
+
     def __del__(self):
         if callable(getattr(self, "callback", "")):
             self.callback.__call__(self)  # pragma: nocover

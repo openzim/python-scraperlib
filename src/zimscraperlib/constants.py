@@ -12,4 +12,8 @@ SCRAPER = f"{NAME} {VERSION}"
 
 UTF8 = "UTF-8"
 
+# list of Image formats witout Alpha Channel support
 ALPHA_NOT_SUPPORTED = ["JPEG", "BMP", "EPS", "PCX"]
+
+# list of mimetypes we consider articles using it should default to FRONT_ARTICLE
+FRONT_ARTICLE_MIMETYPES = ["text/html"]

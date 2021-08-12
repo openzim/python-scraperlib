@@ -59,6 +59,8 @@ def test_zim_creator(tmp_path, png_image, html_file, html_str):
         creator.add_redirect("home", "welcome")
         # redirect to our main page (with a custom title)
         creator.add_redirect("home2", "welcome", "Home !!")
+        creator.add_redirect("home3", "welcome", "Home !!", is_front=True)
+        creator.add_redirect("home4", "welcome", "Home !!", is_front=False)
 
         # ensure args requirement are checked
         with pytest.raises(ValueError, match="One of fpath or content is required"):
@@ -80,7 +82,9 @@ def test_zim_creator(tmp_path, png_image, html_file, html_str):
     assert reader.get_entry_by_path("home2").is_redirect
     assert reader.get_entry_by_path("home2").get_redirect_entry().path == f"{main_path}"
     # make sure titles were indexed
-    assert "home2" in list(reader.suggest("Home !!"))
+    assert "home2" not in list(reader.suggest("Home !!"))
+    assert "home3" in list(reader.suggest("Home !!"))
+    assert "home4" in list(reader.suggest("Home !!"))
     # make sure full text was indexed
     assert reader.get_estimated_search_results_count("PDF doc") >= 1
 
@@ -399,12 +403,22 @@ def test_item_callback(tmp_path, html_file):
     class Store:
         called = False
 
-    def cb(obj):
+    def cb():
         Store.called = True
 
     with Creator(fpath) as creator:
         creator.add_item(
-            StaticItem(path=html_file.name, filepath=html_file, callback=cb)
+            StaticItem(path=html_file.name, filepath=html_file), callback=cb
         )
 
     assert Store.called is True
+
+
+def test_compess_hints(tmp_path, html_file):
+    with Creator(tmp_path / "test.zim") as creator:
+        creator.add_item_for(
+            path=html_file.name,
+            fpath=html_file,
+            delete_fpath=True,
+            should_compress=True,
+        )

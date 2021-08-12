@@ -25,6 +25,7 @@ from typing import Dict, Union, Optional
 import libzim.writer
 
 from ..filesystem import get_content_mimetype, get_file_mimetype
+from ..constants import FRONT_ARTICLE_MIMETYPES
 from ..types import get_mime_for_name
 from .items import StaticItem
 
@@ -103,6 +104,8 @@ class Creator(libzim.writer.Creator):
         fpath: Optional[pathlib.Path] = None,
         content: Optional[bytes] = None,
         mimetype: Optional[str] = None,
+        is_front: Optional[bool] = None,
+        should_compress: Optional[bool] = None,
         delete_fpath: Optional[bool] = False,
     ):
         """Add a File or content at a specified path and get its path
@@ -110,6 +113,13 @@ class Creator(libzim.writer.Creator):
         mimetype is retrieved from content (magic) if not specified
         if magic finds it to be text/*, guesses the mimetype from the source
         filename (if using a file) or the destination path
+
+        is_front: whether this Item is a FRONT_ARTICLE or not. Those are considered
+        user-facing Entries and thus part of suggestion, random, etc.
+        Default (not set) sets it based on mimetype (see constants for list)
+
+        should_compress: specify whether this Item should be compressed or not.
+        Default (not set) lets the libzim decide (based on mimetype)
 
         Content specified either from content (str|bytes) arg or read from fpath
         Source file can be safely deleted after this call."""
@@ -125,11 +135,20 @@ class Creator(libzim.writer.Creator):
                 mimetype = get_mime_for_name(
                     fpath if fpath else path, mimetype, mimetype
                 )
+
+        if is_front is None:
+            is_front = mimetype in FRONT_ARTICLE_MIMETYPES
+        hints = {libzim.writer.Hint.FRONT_ARTICLE: is_front}
+
+        if should_compress is not None:
+            hints[libzim.writer.Hint.COMPRESS] = should_compress
+
         kwargs = {
             "path": path,
             "title": title or "",
             "mimetype": mimetype,
             "filepath": fpath if fpath is not None else "",
+            "hints": hints,
             "content": content,
         }
         if delete_fpath and fpath:
@@ -147,12 +166,21 @@ class Creator(libzim.writer.Creator):
                 self.can_finish = False  # pragma: no cover
             raise
 
-    def add_redirect(self, path: str, target_path: str, title: Optional[str] = ""):
+    def add_redirect(
+        self,
+        path: str,
+        target_path: str,
+        title: Optional[str] = "",
+        is_front: Optional[bool] = None,
+    ):
         """Add a redirect from path to target_path
 
         title is optional. when set, the redirect itself
-        can be found on suggestions (indexed)"""
-        super().add_redirection(path, title, target_path)
+        can be found on suggestions (indexed) if considered FRONT_ARTICLE"""
+        hints = {}
+        if is_front is not None:
+            hints[libzim.writer.Hint.FRONT_ARTICLE] = is_front
+        super().add_redirection(path, title, target_path, hints)
 
     def add_default_illustration(self, content: bytes):
         self.add_illustration(48, content)
