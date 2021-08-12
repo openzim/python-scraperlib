@@ -18,6 +18,7 @@ from libzim.writer import Compression
 
 from zimscraperlib.constants import UTF8
 from zimscraperlib.download import save_large_file, stream_file
+from zimscraperlib.filesystem import delete_callback
 from zimscraperlib.zim import Archive
 from zimscraperlib.zim import Creator, StaticItem, URLItem
 from zimscraperlib.zim.providers import URLProvider, FileLikeProvider
@@ -160,9 +161,8 @@ def test_add_item_for_delete_fail(tmp_path, png_image):
 
     with Creator(fpath, "welcome", "") as creator:
         creator.add_item(
-            StaticItem(
-                filepath=local_path, path="index", remove=True, callback=remove_source
-            )
+            StaticItem(filepath=local_path, path="index", callback=remove_source),
+            callback=(delete_callback, local_path),
         )
     assert not local_path.exists()
 
@@ -222,9 +222,9 @@ def test_sourcefile_removal_std(tmp_path, html_file):
                 StaticItem(
                     filepath=paths[-1],
                     path=paths[-1].name,
-                    remove=True,
                     mimetype="text/html",
-                )
+                ),
+                callback=(delete_callback, paths[-1]),
             )
     for path in paths:
         assert not path.exists()
@@ -422,3 +422,30 @@ def test_compess_hints(tmp_path, html_file):
             delete_fpath=True,
             should_compress=True,
         )
+
+
+def test_callback_and_remove(tmp_path, html_file):
+    class Store:
+        called = 0
+
+    def cb(*args):
+        Store.called += 1
+
+    # duplicate test file as we'll want to remove twice
+    html_file2 = html_file.with_suffix(f".2{html_file.suffix}")
+    shutil.copyfile(html_file, html_file2)
+
+    with Creator(tmp_path / "test.zim") as creator:
+        creator.add_item_for(
+            path=html_file.name, fpath=html_file, delete_fpath=True, callback=cb
+        )
+        creator.add_item_for(
+            path=html_file2.name,
+            fpath=html_file2,
+            delete_fpath=True,
+            callback=(cb, html_file.name),
+        )
+
+    assert not html_file.exists()
+    assert Store.called
+    assert Store.called == 2

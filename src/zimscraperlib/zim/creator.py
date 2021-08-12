@@ -18,13 +18,14 @@
     - content stored on object
     - can be used to store a filepath and content read from it (not stored) """
 
+import weakref
 import pathlib
 import datetime
-from typing import Dict, Union, Optional
+from typing import Dict, Union, Optional, Any, Tuple, Callable
 
 import libzim.writer
 
-from ..filesystem import get_content_mimetype, get_file_mimetype
+from ..filesystem import get_content_mimetype, get_file_mimetype, delete_callback
 from ..constants import FRONT_ARTICLE_MIMETYPES
 from ..types import get_mime_for_name
 from .items import StaticItem
@@ -107,6 +108,7 @@ class Creator(libzim.writer.Creator):
         is_front: Optional[bool] = None,
         should_compress: Optional[bool] = None,
         delete_fpath: Optional[bool] = False,
+        callback: Optional[Union[callable, Tuple[callable, Any]]] = None,
     ):
         """Add a File or content at a specified path and get its path
 
@@ -122,7 +124,9 @@ class Creator(libzim.writer.Creator):
         Default (not set) lets the libzim decide (based on mimetype)
 
         Content specified either from content (str|bytes) arg or read from fpath
-        Source file can be safely deleted after this call."""
+        Source file can be safely deleted after this call.
+
+        callback: see add_item()"""
         if fpath is None and content is None:
             raise ValueError("One of fpath or content is required")
 
@@ -152,13 +156,31 @@ class Creator(libzim.writer.Creator):
             "content": content,
         }
         if delete_fpath and fpath:
-            kwargs.update({"remove": True})
+            cb = [delete_callback, fpath]
+            if callback and callable(callback):
+                cb.append(callback)
+            elif callback:
+                cb += list(callback)
+            callback = tuple(cb)
 
-        self.add_item(StaticItem(**kwargs))
+        self.add_item(StaticItem(**kwargs), callback)
         return path
 
-    def add_item(self, item: libzim.writer.Item):
-        """Add a libzim.writer.Item"""
+    def add_item(
+        self,
+        item: libzim.writer.Item,
+        callback: Optional[Union[Callable, Tuple[Callable, Any]]] = None,
+    ):
+        """Add a libzim.writer.Item
+
+        callback: either a single callable or a tuple containing the callable
+        as first element then the arguments to pass to the callable.
+        Note: you must __not__ include the item itself in those arguments."""
+        if callback:
+            if callable(callback):
+                weakref.finalize(item, callback)
+            else:
+                weakref.finalize(item, *callback)
         try:
             super().add_item(item)
         except Exception:

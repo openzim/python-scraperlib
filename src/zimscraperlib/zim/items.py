@@ -6,7 +6,6 @@
 """ libzim Item helpers """
 
 import io
-import os
 import re
 import tempfile
 import pathlib
@@ -15,7 +14,6 @@ from typing import Dict, Union
 
 import libzim.writer
 
-from .. import logger
 from ..download import stream_file
 from .providers import FileProvider, StringProvider, FileLikeProvider, URLProvider
 
@@ -46,16 +44,14 @@ class Item(libzim.writer.Item):
     def get_hints(self) -> dict:
         return getattr(self, "hints", dict())
 
-    def __del__(self):
-        if callable(getattr(self, "callback", "")):
-            self.callback.__call__(self)  # pragma: nocover
-
 
 class StaticItem(Item):
     """scraperlib Item with auto contentProvider from `content` or `filepath`
 
     Sets a `ref` to itself on the File/String content providers so it outlives them
-    Accepts a `remove` prop to automatically remove the `filepath` on deletion"""
+    We need Item to survive its ContentProvider so that we can track lifecycle
+    more efficiently: now when the libzim destroys the CP, python will destroy
+    the Item and we can be notified that we're effectively through with our content"""
 
     def get_contentprovider(self) -> libzim.writer.ContentProvider:
         # content was set manually
@@ -75,14 +71,6 @@ class StaticItem(Item):
             )
 
         raise NotImplementedError("No data to provide`")
-
-    def __del__(self):
-        super().__del__()
-        if getattr(self, "remove", False) and getattr(self, "filepath", ""):
-            try:  # pragma: nocover
-                os.remove(self.filepath)
-            except Exception as exc:  # pragma: nocover
-                logger.error(f"unable to remove {self.filepath}: {exc}")
 
 
 class URLItem(StaticItem):

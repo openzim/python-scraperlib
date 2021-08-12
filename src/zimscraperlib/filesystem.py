@@ -7,7 +7,9 @@
     Shortcuts to retrieve mime type using magic
     """
 
+import os
 import pathlib
+from typing import Union, Callable, Optional, Any
 
 import magic
 
@@ -32,3 +34,17 @@ def get_content_mimetype(content: bytes) -> str:
 
     detected_mime = magic.detect_from_content(content).mime_type
     return MIME_OVERRIDES.get(detected_mime, detected_mime)
+
+
+def delete_callback(
+    fpath: Union[str, pathlib.Path],
+    callback: Optional[Callable] = None,
+    *callback_args: Any
+):
+    """helper deleting passed filepath, optionnaly calling an additional callback"""
+
+    os.unlink(fpath)
+
+    # call the callback if requested
+    if callback and callable(callback):
+        callback.__call__(*callback_args)
