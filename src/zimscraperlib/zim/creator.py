@@ -31,6 +31,27 @@ from ..types import get_mime_for_name
 from .items import StaticItem
 
 
+def mimetype_for(
+    path: str,
+    content: Optional[Union[bytes, str]] = None,
+    fpath: Optional[pathlib.Path] = None,
+    mimetype: Optional[str] = None,
+) -> str:
+    """mimetype as provided or guessed from fpath, path or content"""
+    if not mimetype:
+        mimetype = (
+            get_file_mimetype(fpath) if fpath else get_content_mimetype(content[:2048])
+        )
+        # try to guess more-defined mime if it's text
+        if (
+            not mimetype
+            or mimetype == "application/octet-stream"
+            or mimetype.startswith("text/")
+        ):
+            mimetype = get_mime_for_name(fpath if fpath else path, mimetype, mimetype)
+    return mimetype
+
+
 class Creator(libzim.writer.Creator):
 
     """libzim.writer.Creator subclass
@@ -130,15 +151,9 @@ class Creator(libzim.writer.Creator):
         if fpath is None and content is None:
             raise ValueError("One of fpath or content is required")
 
-        if not mimetype:
-            mimetype = (
-                get_file_mimetype(fpath) if fpath else get_content_mimetype(content[:8])
-            )
-            # try to guess more-defined mime if it's text
-            if not mimetype or mimetype.startswith("text/"):
-                mimetype = get_mime_for_name(
-                    fpath if fpath else path, mimetype, mimetype
-                )
+        mimetype = mimetype_for(
+            path=path, content=content, fpath=fpath, mimetype=mimetype
+        )
 
         if is_front is None:
             is_front = mimetype in FRONT_ARTICLE_MIMETYPES
