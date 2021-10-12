@@ -126,3 +126,29 @@ def gif_image():
 @pytest.fixture(scope="module")
 def webp_image():
     return file_src("ninja.webp")
+
+
+@pytest.fixture(scope="session")
+def small_zim_file(tmpdir_factory):
+    from zimscraperlib.download import stream_file
+
+    dst = tmpdir_factory.mktemp("data").join("small.zim")
+    stream_file(
+        "https://github.com/openzim/zim-testing-suite/raw/v0.3/data/nons/" "small.zim",
+        dst,
+    )
+    return dst
+
+
+@pytest.mark.slow
+@pytest.fixture(scope="session")
+def real_zim_file(tmpdir_factory):
+    from zimscraperlib.download import stream_file
+
+    dst = tmpdir_factory.mktemp("data").join("small.zim")
+    stream_file(
+        "https://github.com/openzim/zim-testing-suite/raw/v0.3/data/withns/"
+        "wikipedia_en_climate_change_nopic_2020-01.zim",
+        dst,
+    )
+    return dst

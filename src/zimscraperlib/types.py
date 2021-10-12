@@ -7,7 +7,7 @@
     All libzim *articles* contains the mime-type of their content, for the libzim
     reader to properly return it.
 
-    Providing accurate mime-type for Zim Article is important to prevent broken features
+    Providing accurate mime-type for ZIM Article is important to prevent broken features
     upon reading.
     Ex.: youtube scraper uses Web Assembly files (.wasm) for the WebM codecs.
     Without the proper mime-type, wasm files are returned as octet-stream and thus

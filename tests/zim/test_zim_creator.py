@@ -51,17 +51,20 @@ def test_zim_creator(tmp_path, png_image, html_file, html_str):
 
     with Creator(fpath, main_path, language, title=title, tags=tags) as creator:
         # verbatim HTML from string
-        creator.add_item_for("welcome", "wel", content=html_str)
+        creator.add_item_for("welcome", "wel", content=html_str, is_front=True)
         # verbatim HTML from file
         creator.add_item_for("welcome3", "wel3", fpath=html_file)
+        creator.add_item_for("welcome4", "wel4", fpath=html_file)
         # single binary image
-        creator.add_item_for("images/yahoo.png", fpath=png_image)
+        creator.add_item_for(
+            "images/yahoo.png", "Home !!", fpath=png_image, is_front=True
+        )
         # redirect to our main page (no title)
         creator.add_redirect("home", "welcome")
         # redirect to our main page (with a custom title)
         creator.add_redirect("home2", "welcome", "Home !!")
-        creator.add_redirect("home3", "welcome", "Home !!", is_front=True)
-        creator.add_redirect("home4", "welcome", "Home !!", is_front=False)
+        creator.add_redirect("home3", "welcome3", "Home !!", is_front=True)
+        creator.add_redirect("home4", "welcome4", "Home !!", is_front=False)
 
         # ensure args requirement are checked
         with pytest.raises(ValueError, match="One of fpath or content is required"):
@@ -82,12 +85,14 @@ def test_zim_creator(tmp_path, png_image, html_file, html_str):
     # make sure we have our redirects
     assert reader.get_entry_by_path("home2").is_redirect
     assert reader.get_entry_by_path("home2").get_redirect_entry().path == f"{main_path}"
-    # make sure titles were indexed
-    assert "home2" not in list(reader.suggest("Home !!"))
-    assert "home3" in list(reader.suggest("Home !!"))
-    assert "home4" in list(reader.suggest("Home !!"))
+    # make sure titles were indexed (html with title for xapian)
+    # see https://github.com/openzim/python-libzim/issues/125
+    assert "home2" in list(reader.get_suggestions("Home !!"))
+    assert "home3" in list(reader.get_suggestions("Home !!"))
+    assert "home4" in list(reader.get_suggestions("Home !!"))
+    assert "images/yahoo.png" not in list(reader.get_suggestions("Home !!"))
     # make sure full text was indexed
-    assert reader.get_estimated_search_results_count("PDF doc") >= 1
+    assert reader.get_search_results_count("PDF doc") >= 1
 
     # ensure non-rewritten articles have not been rewritten
     assert bytes(reader.get_item("welcome").content).decode(UTF8) == html_str
@@ -113,9 +118,12 @@ def test_noindexlanguage(tmp_path):
     with Creator(fpath, "welcome", "") as creator:
         creator.add_item(StaticItem(path="welcome", content="hello"))
         creator.update_metadata(language="bam")
+        creator.add_item_for("index", "Index", content="-", mimetype="text/html")
 
     reader = Archive(fpath)
     assert reader.get_metadata("Language").decode(UTF8) == "bam"
+    # html content triggers both title and content xapian indexes
+    # but since indexing is disabled, we should only have title one
     assert reader.has_title_index
     assert not reader.has_fulltext_index
 

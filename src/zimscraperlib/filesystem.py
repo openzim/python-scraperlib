@@ -4,8 +4,7 @@
 
 """ Files manipulation tools
 
-    Shortcuts to retrieve mime type using magic
-    """
+    Shortcuts to retrieve mime type using magic"""
 
 import os
 import pathlib

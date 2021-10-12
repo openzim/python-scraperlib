@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
-""" Zim Creator helper
+""" ZIM Creator helper
 
     Convenient subclass of libzim.writer.Creator with:
     - easier configuration of commonly set props during init
@@ -60,9 +60,9 @@ class Creator(libzim.writer.Creator):
     to stop a zim creation process. Should an error occur in your code, a Zim file
     with up-to-that-moment content will be created at destination.
 
-    To prevent this (creating an unwanted Zim file) from happening,
+    To prevent this (creating an unwanted ZIM file) from happening,
     a workaround is in place. It prevents the libzim from finishing its process.
-    While it results in no Zim file being created, it also results in
+    While it results in no ZIM file being created, it also results in
     the zim temp folder to be left on disk and very frequently leads to
     a segmentation fault at garbage collection (on exit mostly).
 
@@ -216,7 +216,7 @@ class Creator(libzim.writer.Creator):
         can be found on suggestions (indexed) if considered FRONT_ARTICLE"""
         hints = {}
         if is_front is not None:
-            hints[libzim.writer.Hint.FRONT_ARTICLE] = is_front
+            hints[libzim.writer.Hint.FRONT_ARTICLE] = bool(is_front)
         super().add_redirection(path, title, target_path, hints)
 
     def add_default_illustration(self, content: bytes):

@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
-""" zimwriterfs-like tools to convert a build folder into a Zim
+""" zimwriterfs-like tools to convert a build folder into a ZIM
 
     make_zim_file behaves in a similar way to zimwriterfs and expects the same options:
 

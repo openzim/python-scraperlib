@@ -8,7 +8,7 @@ import subprocess
 
 import pytest
 
-from zimscraperlib.zim import Archive
+from zimscraperlib.zim.archive import Archive
 from zimscraperlib.zim.filesystem import FileItem, make_zim_file
 
 
@@ -82,9 +82,9 @@ def test_make_zim_file_working(build_data, png_image):
 
     assert reader.get_item("style.css").mimetype == "text/css"
     assert reader.get_item("app.js").mimetype == "application/javascript"
-    assert reader.get_estimated_suggestions_results_count("bienvenue") == 2
-    assert reader.get_estimated_suggestions_results_count("coucou") == 2
-    assert "Accueil" in list(reader.suggest("bienvenue"))
+    assert reader.get_suggestions_count("bienvenue") == 1
+    assert reader.get_suggestions_count("coucou") == 0
+    assert "Accueil" in list(reader.get_suggestions("bienvenue"))
 
 
 def test_make_zim_file_exceptions_while_building(tmp_path, png_image, build_data):

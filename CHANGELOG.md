@@ -1,4 +1,4 @@
-# 1.4.0.dev0
+# 1.4.0
 
 * Using new python-libzim based on libzim v7
   * New Creator API
@@ -8,6 +8,8 @@
   * Removed Article/CSS/Binary seggreation
   * Kept zimwriterfs mode (except it doesn't rewrite for namespaces)
   * New `html` module for HTML document manipulations
+  * New callback system on `add_item_for()` and `add_item()`
+  * New Archive API with easier search/suggestions and content access
 * Changed download log level to DEBUG (was INFO)
 * `filesystem.get_file_mimetype` now passes bytes to libmagic instead of filename due to release issue in libmagic
 * safer `inputs.handle_user_provided_file` regarding input as str instead of Path
@@ -16,7 +18,28 @@
 * Fixed `image.save_image()` saving to disk even when using a bytes stream
 * Fixed `image.transformation.resize_image()` when resizing a byte stream without a dst
 
-# 1.3.5.dev0
+# 1.3.6 (internal)
+
+Intermediate release using unreleased libzim to support development of libzim7.
+Don't use it.
+
+* requesting newer libzim version (not released ATM)
+* New ZIM API for non-namespace libzim (v7)
+* updated all requirements
+* Fixed download test inconsistency
+* fix_ogvjs mostly useless: only allows webm types
+* exposing retry_adapter for refactoring
+* Changed download log level to DEBUG (was INFO)
+* guess more-defined mime from filename if magic says it's text
+* get_file_mimetype now passes bytes to libmagic
+* safer regarding input as str instead of Path
+* fixed static item for empty content
+* ext and mimetype properties for all presets
+* Video convert log now DEBUG instead of INFO
+* Added delete_fpath to add_item_for() and fixed StaticItem's auto remove
+* Updated badges for new repo name
+
+# 1.3.5
 
 * add `stream_file()` to stream content from a URL into a file or a `BytesIO` object
 * deprecated `save_file()`
