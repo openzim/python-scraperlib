@@ -1,3 +1,7 @@
+# 1.4.1
+
+* n/a
+
 # 1.4.0
 
 * Using new python-libzim based on libzim v7
