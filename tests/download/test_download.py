@@ -121,19 +121,19 @@ def test_large_download_https(tmp_path, valid_https_url):
 @pytest.mark.parametrize(
     "url,video_id",
     [
-        ("Bc5QSUhL6co", "Bc5QSUhL6co"),
-        ("www.youtube.com/watch?v=Bc5QSUhL6co", "Bc5QSUhL6co"),
+        ("https://vimeo.com/619427082", "619427082"),
+        ("https://vimeo.com/619427082", "619427082"),
         ("https://www.youtube.com/watch?v=Bc5QSUhL6co", "Bc5QSUhL6co"),
     ],
 )
 def test_youtube_download_serial(url, video_id, tmp_path):
     yt_downloader = YoutubeDownloader(threads=1)
-    options = BestWebm.get_options(
+    options = BestMp4.get_options(
         target_dir=tmp_path,
         filepath=pathlib.Path("%(id)s/video.%(ext)s"),
     )
     yt_downloader.download(url, options)
-    assert tmp_path.joinpath(video_id).joinpath("video.webm").exists()
+    assert tmp_path.joinpath(video_id).joinpath("video.mp4").exists()
     yt_downloader.shutdown()
 
 
@@ -141,7 +141,9 @@ def test_youtube_download_serial(url, video_id, tmp_path):
 def test_youtube_download_nowait(tmp_path):
     with YoutubeDownloader(threads=1) as yt_downloader:
         future = yt_downloader.download(
-            "Bc5QSUhL6co", BestMp4.get_options(target_dir=tmp_path), wait=False
+            "https://vimeo.com/619427082",
+            BestMp4.get_options(target_dir=tmp_path),
+            wait=False,
         )
         assert future.running()
         assert not yt_downloader.executor._shutdown
@@ -164,6 +166,8 @@ def test_youtube_download_error(tmp_path):
 @pytest.mark.slow
 def test_youtube_download_contextmanager(tmp_path):
     with YoutubeDownloader(threads=1) as yt_downloader:
-        yt_downloader.download("Bc5QSUhL6co", BestMp4.get_options(target_dir=tmp_path))
+        yt_downloader.download(
+            "https://vimeo.com/619427082", BestWebm.get_options(target_dir=tmp_path)
+        )
     assert yt_downloader.executor._shutdown
-    assert tmp_path.joinpath("video.mp4").exists()
+    assert tmp_path.joinpath("video.mp4").exists()  # videmo doesn't offer webm
