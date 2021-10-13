@@ -3,9 +3,9 @@
 # vim: ai ts=4 sts=4 et sw=4 nu
 
 from zimscraperlib.filesystem import (
+    delete_callback,
     get_content_mimetype,
     get_file_mimetype,
-    delete_callback,
 )
 
 

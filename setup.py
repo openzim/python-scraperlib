@@ -3,7 +3,8 @@
 # vim: ai ts=4 sts=4 et sw=4 nu
 
 import pathlib
-from setuptools import setup, find_packages
+
+from setuptools import find_packages, setup
 
 root_dir = pathlib.Path(__file__).parent
 

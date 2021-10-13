@@ -3,10 +3,10 @@
 # vim: ai ts=4 sts=4 et sw=4 nu
 
 
+import pathlib
+import shutil
 import subprocess
 import tempfile
-import shutil
-import pathlib
 
 from .. import logger
 from ..logging import nicer_args_join

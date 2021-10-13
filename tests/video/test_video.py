@@ -2,21 +2,21 @@
 # -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
-import pytest
-import tempfile
-import pathlib
-import subprocess
-import shutil
 import inspect
+import pathlib
+import shutil
+import subprocess
+import tempfile
 
-from zimscraperlib.video import presets
-from zimscraperlib.video import Config, get_media_info, reencode
+import pytest
+
+from zimscraperlib.video import Config, get_media_info, presets, reencode
 from zimscraperlib.video.presets import (
-    VoiceMp3Low,
-    VideoWebmLow,
+    VideoMp4High,
     VideoMp4Low,
     VideoWebmHigh,
-    VideoMp4High,
+    VideoWebmLow,
+    VoiceMp3Low,
 )
 
 ALL_PRESETS = [
@@ -84,8 +84,8 @@ def test_config_build_from():
         idx = args.index(f"-{option}")
         assert idx != -1
         assert args[idx + 1] == str(getattr(config, attr))
-    video_scale = getattr(config, "video_scale")
-    qmin, qmax = getattr(config, "quantizer_scale_range")
+    video_scale = config.video_scale
+    qmin, qmax = config.quantizer_scale_range
     assert args.index("-qmin") != -1 and args[args.index("-qmin") + 1] == str(qmin)
     assert args.index("-qmax") != -1 and args[args.index("-qmax") + 1] == str(qmax)
     assert (

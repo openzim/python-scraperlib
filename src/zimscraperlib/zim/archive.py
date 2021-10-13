@@ -10,7 +10,7 @@
     - direct access to search results and number of results
     - public Entry access by Id"""
 
-from typing import Iterable, Dict, Optional
+from typing import Dict, Iterable, Optional
 
 import libzim.reader
 import libzim.search  # Query, Searcher

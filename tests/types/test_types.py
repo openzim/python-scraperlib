@@ -4,11 +4,7 @@
 
 import pytest
 
-from zimscraperlib.types import (
-    ARTICLE_MIME,
-    FONT_MIMES,
-    get_mime_for_name,
-)
+from zimscraperlib.types import ARTICLE_MIME, FONT_MIMES, get_mime_for_name
 
 
 def test_constants():

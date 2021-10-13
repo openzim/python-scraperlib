@@ -11,13 +11,16 @@
     - WebP (using Pillow)
 
     Some important notes:
-    - This makes use of the --lossy option from gifsicle which is present only in versions above 1.92.
-      If the package manager has a lower version, you can build gifsicle from source and install or
+    - This makes use of the --lossy option from gifsicle which is present
+     only in versions above 1.92.
+      If the package manager has a lower version, you can build gifsicle
+      from source and install or
       do not use the lossiness option.
 
     - Presets for the optimizer are available in zimscraperlib.image.presets.
 
-    - If no options for an image optimization is passed, the optimizer can still run on default settings which give
+    - If no options for an image optimization is passed, the optimizer
+    can still run on default settings which give
       a bit less size than the original images but maintain a high quality. """
 
 
@@ -28,10 +31,7 @@ import subprocess
 from typing import Optional, Tuple, Union
 
 import piexif
-from optimize_images.img_aux_processing import (
-    do_reduce_colors,
-    rebuild_palette,
-)
+from optimize_images.img_aux_processing import do_reduce_colors, rebuild_palette
 from optimize_images.img_aux_processing import remove_transparency as remove_alpha
 from optimize_images.img_dynamic_quality import jpeg_dynamic_quality
 from PIL import Image
@@ -67,13 +67,15 @@ def optimize_png(
     Arguments:
         reduce_colors: Whether to reduce colors using adaptive color pallette (boolean)
             values: True | False
-        max_colors: Maximum number of colors if reduce_colors is True (integer between 1 and 256)
+        max_colors: Maximum number of colors
+        if reduce_colors is True (integer between 1 and 256)
             values: 35 | 64 | 256 | 128 | XX
         fast_mode: Whether to use faster but weaker compression (boolean)
             values: True | False
         remove_transparency: Whether to remove transparency (boolean)
             values: True | False
-        background_color: Background color if remove_transparency is True (tuple containing RGB values)
+        background_color: Background color
+        if remove_transparency is True (tuple containing RGB values)
             values: (255, 255, 255) | (221, 121, 108) | (XX, YY, ZZ)"""
 
     ensure_matches(src, "PNG")
@@ -178,12 +180,15 @@ def optimize_webp(
     """method to optimize WebP using Pillow options
     lossless: Whether to use lossless compression (boolean)
         values: True | False
-    quality: WebP quality for lossy, effort put into compression for lossless (integer between 0 to 100)
+    quality: WebP quality for lossy, effort put into compression
+    for lossless (integer between 0 to 100)
         values: 30 | 45 | 100 | XX
-    method: Quality/speed trade-off; higher values give better compression (integer between 1 and 6)
+    method: Quality/speed trade-off;
+    higher values give better compression (integer between 1 and 6)
         values: 1 | 2 | 3 | 4 | 5 | 6
 
-    refer to the link for more details - https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html#webp"""
+    refer to the link for more details
+    https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html#webp"""
 
     ensure_matches(src, "WEBP")
     params = {
@@ -218,15 +223,17 @@ def optimize_gif(
     **options,
 ) -> pathlib.Path:
     """method to optimize GIFs using gifsicle >= 1.92
-    optimize_level: Optimization level; higher values give better compression (integer between 1 and 3)
+    optimize_level: Optimization level;
+    higher values give better compression (integer between 1 and 3)
         values: 1 | 2 | 3
-    lossiness: Level of lossy optimization to use; higher values give better compression (integer)
+    lossiness: Level of lossy optimization to use;
+    higher values give better compression (integer)
         values: 20 | 45 | 80 | XX
     interlace: Whether to interlace the frames (boolean)
         values: True | False
     no_extensions: Whether to remove all extension options from GIF (boolean)
         values: True | False
-    max_colors: Maximum number of colors in the resultant GIF (integer between 2 and 256)
+    max_colors: Maximum number of colors in resultant GIF (integer between 2 and 256)
         values: 2 | 86 | 128 | 256 | XX
 
     refer to the link for more details - https://www.lcdf.org/gifsicle/man.html"""

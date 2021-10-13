@@ -12,12 +12,12 @@
 
 import io
 import pathlib
-from typing import Union, Optional
+from typing import Optional, Union
 
-import requests
 import libzim.writer
+import requests
 
-from ..download import stream_file, _get_retry_adapter
+from ..download import _get_retry_adapter, stream_file
 
 
 class FileProvider(libzim.writer.FileProvider):

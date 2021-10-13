@@ -4,7 +4,6 @@
 
 from .config import Config
 
-
 preset_type = "video"
 
 

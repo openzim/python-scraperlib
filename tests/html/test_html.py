@@ -5,10 +5,10 @@
 import pytest
 
 from zimscraperlib.html import (
-    find_title_in,
-    find_title_in_file,
     find_language_in,
     find_language_in_file,
+    find_title_in,
+    find_title_in_file,
 )
 
 
@@ -67,19 +67,25 @@ def test_find_language(tmp_path, html_page):
     "html_string, expected_language",
     [
         (
-            "<html lang='en-US' xml:lang='zh-CN'><head><meta http-equiv='content-language' content='en-UK'></head><body lang='hi-IN'></body></html>",
+            "<html lang='en-US' xml:lang='zh-CN'><head>"
+            "<meta http-equiv='content-language' content='en-UK'></head>"
+            "<body lang='hi-IN'></body></html>",
             "en-US",
         ),
         (
-            "<html xml:lang='en-US'><head><meta http-equiv='content-language' content='en-UK'></head><body lang='hi-IN'></body></html>",
+            "<html xml:lang='en-US'><head>"
+            "<meta http-equiv='content-language' content='en-UK'></head>"
+            "<body lang='hi-IN'></body></html>",
             "en-US",
         ),
         (
-            "<html><head><meta http-equiv='content-language' content='en-UK'></head><body lang='hi-IN'></body></html>",
+            "<html><head><meta http-equiv='content-language' content='en-UK'>"
+            "</head><body lang='hi-IN'></body></html>",
             "hi-IN",
         ),
         (
-            "<html><head><meta http-equiv='content-language' content='en-UK'></head><body></body></html>",
+            "<html><head><meta http-equiv='content-language' content='en-UK'>"
+            "</head><body></body></html>",
             "en-UK",
         ),
     ],

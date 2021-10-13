@@ -2,9 +2,12 @@
 # -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
-import sys
+import io
 import logging
+import pathlib
+import sys
 from logging.handlers import RotatingFileHandler
+from typing import Iterable, Optional
 
 from .constants import NAME
 
@@ -13,17 +16,17 @@ VERBOSE_DEPENDENCIES = ["urllib3", "PIL", "boto3", "botocore", "s3transfer"]
 
 
 def getLogger(
-    name,
-    level=logging.INFO,
-    console=sys.stdout,
-    log_format=DEFAULT_FORMAT,
-    file=False,
-    file_level=None,
-    file_format=None,
-    file_max=2 ** 20,
-    file_nb_backup=1,
-    deps_level=logging.WARNING,
-    additional_deps=None,
+    name: str,
+    level: Optional[int] = logging.INFO,
+    console: Optional[io.TextIOBase] = sys.stdout,
+    log_format: Optional[str] = DEFAULT_FORMAT,
+    file: Optional[pathlib.Path] = False,
+    file_level: Optional[int] = None,
+    file_format: Optional[str] = None,
+    file_max: Optional[int] = 2 ** 20,
+    file_nb_backup: Optional[int] = 1,
+    deps_level: Optional[int] = logging.WARNING,
+    additional_deps: Optional[Iterable] = None,
 ):
     """configured logger for most usages
 
@@ -69,7 +72,7 @@ def getLogger(
     return logger
 
 
-def nicer_args_join(args):
+def nicer_args_join(args: Iterable) -> str:
     """slightly better concateated list of subprocess args for display"""
     nargs = args[0:1]
     for arg in args[1:]:

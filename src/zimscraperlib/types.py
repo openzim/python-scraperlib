@@ -16,9 +16,9 @@
     Should your scraper need additional mapping, use mimetypes.add_type() and it will
     be automatically used. """
 
-import pathlib
 import mimetypes
-from typing import List, Union, Optional
+import pathlib
+from typing import List, Optional, Union
 
 ARTICLE_MIME: str = "text/html"
 FALLBACK_MIME: str = "application/octet-stream"

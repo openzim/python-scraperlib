@@ -6,7 +6,7 @@ import io
 import pathlib
 import subprocess
 from concurrent.futures import Future, ThreadPoolExecutor
-from typing import Optional, Union
+from typing import Dict, Optional, Union
 
 import requests
 import youtube_dl
@@ -15,16 +15,12 @@ from . import logger
 
 
 class YoutubeDownloader:
-    """A class to download youtube videos using youtube_dl, on a ThreadPoolExecutor
-    maintaining a specified number of workers, even when executed parallely with
-    a higher number of workers. The shutdown method must be run explicitly to
+    """Download YT videos using youtube_dl on a ThreadPoolExecutor with nb_workers
+
+    Shutdown method must be run explicitly to
     free any occupied resources"""
 
-    def __init__(self, threads: Optional[int] = 2) -> None:
-        """Initialize the class
-        Arguments:
-        threads: The max number of workers for the executor"""
-
+    def __init__(self, threads: Optional[int] = 1) -> None:
         self.executor = ThreadPoolExecutor(max_workers=threads)
 
     def __enter__(self):
@@ -34,26 +30,26 @@ class YoutubeDownloader:
         self.shutdown()
 
     def shutdown(self) -> None:
-        """shuts down the executor"""
-
+        """shuts down the executor, awaiting completion"""
         self.executor.shutdown(wait=True)
 
-    def _run_youtube_dl(self, url: str, options: dict) -> None:
+    def _run_youtube_dl(self, url: str, options: Dict) -> None:
         with youtube_dl.YoutubeDL(options) as ydl:
             ydl.download([url])
 
     def download(
         self,
         url: str,
-        options: Optional[dict],
+        options: Optional[Dict],
         wait: Optional[bool] = True,
     ) -> Union[bool, Future]:
-        """Downloads a video using run_youtube_dl on the initialized executor.
+        """Downloads video using initialized executor.
 
-        Arguments:
-        url: The url/video ID of the video to download.
-        options: A dict containing any options that you want to pass directly to youtube_dl
-        wait: A boolean to specify whether to wait for completion. In case wait is False, the method would return a Future object"""
+        url: URL or Video ID
+        options: youtube_dl options dict
+        wait: whether to await download completion before returning
+
+        Returns download result of future (wait=False)"""
 
         future = self.executor.submit(self._run_youtube_dl, url, options)
         if not wait:
@@ -140,7 +136,7 @@ def save_large_file(url: str, fpath: pathlib.Path) -> None:
     )
 
 
-def _get_retry_adapter(max_retries: Optional[int] = 5):
+def _get_retry_adapter(max_retries: Optional[int] = 5) -> requests.adapters.BaseAdapter:
     retries = requests.packages.urllib3.util.retry.Retry(
         total=max_retries,  # total number of retries
         connect=max_retries,  # connection errors
@@ -175,7 +171,8 @@ def stream_file(
         fpath - Path of the file where data is sent
         byte_stream - The BytesIO object where data is sent
         block_size - Size of each chunk of data read in one iteration
-        proxies - A dict of proxies to be used (More here - https://requests.readthedocs.io/en/master/user/advanced/#proxies)
+        proxies - A dict of proxies to be used
+        https://requests.readthedocs.io/en/master/user/advanced/#proxies
         only_first_block - Whether to download only one (first) block
         max_retries - Maximum number of retries after which error is raised
     Returns the total number of bytes downloaded and the response headers"""

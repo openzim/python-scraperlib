@@ -9,8 +9,8 @@ from typing import Optional, Union
 import PIL
 from resizeimage import resizeimage
 
-from .utils import save_image
 from ..constants import ALPHA_NOT_SUPPORTED
+from .utils import save_image
 
 
 def resize_image(

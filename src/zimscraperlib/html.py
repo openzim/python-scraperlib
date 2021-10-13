@@ -5,7 +5,7 @@
 """ Tools to work with HTML contents """
 
 import pathlib
-from typing import Union, BinaryIO, TextIO
+from typing import BinaryIO, TextIO, Union
 
 from bs4 import BeautifulSoup
 

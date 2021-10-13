@@ -3,17 +3,19 @@
 # vim: ai ts=4 sts=4 et sw=4 nu
 
 
-""" quick script to fix videojs-ogvjs so that it triggers on webm mimettype """
+""" quick script to fix videojs-ogvjs so that it triggers on webm mimetype """
 
-import sys
 import logging
 import pathlib
+import sys
+from typing import Union
 
 logging.basicConfig(format="%(levelname)s:%(message)s", level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 
-def fix_source_dir(source_vendors_path):
+def fix_source_dir(source_vendors_path: Union[pathlib.Path, str]):
+    """update ogvjs plugin to trigger on webm mimetype"""
     root = pathlib.Path(source_vendors_path)
     logger.info("fixing videosjs-ogvjs.js")
     plugin_path = root.joinpath("videojs-ogvjs.js")

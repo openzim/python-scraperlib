@@ -2,18 +2,19 @@
 # -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
+import concurrent.futures
 import io
+import pathlib
+
 import pytest
 import requests
-import pathlib
-import concurrent.futures
 
 from zimscraperlib.download import (
-    stream_file,
-    save_large_file,
-    YoutubeDownloader,
-    BestWebm,
     BestMp4,
+    BestWebm,
+    YoutubeDownloader,
+    save_large_file,
+    stream_file,
 )
 
 
@@ -137,33 +138,19 @@ def test_youtube_download_serial(url, video_id, tmp_path):
 
 
 @pytest.mark.slow
-def test_youtube_download_parallel(tmp_path):
-    def download_and_assert(url, outtmpl, yt_downloader):
-        options = BestMp4.get_options(
-            filepath=outtmpl,
+def test_youtube_download_nowait(tmp_path):
+    with YoutubeDownloader(threads=1) as yt_downloader:
+        future = yt_downloader.download(
+            "Bc5QSUhL6co", BestMp4.get_options(target_dir=tmp_path), wait=False
         )
-        yt_downloader.download(url, options)
-        assert outtmpl.with_suffix(".mp4").exists()
-
-    yt_downloader = YoutubeDownloader(threads=2)
-    videos = {
-        "Bc5QSUhL6co": tmp_path / "video1.%(ext)s",
-        "a3HZ8S2H-GQ": tmp_path / "video2.%(ext)s",
-        "3HFBR0UQPes": tmp_path / "video3.%(ext)s",
-        "oiWWKumrLH8": tmp_path / "video4.%(ext)s",
-    }
-    with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
-        fs = [
-            executor.submit(download_and_assert, key, val, yt_downloader)
-            for key, val in videos.items()
-        ]
+        assert future.running()
+        assert not yt_downloader.executor._shutdown
         done, not_done = concurrent.futures.wait(
-            fs, return_when=concurrent.futures.ALL_COMPLETED
+            [future], return_when=concurrent.futures.ALL_COMPLETED
         )
-        assert len(done) == 4
-        for future in done:
-            assert future.exception() is None
-    yt_downloader.shutdown()
+        assert future.exception() is None
+        assert len(done) == 1
+        assert len(not_done) == 0
 
 
 @pytest.mark.slow
@@ -175,24 +162,8 @@ def test_youtube_download_error(tmp_path):
 
 
 @pytest.mark.slow
-@pytest.mark.parametrize(
-    "nb_workers,videos",
-    [
-        (1, ["Bc5QSUhL6co"]),
-        (2, ["Bc5QSUhL6co", "a3HZ8S2H-GQ"]),
-    ],
-)
-def test_youtube_download_contextmanager(nb_workers, videos, tmp_path):
-    with YoutubeDownloader(threads=nb_workers) as yt_downloader:
-        assert yt_downloader.executor._max_workers == nb_workers
+def test_youtube_download_contextmanager(tmp_path):
+    with YoutubeDownloader(threads=1) as yt_downloader:
         yt_downloader.download("Bc5QSUhL6co", BestMp4.get_options(target_dir=tmp_path))
-        fs = [
-            yt_downloader.download(
-                video, BestMp4.get_options(target_dir=tmp_path), wait=False
-            )
-            for video in videos
-        ]
-        done, not_done = concurrent.futures.wait(
-            fs, return_when=concurrent.futures.ALL_COMPLETED
-        )
-        assert len(done) == len(videos) and len(not_done) == 0
+    assert yt_downloader.executor._shutdown
+    assert tmp_path.joinpath("video.mp4").exists()

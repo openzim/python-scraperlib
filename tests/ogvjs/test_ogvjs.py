@@ -2,10 +2,10 @@
 # -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
-import sys
 import shutil
-import zipfile
 import subprocess
+import sys
+import zipfile
 
 import pytest
 

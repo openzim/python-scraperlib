@@ -2,16 +2,18 @@
 # -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
+import inspect
 import io
 import os
 import pathlib
 import shutil
-import inspect
 
 import piexif
 import pytest
 from PIL import Image
 from resizeimage.imageexceptions import ImageSizeError
+
+from zimscraperlib.image import presets
 from zimscraperlib.image.convertion import convert_image, create_favicon
 from zimscraperlib.image.optimization import (
     ensure_matches,
@@ -21,7 +23,6 @@ from zimscraperlib.image.optimization import (
     optimize_png,
     optimize_webp,
 )
-from zimscraperlib.image import presets
 from zimscraperlib.image.presets import (
     GifHigh,
     GifLow,
