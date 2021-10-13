@@ -7,7 +7,13 @@ import pathlib
 
 import pytest
 
-from zimscraperlib.i18n import setlocale, get_language_details, _, NotFound
+from zimscraperlib.i18n import (
+    setlocale,
+    get_language_details,
+    _,
+    NotFound,
+    find_language_names,
+)
 
 
 @pytest.mark.parametrize(
@@ -186,6 +192,20 @@ def test_lang_details(query, expected):
             get_language_details(query)
     else:
         assert get_language_details(query) == expected
+
+
+@pytest.mark.parametrize(
+    "query,expected",
+    [
+        ("fr", ("français", "French")),
+        ("en", ("English", "English")),
+        ("bm", ("bamanakan", "Bambara")),
+        ("zh", ("中文", "Chinese")),
+        ("ar", ("العربية", "Arabic")),
+    ],
+)
+def test_lang_name(query, expected):
+    assert find_language_names(query) == expected
 
 
 @pytest.mark.parametrize(
