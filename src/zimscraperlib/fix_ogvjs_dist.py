@@ -5,9 +5,9 @@
 
 """ quick script to fix videojs-ogvjs so that it triggers on webm mimettype """
 
-import sys
 import logging
 import pathlib
+import sys
 
 logging.basicConfig(format="%(levelname)s:%(message)s", level=logging.DEBUG)
 logger = logging.getLogger(__name__)

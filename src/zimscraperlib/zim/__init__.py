@@ -12,11 +12,11 @@
 
 from libzim.writer import Blob
 
-from .creator import Creator
 from .archive import Archive
+from .creator import Creator
 from .filesystem import make_zim_file
 from .items import Item, StaticItem, URLItem
-from .providers import FileProvider, StringProvider, FileLikeProvider, URLProvider
+from .providers import FileLikeProvider, FileProvider, StringProvider, URLProvider
 
 __all__ = [
     "Archive",

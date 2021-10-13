@@ -2,21 +2,21 @@
 # -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
-import pytest
-import tempfile
-import pathlib
-import subprocess
-import shutil
 import inspect
+import pathlib
+import shutil
+import subprocess
+import tempfile
 
-from zimscraperlib.video import presets
-from zimscraperlib.video import Config, get_media_info, reencode
+import pytest
+
+from zimscraperlib.video import Config, get_media_info, presets, reencode
 from zimscraperlib.video.presets import (
-    VoiceMp3Low,
-    VideoWebmLow,
+    VideoMp4High,
     VideoMp4Low,
     VideoWebmHigh,
-    VideoMp4High,
+    VideoWebmLow,
+    VoiceMp3Low,
 )
 
 ALL_PRESETS = [

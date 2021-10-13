@@ -2,14 +2,14 @@
 # -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
-import io
-import re
-import pathlib
 import colorsys
-from typing import Tuple, Optional, Union
+import io
+import pathlib
+import re
+from typing import Optional, Tuple, Union
 
-import PIL.Image
 import colorthief
+import PIL.Image
 
 
 def get_colors(
@@ -55,7 +55,8 @@ def format_for(src: Union[pathlib.Path, io.BytesIO], from_suffix: bool = True) -
         with PIL.Image.open(src) as img:
             return img.format
 
-    from PIL.Image import EXTENSION as ext_fmt_map, init as init_pil
+    from PIL.Image import EXTENSION as ext_fmt_map
+    from PIL.Image import init as init_pil
 
     init_pil()
     return ext_fmt_map[src.suffix]  # might raise KeyError on unknown extension

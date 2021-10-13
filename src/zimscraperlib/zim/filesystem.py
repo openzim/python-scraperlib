@@ -27,15 +27,15 @@
     Meaning you should exit right after an exception in your code (during zim creation)
     Use workaround_nocancel=False to disable the workaround. """
 
-import re
-import pathlib
 import datetime
-from typing import Tuple, Optional, Sequence
+import pathlib
+import re
+from typing import Optional, Sequence, Tuple
 
 from .. import logger
 from ..filesystem import get_file_mimetype
-from ..types import get_mime_for_name
 from ..html import find_title_in_file
+from ..types import get_mime_for_name
 from .creator import Creator
 from .items import StaticItem
 

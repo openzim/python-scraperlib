@@ -4,24 +4,22 @@
 
 import io
 import os
-import sys
-import time
-import shutil
-import random
 import pathlib
-import tempfile
+import random
+import shutil
 import subprocess
+import sys
+import tempfile
+import time
 
 import pytest
-
 from libzim.writer import Compression
 
 from zimscraperlib.constants import UTF8
 from zimscraperlib.download import save_large_file, stream_file
 from zimscraperlib.filesystem import delete_callback
-from zimscraperlib.zim import Archive
-from zimscraperlib.zim import Creator, StaticItem, URLItem
-from zimscraperlib.zim.providers import URLProvider, FileLikeProvider
+from zimscraperlib.zim import Archive, Creator, StaticItem, URLItem
+from zimscraperlib.zim.providers import FileLikeProvider, URLProvider
 
 
 class SpecialURLProvider(URLProvider):

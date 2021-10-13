@@ -5,10 +5,10 @@
 import pytest
 
 from zimscraperlib.html import (
-    find_title_in,
-    find_title_in_file,
     find_language_in,
     find_language_in_file,
+    find_title_in,
+    find_title_in_file,
 )
 
 

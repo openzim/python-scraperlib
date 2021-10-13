@@ -8,11 +8,11 @@ import pathlib
 import pytest
 
 from zimscraperlib.i18n import (
-    setlocale,
-    get_language_details,
-    _,
     NotFound,
+    _,
     find_language_names,
+    get_language_details,
+    setlocale,
 )
 
 

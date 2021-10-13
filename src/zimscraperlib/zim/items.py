@@ -6,16 +6,16 @@
 """ libzim Item helpers """
 
 import io
+import pathlib
 import re
 import tempfile
-import pathlib
 import urllib.parse
 from typing import Dict, Union
 
 import libzim.writer
 
 from ..download import stream_file
-from .providers import FileProvider, StringProvider, FileLikeProvider, URLProvider
+from .providers import FileLikeProvider, FileProvider, StringProvider, URLProvider
 
 
 class Item(libzim.writer.Item):

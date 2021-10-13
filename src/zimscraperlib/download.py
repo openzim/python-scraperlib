@@ -6,7 +6,7 @@ import io
 import pathlib
 import subprocess
 from concurrent.futures import Future, ThreadPoolExecutor
-from typing import Optional, Union, Dict
+from typing import Dict, Optional, Union
 
 import requests
 import youtube_dl

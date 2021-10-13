@@ -2,10 +2,10 @@
 # -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
-import shutil
 import pathlib
+import shutil
 import tempfile
-from typing import Union, Optional
+from typing import Optional, Union
 
 from . import logger
 from .download import stream_file

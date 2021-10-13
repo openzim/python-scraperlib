@@ -31,10 +31,7 @@ import subprocess
 from typing import Optional, Tuple, Union
 
 import piexif
-from optimize_images.img_aux_processing import (
-    do_reduce_colors,
-    rebuild_palette,
-)
+from optimize_images.img_aux_processing import do_reduce_colors, rebuild_palette
 from optimize_images.img_aux_processing import remove_transparency as remove_alpha
 from optimize_images.img_dynamic_quality import jpeg_dynamic_quality
 from PIL import Image

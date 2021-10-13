@@ -2,18 +2,19 @@
 # -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
+import concurrent.futures
 import io
+import pathlib
+
 import pytest
 import requests
-import pathlib
-import concurrent.futures
 
 from zimscraperlib.download import (
-    stream_file,
-    save_large_file,
-    YoutubeDownloader,
-    BestWebm,
     BestMp4,
+    BestWebm,
+    YoutubeDownloader,
+    save_large_file,
+    stream_file,
 )
 
 

@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
-import re
-import locale
 import gettext
+import locale
+import re
 
 import babel
 from iso639 import languages as iso639_languages

@@ -18,15 +18,15 @@
     - content stored on object
     - can be used to store a filepath and content read from it (not stored) """
 
-import weakref
-import pathlib
 import datetime
-from typing import Dict, Union, Optional, Any, Tuple, Callable
+import pathlib
+import weakref
+from typing import Any, Callable, Dict, Optional, Tuple, Union
 
 import libzim.writer
 
-from ..filesystem import get_content_mimetype, get_file_mimetype, delete_callback
 from ..constants import FRONT_ARTICLE_MIMETYPES
+from ..filesystem import delete_callback, get_content_mimetype, get_file_mimetype
 from ..types import get_mime_for_name
 from .items import StaticItem
 
