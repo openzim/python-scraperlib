@@ -123,7 +123,6 @@ def test_large_download_https(tmp_path, valid_https_url):
     [
         ("https://vimeo.com/619427082", "619427082"),
         ("https://vimeo.com/619427082", "619427082"),
-        ("https://www.youtube.com/watch?v=Bc5QSUhL6co", "Bc5QSUhL6co"),
     ],
 )
 def test_youtube_download_serial(url, video_id, tmp_path):
