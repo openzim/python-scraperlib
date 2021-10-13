@@ -4,7 +4,9 @@
 
 import gettext
 import locale
+import pathlib
 import re
+from typing import Dict, Optional, Tuple, Union
 
 import babel
 from iso639 import languages as iso639_languages
@@ -24,7 +26,7 @@ class Locale:
     translation = gettext.translation("messages", fallback=True)
 
     @classmethod
-    def setup(cls, locale_dir, locale_name):
+    def setup(cls, locale_dir: pathlib.Path, locale_name: str):
         cls.name = locale_name
         cls.locale_dir = str(locale_dir)
 
@@ -44,19 +46,19 @@ class Locale:
         return computed
 
 
-def _(text):
+def _(text: str) -> str:
     """translates text according to setup'd locale"""
     return Locale.translation.gettext(text)
 
 
-def setlocale(root_dir, locale_name):
+def setlocale(root_dir: pathlib.Path, locale_name: str):
     """set the desired locale for gettext.
 
     call this early"""
     return Locale.setup(root_dir / "locale", locale_name)
 
 
-def get_iso_lang_data(lang):
+def get_iso_lang_data(lang: str) -> Tuple[Dict, Union[Dict, None]]:
     """ISO-639-x languages details for lang. Raises NotFound
 
     Included keys: iso-639-1, iso-639-2b, iso-639-2t, iso-639-3, iso-639-5
@@ -91,7 +93,9 @@ def get_iso_lang_data(lang):
     return lang_data, None
 
 
-def find_language_names(query, lang_data=None):
+def find_language_names(
+    query: str, lang_data: Optional[Dict] = None
+) -> Tuple[str, str]:
     """(native, english) language names for lang with help from language_details dict
 
     Falls back to English name if available or query if not"""
@@ -114,7 +118,7 @@ def find_language_names(query, lang_data=None):
     return default, default
 
 
-def update_with_macro(lang_data, macro_data):
+def update_with_macro(lang_data: Dict, macro_data: Dict):
     """update empty keys from lang_data with ones of macro_data"""
     if macro_data:
         for key, value in macro_data.items():
@@ -123,7 +127,7 @@ def update_with_macro(lang_data, macro_data):
     return lang_data
 
 
-def get_language_details(query, failsafe=False):
+def get_language_details(query: str, failsafe: Optional[bool] = False) -> Dict:
     """language details dict from query.
 
     Raises NotFound or return `und` language details if failsafe
