@@ -66,7 +66,7 @@ def get_iso_lang_data(lang):
 
     iso_types = []
 
-    for code_type in [f"part{l}" for l in ISO_LEVELS] + ["name"]:
+    for code_type in [f"part{lang_}" for lang_ in ISO_LEVELS] + ["name"]:
         try:
             iso639_languages.get(**{code_type: lang})
             iso_types.append(code_type)
@@ -78,7 +78,9 @@ def get_iso_lang_data(lang):
 
     language = iso639_languages.get(**{iso_types[0]: lang})
 
-    lang_data = {f"iso-639-{l}": getattr(language, f"part{l}") for l in ISO_LEVELS}
+    lang_data = {
+        f"iso-639-{lang_}": getattr(language, f"part{lang_}") for lang_ in ISO_LEVELS
+    }
     lang_data.update({"english": language.name, "iso_types": iso_types})
 
     if language.macro:
@@ -89,10 +91,12 @@ def get_iso_lang_data(lang):
     return lang_data, None
 
 
-def find_language_names(query, lang_data={}):
+def find_language_names(query, lang_data=None):
     """(native, english) language names for lang with help from language_details dict
 
     Falls back to English name if available or query if not"""
+    if lang_data is None:
+        lang_data = {}
     try:
         query_locale = babel.Locale.parse(query)
         return query_locale.get_display_name(), query_locale.get_display_name("en")
@@ -100,7 +104,7 @@ def find_language_names(query, lang_data={}):
         pass
 
     # ISO code lookup order matters (most qualified first)!
-    for iso_level in [f"iso-639-{l}" for l in reversed(ISO_LEVELS)]:
+    for iso_level in [f"iso-639-{lang_}" for lang_ in reversed(ISO_LEVELS)]:
         try:
             query_locale = babel.Locale.parse(lang_data.get(iso_level))
             return query_locale.get_display_name(), query_locale.get_display_name("en")

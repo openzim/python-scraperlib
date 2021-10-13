@@ -6,7 +6,7 @@ import io
 import pathlib
 import subprocess
 from concurrent.futures import Future, ThreadPoolExecutor
-from typing import Optional, Union
+from typing import Optional, Union, Dict
 
 import requests
 import youtube_dl
@@ -20,7 +20,7 @@ class YoutubeDownloader:
     a higher number of workers. The shutdown method must be run explicitly to
     free any occupied resources"""
 
-    def __init__(self, threads: Optional[int] = 2) -> None:
+    def __init__(self, threads: Optional[int] = 1) -> None:
         """Initialize the class
         Arguments:
         threads: The max number of workers for the executor"""
@@ -38,22 +38,24 @@ class YoutubeDownloader:
 
         self.executor.shutdown(wait=True)
 
-    def _run_youtube_dl(self, url: str, options: dict) -> None:
+    def _run_youtube_dl(self, url: str, options: Dict) -> None:
         with youtube_dl.YoutubeDL(options) as ydl:
             ydl.download([url])
 
     def download(
         self,
         url: str,
-        options: Optional[dict],
+        options: Optional[Dict],
         wait: Optional[bool] = True,
     ) -> Union[bool, Future]:
         """Downloads a video using run_youtube_dl on the initialized executor.
 
         Arguments:
         url: The url/video ID of the video to download.
-        options: A dict containing any options that you want to pass directly to youtube_dl
-        wait: A boolean to specify whether to wait for completion. In case wait is False, the method would return a Future object"""
+        options: A dict containing any options that
+        you want to pass directly to youtube_dl
+        wait: A boolean to specify whether to wait for completion.
+        In case wait is False, the method would return a Future object"""
 
         future = self.executor.submit(self._run_youtube_dl, url, options)
         if not wait:
@@ -175,7 +177,8 @@ def stream_file(
         fpath - Path of the file where data is sent
         byte_stream - The BytesIO object where data is sent
         block_size - Size of each chunk of data read in one iteration
-        proxies - A dict of proxies to be used (More here - https://requests.readthedocs.io/en/master/user/advanced/#proxies)
+        proxies - A dict of proxies to be used
+        https://requests.readthedocs.io/en/master/user/advanced/#proxies
         only_first_block - Whether to download only one (first) block
         max_retries - Maximum number of retries after which error is raised
     Returns the total number of bytes downloaded and the response headers"""

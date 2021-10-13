@@ -7,7 +7,10 @@ import pytest
 
 @pytest.fixture(scope="module")
 def videojs_url():
-    return "https://github.com/videojs/video.js/releases/download/v7.6.4/video-js-7.6.4.zip"
+    return (
+        "https://github.com/videojs/video.js/releases/download/v7.6.4/"
+        "video-js-7.6.4.zip"
+    )
 
 
 @pytest.fixture(scope="module")

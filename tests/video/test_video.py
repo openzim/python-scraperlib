@@ -84,8 +84,8 @@ def test_config_build_from():
         idx = args.index(f"-{option}")
         assert idx != -1
         assert args[idx + 1] == str(getattr(config, attr))
-    video_scale = getattr(config, "video_scale")
-    qmin, qmax = getattr(config, "quantizer_scale_range")
+    video_scale = config.video_scale
+    qmin, qmax = config.quantizer_scale_range
     assert args.index("-qmin") != -1 and args[args.index("-qmin") + 1] == str(qmin)
     assert args.index("-qmax") != -1 and args[args.index("-qmax") + 1] == str(qmax)
     assert (
