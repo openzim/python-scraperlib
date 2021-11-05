@@ -19,4 +19,4 @@ repos:
     rev: "3.9.2"
     hooks:
     -   id: flake8
-        args: ["--max-line-length", "88"]
+        args: ["--max-line-length", "88", "--extend-ignore=E203"]

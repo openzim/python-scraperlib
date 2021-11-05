@@ -59,3 +59,18 @@ def test_search(real_zim_file):
     with Archive(real_zim_file) as zim:
         assert zim.get_search_results_count("test") > 0
         assert "A/Diesel_emissions_scandal" in list(zim.get_search_results("test"))
+
+
+def test_counters(small_zim_file):
+    with Archive(small_zim_file) as zim:
+        assert zim.counters == {"image/png": 1, "text/html": 1}
+
+
+def test_article_counter(small_zim_file):
+    with Archive(small_zim_file) as zim:
+        assert zim.article_counter == 1
+
+
+def test_media_counter(small_zim_file):
+    with Archive(small_zim_file) as zim:
+        assert zim.media_counter == 1

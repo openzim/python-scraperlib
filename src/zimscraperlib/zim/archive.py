@@ -16,6 +16,7 @@ import libzim.reader
 import libzim.search  # Query, Searcher
 import libzim.suggestion  # SuggestionSearcher
 
+from ._libkiwix import getArticleCount, getMediaCount, parseMimetypeCounter
 from .items import Item
 
 
@@ -78,3 +79,27 @@ class Archive(libzim.reader.Archive):
             libzim.search.Query().set_query(query)
         )
         return search.getEstimatedMatches()
+
+    @property
+    def counters(self) -> Dict[str, int]:
+        """Parsed `Counter` metadata
+
+        Cached into _counters"""
+
+        def parse_counters():
+            self._counters = parseMimetypeCounter(
+                self.get_metadata("Counter").decode("UTF-8")
+            )
+            return self._counters
+
+        return getattr(self, "_counters", parse_counters())
+
+    @property
+    def article_counter(self) -> int:
+        """Nb of *articles* in the ZIM, using counters (from libkiwix)"""
+        return getArticleCount(self.counters)
+
+    @property
+    def media_counter(self) -> int:
+        """Nb of *medias* in the ZIM, using counters (from libkiwix)"""
+        return getMediaCount(self.counters)
