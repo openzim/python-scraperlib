@@ -1,6 +1,9 @@
 # 1.4.1
 
-* n/a
+* New `Counter` metadata based properties for Archive:
+  * `.counters`: parsed dict of the Counter metadata
+  * `.article_counter`: libkiwix's calculation for nb or article
+  * `.media_counter`: libkiwix's calculation for nb or media
 
 # 1.4.0
 

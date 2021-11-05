@@ -58,3 +58,28 @@ def build_data(tmp_path, png_image):
         "redirects": [("picture", "commons.png", "")],
         "redirects_file": redirects_file,
     }
+
+
+@pytest.fixture(scope="function")
+def counters():
+    return {
+        "application/javascript": 8,
+        "text/html": 3,
+        "application/warc-headers": 28364,
+        "text/html;raw=true": 6336,
+        "text/css": 47,
+        "text/javascript": 98,
+        "image/png": 968,
+        "image/webp": 24,
+        "application/json": 3694,
+        "image/gif": 10274,
+        "image/jpeg": 1582,
+        "font/woff2": 25,
+        "text/plain": 284,
+        "application/atom+xml": 247,
+        "application/x-www-form-urlencoded": 9,
+        "video/mp4": 9,
+        "application/x-javascript": 7,
+        "application/xml": 1,
+        "image/svg+xml": 5,
+    }
