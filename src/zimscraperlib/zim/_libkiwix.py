@@ -28,10 +28,12 @@ def getline(src: io.StringIO, delim: Optional[bool] = None) -> Tuple[bool, str]:
     if not delim:
         return True, src.read()
 
-    while char := src.read(1):
+    char = src.read(1)
+    while char:
         if char == delim:
             break
         output += char
+        char = src.read(1)
     return char == "", output
 
 
