@@ -22,4 +22,3 @@ msgstr ""
 #: tests/i18n/test_i18n.py:113
 msgid "Hello World!"
 msgstr "Olá Mundo!"
-

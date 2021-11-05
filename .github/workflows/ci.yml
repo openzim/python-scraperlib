@@ -52,4 +52,3 @@ jobs:
       run: tox -e py38,black,coverage
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-
