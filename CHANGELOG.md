@@ -1,3 +1,7 @@
+# 1.4.2
+
+* n/a
+
 # 1.4.1
 
 * New `Counter` metadata based properties for Archive:
@@ -5,7 +9,7 @@
   * `.article_counter`: libkiwix's calculation for nb or article
   * `.media_counter`: libkiwix's calculation for nb or media
 * Fixed `i18n.find_language_names()` failing on some languages
-*
+* Added `uri` module with `rebuild_uri()`
 
 
 # 1.4.0
