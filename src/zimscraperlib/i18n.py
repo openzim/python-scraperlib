@@ -100,11 +100,11 @@ def find_language_names(
 
     Falls back to English name if available or query if not"""
     if lang_data is None:
-        lang_data = {}
+        lang_data = get_language_details(query, failsafe=True) or {}
     try:
         query_locale = babel.Locale.parse(query)
         return query_locale.get_display_name(), query_locale.get_display_name("en")
-    except (babel.UnknownLocaleError, TypeError, ValueError):
+    except (babel.UnknownLocaleError, TypeError, ValueError, AttributeError):
         pass
 
     # ISO code lookup order matters (most qualified first)!
@@ -112,7 +112,7 @@ def find_language_names(
         try:
             query_locale = babel.Locale.parse(lang_data.get(iso_level))
             return query_locale.get_display_name(), query_locale.get_display_name("en")
-        except (babel.UnknownLocaleError, TypeError, ValueError):
+        except (babel.UnknownLocaleError, TypeError, ValueError, AttributeError):
             pass
     default = lang_data.get("english", query)
     return default, default

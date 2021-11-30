@@ -202,6 +202,7 @@ def test_lang_details(query, expected):
         ("bm", ("bamanakan", "Bambara")),
         ("zh", ("中文", "Chinese")),
         ("ar", ("العربية", "Arabic")),
+        ("sa", ("Sanskrit", "Sanskrit")),
     ],
 )
 def test_lang_name(query, expected):

@@ -4,6 +4,9 @@
   * `.counters`: parsed dict of the Counter metadata
   * `.article_counter`: libkiwix's calculation for nb or article
   * `.media_counter`: libkiwix's calculation for nb or media
+* Fixed `i18n.find_language_names()` failing on some languages
+*
+
 
 # 1.4.0
 
