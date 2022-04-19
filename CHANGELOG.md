@@ -1,6 +1,7 @@
 # 1.4.2
 
-* n/a
+* Fixed leak in `zim.Archive`'s `.counters`
+* New `.get_text_metadata()` method on `zim.Archive` to save UTF-8 decoding
 
 # 1.4.1
 
