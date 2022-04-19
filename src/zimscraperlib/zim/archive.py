@@ -31,10 +31,14 @@ class Archive(libzim.reader.Archive):
     def metadata(self) -> Dict[str, str]:
         """key: value for all non-illustration metadata listed in .metadata_keys"""
         return {
-            key: self.get_metadata(key).decode("UTF-8")
+            key: self.get_text_metadata(key)
             for key in self.metadata_keys
             if not key.startswith("Illustration_")
         }
+
+    def get_text_metadata(self, name: str) -> str:
+        """Decoded value of a text metadata"""
+        return super().get_metadata(name).decode("UTF-8")
 
     def get_entry_by_id(self, id_: int) -> libzim.reader.Entry:
         """Entry from its Id in ZIM"""
@@ -82,17 +86,7 @@ class Archive(libzim.reader.Archive):
 
     @property
     def counters(self) -> Dict[str, int]:
-        """Parsed `Counter` metadata
-
-        Cached into _counters"""
-
-        def parse_counters():
-            self._counters = parseMimetypeCounter(
-                self.get_metadata("Counter").decode("UTF-8")
-            )
-            return self._counters
-
-        return getattr(self, "_counters", parse_counters())
+        return parseMimetypeCounter(self.get_text_metadata("Counter"))
 
     @property
     def article_counter(self) -> int:

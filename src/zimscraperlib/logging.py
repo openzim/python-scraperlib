@@ -23,7 +23,7 @@ def getLogger(
     file: Optional[pathlib.Path] = False,
     file_level: Optional[int] = None,
     file_format: Optional[str] = None,
-    file_max: Optional[int] = 2 ** 20,
+    file_max: Optional[int] = 2**20,
     file_nb_backup: Optional[int] = 1,
     deps_level: Optional[int] = logging.WARNING,
     additional_deps: Optional[Iterable] = None,
