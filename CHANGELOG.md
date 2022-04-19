@@ -1,3 +1,7 @@
+# 1.4.3
+
+* n/a
+
 # 1.4.2
 
 * Fixed leak in `zim.Archive`'s `.counters`
