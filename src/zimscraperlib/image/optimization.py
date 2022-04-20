@@ -203,7 +203,12 @@ def optimize_webp(
         webp_image.save(dst, format="WEBP", **params)
         dst.seek(0)
     else:
-        save_image(webp_image, dst, fmt="WEBP", **params)
+        try:
+            save_image(webp_image, dst, fmt="WEBP", **params)
+        except Exception as exc:
+            if src.resolve() != dst.resolve() and dst.exists():
+                dst.unlink()  # pragma: nocover
+            raise exc
     return dst
 
 
@@ -253,7 +258,7 @@ def optimize_gif(
 
     # remove dst if gifsicle failed and src is different from dst
     if gifsicle.returncode != 0 and src.resolve() != dst.resolve() and dst.exists():
-        dst.unlink()
+        dst.unlink()  # pragma: nocover
 
     # raise error if unsuccessful
     gifsicle.check_returncode()
