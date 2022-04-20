@@ -126,6 +126,41 @@ def test_noindexlanguage(tmp_path):
     assert not reader.has_fulltext_index
 
 
+def test_duplicatefiles(tmp_path, png_image, html_file):
+    fpath = tmp_path / "test.zim"
+
+    with open(png_image, "rb") as fh:
+        png_data = fh.read()
+
+    with Creator(fpath, "welcome", "") as creator:
+        creator.add_autodedup_filter(r"^images/.*$")
+        # add a file not matching filter patterns
+        creator.add_item_for("other_folder1/yahoo0.png", "Image1", fpath=png_image)
+        # add same file but first matching filter patterns => will be added as-is
+        creator.add_item_for("images/yahoo1.png", "Image1", fpath=png_image)
+        # add same file but second matching filter patterns
+        # => will be replaced by a redirect
+        creator.add_item_for("images/yahoo2.png", "Image2", fpath=png_image)
+        # add same file but not matching filter patterns => will be added as-is
+        creator.add_item_for("other_folder2/yahoo3.png", "Image1", fpath=png_image)
+        # add same file matching filter patterns but with content instead of fpath
+        # => will be replaced by a redirect
+        creator.add_item_for("images/yahoo4.png", "Image3", content=png_data)
+
+    reader = Archive(fpath)
+    # make sure we have our image
+    assert reader.get_item("images/yahoo1.png")
+    assert not reader.get_entry_by_path("images/yahoo1.png").is_redirect
+    assert reader.get_item("images/yahoo2.png")
+    assert reader.get_entry_by_path("images/yahoo2.png").is_redirect
+    assert reader.get_item("images/yahoo4.png")
+    assert reader.get_entry_by_path("images/yahoo4.png").is_redirect
+    assert reader.get_item("other_folder1/yahoo0.png")
+    assert not reader.get_entry_by_path("other_folder1/yahoo0.png").is_redirect
+    assert reader.get_item("other_folder2/yahoo3.png")
+    assert not reader.get_entry_by_path("other_folder2/yahoo3.png").is_redirect
+
+
 def test_add_item_for(tmp_path):
     fpath = tmp_path / "test.zim"
     # test without mimetype

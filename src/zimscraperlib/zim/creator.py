@@ -19,7 +19,9 @@
     - can be used to store a filepath and content read from it (not stored) """
 
 import datetime
+import hashlib
 import pathlib
+import re
 import weakref
 from typing import Any, Callable, Dict, Optional, Tuple, Union
 
@@ -104,6 +106,10 @@ class Creator(libzim.writer.Creator):
 
         self.workaround_nocancel = workaround_nocancel
 
+        self.autodedup_filters = []
+
+        self.dedup_items = dict()
+
     def start(self):
         super().__enter__()
 
@@ -118,6 +124,35 @@ class Creator(libzim.writer.Creator):
         if kwargs:
             for name, value in kwargs.items():
                 self.add_metadata(name, value)
+
+    def add_autodedup_filter(self, filter_regex: str):
+        self.autodedup_filters.append(re.compile(filter_regex))
+
+    def check_for_duplicate(
+        self,
+        path: str,
+        fpath: Optional[pathlib.Path] = None,
+        content: Optional[bytes] = None,
+    ):
+        for dedup_filter in self.autodedup_filters:
+            if dedup_filter.match(path):
+                if content:
+                    digest = hashlib.sha256(content).digest()
+                else:
+                    sha256 = hashlib.sha256()
+                    with open(fpath, "rb") as f:
+                        while True:
+                            data = f.read(65536)  # lets read stuff in 64kb chunks!
+                            if not data:
+                                break
+                            sha256.update(data)
+                    digest = sha256.digest()
+
+                if digest in self.dedup_items:
+                    return self.dedup_items[digest]
+                self.dedup_items[digest] = path
+                break
+        return None
 
     def add_item_for(
         self,
@@ -150,6 +185,18 @@ class Creator(libzim.writer.Creator):
         callback: see add_item()"""
         if fpath is None and content is None:
             raise ValueError("One of fpath or content is required")
+
+        duplicate_path = self.check_for_duplicate(
+            path=path, fpath=fpath, content=content
+        )
+        if duplicate_path:
+            self.add_redirect(
+                path=path,
+                target_path=duplicate_path,
+                title=title,
+                is_front=is_front,
+            )
+            return path
 
         mimetype = mimetype_for(
             path=path, content=content, fpath=fpath, mimetype=mimetype
