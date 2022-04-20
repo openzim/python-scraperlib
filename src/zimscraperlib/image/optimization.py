@@ -203,12 +203,7 @@ def optimize_webp(
         webp_image.save(dst, format="WEBP", **params)
         dst.seek(0)
     else:
-        try:
-            save_image(webp_image, dst, fmt="WEBP", **params)
-        except Exception as exc:
-            if src.resolve() != dst.resolve() and dst.exists():
-                dst.unlink()
-            raise exc
+        save_image(webp_image, dst, fmt="WEBP", **params)
     return dst
 
 

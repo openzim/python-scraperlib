@@ -88,8 +88,8 @@ class Archive(libzim.reader.Archive):
     def counters(self) -> Dict[str, int]:
         try:
             return parseMimetypeCounter(self.get_text_metadata("Counter"))
-        except RuntimeError:
-            return {}
+        except RuntimeError:  # pragma: no cover (no ZIM avail to test itl)
+            return {}  # pragma: no cover
 
     @property
     def article_counter(self) -> int:
