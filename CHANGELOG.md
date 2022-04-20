@@ -1,6 +1,6 @@
 # 1.4.3
 
-* n/a
+* `zim.Archive.counters` wont fail on missing `Counter` metadata
 
 # 1.4.2
 

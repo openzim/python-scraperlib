@@ -79,6 +79,7 @@ def parseMimetypeCounter(
         mtc = parseASingleMimetypeCounter(mtcStr)
         if mtc.mimetype:
             counters.update([mtc])
+    ss.close()
     return counters
 
 
