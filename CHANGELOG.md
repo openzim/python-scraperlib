@@ -1,13 +1,40 @@
-# 1.4.3
+## Changelog
+
+All notable changes to this project are documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) (as of version 1.5.0).
+
+## [Unreleased]
+
+### Added
+
+- `zim.Archive.tags` and `zim.Archive.get_tags()` to retrieve parsed Tags
+  with optionnal `libkiwix` param to include libkiwix's hints
+- [tests] Counter tests now also uses a libzim6 file.
+
+### Changed
+
+- `zim.Archive.article_counter` follows libkiwix's new bahavior of
+  returning libzim's `article_count` for libzim 7+ ZIMs and
+  returning previously returned (parsed) value for older ZIMs.
+
+### Removed
+
+- Unreachable code removed in `imaging` module.
+- [tests] “Sanskrit” removed from tests as output not predicatble depending on plaftform.
+
+
+## [1.4.3]
 
 * `zim.Archive.counters` wont fail on missing `Counter` metadata
 
-# 1.4.2
+## [1.4.2]
 
 * Fixed leak in `zim.Archive`'s `.counters`
 * New `.get_text_metadata()` method on `zim.Archive` to save UTF-8 decoding
 
-# 1.4.1
+## [1.4.1]
 
 * New `Counter` metadata based properties for Archive:
   * `.counters`: parsed dict of the Counter metadata
@@ -17,7 +44,7 @@
 * Added `uri` module with `rebuild_uri()`
 
 
-# 1.4.0
+## [1.4.0]
 
 * Using new python-libzim based on libzim v7
   * New Creator API
@@ -37,7 +64,7 @@
 * Fixed `image.save_image()` saving to disk even when using a bytes stream
 * Fixed `image.transformation.resize_image()` when resizing a byte stream without a dst
 
-# 1.3.6 (internal)
+## [1.3.6 (internal)]
 
 Intermediate release using unreleased libzim to support development of libzim7.
 Don't use it.
@@ -58,7 +85,7 @@ Don't use it.
 * Added delete_fpath to add_item_for() and fixed StaticItem's auto remove
 * Updated badges for new repo name
 
-# 1.3.5
+## [1.3.5]
 
 * add `stream_file()` to stream content from a URL into a file or a `BytesIO` object
 * deprecated `save_file()`
@@ -67,7 +94,7 @@ Don't use it.
 * Added support for in-memory optimization for PNG, JPEG, and WebP images
 * allows enabling debug logs via ZIMSCRAPERLIB_DEBUG environ
 
-# 1.3.4
+## [1.3.4]
 
 * added `wait` option in `YoutubeDownloader` to allow parallelism while using context manager
 * do not use extension for finding format in `ensure_matches()` in `image.optimization` module
@@ -76,21 +103,21 @@ Don't use it.
 * `save_image` moved from `image` to `image.utils`
 * added `convert_image` `optimize_image` `resize_image` functions to `image` module
 
-# 1.3.3
+## [1.3.3]
 
 * added `YoutubeDownloader` to `download` to download YT videos using a capped nb of threads
 
-# 1.3.2
+## [1.3.2]
 
 * fixed rewriting of links with empty target
 * added support for image optimization using `zimscraperlib.image.optimization` for webp, gif, jpeg and png formats
 * added `format_for()` in `zimscraperlib.image.probing` to get PIL image format from the suffix
 
-# 1.3.1
+## [1.3.1]
 
 * replaced BeautifoulSoup parser in rewriting (`html.parser` –> `lxml`)
 
-# 1.3.0
+## [1.3.0]
 
 * detect mimetypes from filenames for all text files
 * fixed non-filename based StaticArticle
@@ -107,7 +134,7 @@ Don't use it.
 * changed `get_colors()` param names (`image_path` -> `src`)
 * changed `resize_image()` param names (`fpath` -> `src`)
 
-# 1.2.1
+## [1.2.1]
 
 * fixed URL rewriting when running from /
 * added support for link rewriting in `<object>` element
@@ -115,7 +142,7 @@ Don't use it.
 * use non greedy match for CSS URL links (shortest string matching `url()` format)
 * fix namespace of target only if link doesn't have a netloc
 
-# 1.2.0
+## [1.2.0]
 
 * added UTF8 to constants
 * added mime_type discovery via magic (filesystem)
@@ -128,11 +155,11 @@ Don't use it.
   * Added zim.rewriting: tools to rewrite links/urls in HTML/CSS
 * add timeout and retries to save_file() and make it return headers
 
-# 1.1.2
+## [1.1.2]
 
 * fixed `convert_image()` which tried to use a closed file
 
-# 1.1.1
+## [1.1.1]
 
 * exposed reencode, Config and get_media_info in zimscraperlib.video
 * added save_image() and convert_image() in zimscraperlib.imaging
@@ -140,34 +167,34 @@ Don't use it.
 * resize_image() now supports params given by user and preservs image colorspace
 * fixed tests for zimscraperlib.imaging
 
-# 1.1.0
+## [1.1.0]
 
 * added video module with reencode, presets, config builder and video file probing
 * `make_zim_file()` accepts extra kwargs for zimwriterfs
 
-# 1.0.6
+## [1.0.6]
 
 * added translation support to i18n
 
-# 1.0.5
+## [1.0.5]
 
 * added s3transfer to verbose dependencies list
 * changed default log format to include module name
 
-# 1.0.4
+## [1.0.4]
 
 * verbose dependencies (urllib3, boto3) now logged at WARNING level by default
 * ability to set verbose dependencies log level and add modules to the list
 * zimscraperlib's logging level now aligned with scraper's requested one
 
 
-# 1.0.3
+## [1.0.3]
 
 * fix_ogvjs_dist script more generic (#1)
 * updated zim to support other zimwriterfs params (#10)
 * more flexible requirements for requests dependency
 
-# 1.0.2
+## [1.0.2]
 
 * fixed return value of `get_language_details` on non-existent language
 * fixed crash on `resize_image` with method `height`
@@ -179,11 +206,11 @@ Don't use it.
 * added `create_favicon` to generate a squared favicon
 * added `handle_user_provided_file` to handle user file/URL from param
 
-# 1.0.1
+## [1.0.1]
 
 * fixed fix_ogvjs_dist
 
-# 1.0.0
+## [1.0.0]
 
 * initial version providing
  * download: save_file, save_large_file

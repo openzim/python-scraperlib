@@ -9,11 +9,12 @@ easily. Hence the unexpected method names and formatting.
 
 https://github.com/kiwix/libkiwix/blob/master/src/reader.cpp
 https://github.com/kiwix/libkiwix/blob/master/src/tools/archiveTools.cpp
+https://github.com/kiwix/libkiwix/blob/master/src/tools/otherTools.cpp
 """
 
 import io
 from collections import namedtuple
-from typing import Dict, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 MimetypeAndCounter = namedtuple("MimetypeAndCounter", ["mimetype", "value"])
 CounterMap = Dict[type(MimetypeAndCounter.mimetype), type(MimetypeAndCounter.value)]
@@ -105,3 +106,39 @@ def getMediaCount(counterMap: CounterMap) -> int:
             counter += count
 
     return counter
+
+
+def convertTags(tags_str: str) -> List[str]:
+    """List of tags expanded with libkiwix's additional hints for pic/vid/det/index"""
+    tags = tags_str.split(";")
+    tagsList = []
+    picSeen = vidSeen = detSeen = indexSeen = False
+    for tag in tags:
+        # not upstream
+        if not tag:
+            continue
+        picSeen |= tag == "nopic" or tag.startswith("_pictures:")
+        vidSeen |= tag == "novid" or tag.startswith("_videos:")
+        detSeen |= tag == "nodet" or tag.startswith("_details:")
+        indexSeen |= tag.startswith("_ftindex")
+
+        if tag == "nopic":
+            tagsList.append("_pictures:no")
+        elif tag == "novid":
+            tagsList.append("_videos:no")
+        elif tag == "nodet":
+            tagsList.append("_details:no")
+        elif tag == "_ftindex":
+            tagsList.append("_ftindex:yes")
+        else:
+            tagsList.append(tag)
+
+    if not indexSeen:
+        tagsList.append("_ftindex:no")
+    if not picSeen:
+        tagsList.append("_pictures:yes")
+    if not vidSeen:
+        tagsList.append("_videos:yes")
+    if not detSeen:
+        tagsList.append("_details:yes")
+    return tagsList

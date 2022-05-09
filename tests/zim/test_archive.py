@@ -5,6 +5,7 @@
 import pytest
 
 from zimscraperlib.zim import Archive
+from zimscraperlib.zim._libkiwix import convertTags
 
 
 def test_metadata(small_zim_file):
@@ -66,11 +67,81 @@ def test_counters(small_zim_file):
         assert zim.counters == {"image/png": 1, "text/html": 1}
 
 
-def test_article_counter(small_zim_file):
+def test_article_counter(small_zim_file, ns_zim_file):
     with Archive(small_zim_file) as zim:
-        assert zim.article_counter == 1
+        assert zim.article_counter == 0
+
+    with Archive(ns_zim_file) as zim:
+        assert zim.article_counter == 66
 
 
-def test_media_counter(small_zim_file):
+def test_media_counter(small_zim_file, ns_zim_file):
     with Archive(small_zim_file) as zim:
         assert zim.media_counter == 1
+
+    with Archive(ns_zim_file) as zim:
+        assert zim.media_counter == 34
+
+
+def test_get_tags(small_zim_file, real_zim_file):
+    with Archive(small_zim_file) as zim:
+        assert zim.get_tags() == ["_ftindex:no"]
+        assert zim.get_tags(libkiwix=True) == [
+            "_ftindex:no",
+            "_pictures:yes",
+            "_videos:yes",
+            "_details:yes",
+        ]
+        assert zim.tags == zim.get_tags()
+
+    with Archive(real_zim_file) as zim:
+        assert zim.get_tags() == [
+            "wikipedia",
+            "_category:wikipedia",
+            "_pictures:no",
+            "_videos:no",
+            "_details:yes",
+            "_ftindex:yes",
+        ]
+        assert zim.get_tags(libkiwix=True) == [
+            "wikipedia",
+            "_category:wikipedia",
+            "_pictures:no",
+            "_videos:no",
+            "_details:yes",
+            "_ftindex:yes",
+        ]
+        assert zim.tags == zim.get_tags()
+
+
+def test_libkiwix_convertTags():
+    assert convertTags("") == [
+        "_ftindex:no",
+        "_pictures:yes",
+        "_videos:yes",
+        "_details:yes",
+    ]
+    assert convertTags("nopic") == [
+        "_pictures:no",
+        "_ftindex:no",
+        "_videos:yes",
+        "_details:yes",
+    ]
+    assert convertTags("novid") == [
+        "_videos:no",
+        "_ftindex:no",
+        "_pictures:yes",
+        "_details:yes",
+    ]
+    assert convertTags("nodet") == [
+        "_details:no",
+        "_ftindex:no",
+        "_pictures:yes",
+        "_videos:yes",
+    ]
+    assert convertTags("_ftindex") == [
+        "_ftindex:yes",
+        "_pictures:yes",
+        "_videos:yes",
+        "_details:yes",
+    ]

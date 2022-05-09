@@ -140,6 +140,19 @@ def small_zim_file(tmpdir_factory):
     return dst
 
 
+@pytest.fixture(scope="session")
+def ns_zim_file(tmpdir_factory):
+    from zimscraperlib.download import stream_file
+
+    dst = tmpdir_factory.mktemp("data").join("ns.zim")
+    stream_file(
+        "https://github.com/openzim/zim-testing-suite/raw/v0.4/data/withns/"
+        "wikibooks_be_all_nopic_2017-02.zim",
+        dst,
+    )
+    return dst
+
+
 @pytest.mark.slow
 @pytest.fixture(scope="session")
 def real_zim_file(tmpdir_factory):
