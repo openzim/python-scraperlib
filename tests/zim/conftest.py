@@ -39,7 +39,7 @@ def build_data(tmp_path, png_image):
     redirects_file = tmp_path / "redirects.tsv"
     with open(redirects_file, "w") as fh:
         fh.write(" \tAccueil\tBienvenue !!\twelcome\n")
-        fh.write(" \tAccueil\t\tcommons.png\n")
+        fh.write(" \tAccueil2\t\tcommons.png\n")
         fh.write(" \timage\t\tcommons.png\n")
     build_dir = tmp_path / "build"
     return {

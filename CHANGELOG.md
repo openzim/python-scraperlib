@@ -5,9 +5,17 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) (as of version 1.5.0).
 
-## [Unreleased]
+## [1.6.0] - 2022-05-23
 
-- n/a
+## Added
+
+  - `Archive.get_metadata_item()` to retrieve full item instead of just value
+
+### Changed
+
+- Using pylibzim v1.1.0 (using libzim 7.2.1)
+  - Adding duplicate entries now raises RuntimeError
+  - filesize is fixed for larger ZIMs
 
 ## [1.5.0] - 2022-05-09
 

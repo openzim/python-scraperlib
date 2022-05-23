@@ -78,13 +78,13 @@ def test_make_zim_file_working(build_data, png_image):
     assert build_data["fpath"].exists()
     reader = Archive(build_data["fpath"])
     # welcome (actual) and two redirs
-    assert reader.entry_count == 7  # includes redirect
+    assert reader.entry_count == 8  # includes redirect
 
     assert reader.get_item("style.css").mimetype == "text/css"
     assert reader.get_item("app.js").mimetype == "application/javascript"
-    assert reader.get_suggestions_count("bienvenue") == 1
-    assert reader.get_suggestions_count("coucou") == 0
-    assert "Accueil" in list(reader.get_suggestions("bienvenue"))
+    assert reader.get_suggestions_count("bienvenue") == 0
+    assert reader.get_suggestions_count("coucou") == 1
+    assert "welcome" in list(reader.get_suggestions("coucou"))
 
 
 def test_make_zim_file_exceptions_while_building(tmp_path, png_image, build_data):

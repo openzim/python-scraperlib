@@ -83,12 +83,13 @@ def test_zim_creator(tmp_path, png_image, html_file, html_str):
     # make sure we have our redirects
     assert reader.get_entry_by_path("home2").is_redirect
     assert reader.get_entry_by_path("home2").get_redirect_entry().path == f"{main_path}"
-    # make sure titles were indexed (html with title for xapian)
+    # make sure titles were indexed (html with title for xapian ; redirects are not)
     # see https://github.com/openzim/python-libzim/issues/125
-    assert "home2" in list(reader.get_suggestions("Home !!"))
-    assert "home3" in list(reader.get_suggestions("Home !!"))
-    assert "home4" in list(reader.get_suggestions("Home !!"))
-    assert "images/yahoo.png" not in list(reader.get_suggestions("Home !!"))
+    # see https://github.com/openzim/libzim/issues/642
+    assert "home2" not in list(reader.get_suggestions("Home !!"))  # no is_front > False
+    assert "home3" in list(reader.get_suggestions("Home !!"))  # is_front=True
+    assert "home4" not in list(reader.get_suggestions("Home !!"))  # is_front=False
+    assert "images/yahoo.png" in list(reader.get_suggestions("Home !!"))  # is_frontTrue
     # make sure full text was indexed
     assert reader.get_search_results_count("PDF doc") >= 1
 
@@ -278,6 +279,8 @@ def test_urlitem_nonhtmlgzip(tmp_path, gzip_nonhtml_url):
     fpath = tmp_path / "test.zim"
     with Creator(fpath) as creator:
         creator.add_item(URLItem(url=gzip_nonhtml_url))
+
+    with Creator(fpath) as creator:
         creator.add_item(URLItem(url=gzip_nonhtml_url, use_disk=True))
 
     zim = Archive(fpath)
