@@ -73,7 +73,7 @@ class Creator(libzim.writer.Creator):
         self,
         filename: pathlib.Path,
         main_path: str = None,
-        language: Optional[str] = "eng",
+        language: Optional[str] = None,
         compression: Optional[str] = None,
         workaround_nocancel: Optional[bool] = True,
         **metadata: Dict[str, Union[str, datetime.date, datetime.datetime]]
@@ -91,6 +91,8 @@ class Creator(libzim.writer.Creator):
                 metadata.update(ld)
             else:
                 metadata = ld
+        else:
+            self.config_indexing(False, language)
 
         if compression:
             self.config_compression(
@@ -98,6 +100,8 @@ class Creator(libzim.writer.Creator):
                 if isinstance(compression, str)
                 else compression
             )
+        else:
+            self.config_compression('None')
 
         if metadata:
             self.metadata = metadata
