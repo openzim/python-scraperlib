@@ -125,7 +125,7 @@ def make_zim_file(
     source: str = None,
     flavour: str = None,
     scraper: str = None,
-    without_fulltext_index: bool = False,
+    without_fulltext_index: bool = True,
     redirects: Sequence[Tuple[str, str, str]] = None,
     redirects_file: pathlib.Path = None,
     rewrite_links: bool = True,
@@ -152,7 +152,7 @@ def make_zim_file(
     zim_file = Creator(
         filename=fpath,
         main_path=main_page,
-        index_language="" if without_fulltext_index else language,
+        index_language=None if without_fulltext_index else language,
         **{
             k: v
             for k, v in {
