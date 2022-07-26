@@ -5,11 +5,17 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) (as of version 1.5.0).
 
+## [1.6.1] - 2022-07-26
+
+### Changed
+
+- Wider range of accepted lxml dependency version as 4.9.1 fixes a security issue
+
 ## [1.6.0] - 2022-05-23
 
 ## Added
 
-  - `Archive.get_metadata_item()` to retrieve full item instead of just value
+- `Archive.get_metadata_item()` to retrieve full item instead of just value
 
 ### Changed
 
