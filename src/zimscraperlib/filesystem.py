@@ -31,7 +31,10 @@ def get_file_mimetype(fpath: pathlib.Path) -> str:
 def get_content_mimetype(content: bytes) -> str:
     """MIME Type of content retrieved from magic headers"""
 
-    detected_mime = magic.detect_from_content(content).mime_type
+    try:
+        detected_mime = magic.detect_from_content(content).mime_type
+    except UnicodeDecodeError:
+        return "application/octet-stream"
     return MIME_OVERRIDES.get(detected_mime, detected_mime)
 
 
