@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
+import magic
+
 from zimscraperlib.filesystem import (
     delete_callback,
     get_content_mimetype,
@@ -21,6 +23,17 @@ def test_content_mimetype(png_image, jpg_image, undecodable_byte_stream):
     with open(jpg_image, "rb") as fh:
         assert get_content_mimetype(fh.read(64)) == "image/jpeg"
 
+
+def test_content_mimetype_fallback(monkeypatch, undecodable_byte_stream):
+
+    # use raw function first to test actual code
+    assert get_content_mimetype(undecodable_byte_stream) == "application/octet-stream"
+
+    # mock then so we keep coverage on systems where magic works
+    def raising_magic(*args):
+        raise UnicodeDecodeError("nocodec", b"", 0, 1, "noreason")
+
+    monkeypatch.setattr(magic, "detect_from_content", raising_magic)
     assert get_content_mimetype(undecodable_byte_stream) == "application/octet-stream"
 
 
