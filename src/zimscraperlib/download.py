@@ -165,6 +165,7 @@ def stream_file(
     proxies: Optional[dict] = None,
     only_first_block: Optional[bool] = False,
     max_retries: Optional[int] = 5,
+    headers: Optional[Dict[str, str]] = None,
 ) -> Union[int, requests.structures.CaseInsensitiveDict]:
     """Stream data from a URL to either a BytesIO object or a file
     Arguments -
@@ -188,6 +189,7 @@ def stream_file(
         url,
         stream=True,
         proxies=proxies,
+        headers=headers,
     )
     resp.raise_for_status()
 

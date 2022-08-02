@@ -66,6 +66,18 @@ def test_first_block_download(valid_http_url):
 
 
 @pytest.mark.slow
+def test_user_agent():
+    ua = "zimscraperlib-test"
+    byte_stream = io.BytesIO()
+    stream_file(
+        url="http://useragentstring.com/",
+        byte_stream=byte_stream,
+        headers={"User-Agent": "zimscraperlib-test"},
+    )
+    assert ua in byte_stream.read().decode("utf-8")
+
+
+@pytest.mark.slow
 def test_save_http(tmp_path, valid_http_url):
     dest_file = tmp_path / "favicon.ico"
     size, ret = stream_file(url=valid_http_url, fpath=dest_file)
