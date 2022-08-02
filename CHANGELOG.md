@@ -5,6 +5,16 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) (as of version 1.5.0).
 
+## [1.7.0] - 2022-08-02
+
+### Added
+
+- `zim.Creator` now supports `ignore_duplicates: bool` parameter to
+  prevent duplicates from raising exceptions
+- `zim.Creator.add_item`, `zim.Creator.add_redirect` and `zim.Creator.add_item_for`
+  now supports a `duplicate_ok: bool` parameter to prevent an exception
+  should this item/redirect be a duplicate
+
 ## [1.6.3] - 2022-08-02
 
 ### Added

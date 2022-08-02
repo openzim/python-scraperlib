@@ -458,3 +458,22 @@ def test_callback_and_remove(tmp_path, html_file):
     assert not html_file.exists()
     assert Store.called
     assert Store.called == 2
+
+
+def test_duplicates(tmp_path):
+    with Creator(tmp_path / "test.zim") as creator:
+        creator.add_item_for(path="A", content="A")
+        creator.add_item_for(path="C", content="C")
+        creator.add_redirect(path="B", target_path="A")
+        with pytest.raises(RuntimeError, match="existing dirent's title"):
+            creator.add_item_for(path="A", content="test2")
+        with pytest.raises(RuntimeError, match="existing dirent's title"):
+            creator.add_redirect(path="B", target_path="C")
+
+
+def test_ignore_duplicates(tmp_path):
+    with Creator(tmp_path / "test.zim", ignore_duplicates=True) as creator:
+        creator.add_item_for(path="A", content="A")
+        creator.add_item_for(path="A", content="A2")
+        creator.add_redirect(path="B", target_path="A")
+        creator.add_redirect(path="B", target_path="C")

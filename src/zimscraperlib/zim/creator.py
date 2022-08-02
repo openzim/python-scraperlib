@@ -20,6 +20,7 @@
 
 import datetime
 import pathlib
+import re
 import weakref
 from typing import Any, Callable, Dict, Optional, Tuple, Union
 
@@ -29,6 +30,13 @@ from ..constants import FRONT_ARTICLE_MIMETYPES
 from ..filesystem import delete_callback, get_content_mimetype, get_file_mimetype
 from ..types import get_mime_for_name
 from .items import StaticItem
+
+DUPLICATE_EXC_STR = re.compile(
+    r"^Impossible to add(.+)"
+    r"dirent\'s title to add is(.+)"
+    r"existing dirent's title is(.+)",
+    re.MULTILINE | re.DOTALL,
+)
 
 
 def mimetype_for(
@@ -76,6 +84,7 @@ class Creator(libzim.writer.Creator):
         language: Optional[str] = "eng",
         compression: Optional[str] = None,
         workaround_nocancel: Optional[bool] = True,
+        ignore_duplicates: Optional[bool] = False,
         **metadata: Dict[str, Union[str, datetime.date, datetime.datetime]]
     ):
         super().__init__(filename=filename)
@@ -103,6 +112,7 @@ class Creator(libzim.writer.Creator):
             self.metadata = metadata
 
         self.workaround_nocancel = workaround_nocancel
+        self.ignore_duplicates = ignore_duplicates
 
     def start(self):
         super().__enter__()
@@ -129,6 +139,7 @@ class Creator(libzim.writer.Creator):
         is_front: Optional[bool] = None,
         should_compress: Optional[bool] = None,
         delete_fpath: Optional[bool] = False,
+        duplicate_ok: Optional[bool] = None,
         callback: Optional[Union[callable, Tuple[callable, Any]]] = None,
     ):
         """Add a File or content at a specified path and get its path
@@ -178,12 +189,15 @@ class Creator(libzim.writer.Creator):
                 cb += list(callback)
             callback = tuple(cb)
 
-        self.add_item(StaticItem(**kwargs), callback)
+        self.add_item(
+            StaticItem(**kwargs), callback=callback, duplicate_ok=duplicate_ok
+        )
         return path
 
     def add_item(
         self,
         item: libzim.writer.Item,
+        duplicate_ok: Optional[bool] = None,
         callback: Optional[Union[Callable, Tuple[Callable, Any]]] = None,
     ):
         """Add a libzim.writer.Item
@@ -196,8 +210,14 @@ class Creator(libzim.writer.Creator):
                 weakref.finalize(item, callback)
             else:
                 weakref.finalize(item, *callback)
+
+        duplicate_ok = duplicate_ok or self.ignore_duplicates
         try:
-            super().add_item(item)
+            try:
+                super().add_item(item)
+            except RuntimeError as exc:
+                if not DUPLICATE_EXC_STR.match(str(exc)) or not duplicate_ok:
+                    raise exc
         except Exception:
             if self.workaround_nocancel:
                 self.can_finish = False  # pragma: no cover
@@ -209,6 +229,7 @@ class Creator(libzim.writer.Creator):
         target_path: str,
         title: Optional[str] = "",
         is_front: Optional[bool] = None,
+        duplicate_ok: Optional[bool] = None,
     ):
         """Add a redirect from path to target_path
 
@@ -217,7 +238,19 @@ class Creator(libzim.writer.Creator):
         hints = {}
         if is_front is not None:
             hints[libzim.writer.Hint.FRONT_ARTICLE] = bool(is_front)
-        super().add_redirection(path, title, target_path, hints)
+
+        duplicate_ok = duplicate_ok or self.ignore_duplicates
+
+        try:
+            try:
+                super().add_redirection(path, title, target_path, hints)
+            except RuntimeError as exc:
+                if not DUPLICATE_EXC_STR.match(str(exc)) or not duplicate_ok:
+                    raise exc
+        except Exception:
+            if self.workaround_nocancel:
+                self.can_finish = False  # pragma: no cover
+            raise
 
     def add_default_illustration(self, content: bytes):
         self.add_illustration(48, content)
