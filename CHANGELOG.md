@@ -5,6 +5,16 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) (as of version 1.5.0).
 
+## [Unreleased]
+
+### Added
+
+- `download.get_session()` to build a new requests Session
+
+### Changed
+
+- `download.stream_file()` accepts a `session` param to use instead of creating one
+
 ## [1.7.0] - 2022-08-02
 
 ### Added

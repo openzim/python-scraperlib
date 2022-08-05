@@ -157,6 +157,13 @@ def _get_retry_adapter(max_retries: Optional[int] = 5) -> requests.adapters.Base
     return requests.adapters.HTTPAdapter(max_retries=retries)
 
 
+def get_session(max_retries: Optional[int] = 5) -> requests.Session:
+    """Session to hold cookies and connection pool together"""
+    session = requests.Session()
+    session.mount("http", _get_retry_adapter(max_retries))  # tied to http and https
+    return session
+
+
 def stream_file(
     url: str,
     fpath: Optional[pathlib.Path] = None,
@@ -166,6 +173,7 @@ def stream_file(
     only_first_block: Optional[bool] = False,
     max_retries: Optional[int] = 5,
     headers: Optional[Dict[str, str]] = None,
+    session: Optional[requests.Session] = None,
 ) -> Union[int, requests.structures.CaseInsensitiveDict]:
     """Stream data from a URL to either a BytesIO object or a file
     Arguments -
@@ -175,16 +183,17 @@ def stream_file(
         proxies - A dict of proxies to be used
         https://requests.readthedocs.io/en/master/user/advanced/#proxies
         only_first_block - Whether to download only one (first) block
-        max_retries - Maximum number of retries after which error is raised
+        max_retries - Maximum number of retries after which error is raised. Does not
+        apply if using your own session
+        session - Session object to make the request with. A new one created otherwise
     Returns the total number of bytes downloaded and the response headers"""
 
     # if no output option is supplied
     if fpath is None and byte_stream is None:
         raise ValueError("Either file path or a bytesIO object is needed")
 
-    session = requests.Session()
-    retry_adapter = _get_retry_adapter(max_retries)
-    session.mount("http", retry_adapter)  # tied to http and https
+    if not session:
+        session = get_session(max_retries)
     resp = session.get(
         url,
         stream=True,
