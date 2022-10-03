@@ -70,7 +70,7 @@ def test_user_agent():
     ua = "zimscraperlib-test"
     byte_stream = io.BytesIO()
     stream_file(
-        url="http://useragentstring.com/",
+        url="http://useragent.fr/",
         byte_stream=byte_stream,
         headers={"User-Agent": "zimscraperlib-test"},
     )
