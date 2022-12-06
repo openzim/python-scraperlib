@@ -7,7 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-- n/a
+- Using pylibzim v2.1.0 (using libzim 8.1.0)
+
+### Added
+
+- [libzim] `Entry.get_redirect_entry()`
+- [libzim] `Item.get_indexdata()` to implement custom IndexData per entry (writer)
+- [libzim] `Archive.media_count`
+
+### Changed
+- [libzim] `Archive.article_count` updated to match scraperlib's version
+- `Archive.article_counter` now deprecated. Now returns `Archive.article_count`
+- `Archive.media_counter` now deprecated. Now returns `Archive.media_count`
+
+### Removed
+
+- [libzim] `lzma` compression algorithm
 
 ## [1.8.0] - 2022-08-05
 

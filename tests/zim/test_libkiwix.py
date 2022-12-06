@@ -6,7 +6,7 @@ import io
 
 import pytest
 
-from zimscraperlib.zim._libkiwix import getArticleCount, getline, getMediaCount
+from zimscraperlib.zim._libkiwix import getline
 from zimscraperlib.zim._libkiwix import parseMimetypeCounter as parse
 
 empty = {}
@@ -81,13 +81,3 @@ def test_getline():
 def test_counter_parsing(counterStr, counterMap):
     # https://github.com/kiwix/libkiwix/blob/master/test/counterParsing.cpp
     assert parse(counterStr) == counterMap
-
-
-def test_article_count(counters):
-    assert getArticleCount({}) == 0
-    assert getArticleCount(counters) == 6339
-
-
-def test_media_count(counters):
-    assert getMediaCount({}) == 0
-    assert getMediaCount(counters) == 12862

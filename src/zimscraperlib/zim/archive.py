@@ -10,13 +10,14 @@
     - direct access to search results and number of results
     - public Entry access by Id"""
 
+import warnings
 from typing import Dict, Iterable, List, Optional
 
 import libzim.reader
 import libzim.search  # Query, Searcher
 import libzim.suggestion  # SuggestionSearcher
 
-from ._libkiwix import convertTags, getArticleCount, getMediaCount, parseMimetypeCounter
+from ._libkiwix import convertTags, parseMimetypeCounter
 from .items import Item
 
 
@@ -109,24 +110,17 @@ class Archive(libzim.reader.Archive):
 
     @property
     def article_counter(self) -> int:
-        """Nb of *articles* in the ZIM, using counters (from libkiwix)"""
-
-        # [libkiwix HACK]
-        # getArticleCount() returns different things depending on
-        # the "version" of the zim.
-        # On old zim (<=6), it returns the number of entry in `A` namespace
-        # On recent zim (>=7), it returns:
-        #  - the number of entry in `C` namespace (==getEntryCount)
-        #    if no frontArticleIndex is present
-        #  - the number of front article if a frontArticleIndex is present
-        # The use case >=7 without frontArticleIndex is pretty rare so we don't care
-        # We can detect if we are reading a zim <= 6
-        # by checking if we have a newNamespaceScheme.
-        if self.has_new_namespace_scheme:
-            return self.article_count
-        return getArticleCount(self.counters)
+        warnings.warn(
+            "Archive.article_counter now deprecated. "
+            "Use Archive.article_count instead",
+            DeprecationWarning,
+        )
+        return self.article_count
 
     @property
     def media_counter(self) -> int:
-        """Nb of *medias* in the ZIM, using counters (from libkiwix)"""
-        return getMediaCount(self.counters)
+        warnings.warn(
+            "Archive.media_counter now deprecated. " "Use Archive.media_count instead",
+            DeprecationWarning,
+        )
+        return self.media_count

@@ -84,30 +84,6 @@ def parseMimetypeCounter(
     return counters
 
 
-def getArticleCount(counterMap: CounterMap):
-    """Get the count of articles which can be indexed/displayed"""
-    counter = 0
-    for mimetype, count in counterMap.items():
-        if mimetype.startswith("text/html"):
-            counter += count
-
-    return counter
-
-
-def getMediaCount(counterMap: CounterMap) -> int:
-    """Get the count of medias content in the ZIM file"""
-    counter = 0
-    for mimetype, count in counterMap.items():
-        if (
-            mimetype.startswith("image/")
-            or mimetype.startswith("video/")
-            or mimetype.startswith("audio/")
-        ):
-            counter += count
-
-    return counter
-
-
 def convertTags(tags_str: str) -> List[str]:
     """List of tags expanded with libkiwix's additional hints for pic/vid/det/index"""
     tags = tags_str.split(";")

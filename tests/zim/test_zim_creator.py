@@ -179,10 +179,10 @@ def test_add_item_for_delete_fail(tmp_path, png_image):
 
 def test_compression(tmp_path):
     fpath = tmp_path / "test.zim"
-    with Creator(tmp_path / "test.zim", "welcome", "", compression="lzma") as creator:
+    with Creator(tmp_path / "test.zim", "welcome", "", compression="zstd") as creator:
         creator.add_item(StaticItem(path="welcome", content="hello"))
 
-    with Creator(fpath, "welcome", "", compression=Compression.lzma) as creator:
+    with Creator(fpath, "welcome", "", compression=Compression.zstd) as creator:
         creator.add_item(StaticItem(path="welcome", content="hello"))
 
 
