@@ -127,6 +127,7 @@ def save_large_file(url: str, fpath: pathlib.Path) -> None:
             "5",
             "--retry-connrefused",
             "--random-wait",
+            "--waitretry=2",
             "-O",
             str(fpath),
             "-c",
