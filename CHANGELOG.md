@@ -5,6 +5,12 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) (as of version 1.5.0).
 
+## [Unreleased]
+
+### Changed
+
+- Fixed `zim.providers.URLProvider` returning incomplete streams under certain circumstances (from https://github.com/openzim/kolibri/issues/40)
+
 ## [2.0.0] - 2022-12-06
 
 - Using pylibzim v2.1.0 (using libzim 8.1.0)

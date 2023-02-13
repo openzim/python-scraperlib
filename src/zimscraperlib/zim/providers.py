@@ -95,6 +95,7 @@ class URLProvider(libzim.writer.ContentProvider):
         return self.size
 
     def gen_blob(self) -> libzim.writer.Blob:  # pragma: nocover
-        bsize = 1048576  # 1MiB chunk
-        for chunk in self.resp.iter_content(bsize):
-            yield libzim.writer.Blob(chunk)
+        for chunk in self.resp.iter_content(10 * 1024):
+            if chunk:
+                yield libzim.writer.Blob(chunk)
+        yield libzim.writer.Blob(b"")
