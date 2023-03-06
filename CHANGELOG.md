@@ -7,9 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## Added
+
+- `zim.creator.Creator(language=)` can be specified as `List[str]`. `["eng", "fra"]`, `["eng"]`, `"eng,fra"`, "eng" are all valid values.
+
 ### Changed
 
 - Fixed `zim.providers.URLProvider` returning incomplete streams under certain circumstances (from https://github.com/openzim/kolibri/issues/40)
+- Fixed `zim.creator.Creator` not supporting multiple values in for Language metadata, as required by the spec
 
 ## [2.0.0] - 2022-12-06
 

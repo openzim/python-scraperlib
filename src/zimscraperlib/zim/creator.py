@@ -22,7 +22,7 @@ import datetime
 import pathlib
 import re
 import weakref
-from typing import Any, Callable, Dict, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import libzim.writer
 
@@ -81,7 +81,7 @@ class Creator(libzim.writer.Creator):
         self,
         filename: pathlib.Path,
         main_path: str = None,
-        language: Optional[str] = "eng",
+        language: Optional[Union[str, List[str]]] = "eng",
         compression: Optional[str] = None,
         workaround_nocancel: Optional[bool] = True,
         ignore_duplicates: Optional[bool] = False,
@@ -94,8 +94,10 @@ class Creator(libzim.writer.Creator):
             self.main_path = main_path
 
         if language:
-            self.config_indexing(True, language)
-            ld = {"Language": language}
+            if not isinstance(language, list):
+                language = language.split(",")
+            self.config_indexing(True, language[0])
+            ld = {"Language": ",".join(language)}
             if metadata:
                 metadata.update(ld)
             else:
