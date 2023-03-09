@@ -33,6 +33,15 @@ class SpecialURLProviderItem(StaticItem):
     def get_contentprovider(self):
         return SpecialURLProvider(self.url)
 
+DEFAULT_METADATA = {
+    "name": "Test Name",
+    "title": "Test Title",
+    "creator": "Test Creator",
+    "publisher": "Test Publisher",
+    "date": "2023-03-09",
+    "description": "Test Description",
+}
+
 
 class FileLikeProviderItem(StaticItem):
     def get_contentprovider(self):
@@ -47,7 +56,7 @@ def test_zim_creator(tmp_path, png_image, html_file, html_str):
     with open(png_image, "rb") as fh:
         png_data = fh.read()
 
-    with Creator(fpath, main_path, language, title=title, tags=tags) as creator:
+    with Creator(fpath, main_path, language, **DEFAULT_METADATA, tags=tags) as creator:
         # verbatim HTML from string
         creator.add_item_for("welcome", "wel", content=html_str, is_front=True)
         # verbatim HTML from file
@@ -74,7 +83,7 @@ def test_zim_creator(tmp_path, png_image, html_file, html_str):
     assert fpath.exists()
 
     reader = Archive(fpath)
-    assert reader.get_metadata("Title").decode(UTF8) == title
+    assert reader.get_metadata("Title").decode(UTF8) == DEFAULT_METADATA["title"]
     assert reader.get_metadata("Language").decode(UTF8) == language
     assert reader.get_metadata("Tags").decode(UTF8) == tags
     assert reader.main_entry.get_item().path == f"{main_path}"
@@ -106,7 +115,7 @@ def test_create_without_workaround(tmp_path):
     fpath = tmp_path / "test.zim"
 
     with Creator(
-        fpath, "welcome", "fra", title="My Title", workaround_nocancel=False
+        fpath, "welcome", "fra", workaround_nocancel=False, **DEFAULT_METADATA
     ) as creator:
         with pytest.raises(RuntimeError, match="AttributeError"):
             creator.add_item("hello")
@@ -130,11 +139,11 @@ def test_noindexlanguage(tmp_path):
 def test_add_item_for(tmp_path):
     fpath = tmp_path / "test.zim"
     # test without mimetype
-    with Creator(fpath, "welcome", "") as creator:
+    with Creator(fpath, "welcome", "fra", **DEFAULT_METADATA) as creator:
         creator.add_item_for(path="welcome", title="hello", content="hello")
 
     # test missing fpath and content
-    with Creator(fpath, "welcome", "") as creator:
+    with Creator(fpath, "welcome", "fra", **DEFAULT_METADATA) as creator:
         with pytest.raises(ValueError):
             creator.add_item_for(path="welcome", title="hello")
 
@@ -146,7 +155,7 @@ def test_add_item_for_delete(tmp_path, html_file):
     # copy file to local path
     shutil.copyfile(html_file, local_path)
 
-    with Creator(fpath, "welcome", "") as creator:
+    with Creator(fpath, "welcome", "fra", **DEFAULT_METADATA) as creator:
         creator.add_item_for(fpath=local_path, path="index", delete_fpath=True)
 
     assert not local_path.exists()
@@ -166,7 +175,7 @@ def test_add_item_for_delete_fail(tmp_path, png_image):
         print("##########", "remove_source")
         os.remove(item.filepath)
 
-    with Creator(fpath, "welcome", "") as creator:
+    with Creator(fpath, "welcome", "fra", **DEFAULT_METADATA) as creator:
         creator.add_item(
             StaticItem(filepath=local_path, path="index", callback=remove_source),
             callback=(delete_callback, local_path),
@@ -179,16 +188,16 @@ def test_add_item_for_delete_fail(tmp_path, png_image):
 
 def test_compression(tmp_path):
     fpath = tmp_path / "test.zim"
-    with Creator(tmp_path / "test.zim", "welcome", "", compression="zstd") as creator:
+    with Creator(tmp_path / "test.zim", "welcome", "fra", compression="zstd", **DEFAULT_METADATA) as creator:
         creator.add_item(StaticItem(path="welcome", content="hello"))
 
-    with Creator(fpath, "welcome", "", compression=Compression.zstd) as creator:
+    with Creator(fpath, "welcome", "fra", compression=Compression.zstd, **DEFAULT_METADATA) as creator:
         creator.add_item(StaticItem(path="welcome", content="hello"))
 
 
 def test_double_finish(tmp_path):
     fpath = tmp_path / "test.zim"
-    with Creator(fpath, "welcome", "fra") as creator:
+    with Creator(fpath, "welcome", "fra", **DEFAULT_METADATA) as creator:
         creator.add_item(StaticItem(path="welcome", content="hello"))
 
     # ensure we can finish an already finished creator
@@ -204,7 +213,7 @@ def test_cannot_finish(tmp_path):
 def test_sourcefile_removal(tmp_path, html_file):
 
     fpath = tmp_path / "test.zim"
-    with Creator(fpath) as creator:
+    with Creator(fpath, language="fra", **DEFAULT_METADATA) as creator:
         # using a temp dir so file still have a meaningful name
         tmpdir = tempfile.TemporaryDirectory(dir=tmp_path)  # can't use contextmgr
         # copy html to folder
@@ -220,7 +229,7 @@ def test_sourcefile_removal_std(tmp_path, html_file):
 
     fpath = tmp_path / "test.zim"
     paths = []
-    with Creator(fpath) as creator:
+    with Creator(fpath, language="fra", **DEFAULT_METADATA) as creator:
         for idx in range(0, 4):
             # copy html to folder
             paths.append(pathlib.Path(tmp_path / f"source{idx}.html"))
@@ -243,7 +252,7 @@ def test_sourcefile_noremoval(tmp_path, html_file):
     shutil.copyfile(html_file, src_path)
 
     fpath = tmp_path / "test.zim"
-    with Creator(fpath) as creator:
+    with Creator(fpath, language="fra", **DEFAULT_METADATA) as creator:
         creator.add_item(StaticItem(path=src_path.name, filepath=src_path))
 
     assert src_path.exists()
@@ -251,7 +260,7 @@ def test_sourcefile_noremoval(tmp_path, html_file):
 
 def test_urlitem_badurl(tmp_path):
 
-    with Creator(tmp_path / "test.zim") as creator:
+    with Creator(tmp_path / "test.zim", language="fra", **DEFAULT_METADATA) as creator:
         with pytest.raises(IOError, match="Unable to access URL"):
             creator.add_item(URLItem(url="httpo://hello:helloe:hello/"))
 
@@ -263,7 +272,7 @@ def test_urlitem_html(tmp_path, gzip_html_url):
         file_bytes = fh.read()
 
     fpath = tmp_path / "test.zim"
-    with Creator(fpath) as creator:
+    with Creator(fpath, language="fra", **DEFAULT_METADATA) as creator:
         creator.add_item(URLItem(url=gzip_html_url))
 
     zim = Archive(fpath)
@@ -277,10 +286,10 @@ def test_urlitem_nonhtmlgzip(tmp_path, gzip_nonhtml_url):
         file_bytes = fh.read()
 
     fpath = tmp_path / "test.zim"
-    with Creator(fpath) as creator:
+    with Creator(fpath, language="fra", **DEFAULT_METADATA) as creator:
         creator.add_item(URLItem(url=gzip_nonhtml_url))
 
-    with Creator(fpath) as creator:
+    with Creator(fpath, language="fra", **DEFAULT_METADATA) as creator:
         creator.add_item(URLItem(url=gzip_nonhtml_url, use_disk=True))
 
     zim = Archive(fpath)
@@ -294,7 +303,7 @@ def test_urlitem_binary(tmp_path, png_image_url):
         file_bytes = fh.read()
 
     fpath = tmp_path / "test.zim"
-    with Creator(fpath) as creator:
+    with Creator(fpath, language="fra", **DEFAULT_METADATA) as creator:
         creator.add_item(URLItem(url=png_image_url))
 
     zim = Archive(fpath)
@@ -306,7 +315,7 @@ def test_urlitem_binary(tmp_path, png_image_url):
 
 def test_urlitem_staticcontent(tmp_path, gzip_nonhtml_url):
     fpath = tmp_path / "test.zim"
-    with Creator(fpath) as creator:
+    with Creator(fpath, language="fra", **DEFAULT_METADATA) as creator:
         creator.add_item(URLItem(url=gzip_nonhtml_url, content="hello"))
 
     zim = Archive(fpath)
@@ -318,7 +327,7 @@ def test_filelikeprovider_nosize(tmp_path, png_image_url):
     stream_file(png_image_url, byte_stream=fileobj)
 
     fpath = tmp_path / "test.zim"
-    with Creator(fpath) as creator:
+    with Creator(fpath, language="fra", **DEFAULT_METADATA) as creator:
         creator.add_item(FileLikeProviderItem(fileobj=fileobj, path="one.png"))
 
     zim = Archive(fpath)
@@ -332,7 +341,7 @@ def test_urlprovider(tmp_path, png_image_url):
         file_bytes = fh.read()
 
     fpath = tmp_path / "test.zim"
-    with Creator(fpath) as creator:
+    with Creator(fpath, language="fra", **DEFAULT_METADATA) as creator:
         creator.add_item(SpecialURLProviderItem(url=png_image_url, path="one.png"))
 
     zim = Archive(fpath)
@@ -379,7 +388,7 @@ with HTTPServer(('', {port}), handler) as server:
 
     fpath = tmp_path / "test.zim"
     try:
-        with tempfile.TemporaryDirectory() as tmp_dir, Creator(fpath) as creator:
+        with tempfile.TemporaryDirectory() as tmp_dir, Creator(fpath, language="fra", **DEFAULT_METADATA) as creator:
             tmp_dir = pathlib.Path(tmp_dir)
             creator.add_item(
                 URLItem(
@@ -415,7 +424,7 @@ def test_item_callback(tmp_path, html_file):
     def cb():
         Store.called = True
 
-    with Creator(fpath) as creator:
+    with Creator(fpath, language="fra", **DEFAULT_METADATA) as creator:
         creator.add_item(
             StaticItem(path=html_file.name, filepath=html_file), callback=cb
         )
@@ -424,7 +433,7 @@ def test_item_callback(tmp_path, html_file):
 
 
 def test_compess_hints(tmp_path, html_file):
-    with Creator(tmp_path / "test.zim") as creator:
+    with Creator(tmp_path / "test.zim", language="fra", **DEFAULT_METADATA) as creator:
         creator.add_item_for(
             path=html_file.name,
             fpath=html_file,
@@ -444,7 +453,7 @@ def test_callback_and_remove(tmp_path, html_file):
     html_file2 = html_file.with_suffix(f".2{html_file.suffix}")
     shutil.copyfile(html_file, html_file2)
 
-    with Creator(tmp_path / "test.zim") as creator:
+    with Creator(tmp_path / "test.zim", language="fra", **DEFAULT_METADATA) as creator:
         creator.add_item_for(
             path=html_file.name, fpath=html_file, delete_fpath=True, callback=cb
         )
@@ -461,7 +470,7 @@ def test_callback_and_remove(tmp_path, html_file):
 
 
 def test_duplicates(tmp_path):
-    with Creator(tmp_path / "test.zim") as creator:
+    with Creator(tmp_path / "test.zim", language="fra", **DEFAULT_METADATA) as creator:
         creator.add_item_for(path="A", content="A")
         creator.add_item_for(path="C", content="C")
         creator.add_redirect(path="B", target_path="A")
@@ -472,8 +481,16 @@ def test_duplicates(tmp_path):
 
 
 def test_ignore_duplicates(tmp_path):
-    with Creator(tmp_path / "test.zim", ignore_duplicates=True) as creator:
+    with Creator(tmp_path / "test.zim", language="fra", ignore_duplicates=True, **DEFAULT_METADATA) as creator:
         creator.add_item_for(path="A", content="A")
         creator.add_item_for(path="A", content="A2")
         creator.add_redirect(path="B", target_path="A")
         creator.add_redirect(path="B", target_path="C")
+
+
+def test_initialize_with_incomplete_metadata(tmp_path):
+    try:
+        Creator(tmp_path)
+        assert False
+    except Exception:
+        assert True
