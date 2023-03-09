@@ -20,15 +20,15 @@ FRONT_ARTICLE_MIMETYPES = ["text/html"]
 
 # list of mandatory meta tags of the zim file.
 ZIM_MANDATORY_METADATA_KEYS = [
-    "Name",
-    "Title",
-    "Creator",
-    "Publisher",
-    "Date",
-    "Description",
-    "Language",
-    "Illustration_48x48@1",
+    "name",
+    "title",
+    "creator",
+    "publisher",
+    "date",
+    "description",
+    "language",
 ]
 
+# Default Value of Language
 DEFAULT_LANG_ISO_639_1 = "en"
 DEFAULT_LANG_ISO_639_3 = "eng"
