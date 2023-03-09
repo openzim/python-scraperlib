@@ -16,7 +16,7 @@ class MetadataDict(collections.UserDict):
     """
 
     @property
-    def all_are_correct(self) -> bool:
+    def all_are_set(self) -> bool:
         """
         Determine if the Key of all mandatory Metadata has a value.
         If they all have values, return True, otherwise return False.
