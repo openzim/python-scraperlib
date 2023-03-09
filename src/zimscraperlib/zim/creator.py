@@ -30,6 +30,7 @@ from ..constants import FRONT_ARTICLE_MIMETYPES
 from ..filesystem import delete_callback, get_content_mimetype, get_file_mimetype
 from ..types import get_mime_for_name
 from .items import StaticItem
+from .metadata_dict import MetadataDict
 
 DUPLICATE_EXC_STR = re.compile(
     r"^Impossible to add(.+)"
@@ -89,6 +90,7 @@ class Creator(libzim.writer.Creator):
     ):
         super().__init__(filename=filename)
         self.can_finish = True
+        self.metadata = MetadataDict()
 
         if main_path:
             self.main_path = main_path
@@ -111,7 +113,7 @@ class Creator(libzim.writer.Creator):
             )
 
         if metadata:
-            self.metadata = metadata
+            self.metadata.update(metadata)
 
         self.workaround_nocancel = workaround_nocancel
         self.ignore_duplicates = ignore_duplicates
@@ -124,6 +126,10 @@ class Creator(libzim.writer.Creator):
 
         if getattr(self, "metadata", None):
             self.update_metadata(**self.metadata)
+
+        if not self.metadata.all_are_set:
+            raise ValueError(f"{self.metadata} Mandatory Metadata are not all set.")
+
         return self
 
     def update_metadata(self, **kwargs):
