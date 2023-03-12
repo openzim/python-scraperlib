@@ -22,11 +22,15 @@ import datetime
 import pathlib
 import re
 import weakref
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Iterable, Optional, Tuple, Union
 
 import libzim.writer
 
-from ..constants import FRONT_ARTICLE_MIMETYPES
+from ..constants import (
+    DEFAULT_DEV_ZIM_METADATA,
+    FRONT_ARTICLE_MIMETYPES,
+    MANDATORY_ZIM_METADATA_KEYS,
+)
 from ..filesystem import delete_callback, get_content_mimetype, get_file_mimetype
 from ..types import get_mime_for_name
 from .items import StaticItem
@@ -80,28 +84,16 @@ class Creator(libzim.writer.Creator):
     def __init__(
         self,
         filename: pathlib.Path,
-        main_path: str = None,
-        language: Optional[Union[str, List[str]]] = "eng",
+        main_path: str,
         compression: Optional[str] = None,
         workaround_nocancel: Optional[bool] = True,
         ignore_duplicates: Optional[bool] = False,
-        **metadata: Dict[str, Union[str, datetime.date, datetime.datetime]]
     ):
         super().__init__(filename=filename)
+        self._metadata = dict()
         self.can_finish = True
 
-        if main_path:
-            self.main_path = main_path
-
-        if language:
-            if not isinstance(language, list):
-                language = language.split(",")
-            self.config_indexing(True, language[0])
-            ld = {"Language": ",".join(language)}
-            if metadata:
-                metadata.update(ld)
-            else:
-                metadata = ld
+        self.set_mainpath(main_path)
 
         if compression:
             self.config_compression(
@@ -110,26 +102,108 @@ class Creator(libzim.writer.Creator):
                 else compression
             )
 
-        if metadata:
-            self.metadata = metadata
-
         self.workaround_nocancel = workaround_nocancel
         self.ignore_duplicates = ignore_duplicates
 
     def start(self):
+        if not all(
+            [
+                key in self._metadata.keys() and self._metadata.get(key, None)
+                for key in MANDATORY_ZIM_METADATA_KEYS
+            ]
+        ):
+            raise ValueError("Mandatory metadata are not all set.")
+
+        for name, value in self._metadata.items():
+            if value:
+                self._validate_metadata(name, value)
+
         super().__enter__()
 
-        if getattr(self, "main_path", None):
-            self.set_mainpath(self.main_path)
+        self.add_illustration(48, self._metadata["Illustration_48x48@1"])
+        del self._metadata["Illustration_48x48@1"]
+        for name, value in self._metadata.items():
+            if value:
+                self.add_metadata(name, value)
 
-        if getattr(self, "metadata", None):
-            self.update_metadata(**self.metadata)
         return self
 
-    def update_metadata(self, **kwargs):
-        if kwargs:
-            for name, value in kwargs.items():
-                self.add_metadata(name, value)
+    def _validate_metadata(self, name, value):
+        if name == "Counter":
+            raise ValueError("You do not need to set Counter.")
+
+        if name == "Description" and len(value) > 80:
+            raise ValueError("Description is too long.")
+
+        if name == "LongDescription" and len(value) > 4000:
+            raise ValueError("LongDescription is too long.")
+
+    def config_metadata(
+        self,
+        *,
+        Name: str,
+        Language: str,
+        Title: str,
+        Description: str,
+        LongDescription: Optional[str] = None,
+        Creator: str,
+        Publisher: str,
+        Date: Union[datetime.datetime, datetime.date, str],
+        Illustration_48x48_at_1: bytes,
+        Tags: Optional[Union[Iterable[str], str]] = None,
+        Scraper: Optional[str] = None,
+        Flavour: Optional[str] = None,
+        Source: Optional[str] = None,
+        License: Optional[str] = None,
+        Relation: Optional[str] = None,
+        **extras: str,
+    ):
+        """
+        A chaining functions which configures the metadata of the Creator class.
+        You must set all mandatory metadata in this phase.
+
+        Parameters:
+            check out: https://wiki.openzim.org/wiki/Metadata
+            all the extra metadata must be plain text.
+
+        Returns:
+            Self
+        """
+        self._metadata.update(
+            {
+                "Name": Name,
+                "Title": Title,
+                "Creator": Creator,
+                "Publisher": Publisher,
+                "Date": Date,
+                "Description": Description,
+                "Language": Language,
+                "License": License,
+                "LongDescription": LongDescription,
+                "Tags": Tags,
+                "Relation": Relation,
+                "Flavour": Flavour,
+                "Source": Source,
+                "Scraper": Scraper,
+                "Illustration_48x48@1": Illustration_48x48_at_1,
+            }
+        )
+        self._metadata.update(extras)
+        language = self._metadata.get("Language", "").split(",")
+        self.config_indexing(True, language[0])
+
+        return self
+
+    def config_dev_metadata(self, **extras: str):
+        """
+        A Test function. It will set the default test metadata for a Creator instance.
+
+        Returns:
+            Self
+        """
+        devel_default_metadata = DEFAULT_DEV_ZIM_METADATA.copy()
+        devel_default_metadata.update(extras)
+        return self.config_metadata(**devel_default_metadata)
 
     def add_item_for(
         self,
@@ -253,9 +327,6 @@ class Creator(libzim.writer.Creator):
             if self.workaround_nocancel:
                 self.can_finish = False  # pragma: no cover
             raise
-
-    def add_default_illustration(self, content: bytes):
-        self.add_illustration(48, content)
 
     def finish(self, exc_type=None, exc_val=None, exc_tb=None):
         """Triggers finalization of ZIM creation and create final ZIM file."""

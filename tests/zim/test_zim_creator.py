@@ -15,7 +15,7 @@ import time
 import pytest
 from libzim.writer import Compression
 
-from zimscraperlib.constants import UTF8
+from zimscraperlib.constants import DEFAULT_DEV_ZIM_METADATA, UTF8
 from zimscraperlib.download import save_large_file, stream_file
 from zimscraperlib.filesystem import delete_callback
 from zimscraperlib.zim import Archive, Creator, StaticItem, URLItem
@@ -41,13 +41,13 @@ class FileLikeProviderItem(StaticItem):
 
 def test_zim_creator(tmp_path, png_image, html_file, html_str):
     fpath = tmp_path / "test.zim"
-    main_path, language, title = "welcome", "fra", "My Title"
+    main_path = "welcome"
     tags = ";".join(["toto", "tata"])
-
     with open(png_image, "rb") as fh:
         png_data = fh.read()
-
-    with Creator(fpath, main_path, language, title=title, tags=tags) as creator:
+    with Creator(fpath, main_path).config_dev_metadata(
+        Tags=tags, Illustration_48x48_at_1=png_data
+    ) as creator:
         # verbatim HTML from string
         creator.add_item_for("welcome", "wel", content=html_str, is_front=True)
         # verbatim HTML from file
@@ -68,15 +68,12 @@ def test_zim_creator(tmp_path, png_image, html_file, html_str):
         with pytest.raises(ValueError, match="One of fpath or content is required"):
             creator.add_item_for("images/yahoo.png")
 
-        with open(png_image, "rb") as fh:
-            creator.add_default_illustration(png_data)
-
     assert fpath.exists()
 
     reader = Archive(fpath)
-    assert reader.get_metadata("Title").decode(UTF8) == title
-    assert reader.get_metadata("Language").decode(UTF8) == language
-    assert reader.get_metadata("Tags").decode(UTF8) == tags
+    assert reader.get_text_metadata("Title") == DEFAULT_DEV_ZIM_METADATA["Title"]
+    assert reader.get_text_metadata("Language") == DEFAULT_DEV_ZIM_METADATA["Language"]
+    assert reader.get_text_metadata("Tags") == tags
     assert reader.main_entry.get_item().path == f"{main_path}"
     # make sure we have our image
     assert reader.get_item("images/yahoo.png")
@@ -106,21 +103,22 @@ def test_create_without_workaround(tmp_path):
     fpath = tmp_path / "test.zim"
 
     with Creator(
-        fpath, "welcome", "fra", title="My Title", workaround_nocancel=False
-    ) as creator:
+        fpath, "welcome", workaround_nocancel=False
+    ).config_dev_metadata() as creator:
         with pytest.raises(RuntimeError, match="AttributeError"):
             creator.add_item("hello")
 
 
 def test_noindexlanguage(tmp_path):
     fpath = tmp_path / "test.zim"
-    with Creator(fpath, "welcome", "") as creator:
+    creator = Creator(fpath, "welcome").config_dev_metadata(Language="bam")
+    creator.config_indexing(False, "")
+    with creator as creator:
         creator.add_item(StaticItem(path="welcome", content="hello"))
-        creator.update_metadata(language="bam")
         creator.add_item_for("index", "Index", content="-", mimetype="text/html")
 
     reader = Archive(fpath)
-    assert reader.get_metadata("Language").decode(UTF8) == "bam"
+    assert reader.get_text_metadata("Language") == "bam"
     # html content triggers both title and content xapian indexes
     # but since indexing is disabled, we should only have title one
     assert reader.has_title_index
@@ -130,11 +128,11 @@ def test_noindexlanguage(tmp_path):
 def test_add_item_for(tmp_path):
     fpath = tmp_path / "test.zim"
     # test without mimetype
-    with Creator(fpath, "welcome", "") as creator:
+    with Creator(fpath, "welcome").config_dev_metadata() as creator:
         creator.add_item_for(path="welcome", title="hello", content="hello")
 
     # test missing fpath and content
-    with Creator(fpath, "welcome", "") as creator:
+    with Creator(fpath, "welcome").config_dev_metadata() as creator:
         with pytest.raises(ValueError):
             creator.add_item_for(path="welcome", title="hello")
 
@@ -146,7 +144,7 @@ def test_add_item_for_delete(tmp_path, html_file):
     # copy file to local path
     shutil.copyfile(html_file, local_path)
 
-    with Creator(fpath, "welcome", "") as creator:
+    with Creator(fpath, "welcome").config_dev_metadata() as creator:
         creator.add_item_for(fpath=local_path, path="index", delete_fpath=True)
 
     assert not local_path.exists()
@@ -166,7 +164,7 @@ def test_add_item_for_delete_fail(tmp_path, png_image):
         print("##########", "remove_source")
         os.remove(item.filepath)
 
-    with Creator(fpath, "welcome", "") as creator:
+    with Creator(fpath, "welcome").config_dev_metadata() as creator:
         creator.add_item(
             StaticItem(filepath=local_path, path="index", callback=remove_source),
             callback=(delete_callback, local_path),
@@ -179,16 +177,20 @@ def test_add_item_for_delete_fail(tmp_path, png_image):
 
 def test_compression(tmp_path):
     fpath = tmp_path / "test.zim"
-    with Creator(tmp_path / "test.zim", "welcome", "", compression="zstd") as creator:
+    with Creator(
+        tmp_path / "test.zim", "welcome", compression="zstd"
+    ).config_dev_metadata() as creator:
         creator.add_item(StaticItem(path="welcome", content="hello"))
 
-    with Creator(fpath, "welcome", "", compression=Compression.zstd) as creator:
+    with Creator(
+        fpath, "welcome", compression=Compression.zstd
+    ).config_dev_metadata() as creator:
         creator.add_item(StaticItem(path="welcome", content="hello"))
 
 
 def test_double_finish(tmp_path):
     fpath = tmp_path / "test.zim"
-    with Creator(fpath, "welcome", "fra") as creator:
+    with Creator(fpath, "welcome").config_dev_metadata() as creator:
         creator.add_item(StaticItem(path="welcome", content="hello"))
 
     # ensure we can finish an already finished creator
@@ -196,15 +198,14 @@ def test_double_finish(tmp_path):
 
 
 def test_cannot_finish(tmp_path):
-    creator = Creator(tmp_path / "test.zim")
+    creator = Creator(tmp_path / "test.zim", "")
     creator.can_finish = False
     creator.finish()
 
 
 def test_sourcefile_removal(tmp_path, html_file):
-
     fpath = tmp_path / "test.zim"
-    with Creator(fpath) as creator:
+    with Creator(fpath, "").config_dev_metadata() as creator:
         # using a temp dir so file still have a meaningful name
         tmpdir = tempfile.TemporaryDirectory(dir=tmp_path)  # can't use contextmgr
         # copy html to folder
@@ -217,10 +218,9 @@ def test_sourcefile_removal(tmp_path, html_file):
 
 
 def test_sourcefile_removal_std(tmp_path, html_file):
-
     fpath = tmp_path / "test.zim"
     paths = []
-    with Creator(fpath) as creator:
+    with Creator(fpath, "").config_dev_metadata() as creator:
         for idx in range(0, 4):
             # copy html to folder
             paths.append(pathlib.Path(tmp_path / f"source{idx}.html"))
@@ -243,15 +243,14 @@ def test_sourcefile_noremoval(tmp_path, html_file):
     shutil.copyfile(html_file, src_path)
 
     fpath = tmp_path / "test.zim"
-    with Creator(fpath) as creator:
+    with Creator(fpath, "").config_dev_metadata() as creator:
         creator.add_item(StaticItem(path=src_path.name, filepath=src_path))
 
     assert src_path.exists()
 
 
 def test_urlitem_badurl(tmp_path):
-
-    with Creator(tmp_path / "test.zim") as creator:
+    with Creator(tmp_path / "test.zim", "").config_dev_metadata() as creator:
         with pytest.raises(IOError, match="Unable to access URL"):
             creator.add_item(URLItem(url="httpo://hello:helloe:hello/"))
 
@@ -263,7 +262,7 @@ def test_urlitem_html(tmp_path, gzip_html_url):
         file_bytes = fh.read()
 
     fpath = tmp_path / "test.zim"
-    with Creator(fpath) as creator:
+    with Creator(fpath, "").config_dev_metadata() as creator:
         creator.add_item(URLItem(url=gzip_html_url))
 
     zim = Archive(fpath)
@@ -277,10 +276,10 @@ def test_urlitem_nonhtmlgzip(tmp_path, gzip_nonhtml_url):
         file_bytes = fh.read()
 
     fpath = tmp_path / "test.zim"
-    with Creator(fpath) as creator:
+    with Creator(fpath, "").config_dev_metadata() as creator:
         creator.add_item(URLItem(url=gzip_nonhtml_url))
 
-    with Creator(fpath) as creator:
+    with Creator(fpath, "").config_dev_metadata() as creator:
         creator.add_item(URLItem(url=gzip_nonhtml_url, use_disk=True))
 
     zim = Archive(fpath)
@@ -294,7 +293,7 @@ def test_urlitem_binary(tmp_path, png_image_url):
         file_bytes = fh.read()
 
     fpath = tmp_path / "test.zim"
-    with Creator(fpath) as creator:
+    with Creator(fpath, "").config_dev_metadata() as creator:
         creator.add_item(URLItem(url=png_image_url))
 
     zim = Archive(fpath)
@@ -306,7 +305,7 @@ def test_urlitem_binary(tmp_path, png_image_url):
 
 def test_urlitem_staticcontent(tmp_path, gzip_nonhtml_url):
     fpath = tmp_path / "test.zim"
-    with Creator(fpath) as creator:
+    with Creator(fpath, "").config_dev_metadata() as creator:
         creator.add_item(URLItem(url=gzip_nonhtml_url, content="hello"))
 
     zim = Archive(fpath)
@@ -318,7 +317,7 @@ def test_filelikeprovider_nosize(tmp_path, png_image_url):
     stream_file(png_image_url, byte_stream=fileobj)
 
     fpath = tmp_path / "test.zim"
-    with Creator(fpath) as creator:
+    with Creator(fpath, "").config_dev_metadata() as creator:
         creator.add_item(FileLikeProviderItem(fileobj=fileobj, path="one.png"))
 
     zim = Archive(fpath)
@@ -332,7 +331,7 @@ def test_urlprovider(tmp_path, png_image_url):
         file_bytes = fh.read()
 
     fpath = tmp_path / "test.zim"
-    with Creator(fpath) as creator:
+    with Creator(fpath, "").config_dev_metadata() as creator:
         creator.add_item(SpecialURLProviderItem(url=png_image_url, path="one.png"))
 
     zim = Archive(fpath)
@@ -340,7 +339,6 @@ def test_urlprovider(tmp_path, png_image_url):
 
 
 def test_urlprovider_nolength(tmp_path, png_image_url, png_image):
-
     # save url's content locally using external tool
     png_image = tmp_path / "original.png"
     save_large_file(png_image_url, png_image)
@@ -379,7 +377,9 @@ with HTTPServer(('', {port}), handler) as server:
 
     fpath = tmp_path / "test.zim"
     try:
-        with tempfile.TemporaryDirectory() as tmp_dir, Creator(fpath) as creator:
+        with tempfile.TemporaryDirectory() as tmp_dir, Creator(
+            fpath, ""
+        ).config_dev_metadata() as creator:
             tmp_dir = pathlib.Path(tmp_dir)
             creator.add_item(
                 URLItem(
@@ -415,7 +415,7 @@ def test_item_callback(tmp_path, html_file):
     def cb():
         Store.called = True
 
-    with Creator(fpath) as creator:
+    with Creator(fpath, "").config_dev_metadata() as creator:
         creator.add_item(
             StaticItem(path=html_file.name, filepath=html_file), callback=cb
         )
@@ -424,7 +424,7 @@ def test_item_callback(tmp_path, html_file):
 
 
 def test_compess_hints(tmp_path, html_file):
-    with Creator(tmp_path / "test.zim") as creator:
+    with Creator(tmp_path / "test.zim", "").config_dev_metadata() as creator:
         creator.add_item_for(
             path=html_file.name,
             fpath=html_file,
@@ -444,7 +444,7 @@ def test_callback_and_remove(tmp_path, html_file):
     html_file2 = html_file.with_suffix(f".2{html_file.suffix}")
     shutil.copyfile(html_file, html_file2)
 
-    with Creator(tmp_path / "test.zim") as creator:
+    with Creator(tmp_path / "test.zim", "").config_dev_metadata() as creator:
         creator.add_item_for(
             path=html_file.name, fpath=html_file, delete_fpath=True, callback=cb
         )
@@ -461,7 +461,7 @@ def test_callback_and_remove(tmp_path, html_file):
 
 
 def test_duplicates(tmp_path):
-    with Creator(tmp_path / "test.zim") as creator:
+    with Creator(tmp_path / "test.zim", "").config_dev_metadata() as creator:
         creator.add_item_for(path="A", content="A")
         creator.add_item_for(path="C", content="C")
         creator.add_redirect(path="B", target_path="A")
@@ -472,8 +472,85 @@ def test_duplicates(tmp_path):
 
 
 def test_ignore_duplicates(tmp_path):
-    with Creator(tmp_path / "test.zim", ignore_duplicates=True) as creator:
+    with Creator(
+        tmp_path / "test.zim", "", ignore_duplicates=True
+    ).config_dev_metadata() as creator:
         creator.add_item_for(path="A", content="A")
         creator.add_item_for(path="A", content="A2")
         creator.add_redirect(path="B", target_path="A")
         creator.add_redirect(path="B", target_path="C")
+
+
+def test_without_metadata(tmp_path):
+    with pytest.raises(ValueError, match="Mandatory metadata are not all set."):
+        Creator(tmp_path, "").start()
+
+
+def test_check_metadata(tmp_path):
+    with pytest.raises(ValueError, match="You do not need to set Counter."):
+        Creator(tmp_path, "").config_dev_metadata(Counter=1).start()
+
+    with pytest.raises(ValueError, match="Description is too long."):
+        Creator(tmp_path, "").config_dev_metadata(Description="T" * 90).start()
+
+    with pytest.raises(ValueError, match="LongDescription is too long."):
+        Creator(tmp_path, "").config_dev_metadata(LongDescription="T" * 5000).start()
+
+
+def test_config_metadata(tmp_path, png_image):
+    fpath = tmp_path / "test_config.zim"
+    with open(png_image, "rb") as fh:
+        png_data = fh.read()
+    creator = Creator(fpath, "").config_metadata(
+        Name="wikipedia_fr_football",
+        Title="English Wikipedia",
+        Creator="English speaking Wikipedia contributors",
+        Publisher="Wikipedia user Foobar",
+        Date="2009-11-21",
+        Description="All articles (without images) from the english Wikipedia",
+        LongDescription="This ZIM file contains all articles (without images)"
+        " from the english Wikipedia by 2009-11-10. The topics are...",
+        Language="eng",
+        License="CC-BY",
+        Tags="wikipedia;_category:wikipedia;_pictures:no;_videos:no;"
+        "_details:yes;_ftindex:yes",
+        Flavour="nopic",
+        Source="https://en.wikipedia.org/",
+        Scraper="mwoffliner 1.2.3",
+        Illustration_48x48_at_1=png_data,
+        TestMetadata="Test Metadata",
+    )
+    with creator:
+        pass
+
+    assert fpath.exists()
+
+    reader = Archive(fpath)
+    assert reader.get_text_metadata("Name") == "wikipedia_fr_football"
+    assert reader.get_text_metadata("Title") == "English Wikipedia"
+    assert (
+        reader.get_text_metadata("Creator") == "English speaking Wikipedia contributors"
+    )
+    assert reader.get_text_metadata("Publisher") == "Wikipedia user Foobar"
+    assert reader.get_text_metadata("Date") == "2009-11-21"
+    assert (
+        reader.get_text_metadata("Description")
+        == "All articles (without images) from the english Wikipedia"
+    )
+    assert (
+        reader.get_text_metadata("Longdescription")
+        == "This ZIM file contains all articles (without images)"
+        " from the english Wikipedia by 2009-11-10. The topics are..."
+    )
+    assert reader.get_text_metadata("Language") == "eng"
+    assert reader.get_text_metadata("License") == "CC-BY"
+    assert (
+        reader.get_text_metadata("Tags")
+        == "wikipedia;_category:wikipedia;_pictures:no;_videos:no;"
+        "_details:yes;_ftindex:yes"
+    )
+    assert reader.get_text_metadata("Flavour") == "nopic"
+    assert reader.get_text_metadata("Source") == "https://en.wikipedia.org/"
+    assert reader.get_text_metadata("Scraper") == "mwoffliner 1.2.3"
+    assert reader.get_metadata("Illustration_48x48@1") == png_data
+    assert reader.get_text_metadata("Testmetadata") == "Test Metadata"
