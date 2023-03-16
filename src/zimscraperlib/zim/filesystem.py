@@ -125,6 +125,7 @@ def make_zim_file(
     source: str = None,
     flavour: str = None,
     scraper: str = None,
+    long_description: str = None,
     without_fulltext_index: bool = False,
     redirects: Sequence[Tuple[str, str, str]] = None,
     redirects_file: pathlib.Path = None,
@@ -149,38 +150,36 @@ def make_zim_file(
     if not favicon_path.exists() or not favicon_path.is_file():
         raise IOError(f"Incorrect favicon: {favicon} ({favicon_path})")
 
-    zim_file = Creator(
-        filename=fpath,
-        main_path=main_page,
-        index_language="" if without_fulltext_index else language,
+    with open(favicon_path, "rb") as fh:
+        favicon_data = fh.read()
+
+    zim_file = Creator(filename=fpath, main_path=main_page).config_metadata(
         **{
             k: v
             for k, v in {
                 # (somewhat) mandatory
-                "name": name,
-                "title": title,
-                "description": description,
-                "date": date or datetime.date.today(),
-                "language": language,
-                "creator": creator,
-                "publisher": publisher,
+                "Name": name,
+                "Title": title,
+                "Description": description,
+                "Date": date or datetime.date.today(),
+                "Language": language,
+                "Creator": creator,
+                "Publisher": publisher,
                 # optional
-                "tags": ";".join(tags) if tags else None,
-                "source": source,
-                "flavour": flavour,
-                "scraper": scraper,
+                "Tags": ";".join(tags) if tags else None,
+                "Source": source,
+                "Flavour": flavour,
+                "Scraper": scraper,
+                "LongDescription": long_description,
+                "Illustration_48x48_at_1": favicon_data,
             }.items()
             if v is not None
-        },
+        }
     )
 
     zim_file.start()
     try:
         logger.debug(f"Preparing zimfile at {zim_file.filename}")
-
-        # add favicon as illustration
-        with open(favicon_path, "rb") as fh:
-            zim_file.add_default_illustration(fh.read())
 
         # recursively add content from build_dir
         logger.debug(f"Recursively adding files from {build_dir}")
