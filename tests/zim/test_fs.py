@@ -37,7 +37,7 @@ def test_redirects_file(tmp_path, png_image, build_data):
         fpath=build_data["fpath"],
         name="test-zim",
         main_page="welcome",
-        favicon=png_image.name,
+        illustration=png_image.name,
         title="Test ZIM",
         description="A test ZIM",
         redirects_file=build_data["redirects_file"],
@@ -51,8 +51,8 @@ def test_make_zim_file_fail_nobuildir(build_data):
     assert not build_data["fpath"].exists()
 
 
-def test_make_zim_file_fail_nofavicon(build_data):
-    # ensure we fail on missing favicon
+def test_make_zim_file_fail_noillustration(build_data):
+    # ensure we fail on missing illustration
     build_data["build_dir"].mkdir()
     with pytest.raises(IOError):
         make_zim_file(**build_data)
@@ -110,7 +110,7 @@ try:
         fpath=pathlib.Path("{build_data['fpath']}"),
         name="test-zim",
         main_page="welcome",
-        favicon="{png_image.name}",
+        illustration="{png_image.name}",
         title="Test ZIM",
         description="A test ZIM",
         redirects_file="{build_data["redirects_file"]}")

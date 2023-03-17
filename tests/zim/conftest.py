@@ -47,7 +47,7 @@ def build_data(tmp_path, png_image):
         "fpath": fpath,
         "name": "test-zim",
         "main_page": "welcome",
-        "favicon": png_image.name,
+        "illustration": png_image.name,
         "title": "Test ZIM",
         "description": "A test ZIM",
         "date": None,
