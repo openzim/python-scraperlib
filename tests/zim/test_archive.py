@@ -67,22 +67,6 @@ def test_counters(small_zim_file):
         assert zim.counters == {"image/png": 1, "text/html": 1}
 
 
-def test_article_counter(small_zim_file, ns_zim_file):
-    with Archive(small_zim_file) as zim:
-        assert zim.article_counter == 0
-
-    with Archive(ns_zim_file) as zim:
-        assert zim.article_counter == 66
-
-
-def test_media_counter(small_zim_file, ns_zim_file):
-    with Archive(small_zim_file) as zim:
-        assert zim.media_counter == 1
-
-    with Archive(ns_zim_file) as zim:
-        assert zim.media_counter == 34
-
-
 def test_get_tags(small_zim_file, real_zim_file):
     with Archive(small_zim_file) as zim:
         assert zim.get_tags() == ["_ftindex:no"]
