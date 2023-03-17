@@ -37,7 +37,12 @@ from zimscraperlib.image.presets import (
     WebpLow,
     WebpMedium,
 )
-from zimscraperlib.image.probing import format_for, get_colors, is_hex_color
+from zimscraperlib.image.probing import (
+    format_for,
+    get_colors,
+    is_hex_color,
+    is_valid_image,
+)
 from zimscraperlib.image.transformation import resize_image
 from zimscraperlib.image.utils import save_image
 
@@ -93,7 +98,7 @@ def test_colors_noimage():
 
 
 def test_colors_png_nopalette(png_image):
-    assert get_colors(png_image, False) == ("#04649C", "#E7F6FF")
+    assert get_colors(png_image, False) == ("#04659B", "#E7F6FF")
 
 
 def test_colors_jpg_nopalette(jpg_image):
@@ -101,7 +106,7 @@ def test_colors_jpg_nopalette(jpg_image):
 
 
 def test_colors_png_palette(png_image):
-    assert get_colors(png_image, True) == ("#04649C", "#FFE7E7")
+    assert get_colors(png_image, True) == ("#9E0404", "#E7F6FF")
 
 
 def test_colors_jpg_palette(jpg_image):
@@ -285,8 +290,8 @@ def test_change_image_format_defaults(png_image, jpg_image, tmp_path):
     "fmt,exp_size",
     [("png", 128), ("jpg", 128)],
 )
-def test_create_favicon(png_image, jpg_image, tmp_path, fmt, exp_size):
-    src, dst = get_src_dst(tmp_path, fmt, png_image=png_image, jpg_image=jpg_image)
+def test_create_favicon(png_image2, jpg_image, tmp_path, fmt, exp_size):
+    src, dst = get_src_dst(tmp_path, fmt, png_image=png_image2, jpg_image=jpg_image)
     dst = dst.parent.joinpath("favicon.ico")
     create_favicon(src, dst)
 
@@ -328,12 +333,12 @@ def test_wrong_extension(square_png_image, square_jpg_image, tmp_path, fmt):
     ["png", "jpg", "gif", "webp"],
 )
 def test_optimize_image_default(
-    png_image, jpg_image, gif_image, webp_image, tmp_path, fmt
+    png_image2, jpg_image, gif_image, webp_image, tmp_path, fmt
 ):
     src, dst = get_src_dst(
         tmp_path,
         fmt,
-        png_image=png_image,
+        png_image=png_image2,
         jpg_image=jpg_image,
         gif_image=gif_image,
         webp_image=webp_image,
@@ -476,7 +481,7 @@ def test_preset_has_mime_and_ext():
 def test_remove_png_transparency(png_image, tmp_path):
     dst = tmp_path / "out.png"
     optimize_png(src=png_image, dst=dst, remove_transparency=True)
-    assert os.path.getsize(dst) == 10686
+    assert os.path.getsize(dst) == 2352
 
 
 def test_jpeg_exif_preserve(jpg_exif_image, tmp_path):
@@ -547,3 +552,18 @@ def test_wrong_extension_optim(tmp_path, png_image):
     shutil.copy(png_image, dst)
     with pytest.raises(Exception):
         optimize_jpeg(dst, dst)
+
+
+def test_is_valid_image(png_image, png_image2, jpg_image, font):
+    assert is_valid_image(png_image, "PNG")
+    assert not is_valid_image(png_image, "JPEG")
+    assert is_valid_image(jpg_image, "JPEG")
+    assert is_valid_image(png_image, "PNG", (48, 48))
+    assert not is_valid_image(png_image2, "PNG", (48, 48))
+    assert not is_valid_image(b"", "PNG")
+    assert not is_valid_image(34, "PNG")
+    assert not is_valid_image(font, "PNG")
+    with open(png_image, "rb") as fh:
+        assert is_valid_image(fh.read(), "PNG", (48, 48))
+        fh.seek(0)
+        assert is_valid_image(io.BytesIO(fh.read()), "PNG", (48, 48))

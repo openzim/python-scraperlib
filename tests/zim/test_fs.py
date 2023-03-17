@@ -18,7 +18,7 @@ def test_fileitem(tmp_path, png_image):
 
     # ensure all properties of a FileItem representing a binary are correct
     article = FileItem(tmp_path, fpath)
-    assert article.get_path() == "commons.png"
+    assert article.get_path() == "commons48.png"
     assert article.get_title() == ""
     assert article.get_mimetype() == "image/png"
 
@@ -29,7 +29,7 @@ def test_redirects_file(tmp_path, png_image, build_data):
     build_data["redirects_file"] = tmp_path / "toto.tsv"
     with open(build_data["redirects_file"], "w") as fh:
         # write a redirect with a namespace (old ns scheme)
-        fh.write("A\tAccueil\t\tcommons.png\n")
+        fh.write("A\tAccueil\t\tcommons48.png\n")
 
     # call make_zim_file with redirects_file
     make_zim_file(

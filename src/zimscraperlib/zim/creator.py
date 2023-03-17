@@ -22,6 +22,7 @@ import datetime
 import pathlib
 import re
 import weakref
+from collections.abc import Iterable as IterableT
 from typing import Any, Callable, Iterable, Optional, Tuple, Union
 
 import libzim.writer
@@ -29,9 +30,14 @@ import libzim.writer
 from ..constants import (
     DEFAULT_DEV_ZIM_METADATA,
     FRONT_ARTICLE_MIMETYPES,
+    ILLUSTRATIONS_METADATA_RE,
     MANDATORY_ZIM_METADATA_KEYS,
+    MAXIMUM_DESCRIPTION_METADATA_LENGTH,
+    MAXIMUM_LONG_DESCRIPTION_METADATA_LENGTH,
 )
 from ..filesystem import delete_callback, get_content_mimetype, get_file_mimetype
+from ..i18n import is_valid_iso_639_3
+from ..image.probing import is_valid_image
 from ..types import get_mime_for_name
 from .items import StaticItem
 
@@ -91,6 +97,7 @@ class Creator(libzim.writer.Creator):
     ):
         super().__init__(filename=filename)
         self._metadata = dict()
+        self.__indexing_configured = False
         self.can_finish = True
 
         self.set_mainpath(main_path)
@@ -105,18 +112,28 @@ class Creator(libzim.writer.Creator):
         self.workaround_nocancel = workaround_nocancel
         self.ignore_duplicates = ignore_duplicates
 
+    def config_indexing(self, indexing: bool, language: Optional[str] = None):
+        """Toggle full-text and title indexing of entries
+
+        Uses Language metadata's value (or "") if not set"""
+        language = language or self._metadata.get("Language", "")
+        if indexing and not is_valid_iso_639_3(language):
+            raise ValueError("Not a valid ISO-639-3 language code")
+        super().config_indexing(indexing, language)
+        self.__indexing_configured = True
+        return self
+
     def start(self):
-        if not all(
-            [
-                key in self._metadata.keys() and self._metadata.get(key, None)
-                for key in MANDATORY_ZIM_METADATA_KEYS
-            ]
-        ):
+        if not all([self._metadata.get(key) for key in MANDATORY_ZIM_METADATA_KEYS]):
             raise ValueError("Mandatory metadata are not all set.")
 
         for name, value in self._metadata.items():
             if value:
-                self._validate_metadata(name, value)
+                self.validate_metadata(name, value)
+
+        language = self._metadata.get("Language", "").split(",")
+        if language[0] and not self.__indexing_configured:
+            self.config_indexing(True, language[0])
 
         super().__enter__()
 
@@ -128,15 +145,97 @@ class Creator(libzim.writer.Creator):
 
         return self
 
-    def _validate_metadata(self, name, value):
+    def validate_metadata(
+        self,
+        name: str,
+        value: Union[bytes, str, datetime.datetime, datetime.date, Iterable[str]],
+    ):
+        """Ensures metadata value for name is conform with the openZIM spec on Metadata
+
+        Also enforces recommendations
+        See https://wiki.openzim.org/wiki/Metadata"""
+
+        # spec doesnt require any value but empty strings are not useful
+        if name in MANDATORY_ZIM_METADATA_KEYS and not value:
+            raise ValueError(f"Missing value for {name}")
+
+        # most require/standard and al
+        if name in (
+            "Name",
+            "Title",
+            "Creator",
+            "Publisher",
+            "Description",
+            "LongDescription",
+            "License",
+            "Relation",
+            "Relation",
+            "Flavour",
+            "Source",
+            "Scraper",
+        ) and not isinstance(value, str):
+            raise ValueError(f"Invalid type for {name}")
+
+        if name == "Title" and len(value) > 30:
+            raise ValueError(f"{name} is too long.")
+
+        if name == "Date":
+            if not isinstance(value, (datetime.datetime, datetime.date, str)):
+                raise ValueError(f"Invalid type for {name}.")
+            elif isinstance(value, str):
+                match = re.match(
+                    r"(?P<year>\d{4})-(?P<month>\d{2})-(?P<day>\d{2})", value
+                )
+                try:
+                    datetime.date(**{k: int(v) for k, v in match.groupdict().items()})
+                except Exception as exc:
+                    raise ValueError(f"Invalid {name} format: {exc}")
+
+        if name == "Language" and not is_valid_iso_639_3(value):
+            raise ValueError(f"{value} is not ISO-639-3.")
+
         if name == "Counter":
-            raise ValueError("You do not need to set Counter.")
+            raise ValueError(f"{name} cannot be set. libzim sets it.")
 
-        if name == "Description" and len(value) > 80:
-            raise ValueError("Description is too long.")
+        if name == "Description" and len(value) > MAXIMUM_DESCRIPTION_METADATA_LENGTH:
+            raise ValueError(f"{name} is too long.")
 
-        if name == "LongDescription" and len(value) > 4000:
-            raise ValueError("LongDescription is too long.")
+        if (
+            name == "LongDescription"
+            and len(value) > MAXIMUM_LONG_DESCRIPTION_METADATA_LENGTH
+        ):
+            raise ValueError(f"{name} is too long.")
+
+        if name == "Tags" and (
+            not isinstance(value, IterableT)
+            or not all([isinstance(tag, str) for tag in value])
+        ):
+            raise ValueError(f"Invalid type(s) for {name}")
+
+        if name.startswith("Illustration_"):
+            match = ILLUSTRATIONS_METADATA_RE.match(name)
+            if match and not is_valid_image(
+                image=value,
+                imformat="PNG",
+                size=(
+                    int(match.groupdict()["width"]),
+                    int(match.groupdict()["height"]),
+                ),
+            ):
+                raise ValueError(
+                    f"{name} is not a "
+                    f"{match.groupdict()['width']}x{match.groupdict()['height']} "
+                    "PNG Image"
+                )
+
+    def add_metadata(
+        self,
+        name: str,
+        content: Union[str, bytes, datetime.date, datetime.datetime],
+        mimetype: str = "text/plain;charset=UTF-8",
+    ):
+        self.validate_metadata(name, content)
+        super().add_metadata(name, content, mimetype)
 
     def config_metadata(
         self,
@@ -158,17 +257,7 @@ class Creator(libzim.writer.Creator):
         Relation: Optional[str] = None,
         **extras: str,
     ):
-        """
-        A chaining functions which configures the metadata of the Creator class.
-        You must set all mandatory metadata in this phase.
-
-        Parameters:
-            check out: https://wiki.openzim.org/wiki/Metadata
-            all the extra metadata must be plain text.
-
-        Returns:
-            Self
-        """
+        """Sets all mandatory Metadata as well as standard and any other text ones"""
         self._metadata.update(
             {
                 "Name": Name,
@@ -189,18 +278,10 @@ class Creator(libzim.writer.Creator):
             }
         )
         self._metadata.update(extras)
-        language = self._metadata.get("Language", "").split(",")
-        self.config_indexing(True, language[0])
-
         return self
 
     def config_dev_metadata(self, **extras: str):
-        """
-        A Test function. It will set the default test metadata for a Creator instance.
-
-        Returns:
-            Self
-        """
+        """Calls config_metadata with default (yet overridable) values for dev"""
         devel_default_metadata = DEFAULT_DEV_ZIM_METADATA.copy()
         devel_default_metadata.update(extras)
         return self.config_metadata(**devel_default_metadata)

@@ -5,6 +5,36 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) (as of version 1.5.0).
 
+## [Unreleased]
+
+⚠️ Warning: this release introduce several API changes to `zim.creator.Creator` and `zim.filesystem.make_zim_file`
+
+### Added
+
+- `zim.creator.Creator.config_metadata` method (returning Self) exposing all mandatory Metdata, all standard ones and allowing extra text metdadata.
+- `zim.creator.Creator.config_dev_metadata` method setting stub metdata for all mandatory ones (allowing overrides)
+- `zim.creator.Creator.validate_metadata` (called on `start`) to verify metadata respects the spec (and its recommendations)
+- `zim.filesystem.make_zim_file` accepts a new optional `long_description` param.
+- `i18n.is_valid_iso_639_3` to check ISO-639-3 codes
+- `image.probing.is_valid_image` to check Image format and size
+
+### Changed
+
+- `zim.creator.Creator` `main_path` argument now mandatory
+- `zim.creator.Creator.start` now fails on missing required or invalid metadata
+- `zim.creator.Creator.add_metadata` nows enforces validation checks
+- `zim.filesystem.make_zim_file` renamed its `favicon_path` param to `illustration_path`
+- `zim.creator.Creator.config_indexing` `language` argument now optionnal when `indexing=False`
+- `zim.creator.Creator.config_indexing` now validates `language` is ISO- 639-3 when `indexing=True`
+
+### Removed
+
+- `zim.creator.Creator.update_metadata`. See `.config_metadata()` instead
+- `zim.creator.Creator` `language` argument. See `.config_metadata()` instead
+- `zim.creator.Creator` keyword arguments. See `.config_metadata()` instead
+- `zim.creator.Creator.add_default_illustration`. See `.config_metadata()` instead
+- `zim.archibe.Archive.media_counter` (deprecated in `2.0.0`)
+
 ## [2.1.0] - 2023-03-06
 
 ## Added

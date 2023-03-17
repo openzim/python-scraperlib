@@ -85,6 +85,11 @@ def file_src(fname):
 
 @pytest.fixture(scope="module")
 def png_image():
+    return file_src("commons48.png")
+
+
+@pytest.fixture(scope="module")
+def png_image2():
     return file_src("commons.png")
 
 

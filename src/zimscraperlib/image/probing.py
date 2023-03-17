@@ -60,3 +60,22 @@ def format_for(src: Union[pathlib.Path, io.BytesIO], from_suffix: bool = True) -
 
     init_pil()
     return ext_fmt_map[src.suffix]  # might raise KeyError on unknown extension
+
+
+def is_valid_image(
+    image: Union[pathlib.Path, io.IOBase, bytes],
+    imformat: str,
+    size: Optional[Tuple[int, int]] = None,
+) -> bool:
+    """whether image is a valid imformat (PNG) image, optionnaly of requested size"""
+    if isinstance(image, bytes):
+        image = io.BytesIO(image)
+    try:
+        img = PIL.Image.open(image)
+        if img.format != imformat:
+            return False
+        if size and img.size != size:
+            return False
+    except Exception:
+        return False
+    return True

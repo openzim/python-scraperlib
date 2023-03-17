@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
+import base64
+import datetime
 import io
 import os
 import pathlib
@@ -15,7 +17,11 @@ import time
 import pytest
 from libzim.writer import Compression
 
-from zimscraperlib.constants import DEFAULT_DEV_ZIM_METADATA, UTF8
+from zimscraperlib.constants import (
+    DEFAULT_DEV_ZIM_METADATA,
+    MANDATORY_ZIM_METADATA_KEYS,
+    UTF8,
+)
 from zimscraperlib.download import save_large_file, stream_file
 from zimscraperlib.filesystem import delete_callback
 from zimscraperlib.zim import Archive, Creator, StaticItem, URLItem
@@ -112,7 +118,7 @@ def test_create_without_workaround(tmp_path):
 def test_noindexlanguage(tmp_path):
     fpath = tmp_path / "test.zim"
     creator = Creator(fpath, "welcome").config_dev_metadata(Language="bam")
-    creator.config_indexing(False, "")
+    creator.config_indexing(False)
     with creator as creator:
         creator.add_item(StaticItem(path="welcome", content="hello"))
         creator.add_item_for("index", "Index", content="-", mimetype="text/html")
@@ -487,7 +493,7 @@ def test_without_metadata(tmp_path):
 
 
 def test_check_metadata(tmp_path):
-    with pytest.raises(ValueError, match="You do not need to set Counter."):
+    with pytest.raises(ValueError, match="Counter cannot be set"):
         Creator(tmp_path, "").config_dev_metadata(Counter=1).start()
 
     with pytest.raises(ValueError, match="Description is too long."):
@@ -538,7 +544,7 @@ def test_config_metadata(tmp_path, png_image):
         == "All articles (without images) from the english Wikipedia"
     )
     assert (
-        reader.get_text_metadata("Longdescription")
+        reader.get_text_metadata("LongDescription")
         == "This ZIM file contains all articles (without images)"
         " from the english Wikipedia by 2009-11-10. The topics are..."
     )
@@ -553,4 +559,88 @@ def test_config_metadata(tmp_path, png_image):
     assert reader.get_text_metadata("Source") == "https://en.wikipedia.org/"
     assert reader.get_text_metadata("Scraper") == "mwoffliner 1.2.3"
     assert reader.get_metadata("Illustration_48x48@1") == png_data
-    assert reader.get_text_metadata("Testmetadata") == "Test Metadata"
+    assert reader.get_text_metadata("TestMetadata") == "Test Metadata"
+
+
+@pytest.mark.parametrize(
+    "name,value,valid",
+    [
+        ("Name", 4, False),
+        ("Title", 4, False),
+        ("Creator", 4, False),
+        ("Publisher", 4, False),
+        ("Description", 4, False),
+        ("LongDescription", 4, False),
+        ("License", 4, False),
+        ("Relation", 4, False),
+        ("Relation", 4, False),
+        ("Flavour", 4, False),
+        ("Source", 4, False),
+        ("Scraper", 4, False),
+        ("Title", "X" * 30, True),
+        ("Title", "X" * 31, False),
+        ("Date", 4, False),
+        ("Date", datetime.datetime.now(), True),
+        ("Date", datetime.datetime(1969, 12, 31, 23, 59), True),
+        ("Date", datetime.date(1969, 12, 31), True),
+        ("Date", datetime.date.today(), True),
+        ("Date", "1969-12-31", True),
+        ("Date", "1969-13-31", False),
+        ("Date", "2023/02/29", False),
+        ("Language", "xxx", False),
+        ("Language", "rmr", False),
+        ("Language", "eng", True),
+        ("Language", "fra", True),
+        ("Language", "bam", True),
+        ("Language", "fr", False),
+        ("Language", "en", False),
+        ("Counter", "1", False),
+        ("Description", "X" * 80, True),
+        ("Description", "X" * 81, False),
+        ("LongDescription", "X" * 4000, True),
+        ("LongDescription", "X" * 4001, False),
+        ("Tags", 4, False),
+        ("Tags", ["wikipedia", 4, "football"], False),
+        ("Tags", ("wikipedia", "football"), True),
+        ("Tags", ["wikipedia", "football"], True),
+        ("Tags", "wikipedia;football", True),
+        # 1x1 PNG image
+        (
+            "Illustration_48x48@1",
+            base64.b64decode(
+                "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAAGXRFWHRTb2Z0d2FyZQBB"
+                "ZG9iZSBJbWFnZVJlYWR5ccllPAAAAA9JREFUeNpi+P//P0CAAQAF/gL+Lc6J7gAAAABJ"
+                "RU5ErkJggg=="
+            ),
+            False,
+        ),
+        (
+            "Illustration_48x48@1",
+            DEFAULT_DEV_ZIM_METADATA["Illustration_48x48_at_1"],
+            True,
+        ),
+        (
+            "Illustration_96x96@1",
+            DEFAULT_DEV_ZIM_METADATA["Illustration_48x48_at_1"],
+            False,
+        ),
+    ]
+    + [(name, "", False) for name in MANDATORY_ZIM_METADATA_KEYS],
+)
+def test_validate_metadata(tmp_path, name, value, valid):
+    if valid:
+        Creator(tmp_path / "_.zim", "").validate_metadata(name, value)
+    else:
+        with pytest.raises(ValueError):
+            Creator(tmp_path / "_.zim", "").validate_metadata(name, value)
+
+
+def test_config_indexing(tmp_path):
+    with pytest.raises(ValueError):
+        Creator(tmp_path / "_.zim", "").config_indexing(True, "fr")
+    with pytest.raises(ValueError):
+        Creator(tmp_path / "_.zim", "").config_indexing(True, "")
+    assert Creator(tmp_path / "_.zim", "").config_indexing(True, "fra")
+    assert Creator(tmp_path / "_.zim", "").config_indexing(True, "bam")
+    assert Creator(tmp_path / "_.zim", "").config_indexing(False, "bam")
+    assert Creator(tmp_path / "_.zim", "").config_indexing(False)

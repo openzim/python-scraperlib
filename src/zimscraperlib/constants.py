@@ -4,6 +4,7 @@
 
 import base64
 import pathlib
+import re
 
 ROOT_DIR = pathlib.Path(__file__).parent
 NAME = pathlib.Path(__file__).parent.name
@@ -39,9 +40,17 @@ DEFAULT_DEV_ZIM_METADATA = {
     "Date": "2023-01-01",
     "Description": "Test Description",
     "Language": "fra",
+    # blank 48x48 transparent PNG
     "Illustration_48x48_at_1": base64.b64decode(
-        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAAGXRFWHRTb2Z0d2FyZQBB"
-        "ZG9iZSBJbWFnZVJlYWR5ccllPAAAAA9JREFUeNpi+P//P0CAAQAF/gL+Lc6J7gAAAABJ"
-        "RU5ErkJggg=="
+        "iVBORw0KGgoAAAANSUhEUgAAADAAAAAwAQMAAABtzGvEAAAAGXRFWHRTb2Z0d2FyZQBB"
+        "ZG9iZSBJbWFnZVJlYWR5ccllPAAAAANQTFRFR3BMgvrS0gAAAAF0Uk5TAEDm2GYAAAAN"
+        "SURBVBjTY2AYBdQEAAFQAAGn4toWAAAAAElFTkSuQmCC"
     ),
 }
+
+MAXIMUM_DESCRIPTION_METADATA_LENGTH = 80
+MAXIMUM_LONG_DESCRIPTION_METADATA_LENGTH = 4000
+
+ILLUSTRATIONS_METADATA_RE = re.compile(
+    r"^Illustration_(?P<height>\d+)x(?P<width>\d+)@(?P<scale>\d+)$"
+)
