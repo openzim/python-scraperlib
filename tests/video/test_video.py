@@ -128,7 +128,8 @@ def test_config_build_from():
     ],
 )
 def test_get_media_info(media_format, media, expected, test_files):
-    with tempfile.TemporaryDirectory() as t, pathlib.Path(t).joinpath(media) as src:
+    with tempfile.TemporaryDirectory() as t:
+        src = pathlib.Path(t).joinpath(media)
         shutil.copy2(test_files[media_format], src)
         assert get_media_info(src) == expected
 
@@ -342,7 +343,8 @@ def test_preset_voice_mp3_low():
     ],
 )
 def test_reencode_media(src, dest, ffmpeg_args, expected, test_files):
-    with tempfile.TemporaryDirectory() as t, pathlib.Path(t) as temp_dir:
+    with tempfile.TemporaryDirectory() as t:
+        temp_dir = pathlib.Path(t)
         copy_media_and_reencode(temp_dir, src, dest, ffmpeg_args, test_files)
         converted_details = get_media_info(temp_dir.joinpath(dest))
         assert expected["duration"] == converted_details["duration"]
@@ -368,9 +370,10 @@ def test_reencode_media(src, dest, ffmpeg_args, expected, test_files):
     ],
 )
 def test_reencode_delete_src(src, dest, ffmpeg_args, delete_src, test_files):
-    with tempfile.TemporaryDirectory() as t, pathlib.Path(
-        t
-    ) as temp_dir, temp_dir.joinpath(src) as src_path:
+    with tempfile.TemporaryDirectory() as t:
+        temp_dir = pathlib.Path(t)
+        src_path = temp_dir.joinpath(src)
+
         copy_media_and_reencode(
             temp_dir, src, dest, ffmpeg_args, test_files, delete_src=delete_src
         )
@@ -401,7 +404,8 @@ def test_reencode_delete_src(src, dest, ffmpeg_args, delete_src, test_files):
 def test_reencode_return_ffmpeg_output(
     src, dest, ffmpeg_args, return_output, test_files
 ):
-    with tempfile.TemporaryDirectory() as t, pathlib.Path(t) as temp_dir:
+    with tempfile.TemporaryDirectory() as t:
+        temp_dir = pathlib.Path(t)
         ret = copy_media_and_reencode(
             temp_dir,
             src,
@@ -437,7 +441,8 @@ def test_reencode_return_ffmpeg_output(
     ],
 )
 def test_reencode_failsafe(src, dest, ffmpeg_args, failsafe, test_files):
-    with tempfile.TemporaryDirectory() as t, pathlib.Path(t) as temp_dir:
+    with tempfile.TemporaryDirectory() as t:
+        temp_dir = pathlib.Path(t)
         if not failsafe:
             with pytest.raises(subprocess.CalledProcessError) as exc_info:
                 copy_media_and_reencode(
