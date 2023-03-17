@@ -114,7 +114,7 @@ def make_zim_file(
     fpath: pathlib.Path,
     name: str,
     main_page: str,
-    favicon: str,
+    illustration: str,
     title: str,
     description: str,
     date: datetime.date = None,
@@ -135,7 +135,7 @@ def make_zim_file(
     """Creates a zimwriterfs-like ZIM file at {fpath} from {build_dir}
 
     main_page: path of item to serve as main page
-    favicon: relative path to favicon file in build_dir
+    illustration: relative path to illustration file in build_dir
     tags: list of str tags to add to meta
     redirects: list of (src, dst, title) tuple to create redirects from
     rewrite_links controls whether to rewrite HTML/CSS content
@@ -146,12 +146,12 @@ def make_zim_file(
     if not build_dir.exists() or not build_dir.is_dir():
         raise IOError(f"Incorrect build_dir: {build_dir}")
 
-    favicon_path = build_dir / favicon
-    if not favicon_path.exists() or not favicon_path.is_file():
-        raise IOError(f"Incorrect favicon: {favicon} ({favicon_path})")
+    illustration_path = build_dir / illustration
+    if not illustration_path.exists() or not illustration_path.is_file():
+        raise IOError(f"Incorrect illustration: {illustration} ({illustration_path})")
 
-    with open(favicon_path, "rb") as fh:
-        favicon_data = fh.read()
+    with open(illustration_path, "rb") as fh:
+        illustration_data = fh.read()
 
     zim_file = Creator(filename=fpath, main_path=main_page).config_metadata(
         **{
@@ -171,7 +171,7 @@ def make_zim_file(
                 "Flavour": flavour,
                 "Scraper": scraper,
                 "LongDescription": long_description,
-                "Illustration_48x48_at_1": favicon_data,
+                "Illustration_48x48_at_1": illustration_data,
             }.items()
             if v is not None
         }

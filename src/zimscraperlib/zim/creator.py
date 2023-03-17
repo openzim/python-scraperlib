@@ -32,8 +32,21 @@ from ..constants import (
     MANDATORY_ZIM_METADATA_KEYS,
 )
 from ..filesystem import delete_callback, get_content_mimetype, get_file_mimetype
+from ..i18n import is_valid_iso_639_3
 from ..types import get_mime_for_name
 from .items import StaticItem
+from .metadata import (
+    validate_counter,
+    validate_date,
+    validate_description,
+    validate_illustrations,
+    validate_language,
+    validate_longdescription,
+    validate_required_values,
+    validate_standard_str_types,
+    validate_tags,
+    validate_title,
+)
 
 DUPLICATE_EXC_STR = re.compile(
     r"^Impossible to add(.+)"
@@ -91,6 +104,7 @@ class Creator(libzim.writer.Creator):
     ):
         super().__init__(filename=filename)
         self._metadata = dict()
+        self.__indexing_configured = False
         self.can_finish = True
 
         self.set_mainpath(main_path)
@@ -105,18 +119,28 @@ class Creator(libzim.writer.Creator):
         self.workaround_nocancel = workaround_nocancel
         self.ignore_duplicates = ignore_duplicates
 
+    def config_indexing(self, indexing: bool, language: Optional[str] = None):
+        """Toggle full-text and title indexing of entries
+
+        Uses Language metadata's value (or "") if not set"""
+        language = language or self._metadata.get("Language", "")
+        if indexing and not is_valid_iso_639_3(language):
+            raise ValueError("Not a valid ISO-639-3 language code")
+        super().config_indexing(indexing, language)
+        self.__indexing_configured = True
+        return self
+
     def start(self):
-        if not all(
-            [
-                key in self._metadata.keys() and self._metadata.get(key, None)
-                for key in MANDATORY_ZIM_METADATA_KEYS
-            ]
-        ):
+        if not all([self._metadata.get(key) for key in MANDATORY_ZIM_METADATA_KEYS]):
             raise ValueError("Mandatory metadata are not all set.")
 
         for name, value in self._metadata.items():
             if value:
-                self._validate_metadata(name, value)
+                self.validate_metadata(name, value)
+
+        language = self._metadata.get("Language", "").split(",")
+        if language[0] and not self.__indexing_configured:
+            self.config_indexing(True, language[0])
 
         super().__enter__()
 
@@ -128,15 +152,36 @@ class Creator(libzim.writer.Creator):
 
         return self
 
-    def _validate_metadata(self, name, value):
-        if name == "Counter":
-            raise ValueError("You do not need to set Counter.")
+    def validate_metadata(
+        self,
+        name: str,
+        value: Union[bytes, str, datetime.datetime, datetime.date, Iterable[str]],
+    ):
+        """Ensures metadata value for name is conform with the openZIM spec on Metadata
 
-        if name == "Description" and len(value) > 80:
-            raise ValueError("Description is too long.")
+        Also enforces recommendations
+        See https://wiki.openzim.org/wiki/Metadata"""
 
-        if name == "LongDescription" and len(value) > 4000:
-            raise ValueError("LongDescription is too long.")
+        validate_required_values(name, value)
+        validate_standard_str_types(name, value)
+
+        validate_title(name, value)
+        validate_date(name, value)
+        validate_language(name, value)
+        validate_counter(name, value)
+        validate_description(name, value)
+        validate_longdescription(name, value)
+        validate_tags(name, value)
+        validate_illustrations(name, value)
+
+    def add_metadata(
+        self,
+        name: str,
+        content: Union[str, bytes, datetime.date, datetime.datetime],
+        mimetype: str = "text/plain;charset=UTF-8",
+    ):
+        self.validate_metadata(name, content)
+        super().add_metadata(name, content, mimetype)
 
     def config_metadata(
         self,
@@ -158,17 +203,7 @@ class Creator(libzim.writer.Creator):
         Relation: Optional[str] = None,
         **extras: str,
     ):
-        """
-        A chaining functions which configures the metadata of the Creator class.
-        You must set all mandatory metadata in this phase.
-
-        Parameters:
-            check out: https://wiki.openzim.org/wiki/Metadata
-            all the extra metadata must be plain text.
-
-        Returns:
-            Self
-        """
+        """Sets all mandatory Metadata as well as standard and any other text ones"""
         self._metadata.update(
             {
                 "Name": Name,
@@ -189,18 +224,10 @@ class Creator(libzim.writer.Creator):
             }
         )
         self._metadata.update(extras)
-        language = self._metadata.get("Language", "").split(",")
-        self.config_indexing(True, language[0])
-
         return self
 
     def config_dev_metadata(self, **extras: str):
-        """
-        A Test function. It will set the default test metadata for a Creator instance.
-
-        Returns:
-            Self
-        """
+        """Calls config_metadata with default (yet overridable) values for dev"""
         devel_default_metadata = DEFAULT_DEV_ZIM_METADATA.copy()
         devel_default_metadata.update(extras)
         return self.config_metadata(**devel_default_metadata)

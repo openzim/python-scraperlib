@@ -10,7 +10,6 @@
     - direct access to search results and number of results
     - public Entry access by Id"""
 
-import warnings
 from typing import Dict, Iterable, List, Optional
 
 import libzim.reader
@@ -107,20 +106,3 @@ class Archive(libzim.reader.Archive):
             return parseMimetypeCounter(self.get_text_metadata("Counter"))
         except RuntimeError:  # pragma: no cover (no ZIM avail to test itl)
             return {}  # pragma: no cover
-
-    @property
-    def article_counter(self) -> int:
-        warnings.warn(
-            "Archive.article_counter now deprecated. "
-            "Use Archive.article_count instead",
-            DeprecationWarning,
-        )
-        return self.article_count
-
-    @property
-    def media_counter(self) -> int:
-        warnings.warn(
-            "Archive.media_counter now deprecated. " "Use Archive.media_count instead",
-            DeprecationWarning,
-        )
-        return self.media_count

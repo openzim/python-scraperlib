@@ -179,3 +179,8 @@ def get_language_details(query: str, failsafe: Optional[bool] = False) -> Dict:
         }
     )
     return iso_data
+
+
+def is_valid_iso_639_3(code: str) -> bool:
+    """whether code is a valid ISO-639-3 code"""
+    return (get_language_details(code, failsafe=True) or {}).get("iso-639-3") == code

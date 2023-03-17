@@ -39,7 +39,6 @@ def test_get_item(small_zim_file):
 
 def test_suggestions(small_zim_file):
     with Archive(small_zim_file) as zim:
-
         assert zim.get_suggestions_count("test") == 1
         assert "main.html" in list(zim.get_suggestions("test"))
 
@@ -56,6 +55,7 @@ def test_search_no_fti(small_zim_file):
             zim.get_search_results("test")
 
 
+@pytest.mark.slow
 def test_search(real_zim_file):
     with Archive(real_zim_file) as zim:
         assert zim.get_search_results_count("test") > 0
@@ -65,22 +65,6 @@ def test_search(real_zim_file):
 def test_counters(small_zim_file):
     with Archive(small_zim_file) as zim:
         assert zim.counters == {"image/png": 1, "text/html": 1}
-
-
-def test_article_counter(small_zim_file, ns_zim_file):
-    with Archive(small_zim_file) as zim:
-        assert zim.article_counter == 0
-
-    with Archive(ns_zim_file) as zim:
-        assert zim.article_counter == 66
-
-
-def test_media_counter(small_zim_file, ns_zim_file):
-    with Archive(small_zim_file) as zim:
-        assert zim.media_counter == 1
-
-    with Archive(ns_zim_file) as zim:
-        assert zim.media_counter == 34
 
 
 def test_get_tags(small_zim_file, real_zim_file):
