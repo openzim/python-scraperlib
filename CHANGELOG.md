@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `zim.creator.Creator.config_metadata` method (returning Self) exposing all mandatory Metdata, all standard ones and allowing extra text metdadata.
 - `zim.creator.Creator.config_dev_metadata` method setting stub metdata for all mandatory ones (allowing overrides)
+- `zim.metadata` module with a list of per-metadata validation functions
 - `zim.creator.Creator.validate_metadata` (called on `start`) to verify metadata respects the spec (and its recommendations)
 - `zim.filesystem.make_zim_file` accepts a new optional `long_description` param.
 - `i18n.is_valid_iso_639_3` to check ISO-639-3 codes

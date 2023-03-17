@@ -22,7 +22,6 @@ import datetime
 import pathlib
 import re
 import weakref
-from collections.abc import Iterable as IterableT
 from typing import Any, Callable, Iterable, Optional, Tuple, Union
 
 import libzim.writer
@@ -30,16 +29,24 @@ import libzim.writer
 from ..constants import (
     DEFAULT_DEV_ZIM_METADATA,
     FRONT_ARTICLE_MIMETYPES,
-    ILLUSTRATIONS_METADATA_RE,
     MANDATORY_ZIM_METADATA_KEYS,
-    MAXIMUM_DESCRIPTION_METADATA_LENGTH,
-    MAXIMUM_LONG_DESCRIPTION_METADATA_LENGTH,
 )
 from ..filesystem import delete_callback, get_content_mimetype, get_file_mimetype
 from ..i18n import is_valid_iso_639_3
-from ..image.probing import is_valid_image
 from ..types import get_mime_for_name
 from .items import StaticItem
+from .metadata import (
+    validate_counter,
+    validate_date,
+    validate_description,
+    validate_illustrations,
+    validate_language,
+    validate_longdescription,
+    validate_required_values,
+    validate_standard_str_types,
+    validate_tags,
+    validate_title,
+)
 
 DUPLICATE_EXC_STR = re.compile(
     r"^Impossible to add(.+)"
@@ -155,78 +162,17 @@ class Creator(libzim.writer.Creator):
         Also enforces recommendations
         See https://wiki.openzim.org/wiki/Metadata"""
 
-        # spec doesnt require any value but empty strings are not useful
-        if name in MANDATORY_ZIM_METADATA_KEYS and not value:
-            raise ValueError(f"Missing value for {name}")
+        validate_required_values(name, value)
+        validate_standard_str_types(name, value)
 
-        # most require/standard and al
-        if name in (
-            "Name",
-            "Title",
-            "Creator",
-            "Publisher",
-            "Description",
-            "LongDescription",
-            "License",
-            "Relation",
-            "Relation",
-            "Flavour",
-            "Source",
-            "Scraper",
-        ) and not isinstance(value, str):
-            raise ValueError(f"Invalid type for {name}")
-
-        if name == "Title" and len(value) > 30:
-            raise ValueError(f"{name} is too long.")
-
-        if name == "Date":
-            if not isinstance(value, (datetime.datetime, datetime.date, str)):
-                raise ValueError(f"Invalid type for {name}.")
-            elif isinstance(value, str):
-                match = re.match(
-                    r"(?P<year>\d{4})-(?P<month>\d{2})-(?P<day>\d{2})", value
-                )
-                try:
-                    datetime.date(**{k: int(v) for k, v in match.groupdict().items()})
-                except Exception as exc:
-                    raise ValueError(f"Invalid {name} format: {exc}")
-
-        if name == "Language" and not is_valid_iso_639_3(value):
-            raise ValueError(f"{value} is not ISO-639-3.")
-
-        if name == "Counter":
-            raise ValueError(f"{name} cannot be set. libzim sets it.")
-
-        if name == "Description" and len(value) > MAXIMUM_DESCRIPTION_METADATA_LENGTH:
-            raise ValueError(f"{name} is too long.")
-
-        if (
-            name == "LongDescription"
-            and len(value) > MAXIMUM_LONG_DESCRIPTION_METADATA_LENGTH
-        ):
-            raise ValueError(f"{name} is too long.")
-
-        if name == "Tags" and (
-            not isinstance(value, IterableT)
-            or not all([isinstance(tag, str) for tag in value])
-        ):
-            raise ValueError(f"Invalid type(s) for {name}")
-
-        if name.startswith("Illustration_"):
-            match = ILLUSTRATIONS_METADATA_RE.match(name)
-            if match and not is_valid_image(
-                image=value,
-                imformat="PNG",
-                size=(
-                    int(match.groupdict()["width"]),
-                    int(match.groupdict()["height"]),
-                ),
-            ):
-                raise ValueError(
-                    f"{name} is not a "
-                    f"{match.groupdict()['width']}x{match.groupdict()['height']} "
-                    "PNG Image"
-                )
+        validate_title(name, value)
+        validate_date(name, value)
+        validate_language(name, value)
+        validate_counter(name, value)
+        validate_description(name, value)
+        validate_longdescription(name, value)
+        validate_tags(name, value)
+        validate_illustrations(name, value)
 
     def add_metadata(
         self,
