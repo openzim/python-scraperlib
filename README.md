@@ -45,6 +45,16 @@ sudo apt install libmagic1 wget ffmpeg \
     libharfbuzz-dev libfribidi-dev libxcb1-dev gifsicle
 ```
 
+# Contribution
+
+```shell
+pip -r requirements.txt
+pip install tox pre-commit
+pre-commit install
+# For tests
+tox
+```
+
 # Users
 
 Non-exhaustive list of scrapers using it (check status when updating API):

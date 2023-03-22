@@ -49,6 +49,6 @@ jobs:
         python -m pip install --upgrade pip
         pip install -U tox
     - name: Run tox
-      run: tox -e py38,black,coverage
+      run: tox -e py38,black,isort,flake8,coverage
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
