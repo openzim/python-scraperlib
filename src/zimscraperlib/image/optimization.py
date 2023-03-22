@@ -61,7 +61,6 @@ def optimize_png(
     background_color: Optional[Tuple[int, int, int]] = (255, 255, 255),
     **options,
 ) -> Union[pathlib.Path, io.BytesIO]:
-
     """method to optimize PNG files using a pure python external optimizer
 
     Arguments:
@@ -107,7 +106,6 @@ def optimize_jpeg(
     keep_exif: Optional[bool] = True,
     **options,
 ) -> Union[pathlib.Path, io.BytesIO]:
-
     """method to optimize JPEG files using a pure python external optimizer
     quality: JPEG quality (integer between 1 and 100)
         values: 50 | 55 | 35 | 100 | XX
@@ -155,7 +153,6 @@ def optimize_jpeg(
         dst.seek(0)
 
     if keep_exif and had_exif:
-
         piexif.transplant(
             exif_src=str(src.resolve())
             if isinstance(src, pathlib.Path)
