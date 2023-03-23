@@ -13,7 +13,6 @@ from zimscraperlib.download import save_large_file
 
 
 def prepare_ogvjs_folder(tmp_path, videojs_url, ogvjs_url, videojs_ogvjs_url):
-
     videojs_zip = tmp_path / "video-js-7.6.4.zip"
     if not videojs_zip.exists():
         save_large_file(videojs_url, videojs_zip)

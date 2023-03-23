@@ -25,7 +25,6 @@ def test_content_mimetype(png_image, jpg_image, undecodable_byte_stream):
 
 
 def test_content_mimetype_fallback(monkeypatch, undecodable_byte_stream):
-
     # use raw function first to test actual code
     assert get_content_mimetype(undecodable_byte_stream) == "application/octet-stream"
 

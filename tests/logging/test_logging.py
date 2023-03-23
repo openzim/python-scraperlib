@@ -80,7 +80,6 @@ def test_critical_level(random_id, console):
 
 
 def test_format():
-
     # assert is_in_log(message, console)
     # "[%(asctime)s] %(levelname)s:%(message)s"
     pass
