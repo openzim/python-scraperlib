@@ -1,0 +1,34 @@
+name: release
+on:
+  release:
+    types: [published]
+    tags:
+      - v*
+
+env:
+  TWINE_USERNAME: __token__
+  TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+
+jobs:
+  release:
+    environment: release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+          architecture: x64
+
+      - name: Build sdist and wheel
+        run: |
+          pip install --upgrade pip build wheel
+          python3 -m build
+
+      - name: Push release to PyPI
+        if: github.event_name == 'release'
+        run: |
+          pip install --upgrade twine
+          twine check dist/*
+          twine upload dist/*
