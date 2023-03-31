@@ -39,7 +39,7 @@ setup(
         "console_scripts": ["fix_ogvjs_dist=zimscraperlib.fix_ogvjs_dist:run"]
     },
     classifiers=[
-        "Development Status :: 4 - Beta",
+        "Development Status :: 5 - Production/Stable",
         "Intended Audience :: Developers",
         "Programming Language :: Python",
         "Programming Language :: Python :: 3.6",
