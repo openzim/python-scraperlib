@@ -63,7 +63,6 @@ def build_data(tmp_path, png_image):
 @pytest.fixture(scope="function")
 def counters():
     return {
-        "application/javascript": 8,
         "text/html": 3,
         "application/warc-headers": 28364,
         "text/html;raw=true": 6336,

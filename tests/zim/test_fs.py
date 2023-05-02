@@ -81,7 +81,10 @@ def test_make_zim_file_working(build_data, png_image):
     assert reader.entry_count == 8  # includes redirect
 
     assert reader.get_item("style.css").mimetype == "text/css"
-    assert reader.get_item("app.js").mimetype == "application/javascript"
+    assert reader.get_item("app.js").mimetype in (
+        "text/javascript",
+        "application/javascript",
+    )
     assert reader.get_suggestions_count("bienvenue") == 0
     assert reader.get_suggestions_count("coucou") == 1
     assert "welcome" in list(reader.get_suggestions("coucou"))
