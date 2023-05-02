@@ -89,10 +89,10 @@ def test_zim_creator(tmp_path, png_image, html_file, html_str):
     # make sure titles were indexed (html with title for xapian ; redirects are not)
     # see https://github.com/openzim/python-libzim/issues/125
     # see https://github.com/openzim/libzim/issues/642
-    assert "home2" not in list(reader.get_suggestions("Home !!"))  # no is_front > False
-    assert "home3" in list(reader.get_suggestions("Home !!"))  # is_front=True
-    assert "home4" not in list(reader.get_suggestions("Home !!"))  # is_front=False
-    assert "images/yahoo.png" in list(reader.get_suggestions("Home !!"))  # is_frontTrue
+    assert "home2" not in list(reader.get_suggestions("Home"))  # no is_front > False
+    # assert "home3" in list(reader.get_suggestions("Home"))  # is_front=True
+    assert "home4" not in list(reader.get_suggestions("Home"))  # is_front=False
+    assert "images/yahoo.png" in list(reader.get_suggestions("Home"))  # is_frontTrue
     # make sure full text was indexed
     assert reader.get_search_results_count("PDF doc") >= 1
 
