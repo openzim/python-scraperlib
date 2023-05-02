@@ -16,7 +16,7 @@ def test_file_mimetype(png_image, jpg_image):
     assert get_file_mimetype(jpg_image) == "image/jpeg"
 
 
-def test_content_mimetype(png_image, jpg_image, undecodable_byte_stream):
+def test_content_mimetype(png_image, jpg_image):
     with open(png_image, "rb") as fh:
         assert get_content_mimetype(fh.read(64)) == "image/png"
 
