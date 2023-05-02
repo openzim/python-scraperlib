@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Using pylibzim `3.1.0`
 
+### Removed
+
+- Dropped support for Python 3.6
+
 ## [3.0.0] - 2023-03-31
 
 ⚠️ Warning: this release introduce several API changes to `zim.creator.Creator` and `zim.filesystem.make_zim_file`
