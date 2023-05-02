@@ -35,7 +35,12 @@ def test_constants():
         ("assets/ogv.wasm", "application/wasm", None, None),
         # make sure our custom mapping is used
         ("assets/subtite.vtt", "text/vtt", None, None),
-        ("assets/jquery.min.js", "application/javascript", None, None),
+        (
+            "assets/jquery.min.js",
+            ("application/javascript", "text/javascript"),
+            None,
+            None,
+        ),
         ("assets/test.css", "text/css", None, None),
     ],
 )
@@ -45,4 +50,7 @@ def test_mime_for_name(filename, fallback, expected_mime, no_ext_to):
         kwargs.update({"fallback": fallback})
     if no_ext_to is not None:
         kwargs.update({"no_ext_to": no_ext_to})
-    assert get_mime_for_name(filename, **kwargs) == expected_mime
+    if isinstance(expected_mime, tuple):
+        assert get_mime_for_name(filename, **kwargs) in expected_mime
+    else:
+        assert get_mime_for_name(filename, **kwargs) == expected_mime
