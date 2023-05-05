@@ -59,8 +59,12 @@ def validate_date(name: str, value: Union[datetime.datetime, datetime.date, str]
 
 def validate_language(name: str, value: Union[Iterable[str], str]):
     """ensures Language metadata is a single or list of ISO-639-3 codes"""
-    if name == "Language" and not is_valid_iso_639_3(value):
-        raise ValueError(f"{value} is not ISO-639-3.")
+    if name == "Language":
+        if isinstance(value, str):
+            value = value.split(",")
+        for code in value:
+            if not is_valid_iso_639_3(code):
+                raise ValueError(f"{code} is not ISO-639-3.")
 
 
 def validate_counter(name: str, value: str):

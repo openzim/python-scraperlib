@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Using pylibzim `3.1.0`
+- ZIM metadata check now allows multiple values (comma-separated) for `Language`
 
 ### Removed
 
