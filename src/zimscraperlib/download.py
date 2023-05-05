@@ -9,7 +9,7 @@ from concurrent.futures import Future, ThreadPoolExecutor
 from typing import Dict, Optional, Union
 
 import requests
-import youtube_dl
+import yt_dlp as youtube_dl
 
 from . import logger
 
