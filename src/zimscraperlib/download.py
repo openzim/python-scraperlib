@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
+from __future__ import annotations
+
 import io
 import pathlib
 import subprocess
@@ -174,7 +176,7 @@ def stream_file(
     max_retries: Optional[int] = 5,
     headers: Optional[Dict[str, str]] = None,
     session: Optional[requests.Session] = None,
-) -> Union[int, requests.structures.CaseInsensitiveDict]:
+) -> tuple[int, requests.structures.CaseInsensitiveDict]:
     """Stream data from a URL to either a BytesIO object or a file
     Arguments -
         fpath - Path of the file where data is sent
