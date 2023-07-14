@@ -2,11 +2,13 @@
 # -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
+from __future__ import annotations
+
 import io
 import pathlib
 import subprocess
 from concurrent.futures import Future, ThreadPoolExecutor
-from typing import Dict, Optional, Tuple, Union
+from typing import Dict, Optional, Union
 
 import requests
 import yt_dlp as youtube_dl
@@ -174,7 +176,7 @@ def stream_file(
     max_retries: Optional[int] = 5,
     headers: Optional[Dict[str, str]] = None,
     session: Optional[requests.Session] = None,
-) -> Tuple[int, requests.structures.CaseInsensitiveDict]:
+) -> tuple[int, requests.structures.CaseInsensitiveDict]:
     """Stream data from a URL to either a BytesIO object or a file
     Arguments -
         fpath - Path of the file where data is sent
