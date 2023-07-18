@@ -237,7 +237,7 @@ class Creator(libzim.writer.Creator):
         path: str,
         title: Optional[str] = None,
         fpath: Optional[pathlib.Path] = None,
-        content: Optional[bytes] = None,
+        content: Optional[Union[bytes, str]] = None,
         mimetype: Optional[str] = None,
         is_front: Optional[bool] = None,
         should_compress: Optional[bool] = None,
