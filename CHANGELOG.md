@@ -5,6 +5,13 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) (as of version 1.5.0).
 
+## [Unreleased]
+
+### Changed
+
+- Fixed declared (hint) return type of `download.stream_file` #104
+- Fixed declared (hint) type of `content` param for `Creator.add_item_for` #107
+
 ## [3.1.0] - 2023-05-05
 
 ### Changed
