@@ -5,8 +5,7 @@
 import pathlib
 import shutil
 import tempfile
-from dataclasses import dataclass
-from typing import Optional, Union
+from typing import Optional, Tuple, Union
 
 from . import logger
 from .constants import MAXIMUM_DESCRIPTION_METADATA_LENGTH as MAX_DESC_LENGTH
@@ -54,17 +53,11 @@ def handle_user_provided_file(
     return dest
 
 
-@dataclass
-class Descriptions:
-    description: str
-    long_description: Optional[str]
-
-
 def compute_descriptions(
     default_description: str,
     user_description: Optional[str],
     user_long_description: Optional[str],
-) -> Descriptions:
+) -> Tuple[str, Optional[str]]:
     """Computes short and long descriptions compliant with ZIM standard.
 
     Based on provided parameters, the function computes a short and a long description
@@ -87,6 +80,8 @@ def compute_descriptions(
                                CLI argument)
         user_long_description: the long description set by the user (typically set by a
                                CLI argument)
+
+    Returns a tuple of (description, long_description)
     """
 
     if user_description and len(user_description) > MAX_DESC_LENGTH:
@@ -108,6 +103,4 @@ def compute_descriptions(
         if len(default_description) > MAX_DESC_LENGTH:
             user_description = user_description[:-1] + "…"
 
-    return Descriptions(
-        description=user_description, long_description=user_long_description
-    )
+    return (user_description, user_long_description)

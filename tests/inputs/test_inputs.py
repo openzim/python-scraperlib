@@ -239,9 +239,9 @@ def test_description(
             )
         return
     else:
-        descriptions = compute_descriptions(
+        (description, long_description) = compute_descriptions(
             default_description, user_description, user_long_description
         )
 
-    assert descriptions.description == expected_description
-    assert descriptions.long_description == expected_long_description
+    assert description == expected_description
+    assert long_description == expected_long_description
