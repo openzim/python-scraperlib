@@ -8,6 +8,7 @@ from ..constants import (
     MANDATORY_ZIM_METADATA_KEYS,
     MAXIMUM_DESCRIPTION_METADATA_LENGTH,
     MAXIMUM_LONG_DESCRIPTION_METADATA_LENGTH,
+    RECOMMENDED_MAX_TITLE_LENGTH,
 )
 from ..i18n import is_valid_iso_639_3
 from ..image.probing import is_valid_image
@@ -40,7 +41,7 @@ def validate_standard_str_types(name: str, value: str):
 
 def validate_title(name: str, value: str):
     """ensures Title metadata is within recommended length"""
-    if name == "Title" and len(value) > 30:
+    if name == "Title" and len(value) > RECOMMENDED_MAX_TITLE_LENGTH:
         raise ValueError(f"{name} is too long.")
 
 
