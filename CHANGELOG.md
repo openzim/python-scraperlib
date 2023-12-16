@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Add utility function to compute/check ZIM descriptions #110
 
+### Changed
+
+- Using pylibzim `3.4.0`
+
 ### Removed
 
 - Support for Python 3.7 (EOL)
