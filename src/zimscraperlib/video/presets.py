@@ -32,7 +32,7 @@ class VideoWebmLow(Config):
     """Low Quality webm video
 
     480:h format with height adjusted to keep aspect ratio
-    200k target, 300k max video bitrate
+    128k target video bitrate but stay within quality boundaries.
     48k audio bitrate"""
 
     VERSION = 1
@@ -43,10 +43,9 @@ class VideoWebmLow(Config):
     options: ClassVar[Dict[str, Optional[Union[str, bool, int]]]] = {
         "-codec:v": "libvpx",  # video codec
         "-quality": "best",  # codec preset
-        "-b:v": "200k",  # target video bitrate
-        "-maxrate": "300k",  # max video bitrate
-        "-bufsize": "512k",  # target bitrate window
-        "-qmax": "30",  # Max quantizer scale.  Cap loss to reduce VP8 shimmer bug.
+        "-b:v": "128k", # Adjust quantizer within min/max to target this bitrate
+        "-qmin": "18",  # Reduce the bitrate on very still videos once the quality is good enough.
+        "-qmax": "40",  # Increase the bitrate on very busy videos once the quality degrades too much.  Also reduce key shimmer bug.
         "-vf": "scale='480:trunc(ow/a/2)*2'",  # frame size
         "-codec:a": "libvorbis",  # audio codec
         "-ar": "44100",  # audio sampling rate
