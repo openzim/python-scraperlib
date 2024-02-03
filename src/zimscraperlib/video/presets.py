@@ -43,9 +43,9 @@ class VideoWebmLow(Config):
     options: ClassVar[Dict[str, Optional[Union[str, bool, int]]]] = {
         "-codec:v": "libvpx",  # video codec
         "-quality": "best",  # codec preset
-        "-b:v": "128k", # Adjust quantizer within min/max to target this bitrate
-        "-qmin": "18",  # Reduce the bitrate on very still videos once the quality is good enough.
-        "-qmax": "40",  # Increase the bitrate on very busy videos once the quality degrades too much.  Also reduce key shimmer bug.
+        "-b:v": "128k",  # Adjust quantizer within min/max to target this bitrate
+        "-qmin": "18",   # Reduce the bitrate on very still videos
+        "-qmax": "40",   # Increase the bitrate on very busy videos
         "-vf": "scale='480:trunc(ow/a/2)*2'",  # frame size
         "-codec:a": "libvorbis",  # audio codec
         "-ar": "44100",  # audio sampling rate
