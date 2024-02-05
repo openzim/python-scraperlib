@@ -130,7 +130,17 @@ def test_get_media_info(media_format, media, expected, test_files):
     with tempfile.TemporaryDirectory() as t:
         src = pathlib.Path(t).joinpath(media)
         shutil.copy2(test_files[media_format], src)
-        assert get_media_info(src) == expected
+        result = get_media_info(src)
+        assert result.keys() == expected.keys()
+        assert result["codecs"] == expected["codecs"]
+        assert result["duration"] == expected["duration"]
+        # for bitrate, we need to allow some variability, not all ffmpeg version are
+        # reporting the same values (e.g. Alpine Linux is reporting 3837275 instead of
+        # 3818365 for video.mp4) ; we allow 1% variability with following assertion
+        assert (
+            abs(100.0 * (result["bitrate"] - expected["bitrate"]) / expected["bitrate"])
+            < 1
+        )
 
 
 def test_preset_has_mime_and_ext():
