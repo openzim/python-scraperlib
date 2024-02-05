@@ -145,6 +145,7 @@ def test_preset_video_webm_low():
     args = config.to_ffmpeg_args()
     assert len(args) > 0
 
+
 def test_preset_video_webm_high():
     config = VideoWebmHigh()
     assert config.VERSION == 1

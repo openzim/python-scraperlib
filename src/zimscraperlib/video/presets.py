@@ -44,8 +44,8 @@ class VideoWebmLow(Config):
         "-codec:v": "libvpx",  # video codec
         "-quality": "best",  # codec preset
         "-b:v": "128k",  # Adjust quantizer within min/max to target this bitrate
-        "-qmin": "18",   # Reduce the bitrate on very still videos
-        "-qmax": "40",   # Increase the bitrate on very busy videos
+        "-qmin": "18",  # Reduce the bitrate on very still videos
+        "-qmax": "40",  # Increase the bitrate on very busy videos
         "-vf": "scale='480:trunc(ow/a/2)*2'",  # frame size
         "-codec:a": "libvorbis",  # audio codec
         "-ar": "44100",  # audio sampling rate
