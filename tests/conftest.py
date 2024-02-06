@@ -158,7 +158,6 @@ def ns_zim_file(tmpdir_factory):
     return dst
 
 
-@pytest.mark.slow
 @pytest.fixture(scope="session")
 def real_zim_file(tmpdir_factory):
     from zimscraperlib.download import stream_file
