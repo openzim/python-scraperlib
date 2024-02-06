@@ -8,7 +8,7 @@ requires-python = ">=3.8,<3.13"
 description = "Collection of python tools to re-use common code across scrapers"
 readme = "README.md"
 dependencies = [
-  "iso-639==0.4.5",
+  "iso639-lang==2.2.3",
   "requests==2.31.0",
   "colorthief==0.2.1",
   "python-resize-image==1.1.20",

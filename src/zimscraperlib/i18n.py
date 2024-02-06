@@ -8,7 +8,8 @@ import re
 from typing import Dict, Optional, Tuple, Union
 
 import babel
-from iso639 import languages as iso639_languages
+import iso639
+import iso639.exceptions
 
 ISO_LEVELS = ["1", "2b", "2t", "3", "5"]
 
@@ -67,27 +68,45 @@ def get_iso_lang_data(lang: str) -> Tuple[Dict, Union[Dict, None]]:
 
     iso_types = []
 
-    for code_type in [f"part{lang_}" for lang_ in ISO_LEVELS] + ["name"]:
-        try:
-            iso639_languages.get(**{code_type: lang})
-            iso_types.append(code_type)
-        except KeyError:
-            pass
+    try:
+        isolang = iso639.Lang(lang)
+    except (
+        iso639.exceptions.InvalidLanguageValue,
+        iso639.exceptions.DeprecatedLanguageValue,
+    ) as exc:
+        raise NotFound("Not a valid iso language name/code") from exc
 
-    if not iso_types:
-        raise NotFound("Not a valid iso language name/code")
+    def replace_types(new_type: str) -> str:
+        # convert new iso_types from iso639-lang Pypi package to old iso_types from
+        # iso-639 package, since we were returning these values for a long time
+        if new_type == "pt1":
+            return "part1"
+        elif new_type == "pt2b":
+            return "part2b"
+        elif new_type == "pt2t":
+            return "part2t"
+        elif new_type == "pt3":
+            return "part3"
+        elif new_type == "pt5":
+            return "part5"
+        return new_type
 
-    language = iso639_languages.get(**{iso_types[0]: lang})
+    for code_type in [f"pt{lang_}" for lang_ in ISO_LEVELS] + ["name"]:
+        # the `if` condition below is a bit hackish but it is the only way to know
+        # if the passed value is matching a code type or not with new python-i639
+        # library and we do not expect weird things to happen here
+        if str(getattr(isolang, code_type)).lower() == lang.lower():
+            iso_types.append(replace_types(code_type))
 
     lang_data = {
-        f"iso-639-{lang_}": getattr(language, f"part{lang_}") for lang_ in ISO_LEVELS
+        f"iso-639-{lang_}": getattr(isolang, f"pt{lang_}") for lang_ in ISO_LEVELS
     }
-    lang_data.update({"english": language.name, "iso_types": iso_types})
+    lang_data.update({"english": isolang.name, "iso_types": iso_types})
 
-    if language.macro:
+    if isolang.macro():
         return (
             lang_data,
-            get_iso_lang_data(language.macro)[0],
+            get_iso_lang_data(isolang.macro().name)[0],
         )  # first item in the returned tuple
     return lang_data, None
 
