@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
 import logging
@@ -19,7 +18,7 @@ def assert_message_console(logger, console, level, expected):
 def assert_message_file(logger, fpath, level, expected):
     msg = f"a {level} message"
     getattr(logger, level)(msg)
-    with open(fpath, "r") as file:
+    with open(fpath) as file:
         file.seek(0)
         if expected:
             assert msg in file.read()

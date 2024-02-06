@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
 
@@ -34,14 +33,15 @@ def reencode(
             + [f"file:{tmp_path}"]
         )
         logger.debug(
-            f"Encode {src_path} -> {dst_path} " f"video format = {dst_path.suffix}"
+            f"Encode {src_path} -> {dst_path} video format = {dst_path.suffix}"
         )
         logger.debug(nicer_args_join(args))
         ffmpeg = subprocess.run(
             args,
             stderr=subprocess.STDOUT,
             stdout=subprocess.PIPE,
-            universal_newlines=True,
+            text=True,
+            check=False,
         )
         if not failsafe:
             ffmpeg.check_returncode()

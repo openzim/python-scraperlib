@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
 import shutil
@@ -59,7 +58,8 @@ def test_missing_param():
             sys.executable,
             "-m",
             "zimscraperlib.fix_ogvjs_dist",
-        ]
+        ],
+        check=False,
     )
     assert script.returncode == 1
 
@@ -76,11 +76,12 @@ def test_fix_ogvjs_dist(tmp_path, videojs_url, ogvjs_url, videojs_ogvjs_url):
             "zimscraperlib.fix_ogvjs_dist",
             str(tmp_path),
         ],
-        universal_newlines=True,
+        text=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
+        check=False,
     )
     assert script.returncode == 0
 
-    with open(tmp_path / "videojs-ogvjs.js", "r") as fh:
+    with open(tmp_path / "videojs-ogvjs.js") as fh:
         assert "webm" in fh.read()

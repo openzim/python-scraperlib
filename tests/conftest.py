@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
 import pathlib
@@ -139,7 +138,7 @@ def small_zim_file(tmpdir_factory):
 
     dst = tmpdir_factory.mktemp("data").join("small.zim")
     stream_file(
-        "https://github.com/openzim/zim-testing-suite/raw/v0.3/data/nons/" "small.zim",
+        "https://github.com/openzim/zim-testing-suite/raw/v0.3/data/nons/small.zim",
         dst,
     )
     return dst

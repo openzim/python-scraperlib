@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
 """ zimwriterfs-like tools to convert a build folder into a ZIM
@@ -99,7 +98,7 @@ def add_redirects_to_zim(
         zim_file.add_redirect(source_url, target_url, title)
 
     if redirects_file:
-        with open(redirects_file, "r") as fh:
+        with open(redirects_file) as fh:
             for line in fh.readlines():
                 namespace, path, title, target_url = re.match(
                     r"^(.)\t(.+)\t(.*)\t(.+)$", line
@@ -144,11 +143,11 @@ def make_zim_file(
 
     # sanity checks
     if not build_dir.exists() or not build_dir.is_dir():
-        raise IOError(f"Incorrect build_dir: {build_dir}")
+        raise OSError(f"Incorrect build_dir: {build_dir}")
 
     illustration_path = build_dir / illustration
     if not illustration_path.exists() or not illustration_path.is_file():
-        raise IOError(f"Incorrect illustration: {illustration} ({illustration_path})")
+        raise OSError(f"Incorrect illustration: {illustration} ({illustration_path})")
 
     with open(illustration_path, "rb") as fh:
         illustration_data = fh.read()

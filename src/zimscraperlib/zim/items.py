@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
 
@@ -113,7 +112,7 @@ class URLItem(StaticItem):
                 url, byte_stream=io.BytesIO(), only_first_block=True
             )
         except Exception as exc:
-            raise IOError(f"Unable to access URL at {url}: {exc}")
+            raise OSError(f"Unable to access URL at {url}: {exc}")
 
         # HTML content will be indexed.
         # we proxy the content in the Item to prevent double-download of the resource

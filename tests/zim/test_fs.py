@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
 import shutil
@@ -123,7 +122,7 @@ finally:
     print("Program exiting")
 """
 
-    py = subprocess.run([sys.executable, "-c", pycode])
+    py = subprocess.run([sys.executable, "-c", pycode], check=False)
     # returncode will be either 0 or -11, depending on garbage collection
     # in scrapers, we want to be able to fail on errors and absolutely don't want to
     # create a ZIM file, so SEGFAULT on exit it (somewhat) OK

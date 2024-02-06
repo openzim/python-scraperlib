@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
 
@@ -30,7 +29,7 @@ def get_media_info(src_path):
         args,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
-        universal_newlines=True,
+        text=True,
         check=False,
     )
     result = ffprobe.stdout.strip().split("\n")

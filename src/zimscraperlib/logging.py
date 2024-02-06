@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
 import io
@@ -76,5 +75,5 @@ def nicer_args_join(args: Iterable) -> str:
     """slightly better concateated list of subprocess args for display"""
     nargs = args[0:1]
     for arg in args[1:]:
-        nargs.append(arg if arg.startswith("-") else '"{}"'.format(arg))
+        nargs.append(arg if arg.startswith("-") else f'"{arg}"')
     return " ".join(nargs)

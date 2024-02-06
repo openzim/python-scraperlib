@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
 """ ZIM Creator helper
@@ -78,7 +77,6 @@ def mimetype_for(
 
 
 class Creator(libzim.writer.Creator):
-
     """libzim.writer.Creator subclass
 
     Note: due to the lack of a cancel() method in the libzim itself, it is not possible

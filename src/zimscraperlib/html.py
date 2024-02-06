@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
 """ Tools to work with HTML contents """
@@ -27,7 +26,7 @@ def find_title_in(content: Union[str, BinaryIO, TextIO], mime_type: str) -> str:
 def find_title_in_file(fpath: pathlib.Path, mime_type: str) -> str:
     """Extracted title from an HTML file"""
     try:
-        with open(fpath, "r") as fh:
+        with open(fpath) as fh:
             return find_title_in(fh, mime_type)
     except Exception:
         return ""
@@ -60,7 +59,7 @@ def find_language_in(content: Union[str, BinaryIO, TextIO], mime_type: str) -> s
 def find_language_in_file(fpath: pathlib.Path, mime_type: str) -> str:
     """Extracted language from an HTML file"""
     try:
-        with open(fpath, "r") as fh:
+        with open(fpath) as fh:
             return find_language_in(fh, mime_type)
     except Exception:
         return ""

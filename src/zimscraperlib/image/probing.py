@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
 import colorsys
@@ -24,7 +23,7 @@ def get_colors(
     def solarize(r: int, g: int, b: int) -> Tuple[int, int, int]:
         # calculate solarized color for main
         h, l, s = colorsys.rgb_to_hls(float(r) / 256, float(g) / 256, float(b) / 256)
-        r2, g2, b2 = [int(x * 256) for x in colorsys.hls_to_rgb(h, 0.95, s)]
+        r2, g2, b2 = (int(x * 256) for x in colorsys.hls_to_rgb(h, 0.95, s))
         return r2, g2, b2
 
     ct = colorthief.ColorThief(src)

@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
 import pathlib
@@ -43,7 +42,7 @@ def handle_user_provided_file(
     else:
         source = pathlib.Path(source).expanduser().resolve()
         if not source.exists():
-            raise IOError(f"{source} could not be found.")
+            raise OSError(f"{source} could not be found.")
         if nocopy:
             return source
 

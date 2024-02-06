@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
 
@@ -19,7 +18,7 @@ def fix_source_dir(source_vendors_path: Union[pathlib.Path, str]):
     root = pathlib.Path(source_vendors_path)
     logger.info("fixing videosjs-ogvjs.js")
     plugin_path = root.joinpath("videojs-ogvjs.js")
-    with open(plugin_path, "r") as fp:
+    with open(plugin_path) as fp:
         content = fp.read()
 
     content = content.replace(

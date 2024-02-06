@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
 """ Files manipulation tools
@@ -41,7 +40,7 @@ def get_content_mimetype(content: bytes) -> str:
 def delete_callback(
     fpath: Union[str, pathlib.Path],
     callback: Optional[Callable] = None,
-    *callback_args: Any
+    *callback_args: Any,
 ):
     """helper deleting passed filepath, optionnaly calling an additional callback"""
 

@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
 
@@ -154,12 +153,12 @@ def optimize_jpeg(
 
     if keep_exif and had_exif:
         piexif.transplant(
-            exif_src=str(src.resolve())
-            if isinstance(src, pathlib.Path)
-            else src.getvalue(),
-            image=str(dst.resolve())
-            if isinstance(dst, pathlib.Path)
-            else dst.getvalue(),
+            exif_src=(
+                str(src.resolve()) if isinstance(src, pathlib.Path) else src.getvalue()
+            ),
+            image=(
+                str(dst.resolve()) if isinstance(dst, pathlib.Path) else dst.getvalue()
+            ),
             new_file=dst,
         )
 
@@ -251,7 +250,7 @@ def optimize_gif(
         args += ["--interlace"]
     args += [str(src)]
     with open(dst, "w") as out_file:
-        gifsicle = subprocess.run(args, stdout=out_file)
+        gifsicle = subprocess.run(args, stdout=out_file, check=False)
 
     # remove dst if gifsicle failed and src is different from dst
     if gifsicle.returncode != 0 and src.resolve() != dst.resolve() and dst.exists():
