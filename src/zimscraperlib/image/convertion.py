@@ -6,10 +6,10 @@ from typing import Optional
 
 import PIL
 
-from ..constants import ALPHA_NOT_SUPPORTED
-from .probing import format_for
-from .transformation import resize_image
-from .utils import save_image
+from zimscraperlib.constants import ALPHA_NOT_SUPPORTED
+from zimscraperlib.image.probing import format_for
+from zimscraperlib.image.transformation import resize_image
+from zimscraperlib.image.utils import save_image
 
 
 def convert_image(

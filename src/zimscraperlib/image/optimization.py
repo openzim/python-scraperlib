@@ -35,9 +35,9 @@ from optimize_images.img_aux_processing import remove_transparency as remove_alp
 from optimize_images.img_dynamic_quality import jpeg_dynamic_quality
 from PIL import Image
 
-from .convertion import convert_image
-from .probing import format_for
-from .utils import save_image
+from zimscraperlib.image.convertion import convert_image
+from zimscraperlib.image.probing import format_for
+from zimscraperlib.image.utils import save_image
 
 
 def ensure_matches(

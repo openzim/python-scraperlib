@@ -7,8 +7,8 @@ import shutil
 import subprocess
 import tempfile
 
-from .. import logger
-from ..logging import nicer_args_join
+from zimscraperlib import logger
+from zimscraperlib.logging import nicer_args_join
 
 
 def reencode(

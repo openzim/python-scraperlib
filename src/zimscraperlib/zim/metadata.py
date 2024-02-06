@@ -3,15 +3,15 @@ import re
 from collections.abc import Iterable as IterableT
 from typing import Any, Iterable, Union
 
-from ..constants import (
+from zimscraperlib.constants import (
     ILLUSTRATIONS_METADATA_RE,
     MANDATORY_ZIM_METADATA_KEYS,
     MAXIMUM_DESCRIPTION_METADATA_LENGTH,
     MAXIMUM_LONG_DESCRIPTION_METADATA_LENGTH,
     RECOMMENDED_MAX_TITLE_LENGTH,
 )
-from ..i18n import is_valid_iso_639_3
-from ..image.probing import is_valid_image
+from zimscraperlib.i18n import is_valid_iso_639_3
+from zimscraperlib.image.probing import is_valid_image
 
 
 def validate_required_values(name: str, value: Any):

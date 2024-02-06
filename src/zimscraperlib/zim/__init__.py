@@ -11,11 +11,16 @@
 
 from libzim.writer import Blob
 
-from .archive import Archive
-from .creator import Creator
-from .filesystem import make_zim_file
-from .items import Item, StaticItem, URLItem
-from .providers import FileLikeProvider, FileProvider, StringProvider, URLProvider
+from zimscraperlib.zim.archive import Archive
+from zimscraperlib.zim.creator import Creator
+from zimscraperlib.zim.filesystem import make_zim_file
+from zimscraperlib.zim.items import Item, StaticItem, URLItem
+from zimscraperlib.zim.providers import (
+    FileLikeProvider,
+    FileProvider,
+    StringProvider,
+    URLProvider,
+)
 
 __all__ = [
     "Archive",

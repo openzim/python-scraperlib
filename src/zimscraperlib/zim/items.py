@@ -13,8 +13,13 @@ from typing import Dict, Union
 
 import libzim.writer
 
-from ..download import stream_file
-from .providers import FileLikeProvider, FileProvider, StringProvider, URLProvider
+from zimscraperlib.download import stream_file
+from zimscraperlib.zim.providers import (
+    FileLikeProvider,
+    FileProvider,
+    StringProvider,
+    URLProvider,
+)
 
 
 class Item(libzim.writer.Item):

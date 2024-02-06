@@ -15,8 +15,8 @@ import libzim.reader
 import libzim.search  # Query, Searcher
 import libzim.suggestion  # SuggestionSearcher
 
-from ._libkiwix import convertTags, parseMimetypeCounter
-from .items import Item
+from zimscraperlib.zim._libkiwix import convertTags, parseMimetypeCounter
+from zimscraperlib.zim.items import Item
 
 
 class Archive(libzim.reader.Archive):

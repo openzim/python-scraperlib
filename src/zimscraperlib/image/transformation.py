@@ -8,8 +8,8 @@ from typing import Optional, Union
 import PIL
 from resizeimage import resizeimage
 
-from ..constants import ALPHA_NOT_SUPPORTED
-from .utils import save_image
+from zimscraperlib.constants import ALPHA_NOT_SUPPORTED
+from zimscraperlib.image.utils import save_image
 
 
 def resize_image(

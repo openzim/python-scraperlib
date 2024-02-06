@@ -6,10 +6,14 @@ import shutil
 import tempfile
 from typing import Optional, Tuple, Union
 
-from . import logger
-from .constants import MAXIMUM_DESCRIPTION_METADATA_LENGTH as MAX_DESC_LENGTH
-from .constants import MAXIMUM_LONG_DESCRIPTION_METADATA_LENGTH as MAX_LONG_DESC_LENGTH
-from .download import stream_file
+from zimscraperlib import logger
+from zimscraperlib.constants import (
+    MAXIMUM_DESCRIPTION_METADATA_LENGTH as MAX_DESC_LENGTH,
+)
+from zimscraperlib.constants import (
+    MAXIMUM_LONG_DESCRIPTION_METADATA_LENGTH as MAX_LONG_DESC_LENGTH,
+)
+from zimscraperlib.download import stream_file
 
 
 def handle_user_provided_file(

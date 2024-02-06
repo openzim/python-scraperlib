@@ -12,7 +12,7 @@ from typing import Dict, Optional, Union
 import requests
 import yt_dlp as youtube_dl
 
-from . import logger
+from zimscraperlib import logger
 
 
 class YoutubeDownloader:

@@ -31,12 +31,12 @@ import pathlib
 import re
 from typing import Optional, Sequence, Tuple
 
-from .. import logger
-from ..filesystem import get_file_mimetype
-from ..html import find_title_in_file
-from ..types import get_mime_for_name
-from .creator import Creator
-from .items import StaticItem
+from zimscraperlib import logger
+from zimscraperlib.filesystem import get_file_mimetype
+from zimscraperlib.html import find_title_in_file
+from zimscraperlib.types import get_mime_for_name
+from zimscraperlib.zim.creator import Creator
+from zimscraperlib.zim.items import StaticItem
 
 
 class FileItem(StaticItem):

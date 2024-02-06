@@ -3,8 +3,8 @@
 import urllib.parse
 from typing import Union
 
-from . import logger
-from .misc import first
+from zimscraperlib import logger
+from zimscraperlib.misc import first
 
 
 def rebuild_uri(

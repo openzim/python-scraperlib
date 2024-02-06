@@ -8,7 +8,7 @@ import sys
 from logging.handlers import RotatingFileHandler
 from typing import Iterable, Optional
 
-from .constants import NAME
+from zimscraperlib.constants import NAME
 
 DEFAULT_FORMAT = "[%(name)s::%(asctime)s] %(levelname)s:%(message)s"
 VERBOSE_DEPENDENCIES = ["urllib3", "PIL", "boto3", "botocore", "s3transfer"]

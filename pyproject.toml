@@ -182,6 +182,8 @@ ignore = [
   "S603",
   # Ignore complexity
   "C901", "PLR0911", "PLR0912", "PLR0913", "PLR0915",
+  # To be fixed once more recent Python versions are available
+  "UP006", "UP007"
 ]
 unfixable = [
   # Don't touch unused imports

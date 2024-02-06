@@ -8,7 +8,7 @@ from typing import BinaryIO, TextIO, Union
 
 from bs4 import BeautifulSoup
 
-from .types import ARTICLE_MIME
+from zimscraperlib.types import ARTICLE_MIME
 
 
 def find_title_in(content: Union[str, BinaryIO, TextIO], mime_type: str) -> str:

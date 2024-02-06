@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # vim: ai ts=4 sts=4 et sw=4 nu
 
-from .config import Config
+from zimscraperlib.video.config import Config
 
 preset_type = "video"
 

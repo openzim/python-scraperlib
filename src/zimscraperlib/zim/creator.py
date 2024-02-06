@@ -25,16 +25,20 @@ from typing import Any, Callable, Iterable, Optional, Tuple, Union
 
 import libzim.writer
 
-from ..constants import (
+from zimscraperlib.constants import (
     DEFAULT_DEV_ZIM_METADATA,
     FRONT_ARTICLE_MIMETYPES,
     MANDATORY_ZIM_METADATA_KEYS,
 )
-from ..filesystem import delete_callback, get_content_mimetype, get_file_mimetype
-from ..i18n import is_valid_iso_639_3
-from ..types import get_mime_for_name
-from .items import StaticItem
-from .metadata import (
+from zimscraperlib.filesystem import (
+    delete_callback,
+    get_content_mimetype,
+    get_file_mimetype,
+)
+from zimscraperlib.i18n import is_valid_iso_639_3
+from zimscraperlib.types import get_mime_for_name
+from zimscraperlib.zim.items import StaticItem
+from zimscraperlib.zim.metadata import (
     validate_counter,
     validate_date,
     validate_description,

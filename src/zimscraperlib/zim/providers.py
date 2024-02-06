@@ -16,7 +16,7 @@ from typing import Optional, Union
 import libzim.writer
 import requests
 
-from ..download import _get_retry_adapter, stream_file
+from zimscraperlib.download import _get_retry_adapter, stream_file
 
 
 class FileProvider(libzim.writer.FileProvider):
