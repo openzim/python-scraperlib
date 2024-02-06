@@ -1,0 +1,28 @@
+name: Build and upload to PyPI
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  publish:
+    runs-on: ubuntu-22.04
+    permissions:
+      id-token: write  # mandatory for PyPI trusted publishing
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version-file: pyproject.toml
+          architecture: x64
+
+      - name: Build packages
+        run: |
+          pip install -U pip build
+          python -m build --sdist --wheel
+
+      - name: Upload to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1.8
