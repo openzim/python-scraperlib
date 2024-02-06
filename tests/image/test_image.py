@@ -270,7 +270,7 @@ def test_change_image_format(
     assert dst_image.format == dst_fmt
 
 
-def test_change_image_format_defaults(png_image, jpg_image, tmp_path):
+def test_change_image_format_defaults(png_image, jpg_image, tmp_path):  # noqa: ARG001
     # PNG to JPEG (loosing alpha)
     dst = tmp_path.joinpath(f"{png_image.stem}.jpg")
     convert_image(png_image, dst)
@@ -535,13 +535,13 @@ def test_optimize_webp_gif_failure(tmp_path, webp_image, gif_image):
     dst = tmp_path.joinpath("image.img")
 
     # webp
-    with pytest.raises(Exception):
+    with pytest.raises(Exception):  # noqa: B017
         optimize_webp(webp_image, dst, lossless="bad")
     assert not dst.exists()
 
     # gif
     dst.touch()  # fake temp file created during optim (actually fails before)
-    with pytest.raises(Exception):
+    with pytest.raises(Exception):  # noqa: B017
         optimize_gif(gif_image, dst, optimize_level="bad")
     assert not dst.exists()
 
@@ -549,7 +549,7 @@ def test_optimize_webp_gif_failure(tmp_path, webp_image, gif_image):
 def test_wrong_extension_optim(tmp_path, png_image):
     dst = tmp_path.joinpath("image.jpg")
     shutil.copy(png_image, dst)
-    with pytest.raises(Exception):
+    with pytest.raises(Exception):  # noqa: B017
         optimize_jpeg(dst, dst)
 
 

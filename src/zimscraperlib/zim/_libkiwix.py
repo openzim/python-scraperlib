@@ -38,27 +38,29 @@ def getline(src: io.StringIO, delim: Optional[bool] = None) -> Tuple[bool, str]:
     return char == "", output
 
 
-def readFullMimetypeAndCounterString(src: io.StringIO) -> Tuple[bool, str]:
+def readFullMimetypeAndCounterString(  # noqa: N802
+    src: io.StringIO,
+) -> Tuple[bool, str]:
     """read a single mimetype-and-counter string from source
 
     Returns whether the source is EOF and the extracted string (or empty one)"""
     params = ""
-    eof, mtcStr = getline(src, ";")
+    eof, mtcStr = getline(src, ";")  # noqa: N806
     if mtcStr.find("=") == -1:
-        while params.count("=") != 2:
+        while params.count("=") != 2:  # noqa: PLR2004
             eof, params = getline(src, ";")
-            if params.count("=") == 2:
-                mtcStr += ";" + params
+            if params.count("=") == 2:  # noqa: PLR2004
+                mtcStr += ";" + params  # noqa: N806
             if eof:
                 break
     return eof, mtcStr
 
 
-def parseASingleMimetypeCounter(string: str) -> MimetypeAndCounter:
+def parseASingleMimetypeCounter(string: str) -> MimetypeAndCounter:  # noqa: N802
     """MimetypeAndCounter from a single mimetype-and-counter string"""
     k: int = string.rfind("=")
     if k != len(string) - 1:
-        mimeType = string[:k]
+        mimeType = string[:k]  # noqa: N806
         counter = string[k + 1 :]
         if counter:
             try:
@@ -68,15 +70,15 @@ def parseASingleMimetypeCounter(string: str) -> MimetypeAndCounter:
     return MimetypeAndCounter("", 0)
 
 
-def parseMimetypeCounter(
-    counterData: str,
+def parseMimetypeCounter(  # noqa: N802
+    counterData: str,  # noqa: N803
 ) -> CounterMap:
     """Mapping of MIME types with count for each from ZIM Counter metadata string"""
-    counters = dict()
+    counters = dict()  # noqa: C408
     ss = io.StringIO(counterData)
     eof = False
     while not eof:
-        eof, mtcStr = readFullMimetypeAndCounterString(ss)
+        eof, mtcStr = readFullMimetypeAndCounterString(ss)  # noqa: N806
         mtc = parseASingleMimetypeCounter(mtcStr)
         if mtc.mimetype:
             counters.update([mtc])
@@ -84,19 +86,19 @@ def parseMimetypeCounter(
     return counters
 
 
-def convertTags(tags_str: str) -> List[str]:
+def convertTags(tags_str: str) -> List[str]:  # noqa: N802
     """List of tags expanded with libkiwix's additional hints for pic/vid/det/index"""
     tags = tags_str.split(";")
-    tagsList = []
-    picSeen = vidSeen = detSeen = indexSeen = False
+    tagsList = []  # noqa: N806
+    picSeen = vidSeen = detSeen = indexSeen = False  # noqa: N806
     for tag in tags:
         # not upstream
         if not tag:
             continue
-        picSeen |= tag == "nopic" or tag.startswith("_pictures:")
-        vidSeen |= tag == "novid" or tag.startswith("_videos:")
-        detSeen |= tag == "nodet" or tag.startswith("_details:")
-        indexSeen |= tag.startswith("_ftindex")
+        picSeen |= tag == "nopic" or tag.startswith("_pictures:")  # noqa: N806
+        vidSeen |= tag == "novid" or tag.startswith("_videos:")  # noqa: N806
+        detSeen |= tag == "nodet" or tag.startswith("_details:")  # noqa: N806
+        indexSeen |= tag.startswith("_ftindex")  # noqa: N806
 
         if tag == "nopic":
             tagsList.append("_pictures:no")

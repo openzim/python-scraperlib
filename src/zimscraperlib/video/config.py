@@ -6,9 +6,9 @@ class Config(dict):
     VERSION = 1
     ext = "dat"
     mimetype = "application/data"
-    options = {}
-    defaults = {"-max_muxing_queue_size": "9999"}
-    mapping = {
+    options = {}  # noqa: RUF012
+    defaults = {"-max_muxing_queue_size": "9999"}  # noqa: RUF012
+    mapping = {  # noqa: RUF012
         "video_codec": "-codec:v",
         "audio_codec": "-codec:a",
         "max_video_bitrate": "-maxrate",
@@ -128,8 +128,8 @@ class Config(dict):
         if (
             isinstance(qmin, int)
             and isinstance(qmax, int)
-            and -1 <= qmin <= 69
-            and -1 <= qmax <= 1024
+            and -1 <= qmin <= 69  # noqa: PLR2004
+            and -1 <= qmax <= 1024  # noqa: PLR2004
         ):
             self["-qmin"] = str(qmin)
             self["-qmax"] = str(qmax)

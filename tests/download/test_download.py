@@ -20,7 +20,7 @@ from zimscraperlib.download import (
 def assert_downloaded_file(url, file):
     assert file.exists()
     # our google test urls dont support HEAD
-    req = requests.get(url)
+    req = requests.get(url)  # noqa: S113
     # we test against binary response: Content-Length not accurate as gzip-encoded
     assert file.stat().st_size == len(req.content)
 
@@ -34,7 +34,7 @@ def get_dest_file(tmp_path):
     return tmp_path.joinpath("favicon.ico")
 
 
-def test_missing_dest(tmp_path):
+def test_missing_dest(tmp_path):  # noqa: ARG001
     with pytest.raises(requests.exceptions.ConnectionError):
         stream_file(url="http://some_url", byte_stream=io.BytesIO())
 
@@ -97,7 +97,7 @@ def test_stream_to_bytes(valid_https_url):
     byte_stream = io.BytesIO()
     size, ret = stream_file(url=valid_https_url, byte_stream=byte_stream)
     assert_headers(ret)
-    assert byte_stream.read() == requests.get(valid_https_url).content
+    assert byte_stream.read() == requests.get(valid_https_url).content  # noqa: S113
 
 
 @pytest.mark.slow
@@ -166,9 +166,9 @@ def test_youtube_download_nowait(tmp_path):
 
 
 @pytest.mark.slow
-def test_youtube_download_error(tmp_path):
+def test_youtube_download_error(tmp_path):  # noqa: ARG001
     yt_downloader = YoutubeDownloader(threads=1)
-    with pytest.raises(Exception):
+    with pytest.raises(Exception):  # noqa: B017
         yt_downloader.download("11", BestMp4.get_options())
     yt_downloader.shutdown()
 

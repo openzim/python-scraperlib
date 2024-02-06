@@ -42,7 +42,7 @@ class YoutubeDownloader:
         self,
         url: str,
         options: Optional[Dict],
-        wait: Optional[bool] = True,
+        wait: Optional[bool] = True,  # noqa: FBT002
     ) -> Union[bool, Future]:
         """Downloads video using initialized executor.
 
@@ -63,8 +63,8 @@ class YoutubeDownloader:
 
 
 class YoutubeConfig(dict):
-    options = {}
-    defaults = {
+    options = {}  # noqa: RUF012
+    defaults = {  # noqa: RUF012
         "writethumbnail": True,
         "write_all_thumbnails": True,
         "writesubtitles": True,
@@ -105,14 +105,14 @@ class YoutubeConfig(dict):
 
 
 class BestWebm(YoutubeConfig):
-    options = {
+    options = {  # noqa: RUF012
         "preferredcodec": "webm",
         "format": "best[ext=webm]/bestvideo[ext=webm]+bestaudio[ext=webm]/best",
     }
 
 
 class BestMp4(YoutubeConfig):
-    options = {
+    options = {  # noqa: RUF012
         "preferredcodec": "mp4",
         "format": "best[ext=mp4]/bestvideo[ext=mp4]+bestaudio[ext=m4a]/best",
     }
@@ -171,7 +171,7 @@ def stream_file(
     byte_stream: Optional[io.BytesIO] = None,
     block_size: Optional[int] = 1024,
     proxies: Optional[dict] = None,
-    only_first_block: Optional[bool] = False,
+    only_first_block: Optional[bool] = False,  # noqa: FBT002
     max_retries: Optional[int] = 5,
     headers: Optional[Dict[str, str]] = None,
     session: Optional[requests.Session] = None,

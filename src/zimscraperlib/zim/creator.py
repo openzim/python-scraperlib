@@ -101,11 +101,11 @@ class Creator(libzim.writer.Creator):
         filename: pathlib.Path,
         main_path: str,
         compression: Optional[str] = None,
-        workaround_nocancel: Optional[bool] = True,
-        ignore_duplicates: Optional[bool] = False,
+        workaround_nocancel: Optional[bool] = True,  # noqa: FBT002
+        ignore_duplicates: Optional[bool] = False,  # noqa: FBT002
     ):
         super().__init__(filename=filename)
-        self._metadata = dict()
+        self._metadata = dict()  # noqa: C408
         self.__indexing_configured = False
         self.can_finish = True
 
@@ -121,7 +121,9 @@ class Creator(libzim.writer.Creator):
         self.workaround_nocancel = workaround_nocancel
         self.ignore_duplicates = ignore_duplicates
 
-    def config_indexing(self, indexing: bool, language: Optional[str] = None):
+    def config_indexing(
+        self, indexing: bool, language: Optional[str] = None  # noqa: FBT001
+    ):
         """Toggle full-text and title indexing of entries
 
         Uses Language metadata's value (or "") if not set"""
@@ -133,7 +135,11 @@ class Creator(libzim.writer.Creator):
         return self
 
     def start(self):
-        if not all([self._metadata.get(key) for key in MANDATORY_ZIM_METADATA_KEYS]):
+        if not all(
+            [  # noqa: C419
+                self._metadata.get(key) for key in MANDATORY_ZIM_METADATA_KEYS
+            ]  # noqa: C419, RUF100
+        ):
             raise ValueError("Mandatory metadata are not all set.")
 
         for name, value in self._metadata.items():
@@ -188,21 +194,21 @@ class Creator(libzim.writer.Creator):
     def config_metadata(
         self,
         *,
-        Name: str,
-        Language: str,
-        Title: str,
-        Description: str,
-        LongDescription: Optional[str] = None,
-        Creator: str,
-        Publisher: str,
-        Date: Union[datetime.datetime, datetime.date, str],
-        Illustration_48x48_at_1: bytes,
-        Tags: Optional[Union[Iterable[str], str]] = None,
-        Scraper: Optional[str] = None,
-        Flavour: Optional[str] = None,
-        Source: Optional[str] = None,
-        License: Optional[str] = None,
-        Relation: Optional[str] = None,
+        Name: str,  # noqa: N803
+        Language: str,  # noqa: N803
+        Title: str,  # noqa: N803
+        Description: str,  # noqa: N803
+        LongDescription: Optional[str] = None,  # noqa: N803
+        Creator: str,  # noqa: N803
+        Publisher: str,  # noqa: N803
+        Date: Union[datetime.datetime, datetime.date, str],  # noqa: N803
+        Illustration_48x48_at_1: bytes,  # noqa: N803
+        Tags: Optional[Union[Iterable[str], str]] = None,  # noqa: N803
+        Scraper: Optional[str] = None,  # noqa: N803
+        Flavour: Optional[str] = None,  # noqa: N803
+        Source: Optional[str] = None,  # noqa: N803
+        License: Optional[str] = None,  # noqa: N803
+        Relation: Optional[str] = None,  # noqa: N803
         **extras: str,
     ):
         """Sets all mandatory Metadata as well as standard and any other text ones"""
@@ -243,7 +249,7 @@ class Creator(libzim.writer.Creator):
         mimetype: Optional[str] = None,
         is_front: Optional[bool] = None,
         should_compress: Optional[bool] = None,
-        delete_fpath: Optional[bool] = False,
+        delete_fpath: Optional[bool] = False,  # noqa: FBT002
         duplicate_ok: Optional[bool] = None,
         callback: Optional[Union[callable, Tuple[callable, Any]]] = None,
     ):
@@ -357,7 +363,7 @@ class Creator(libzim.writer.Creator):
                 self.can_finish = False  # pragma: no cover
             raise
 
-    def finish(self, exc_type=None, exc_val=None, exc_tb=None):
+    def finish(self, exc_type=None, exc_val=None, exc_tb=None):  # noqa: ARG002
         """Triggers finalization of ZIM creation and create final ZIM file."""
         if not getattr(self, "can_finish", False):
             return

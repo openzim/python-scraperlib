@@ -22,4 +22,4 @@ def html_page():
 </head>
 <body>
 </html>
-"""
+"""  # noqa: RUF001

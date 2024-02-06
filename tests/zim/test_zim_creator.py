@@ -166,7 +166,7 @@ def test_add_item_for_delete_fail(tmp_path, png_image):
     shutil.copyfile(png_image, local_path)
 
     def remove_source(item):
-        print("##########", "remove_source")
+        print("##########", "remove_source")  # noqa: T201
         os.remove(item.filepath)
 
     with Creator(fpath, "welcome").config_dev_metadata() as creator:
@@ -352,7 +352,7 @@ def test_urlprovider_nolength(tmp_path, png_image_url, png_image):
 
     # create and start an http server without Content-Length support
     server_fpath = tmp_path / "httpd.py"
-    port = random.randint(10000, 20000)
+    port = random.randint(10000, 20000)  # noqa: S311
     server_code = """
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
@@ -385,7 +385,7 @@ with HTTPServer(('', {port}), handler) as server:
         with tempfile.TemporaryDirectory() as tmp_dir, Creator(
             fpath, ""
         ).config_dev_metadata() as creator:
-            tmp_dir = pathlib.Path(tmp_dir)
+            tmp_dir = pathlib.Path(tmp_dir)  # noqa: PLW2901
             creator.add_item(
                 URLItem(
                     url=f"http://localhost:{port}/hoho.png",
@@ -442,7 +442,7 @@ def test_callback_and_remove(tmp_path, html_file):
     class Store:
         called = 0
 
-    def cb(*args):
+    def cb(*args):  # noqa: ARG001
         Store.called += 1
 
     # duplicate test file as we'll want to remove twice
@@ -579,10 +579,10 @@ def test_config_metadata(tmp_path, png_image):
         ("Title", "X" * 30, True),
         ("Title", "X" * 31, False),
         ("Date", 4, False),
-        ("Date", datetime.datetime.now(), True),
-        ("Date", datetime.datetime(1969, 12, 31, 23, 59), True),
+        ("Date", datetime.datetime.now(), True),  # noqa: DTZ005
+        ("Date", datetime.datetime(1969, 12, 31, 23, 59), True),  # noqa: DTZ001
         ("Date", datetime.date(1969, 12, 31), True),
-        ("Date", datetime.date.today(), True),
+        ("Date", datetime.date.today(), True),  # noqa: DTZ011
         ("Date", "1969-12-31", True),
         ("Date", "1969-13-31", False),
         ("Date", "2023/02/29", False),

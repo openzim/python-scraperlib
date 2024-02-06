@@ -55,7 +55,7 @@ def validate_date(name: str, value: Union[datetime.datetime, datetime.date, str]
             try:
                 datetime.date(**{k: int(v) for k, v in match.groupdict().items()})
             except Exception as exc:
-                raise ValueError(f"Invalid {name} format: {exc}")
+                raise ValueError(f"Invalid {name} format: {exc}")  # noqa: B904
 
 
 def validate_language(name: str, value: Union[Iterable[str], str]):
@@ -68,7 +68,7 @@ def validate_language(name: str, value: Union[Iterable[str], str]):
                 raise ValueError(f"{code} is not ISO-639-3.")
 
 
-def validate_counter(name: str, value: str):
+def validate_counter(name: str, value: str):  # noqa: ARG001
     """ensures Counter metadata is not manually set"""
     if name == "Counter":
         raise ValueError(f"{name} cannot be set. libzim sets it.")
@@ -93,7 +93,7 @@ def validate_tags(name: str, value: Union[Iterable[str], str]):
     """ensures Tags metadata is either one or a list of strings"""
     if name == "Tags" and (
         not isinstance(value, IterableT)
-        or not all([isinstance(tag, str) for tag in value])
+        or not all([isinstance(tag, str) for tag in value])  # noqa: C419
     ):
         raise ValueError(f"Invalid type(s) for {name}")
 

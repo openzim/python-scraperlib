@@ -18,7 +18,7 @@ class VoiceMp3Low(Config):
     ext = "mp3"
     mimetype = "audio/mp3"
 
-    options = {
+    options = {  # noqa: RUF012
         "-vn": "",  # remove video stream
         "-codec:a": "mp3",  # audio codec
         "-ar": "44100",  # audio sampling rate
@@ -39,7 +39,7 @@ class VideoWebmLow(Config):
     ext = "webm"
     mimetype = f"{preset_type}/webm"
 
-    options = {
+    options = {  # noqa: RUF012
         "-codec:v": "libvpx",  # video codec
         "-quality": "best",  # codec preset
         "-b:v": "300k",  # target video bitrate
@@ -67,7 +67,7 @@ class VideoMp4Low(Config):
     ext = "mp4"
     mimetype = f"{preset_type}/mp4"
 
-    options = {
+    options = {  # noqa: RUF012
         "-codec:v": "h264",  # video codec
         "-b:v": "300k",  # target video bitrate
         "-maxrate": "300k",  # max video bitrate
@@ -92,7 +92,7 @@ class VideoWebmHigh(Config):
     ext = "webm"
     mimetype = f"{preset_type}/webm"
 
-    options = {
+    options = {  # noqa: RUF012
         "-codec:v": "libvpx",  # video codec
         "-codec:a": "libvorbis",  # audio codec
         "-crf": "25",  # constant quality, lower value gives better qual and larger size
@@ -110,7 +110,7 @@ class VideoMp4High(Config):
     ext = "mp4"
     mimetype = f"{preset_type}/mp4"
 
-    options = {
+    options = {  # noqa: RUF012
         "-codec:v": "h264",  # video codec
         "-codec:a": "aac",  # audio codec
         "-crf": "20",  # constant quality, lower value gives better qual and larger size

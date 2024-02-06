@@ -30,7 +30,7 @@ def convert_image(
         fmt = format_for(dst)
     with PIL.Image.open(src) as image:
         if image.mode == "RGBA" and fmt in ALPHA_NOT_SUPPORTED or colorspace:
-            image = image.convert(colorspace or "RGB")
+            image = image.convert(colorspace or "RGB")  # noqa: PLW2901
         save_image(image, dst, fmt, **params)
 
 

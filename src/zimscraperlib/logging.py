@@ -14,17 +14,17 @@ DEFAULT_FORMAT = "[%(name)s::%(asctime)s] %(levelname)s:%(message)s"
 VERBOSE_DEPENDENCIES = ["urllib3", "PIL", "boto3", "botocore", "s3transfer"]
 
 
-def getLogger(
+def getLogger(  # noqa: N802
     name: str,
     level: Optional[int] = logging.INFO,
     console: Optional[io.TextIOBase] = sys.stdout,
     log_format: Optional[str] = DEFAULT_FORMAT,
-    file: Optional[pathlib.Path] = False,
+    file: Optional[pathlib.Path] = False,  # noqa: FBT002
     file_level: Optional[int] = None,
     file_format: Optional[str] = None,
     file_max: Optional[int] = 2**20,
     file_nb_backup: Optional[int] = 1,
-    deps_level: Optional[int] = logging.WARNING,
+    deps_level: Optional[int] = logging.WARNING,  # noqa: ARG001
     additional_deps: Optional[Iterable] = None,
 ):
     """configured logger for most usages

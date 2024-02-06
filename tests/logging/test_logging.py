@@ -100,14 +100,14 @@ def test_debug_level_file(random_id, tmp_path):
     assert_message_file(logger, log_file, "debug", True)
 
 
-def test_info_level_file(random_id, console, tmp_path):
+def test_info_level_file(random_id, console, tmp_path):  # noqa: ARG001
     log_file = tmp_path / "test.log"
     logger = getLogger(name=random_id, file=log_file, file_level=logging.INFO)
     assert_message_file(logger, log_file, "debug", False)
     assert_message_file(logger, log_file, "info", True)
 
 
-def test_warning_level_file(random_id, console, tmp_path):
+def test_warning_level_file(random_id, console, tmp_path):  # noqa: ARG001
     log_file = tmp_path / "test.log"
     logger = getLogger(name=random_id, file=log_file, file_level=logging.WARNING)
     assert_message_file(logger, log_file, "debug", False)
@@ -115,7 +115,7 @@ def test_warning_level_file(random_id, console, tmp_path):
     assert_message_file(logger, log_file, "warning", True)
 
 
-def test_error_level_file(random_id, console, tmp_path):
+def test_error_level_file(random_id, console, tmp_path):  # noqa: ARG001
     log_file = tmp_path / "test.log"
     logger = getLogger(name=random_id, file=log_file, file_level=logging.ERROR)
     assert_message_file(logger, log_file, "debug", False)
@@ -124,7 +124,7 @@ def test_error_level_file(random_id, console, tmp_path):
     assert_message_file(logger, log_file, "error", True)
 
 
-def test_critical_level_file(random_id, console, tmp_path):
+def test_critical_level_file(random_id, console, tmp_path):  # noqa: ARG001
     log_file = tmp_path / "test.log"
     logger = getLogger(name=random_id, file=log_file, file_level=logging.CRITICAL)
     assert_message_file(logger, log_file, "debug", False)
@@ -134,7 +134,7 @@ def test_critical_level_file(random_id, console, tmp_path):
     assert_message_file(logger, log_file, "critical", True)
 
 
-def test_level_fallback(random_id, console, tmp_path):
+def test_level_fallback(random_id, console, tmp_path):  # noqa: ARG001
     log_file = tmp_path / "test.log"
     logger = getLogger(name=random_id, file=log_file, level=logging.CRITICAL)
     assert_message_file(logger, log_file, "debug", False)

@@ -12,7 +12,12 @@ from zimscraperlib.logging import nicer_args_join
 
 
 def reencode(
-    src_path, dst_path, ffmpeg_args, delete_src=False, with_process=False, failsafe=True
+    src_path,
+    dst_path,
+    ffmpeg_args,
+    delete_src=False,  # noqa: FBT002
+    with_process=False,  # noqa: FBT002
+    failsafe=True,  # noqa: FBT002
 ):
     """Runs ffmpeg with given ffmpeg_args
 
@@ -28,7 +33,7 @@ def reencode(
     with tempfile.TemporaryDirectory() as tmp_dir:
         tmp_path = pathlib.Path(tmp_dir).joinpath(f"video.tmp{dst_path.suffix}")
         args = (
-            ["ffmpeg", "-y", "-i", f"file:{src_path}"]
+            ["ffmpeg", "-y", "-i", f"file:{src_path}"]  # noqa: RUF005
             + ffmpeg_args
             + [f"file:{tmp_path}"]
         )

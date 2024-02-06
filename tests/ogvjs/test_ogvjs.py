@@ -47,7 +47,9 @@ def prepare_ogvjs_folder(tmp_path, videojs_url, ogvjs_url, videojs_ogvjs_url):
 @pytest.mark.installed
 def test_installed_script():
     kwargs = {"universal_newlines": True, "stdout": subprocess.PIPE}
-    script = subprocess.run(["fix_ogvjs_dist"], **kwargs)  # nosec
+    script = subprocess.run(  # noqa: PLW1510
+        ["fix_ogvjs_dist"], **kwargs  # noqa: S607
+    )  # nosec
     assert script.returncode == 1
     assert script.stdout.strip().startswith("Usage: ")
 

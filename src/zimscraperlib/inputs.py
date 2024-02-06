@@ -20,7 +20,7 @@ def handle_user_provided_file(
     source: Optional[Union[pathlib.Path, str]] = None,
     dest: Optional[pathlib.Path] = None,
     in_dir: Optional[pathlib.Path] = None,
-    nocopy: bool = False,
+    nocopy: bool = False,  # noqa: FBT001, FBT002
 ) -> Union[pathlib.Path, None]:
     """path to downloaded or copied a user provided file (URL or path)
 

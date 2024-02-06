@@ -6,7 +6,7 @@ import io
 import pytest
 
 from zimscraperlib.zim._libkiwix import getline
-from zimscraperlib.zim._libkiwix import parseMimetypeCounter as parse
+from zimscraperlib.zim._libkiwix import parseMimetypeCounter as parse  # noqa: N813
 
 empty = {}
 
@@ -74,6 +74,6 @@ def test_getline():
         ("text/html=50;;foo", {"text/html": 50}),
     ],
 )
-def test_counter_parsing(counterStr, counterMap):
+def test_counter_parsing(counterStr, counterMap):  # noqa: N803
     # https://github.com/kiwix/libkiwix/blob/master/test/counterParsing.cpp
     assert parse(counterStr) == counterMap

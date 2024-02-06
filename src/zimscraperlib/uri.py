@@ -9,16 +9,16 @@ from zimscraperlib.misc import first
 
 def rebuild_uri(
     uri: urllib.parse.ParseResult,
-    scheme: str = None,
-    username: str = None,
-    password: str = None,
-    hostname: str = None,
-    port: Union[str, int] = None,
-    path: str = None,
-    params: str = None,
-    query: str = None,
-    fragment: str = None,
-    failsafe: bool = False,
+    scheme: str = None,  # noqa: RUF013
+    username: str = None,  # noqa: RUF013
+    password: str = None,  # noqa: RUF013
+    hostname: str = None,  # noqa: RUF013
+    port: Union[str, int] = None,  # noqa: RUF013
+    path: str = None,  # noqa: RUF013
+    params: str = None,  # noqa: RUF013
+    query: str = None,  # noqa: RUF013
+    fragment: str = None,  # noqa: RUF013
+    failsafe: bool = False,  # noqa: FBT001, FBT002
 ) -> urllib.parse.ParseResult:
     """new ParseResult named tuple from uri with requested part updated"""
     try:

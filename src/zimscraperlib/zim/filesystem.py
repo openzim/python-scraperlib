@@ -116,20 +116,20 @@ def make_zim_file(
     illustration: str,
     title: str,
     description: str,
-    date: datetime.date = None,
+    date: datetime.date = None,  # noqa: RUF013
     language: str = "eng",
     creator: str = "-",
     publisher="-",
-    tags: Sequence[str] = None,
-    source: str = None,
-    flavour: str = None,
-    scraper: str = None,
-    long_description: str = None,
-    without_fulltext_index: bool = False,
-    redirects: Sequence[Tuple[str, str, str]] = None,
-    redirects_file: pathlib.Path = None,
-    rewrite_links: bool = True,
-    workaround_nocancel: bool = True,
+    tags: Sequence[str] = None,  # noqa: RUF013
+    source: str = None,  # noqa: RUF013
+    flavour: str = None,  # noqa: RUF013
+    scraper: str = None,  # noqa: RUF013
+    long_description: str = None,  # noqa: RUF013
+    without_fulltext_index: bool = False,  # noqa: FBT001, FBT002, ARG001
+    redirects: Sequence[Tuple[str, str, str]] = None,  # noqa: RUF013
+    redirects_file: pathlib.Path = None,  # noqa: RUF013
+    rewrite_links: bool = True,  # noqa: FBT001, FBT002, ARG001
+    workaround_nocancel: bool = True,  # noqa: FBT001, FBT002
 ):
     """Creates a zimwriterfs-like ZIM file at {fpath} from {build_dir}
 
@@ -160,7 +160,7 @@ def make_zim_file(
                 "Name": name,
                 "Title": title,
                 "Description": description,
-                "Date": date or datetime.date.today(),
+                "Date": date or datetime.date.today(),  # noqa: DTZ011
                 "Language": language,
                 "Creator": creator,
                 "Publisher": publisher,

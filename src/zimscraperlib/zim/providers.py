@@ -23,7 +23,7 @@ class FileProvider(libzim.writer.FileProvider):
     def __init__(
         self,
         filepath: pathlib.Path,
-        size: Optional[int] = None,
+        size: Optional[int] = None,  # noqa: ARG002
         ref: Optional[object] = None,
     ):
         super().__init__(filepath)

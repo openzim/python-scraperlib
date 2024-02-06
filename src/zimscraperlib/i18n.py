@@ -13,7 +13,7 @@ from iso639 import languages as iso639_languages
 ISO_LEVELS = ["1", "2b", "2t", "3", "5"]
 
 
-class NotFound(ValueError):
+class NotFound(ValueError):  # noqa: N818
     pass
 
 
@@ -126,7 +126,9 @@ def update_with_macro(lang_data: Dict, macro_data: Dict):
     return lang_data
 
 
-def get_language_details(query: str, failsafe: Optional[bool] = False) -> Dict:
+def get_language_details(
+    query: str, failsafe: Optional[bool] = False  # noqa: FBT002
+) -> Dict:
     """language details dict from query.
 
     Raises NotFound or return `und` language details if failsafe
@@ -142,7 +144,7 @@ def get_language_details(query: str, failsafe: Optional[bool] = False) -> Dict:
 
     """
 
-    if query.isalpha() and (2 <= len(query) <= 3):
+    if query.isalpha() and (2 <= len(query) <= 3):  # noqa: PLR2004
         # possibility of iso-639 code
         adjusted_query = query
         native_query = query

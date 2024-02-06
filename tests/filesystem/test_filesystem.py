@@ -28,7 +28,7 @@ def test_content_mimetype_fallback(monkeypatch, undecodable_byte_stream):
     assert get_content_mimetype(undecodable_byte_stream) == "application/octet-stream"
 
     # mock then so we keep coverage on systems where magic works
-    def raising_magic(*args):
+    def raising_magic(*args):  # noqa: ARG001
         raise UnicodeDecodeError("nocodec", b"", 0, 1, "noreason")
 
     monkeypatch.setattr(magic, "detect_from_content", raising_magic)
@@ -47,7 +47,7 @@ def test_delete_callback(tmp_path):
     class Store:
         called = 0
 
-    def cb(*args):
+    def cb(*args):  # noqa: ARG001
         Store.called += 1
 
     fpath = tmp_path.joinpath("my-file")

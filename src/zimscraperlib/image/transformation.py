@@ -18,7 +18,7 @@ def resize_image(
     height: Optional[int] = None,
     dst: Optional[Union[pathlib.Path, io.BytesIO]] = None,
     method: Optional[str] = "width",
-    allow_upscaling: Optional[bool] = True,
+    allow_upscaling: Optional[bool] = True,  # noqa: FBT002
     **params: Optional[dict],
 ) -> None:
     """resize an image to requested dimensions
@@ -34,9 +34,13 @@ def resize_image(
         if allow_upscaling:
             height_width_ratio = float(image.size[1]) / float(image.size[0])
             if image.size[0] < width:
-                image = image.resize((width, int(width * height_width_ratio)))
+                image = image.resize(  # noqa: PLW2901
+                    (width, int(width * height_width_ratio))
+                )
             if height and image.size[1] < height:
-                image = image.resize((int(height / height_width_ratio), height))
+                image = image.resize(  # noqa: PLW2901
+                    (int(height / height_width_ratio), height)
+                )
 
         # resize using the requested method
         if method == "width":

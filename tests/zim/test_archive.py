@@ -97,7 +97,7 @@ def test_get_tags(small_zim_file, real_zim_file):
         assert zim.tags == zim.get_tags()
 
 
-def test_libkiwix_convertTags():
+def test_libkiwix_convertTags():  # noqa: N802
     assert convertTags("") == [
         "_ftindex:no",
         "_pictures:yes",
