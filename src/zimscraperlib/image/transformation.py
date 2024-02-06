@@ -25,7 +25,7 @@ def resize_image(
 
     methods: width, height, cover, thumbnail
     allow upscaling: upscale image first, preserving aspect ratio if required"""
-    with PIL.Image.open(src) as image:
+    with PIL.Image.open(src) as image:  # pyright: ignore
         # preserve image format as resize() does not transmit it into new object
         image_format = image.format
         image_mode = image.mode
@@ -58,4 +58,9 @@ def resize_image(
     if dst is None and isinstance(src, io.BytesIO):
         src.seek(0)
 
-    save_image(resized, dst if dst is not None else src, image_format, **params)
+    save_image(
+        resized,
+        dst if dst is not None else src,  # pyright: ignore
+        image_format,
+        **params,
+    )

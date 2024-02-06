@@ -46,8 +46,8 @@ class FileItem(StaticItem):
         self,
         root: pathlib.Path,
         filepath: pathlib.Path,
-    ):
-        super().__init__(root=root, filepath=filepath)
+    ):  # pyright: ignore
+        super().__init__(root=root, filepath=filepath)  # pyright: ignore
         # first look inside the file's magic headers
         self.mimetype = get_file_mimetype(self.filepath)
         # most web-specific files are plain text. In this case, use extension
@@ -102,7 +102,7 @@ def add_redirects_to_zim(
             for line in fh.readlines():
                 namespace, path, title, target_url = re.match(
                     r"^(.)\t(.+)\t(.*)\t(.+)$", line
-                ).groups()
+                ).groups()  # pyright: ignore
                 if namespace.strip():
                     path = f"{namespace.strip()}/{path}"
                 zim_file.add_redirect(path, target_url, title)
@@ -116,18 +116,18 @@ def make_zim_file(
     illustration: str,
     title: str,
     description: str,
-    date: datetime.date = None,  # noqa: RUF013
+    date: datetime.date = None,  # noqa: RUF013  # pyright: ignore
     language: str = "eng",
     creator: str = "-",
     publisher="-",
-    tags: Sequence[str] = None,  # noqa: RUF013
-    source: str = None,  # noqa: RUF013
-    flavour: str = None,  # noqa: RUF013
-    scraper: str = None,  # noqa: RUF013
-    long_description: str = None,  # noqa: RUF013
+    tags: Sequence[str] = None,  # noqa: RUF013  # pyright: ignore
+    source: str = None,  # noqa: RUF013  # pyright: ignore
+    flavour: str = None,  # noqa: RUF013  # pyright: ignore
+    scraper: str = None,  # noqa: RUF013  # pyright: ignore
+    long_description: str = None,  # noqa: RUF013  # pyright: ignore
     without_fulltext_index: bool = False,  # noqa: FBT001, FBT002, ARG001
-    redirects: Sequence[Tuple[str, str, str]] = None,  # noqa: RUF013
-    redirects_file: pathlib.Path = None,  # noqa: RUF013
+    redirects: Sequence[Tuple[str, str, str]] = None,  # noqa: RUF013  # pyright: ignore
+    redirects_file: pathlib.Path = None,  # noqa: RUF013  # pyright: ignore
     rewrite_links: bool = True,  # noqa: FBT001, FBT002, ARG001
     workaround_nocancel: bool = True,  # noqa: FBT001, FBT002
 ):

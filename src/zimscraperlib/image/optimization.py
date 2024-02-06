@@ -76,25 +76,25 @@ def optimize_png(
         if remove_transparency is True (tuple containing RGB values)
             values: (255, 255, 255) | (221, 121, 108) | (XX, YY, ZZ)"""
 
-    ensure_matches(src, "PNG")
+    ensure_matches(src, "PNG")  # pyright: ignore
 
     img = Image.open(src)
 
     if remove_transparency:
-        img = remove_alpha(img, background_color)
+        img = remove_alpha(img, background_color)  # pyright: ignore
 
     if reduce_colors:
-        img, _, _ = do_reduce_colors(img, max_colors)
+        img, _, _ = do_reduce_colors(img, max_colors)  # pyright: ignore
 
     if not fast_mode and img.mode == "P":
         img, _ = rebuild_palette(img)
 
     if dst is None:
-        dst = io.BytesIO()
-    img.save(dst, optimize=True, format="PNG")
+        dst = io.BytesIO()  # pyright: ignore
+    img.save(dst, optimize=True, format="PNG")  # pyright: ignore
     if isinstance(dst, io.BytesIO):
         dst.seek(0)
-    return dst
+    return dst  # pyright: ignore
 
 
 def optimize_jpeg(
@@ -114,7 +114,7 @@ def optimize_jpeg(
                get dynamic quality value to ensure better compression
         values: True | False"""
 
-    ensure_matches(src, "JPEG")
+    ensure_matches(src, "JPEG")  # pyright: ignore
 
     img = Image.open(src)
     orig_size = (
@@ -138,10 +138,10 @@ def optimize_jpeg(
         quality_setting, _ = jpeg_dynamic_quality(img)
 
     if dst is None:
-        dst = io.BytesIO()
+        dst = io.BytesIO()  # pyright: ignore
 
     img.save(
-        dst,
+        dst,  # pyright: ignore
         quality=quality_setting,
         optimize=True,
         progressive=use_progressive_jpg,
@@ -157,12 +157,14 @@ def optimize_jpeg(
                 str(src.resolve()) if isinstance(src, pathlib.Path) else src.getvalue()
             ),
             image=(
-                str(dst.resolve()) if isinstance(dst, pathlib.Path) else dst.getvalue()
+                str(dst.resolve())
+                if isinstance(dst, pathlib.Path)
+                else dst.getvalue()  # pyright: ignore
             ),
             new_file=dst,
         )
 
-    return dst
+    return dst  # pyright: ignore
 
 
 def optimize_webp(
@@ -186,7 +188,7 @@ def optimize_webp(
     refer to the link for more details
     https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html#webp"""
 
-    ensure_matches(src, "WEBP")
+    ensure_matches(src, "WEBP")  # pyright: ignore
     params = {
         "lossless": lossless,
         "quality": quality,
@@ -195,17 +197,17 @@ def optimize_webp(
 
     webp_image = Image.open(src)
     if dst is None:
-        dst = io.BytesIO()
-        webp_image.save(dst, format="WEBP", **params)
-        dst.seek(0)
+        dst = io.BytesIO()  # pyright: ignore
+        webp_image.save(dst, format="WEBP", **params)  # pyright: ignore
+        dst.seek(0)  # pyright: ignore
     else:
         try:
-            save_image(webp_image, dst, fmt="WEBP", **params)
+            save_image(webp_image, dst, fmt="WEBP", **params)  # pyright: ignore
         except Exception as exc:
-            if src.resolve() != dst.resolve() and dst.exists():
+            if src.resolve() != dst.resolve() and dst.exists():  # pyright: ignore
                 dst.unlink()  # pragma: nocover
             raise exc
-    return dst
+    return dst  # pyright: ignore
 
 
 def optimize_gif(
@@ -267,7 +269,7 @@ def optimize_image(
     delete_src: Optional[bool] = False,  # noqa: FBT002
     convert: Optional[Union[bool, str]] = False,  # noqa: FBT002
     **options,
-) -> bool:
+) -> bool:  # pyright: ignore
     """Optimize image, automatically selecting correct optimizer
 
     delete_src: whether to remove src file upon success (boolean)
@@ -281,12 +283,12 @@ def optimize_image(
     # if requested, convert src to requested format into dst path
     if convert and src_format != dst_format:
         src_format = dst_format = convert if isinstance(convert, str) else dst_format
-        convert_image(src, dst, fmt=src_format)
+        convert_image(src, dst, fmt=src_format)  # pyright: ignore
         src_img = pathlib.Path(dst)
     else:
         src_img = pathlib.Path(src)
 
-    {
+    {  # pyright: ignore
         "JPEG": optimize_jpeg,
         "PNG": optimize_png,
         "GIF": optimize_gif,

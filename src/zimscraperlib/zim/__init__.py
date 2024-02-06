@@ -9,7 +9,7 @@
     zim.items: item to add to creator
     zim.archive: read ZIM files, accessing or searching its content"""
 
-from libzim.writer import Blob
+from libzim.writer import Blob  # pyright: ignore
 
 from zimscraperlib.zim.archive import Archive
 from zimscraperlib.zim.creator import Creator

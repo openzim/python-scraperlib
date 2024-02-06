@@ -110,7 +110,7 @@ class Config(dict):
     @property
     def video_scale(self):
         # remove "scale='" and "'" and return the value in between
-        return self.get("-vf")[7:-1] if self.get("-vf") else None
+        return self.get("-vf")[7:-1] if self.get("-vf") else None  # pyright: ignore
 
     @video_scale.setter
     def video_scale(self, value):

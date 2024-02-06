@@ -102,7 +102,9 @@ def find_language_names(
         lang_data = get_language_details(query, failsafe=True) or {}
     try:
         query_locale = babel.Locale.parse(query)
-        return query_locale.get_display_name(), query_locale.get_display_name("en")
+        return query_locale.get_display_name(), query_locale.get_display_name(
+            "en"
+        )  # pyright: ignore
     except (babel.UnknownLocaleError, TypeError, ValueError, AttributeError):
         pass
 
@@ -110,7 +112,9 @@ def find_language_names(
     for iso_level in [f"iso-639-{lang_}" for lang_ in reversed(ISO_LEVELS)]:
         try:
             query_locale = babel.Locale.parse(lang_data.get(iso_level))
-            return query_locale.get_display_name(), query_locale.get_display_name("en")
+            return query_locale.get_display_name(), query_locale.get_display_name(
+                "en"
+            )  # pyright: ignore
         except (babel.UnknownLocaleError, TypeError, ValueError, AttributeError):
             pass
     default = lang_data.get("english", query)
@@ -166,10 +170,10 @@ def get_language_details(
         lang_data, macro_data = get_iso_lang_data(adjusted_query)
     except NotFound as exc:
         if failsafe:
-            return None
+            return None  # pyright: ignore
         raise exc
 
-    iso_data = update_with_macro(lang_data, macro_data)
+    iso_data = update_with_macro(lang_data, macro_data)  # pyright: ignore
     native_name, english_name = find_language_names(native_query, iso_data)
     iso_data.update(
         {

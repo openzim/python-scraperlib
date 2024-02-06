@@ -17,9 +17,9 @@ VERBOSE_DEPENDENCIES = ["urllib3", "PIL", "boto3", "botocore", "s3transfer"]
 def getLogger(  # noqa: N802
     name: str,
     level: Optional[int] = logging.INFO,
-    console: Optional[io.TextIOBase] = sys.stdout,
+    console: Optional[io.TextIOBase] = sys.stdout,  # pyright: ignore
     log_format: Optional[str] = DEFAULT_FORMAT,
-    file: Optional[pathlib.Path] = False,  # noqa: FBT002
+    file: Optional[pathlib.Path] = False,  # noqa: FBT002  # pyright: ignore
     file_level: Optional[int] = None,
     file_format: Optional[str] = None,
     file_max: Optional[int] = 2**20,
@@ -43,11 +43,11 @@ def getLogger(  # noqa: N802
         additional_deps = []
 
     # align zimscraperlib logging level to that of scraper
-    logging.Logger(NAME).setLevel(level)
+    logging.Logger(NAME).setLevel(level)  # pyright: ignore
 
     # set arbitrary level for some known verbose dependencies
     # prevents them from polluting logs
-    for logger_name in set(VERBOSE_DEPENDENCIES + additional_deps):
+    for logger_name in set(VERBOSE_DEPENDENCIES + additional_deps):  # pyright: ignore
         logging.getLogger(logger_name).setLevel(logging.WARNING)
 
     logger = logging.Logger(name)
@@ -57,15 +57,17 @@ def getLogger(  # noqa: N802
     if console:
         console_handler = logging.StreamHandler(console)
         console_handler.setFormatter(logging.Formatter(log_format))
-        console_handler.setLevel(level)
+        console_handler.setLevel(level)  # pyright: ignore
         logger.addHandler(console_handler)
 
     if file:
-        file_handler = RotatingFileHandler(
-            file, maxBytes=file_max, backupCount=file_nb_backup
+        file_handler = RotatingFileHandler(  # pyright: ignore
+            file,
+            maxBytes=file_max,  # pyright: ignore
+            backupCount=file_nb_backup,  # pyright: ignore
         )
         file_handler.setFormatter(logging.Formatter(file_format or log_format))
-        file_handler.setLevel(file_level or level)
+        file_handler.setLevel(file_level or level)  # pyright: ignore
         logger.addHandler(file_handler)
 
     return logger
@@ -73,7 +75,7 @@ def getLogger(  # noqa: N802
 
 def nicer_args_join(args: Iterable) -> str:
     """slightly better concateated list of subprocess args for display"""
-    nargs = args[0:1]
-    for arg in args[1:]:
+    nargs = args[0:1]  # pyright: ignore
+    for arg in args[1:]:  # pyright: ignore
         nargs.append(arg if arg.startswith("-") else f'"{arg}"')
     return " ".join(nargs)

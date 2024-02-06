@@ -23,7 +23,7 @@ import re
 import weakref
 from typing import Any, Callable, Iterable, Optional, Tuple, Union
 
-import libzim.writer
+import libzim.writer  # pyright: ignore
 
 from zimscraperlib.constants import (
     DEFAULT_DEV_ZIM_METADATA,
@@ -68,7 +68,9 @@ def mimetype_for(
     """mimetype as provided or guessed from fpath, path or content"""
     if not mimetype:
         mimetype = (
-            get_file_mimetype(fpath) if fpath else get_content_mimetype(content[:2048])
+            get_file_mimetype(fpath)
+            if fpath
+            else get_content_mimetype(content[:2048])  # pyright: ignore
         )
         # try to guess more-defined mime if it's text
         if (
@@ -171,16 +173,16 @@ class Creator(libzim.writer.Creator):
         See https://wiki.openzim.org/wiki/Metadata"""
 
         validate_required_values(name, value)
-        validate_standard_str_types(name, value)
+        validate_standard_str_types(name, value)  # pyright: ignore
 
-        validate_title(name, value)
-        validate_date(name, value)
-        validate_language(name, value)
-        validate_counter(name, value)
-        validate_description(name, value)
-        validate_longdescription(name, value)
-        validate_tags(name, value)
-        validate_illustrations(name, value)
+        validate_title(name, value)  # pyright: ignore
+        validate_date(name, value)  # pyright: ignore
+        validate_language(name, value)  # pyright: ignore
+        validate_counter(name, value)  # pyright: ignore
+        validate_description(name, value)  # pyright: ignore
+        validate_longdescription(name, value)  # pyright: ignore
+        validate_tags(name, value)  # pyright: ignore
+        validate_illustrations(name, value)  # pyright: ignore
 
     def add_metadata(
         self,
@@ -251,7 +253,9 @@ class Creator(libzim.writer.Creator):
         should_compress: Optional[bool] = None,
         delete_fpath: Optional[bool] = False,  # noqa: FBT002
         duplicate_ok: Optional[bool] = None,
-        callback: Optional[Union[callable, Tuple[callable, Any]]] = None,
+        callback: Optional[
+            Union[callable, Tuple[callable, Any]]  # pyright: ignore
+        ] = None,
     ):
         """Add a File or content at a specified path and get its path
 

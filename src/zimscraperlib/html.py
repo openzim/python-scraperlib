@@ -18,7 +18,7 @@ def find_title_in(content: Union[str, BinaryIO, TextIO], mime_type: str) -> str:
     if mime_type != ARTICLE_MIME:
         return ""
     try:
-        return BeautifulSoup(content, "lxml").find("title").text
+        return BeautifulSoup(content, "lxml").find("title").text  # pyright: ignore
     except Exception:
         return ""
 
@@ -44,15 +44,15 @@ def find_language_in(content: Union[str, BinaryIO, TextIO], mime_type: str) -> s
         for key in keylist:
             node = soup.find(nodename)
             if node:
-                if not node.has_attr(key):
+                if not node.has_attr(key):  # pyright: ignore
                     continue
                 if (
                     nodename == "meta"
-                    and not node.attrs.get("http-equiv", "").lower()
+                    and not node.attrs.get("http-equiv", "").lower()  # pyright: ignore
                     == "content-language"
                 ):
                     continue
-                return node.attrs[key]
+                return node.attrs[key]  # pyright: ignore
     return ""
 
 

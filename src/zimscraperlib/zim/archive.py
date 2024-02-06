@@ -11,9 +11,9 @@
 
 from typing import Dict, Iterable, List, Optional
 
-import libzim.reader
-import libzim.search  # Query, Searcher
-import libzim.suggestion  # SuggestionSearcher
+import libzim.reader  # pyright: ignore
+import libzim.search  # Query, Searcher  # pyright: ignore
+import libzim.suggestion  # SuggestionSearcher  # pyright: ignore
 
 from zimscraperlib.zim._libkiwix import convertTags, parseMimetypeCounter
 from zimscraperlib.zim.items import Item

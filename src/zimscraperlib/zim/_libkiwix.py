@@ -17,7 +17,9 @@ from collections import namedtuple
 from typing import Dict, List, Optional, Tuple
 
 MimetypeAndCounter = namedtuple("MimetypeAndCounter", ["mimetype", "value"])
-CounterMap = Dict[type(MimetypeAndCounter.mimetype), type(MimetypeAndCounter.value)]
+CounterMap = Dict[
+    type(MimetypeAndCounter.mimetype), type(MimetypeAndCounter.value)  # pyright: ignore
+]
 
 
 def getline(src: io.StringIO, delim: Optional[bool] = None) -> Tuple[bool, str]:
@@ -45,10 +47,10 @@ def readFullMimetypeAndCounterString(  # noqa: N802
 
     Returns whether the source is EOF and the extracted string (or empty one)"""
     params = ""
-    eof, mtcStr = getline(src, ";")  # noqa: N806
+    eof, mtcStr = getline(src, ";")  # noqa: N806  # pyright: ignore
     if mtcStr.find("=") == -1:
         while params.count("=") != 2:  # noqa: PLR2004
-            eof, params = getline(src, ";")
+            eof, params = getline(src, ";")  # pyright: ignore
             if params.count("=") == 2:  # noqa: PLR2004
                 mtcStr += ";" + params  # noqa: N806
             if eof:

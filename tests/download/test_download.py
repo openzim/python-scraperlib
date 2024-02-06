@@ -26,7 +26,9 @@ def assert_downloaded_file(url, file):
 
 
 def assert_headers(returned_headers):
-    assert isinstance(returned_headers, requests.structures.CaseInsensitiveDict)
+    assert isinstance(
+        returned_headers, requests.structures.CaseInsensitiveDict  # pyright: ignore
+    )
     assert returned_headers["Content-Type"] == "image/x-icon"
 
 
@@ -155,12 +157,12 @@ def test_youtube_download_nowait(tmp_path):
             BestMp4.get_options(target_dir=tmp_path),
             wait=False,
         )
-        assert future.running()
+        assert future.running()  # pyright: ignore
         assert not yt_downloader.executor._shutdown
         done, not_done = concurrent.futures.wait(
-            [future], return_when=concurrent.futures.ALL_COMPLETED
+            [future], return_when=concurrent.futures.ALL_COMPLETED  # pyright: ignore
         )
-        assert future.exception() is None
+        assert future.exception() is None  # pyright: ignore
         assert len(done) == 1
         assert len(not_done) == 0
 

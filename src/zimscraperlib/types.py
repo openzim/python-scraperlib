@@ -50,9 +50,11 @@ def get_mime_for_name(
         filename = pathlib.Path(filename)
         if not filename.suffix:
             return no_ext_to
-        return mimetypes.guess_type(f"{filename.stem}{filename.suffix}")[0] or fallback
+        return (
+            mimetypes.guess_type(f"{filename.stem}{filename.suffix}")[0] or fallback
+        )  # pyright: ignore
     except Exception:
-        return fallback
+        return fallback  # pyright: ignore
 
 
 def init_types():

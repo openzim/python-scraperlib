@@ -13,7 +13,7 @@ import io
 import pathlib
 from typing import Optional, Union
 
-import libzim.writer
+import libzim.writer  # pyright: ignore
 import requests
 
 from zimscraperlib.download import _get_retry_adapter, stream_file
@@ -58,10 +58,12 @@ class FileLikeProvider(libzim.writer.ContentProvider):
             self.fileobj.seek(0, io.SEEK_SET)
 
     def get_size(self) -> int:
-        return self.size
+        return self.size  # pyright: ignore
 
     def gen_blob(self) -> libzim.writer.Blob:
-        yield libzim.writer.Blob(self.fileobj.getvalue())  # pragma: nocover
+        yield libzim.writer.Blob(
+            self.fileobj.getvalue()  # pyright: ignore
+        )  # pragma: nocover
 
 
 class URLProvider(libzim.writer.ContentProvider):
@@ -91,7 +93,7 @@ class URLProvider(libzim.writer.ContentProvider):
             return None
 
     def get_size(self) -> int:
-        return self.size
+        return self.size  # pyright: ignore
 
     def gen_blob(self) -> libzim.writer.Blob:  # pragma: nocover
         for chunk in self.resp.iter_content(10 * 1024):

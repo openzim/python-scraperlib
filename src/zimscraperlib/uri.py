@@ -9,31 +9,31 @@ from zimscraperlib.misc import first
 
 def rebuild_uri(
     uri: urllib.parse.ParseResult,
-    scheme: str = None,  # noqa: RUF013
-    username: str = None,  # noqa: RUF013
-    password: str = None,  # noqa: RUF013
-    hostname: str = None,  # noqa: RUF013
-    port: Union[str, int] = None,  # noqa: RUF013
-    path: str = None,  # noqa: RUF013
-    params: str = None,  # noqa: RUF013
-    query: str = None,  # noqa: RUF013
-    fragment: str = None,  # noqa: RUF013
+    scheme: str = None,  # noqa: RUF013  # pyright: ignore
+    username: str = None,  # noqa: RUF013  # pyright: ignore
+    password: str = None,  # noqa: RUF013  # pyright: ignore
+    hostname: str = None,  # noqa: RUF013  # pyright: ignore
+    port: Union[str, int] = None,  # noqa: RUF013  # pyright: ignore
+    path: str = None,  # noqa: RUF013  # pyright: ignore
+    params: str = None,  # noqa: RUF013  # pyright: ignore
+    query: str = None,  # noqa: RUF013  # pyright: ignore
+    fragment: str = None,  # noqa: RUF013  # pyright: ignore
     failsafe: bool = False,  # noqa: FBT001, FBT002
 ) -> urllib.parse.ParseResult:
     """new ParseResult named tuple from uri with requested part updated"""
     try:
-        username = first(username, uri.username, "")
-        password = first(password, uri.password, "")
-        hostname = first(hostname, uri.hostname, "")
-        port = first(port, uri.port, "")
+        username = first(username, uri.username, "")  # pyright: ignore
+        password = first(password, uri.password, "")  # pyright: ignore
+        hostname = first(hostname, uri.hostname, "")  # pyright: ignore
+        port = first(port, uri.port, "")  # pyright: ignore
         netloc = (
             f"{username}{':' if password else ''}{password}"
             f"{'@' if username or password else ''}{hostname}"
             f"{':' if port else ''}{port}"
         )
-        return urllib.parse.urlparse(
-            urllib.parse.urlunparse(
-                (
+        return urllib.parse.urlparse(  # pyright: ignore
+            urllib.parse.urlunparse(  # pyright: ignore
+                (  # pyright: ignore
                     first(scheme, uri.scheme),
                     netloc,
                     first(path, uri.path),

@@ -25,10 +25,12 @@ def convert_image(
      to RGB. ex: RGB, ARGB, CMYK (and other PIL colorspaces)"""
 
     colorspace = params.get("colorspace")  # requested colorspace
-    fmt = params.pop("fmt").upper() if "fmt" in params else None  # requested format
+    fmt = (
+        params.pop("fmt").upper() if "fmt" in params else None  # pyright: ignore
+    )  # requested format
     if not fmt:
         fmt = format_for(dst)
-    with PIL.Image.open(src) as image:
+    with PIL.Image.open(src) as image:  # pyright: ignore
         if image.mode == "RGBA" and fmt in ALPHA_NOT_SUPPORTED or colorspace:
             image = image.convert(colorspace or "RGB")  # noqa: PLW2901
         save_image(image, dst, fmt, **params)
@@ -39,13 +41,13 @@ def create_favicon(src: pathlib.Path, dst: pathlib.Path) -> None:
     if dst.suffix != ".ico":
         raise ValueError("favicon extension must be ICO")
 
-    img = PIL.Image.open(src)
+    img = PIL.Image.open(src)  # pyright: ignore
     w, h = img.size
     # resize image to square first
     if w != h:
         size = min([w, h])
         resized = dst.parent.joinpath(f"{src.stem}.tmp.{src.suffix}")
         resize_image(src, size, size, resized, "contain")
-        img = PIL.Image.open(resized)
+        img = PIL.Image.open(resized)  # pyright: ignore
     # now convert to ICO
     save_image(img, dst, "ICO")

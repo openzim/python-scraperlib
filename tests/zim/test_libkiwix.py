@@ -19,10 +19,13 @@ def test_geline_nodelim():
 
 def test_getline():
     ins = io.StringIO("text/javascript=8;text/html=3;application/warc-headers=28364;")
-    assert getline(ins, ";") == (False, "text/javascript=8")
-    assert getline(ins, ";") == (False, "text/html=3")
-    assert getline(ins, ";") == (False, "application/warc-headers=28364")
-    assert getline(ins, ";") == (True, "")
+    assert getline(ins, ";") == (False, "text/javascript=8")  # pyright: ignore
+    assert getline(ins, ";") == (False, "text/html=3")  # pyright: ignore
+    assert getline(ins, ";") == (  # pyright: ignore
+        False,
+        "application/warc-headers=28364",
+    )
+    assert getline(ins, ";") == (True, "")  # pyright: ignore
 
 
 @pytest.mark.parametrize(

@@ -53,7 +53,12 @@ def validate_date(name: str, value: Union[datetime.datetime, datetime.date, str]
         elif isinstance(value, str):
             match = re.match(r"(?P<year>\d{4})-(?P<month>\d{2})-(?P<day>\d{2})", value)
             try:
-                datetime.date(**{k: int(v) for k, v in match.groupdict().items()})
+                datetime.date(
+                    **{
+                        k: int(v)
+                        for k, v in match.groupdict().items()  # pyright: ignore
+                    }
+                )
             except Exception as exc:
                 raise ValueError(f"Invalid {name} format: {exc}")  # noqa: B904
 

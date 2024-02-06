@@ -11,7 +11,7 @@ import tempfile
 import urllib.parse
 from typing import Dict, Union
 
-import libzim.writer
+import libzim.writer  # pyright: ignore
 
 from zimscraperlib.download import stream_file
 from zimscraperlib.zim.providers import (
