@@ -251,3 +251,4 @@ $RECYCLE.BIN/
 
 # ignore all vscode, this is not standard configuration in this place
 .vscode
+src/libzim-stubs
