@@ -248,3 +248,6 @@ $RECYCLE.BIN/
 *.lnk
 
 # End of https://www.toptal.com/developers/gitignore/api/python,macos,windows,linux
+
+# ignore all vscode, this is not standard configuration in this place
+.vscode

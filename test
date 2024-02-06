@@ -1,4 +1,0 @@
-#!/bin/sh
-pip install pytest coverage pytest-cov
-
-PYTHONPATH=$(pwd)/src/ pytest "$@" tests/
