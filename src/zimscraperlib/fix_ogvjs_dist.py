@@ -34,7 +34,7 @@ def fix_source_dir(source_vendors_path: Union[pathlib.Path, str]):
 
 
 def run():
-    if len(sys.argv) < 2:  # noqa: PLR2004
+    if len(sys.argv) < 2:  # noqa: PLR2004 # pragma: no cover
         print(f"Usage: {sys.argv[0]} <source_vendors_path>")  # noqa: T201
         print(  # noqa: T201
             "\t<source_vendors_path>\tpath to your folder containing "
