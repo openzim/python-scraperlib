@@ -55,6 +55,9 @@ dev = [
   "zimscraperlib[check]",
 ]
 
+[project.scripts]
+fix_ogvjs_dist = "zimscraperlib.fix_ogvjs_dist:run"
+
 [tool.hatch.version]
 path = "src/zimscraperlib/__about__.py"
 
