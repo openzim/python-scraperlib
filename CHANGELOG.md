@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Using openZIM Python bootstrap conventions (including hatch-openzim plugin) #120
+- Suuport for Python 3.12, drop Python 3.7 #118
+- Replace "iso-369" iso639-lang by "iso639-lang" library
 
 ## [3.2.0] - 2023-12-16
 
