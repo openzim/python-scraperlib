@@ -205,7 +205,7 @@ def optimize_webp(
             save_image(webp_image, dst, fmt="WEBP", **params)  # pyright: ignore
         except Exception as exc:
             if src.resolve() != dst.resolve() and dst.exists():  # pyright: ignore
-                dst.unlink()  # pragma: nocover
+                dst.unlink()  # pragma: no cover
             raise exc
     return dst  # pyright: ignore
 
@@ -256,7 +256,7 @@ def optimize_gif(
 
     # remove dst if gifsicle failed and src is different from dst
     if gifsicle.returncode != 0 and src.resolve() != dst.resolve() and dst.exists():
-        dst.unlink()  # pragma: nocover
+        dst.unlink()  # pragma: no cover
 
     # raise error if unsuccessful
     gifsicle.check_returncode()

@@ -43,7 +43,7 @@ class Archive(libzim.reader.Archive):
         """List of ZIM tags, optionnaly expanded with libkiwix's hints"""
         try:
             tags_meta = self.get_text_metadata("Tags")
-        except RuntimeError:  # pragma: nocover
+        except RuntimeError:  # pragma: no cover
             tags_meta = ""
 
         if libkiwix:
