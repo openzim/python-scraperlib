@@ -46,7 +46,7 @@ class Item(libzim.writer.Item):
         return getattr(self, "mimetype", "")
 
     def get_hints(self) -> dict:
-        return getattr(self, "hints", dict())  # noqa: C408
+        return getattr(self, "hints", {})
 
 
 class StaticItem(Item):
@@ -117,7 +117,7 @@ class URLItem(StaticItem):
                 url, byte_stream=io.BytesIO(), only_first_block=True
             )
         except Exception as exc:
-            raise OSError(f"Unable to access URL at {url}: {exc}")  # noqa: B904
+            raise OSError(f"Unable to access URL at {url}: {exc}") from None
 
         # HTML content will be indexed.
         # we proxy the content in the Item to prevent double-download of the resource

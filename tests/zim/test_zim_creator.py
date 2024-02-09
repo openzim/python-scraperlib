@@ -166,7 +166,6 @@ def test_add_item_for_delete_fail(tmp_path, png_image):
     shutil.copyfile(png_image, local_path)
 
     def remove_source(item):
-        print("##########", "remove_source")  # noqa: T201
         os.remove(item.filepath)
 
     with Creator(fpath, "welcome").config_dev_metadata() as creator:

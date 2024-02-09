@@ -60,7 +60,7 @@ def validate_date(name: str, value: Union[datetime.datetime, datetime.date, str]
                     }
                 )
             except Exception as exc:
-                raise ValueError(f"Invalid {name} format: {exc}")  # noqa: B904
+                raise ValueError(f"Invalid {name} format: {exc}") from None
 
 
 def validate_language(name: str, value: Union[Iterable[str], str]):
@@ -98,7 +98,7 @@ def validate_tags(name: str, value: Union[Iterable[str], str]):
     """ensures Tags metadata is either one or a list of strings"""
     if name == "Tags" and (
         not isinstance(value, IterableT)
-        or not all([isinstance(tag, str) for tag in value])  # noqa: C419
+        or not all(isinstance(tag, str) for tag in value)
     ):
         raise ValueError(f"Invalid type(s) for {name}")
 

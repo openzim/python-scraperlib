@@ -107,7 +107,7 @@ class Creator(libzim.writer.Creator):
         ignore_duplicates: Optional[bool] = False,  # noqa: FBT002
     ):
         super().__init__(filename=filename)
-        self._metadata = dict()  # noqa: C408
+        self._metadata = {}
         self.__indexing_configured = False
         self.can_finish = True
 
@@ -137,11 +137,7 @@ class Creator(libzim.writer.Creator):
         return self
 
     def start(self):
-        if not all(
-            [  # noqa: C419
-                self._metadata.get(key) for key in MANDATORY_ZIM_METADATA_KEYS
-            ]  # noqa: C419, RUF100
-        ):
+        if not all(self._metadata.get(key) for key in MANDATORY_ZIM_METADATA_KEYS):
             raise ValueError("Mandatory metadata are not all set.")
 
         for name, value in self._metadata.items():

@@ -25,10 +25,9 @@ def get_media_info(src_path):
         "-of",
         "csv",
     ]
-    ffprobe = subprocess.run(  # noqa: UP022
+    ffprobe = subprocess.run(
         args,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        capture_output=True,
         text=True,
         check=False,
     )

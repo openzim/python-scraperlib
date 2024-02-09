@@ -14,7 +14,7 @@ def html_page():
     <meta charset="UTF-8" />
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <link rel="pingback" href="" />
-    <title>Kiwix lets you access free knowledge – even offline</title>
+    <title>Kiwix lets you access free knowledge - even offline</title>
     <meta name="description"
           content="Internet content for people without internet access.
           On computers, phone or raspberry hotspots: Wikipedia
@@ -22,4 +22,4 @@ def html_page():
 </head>
 <body>
 </html>
-"""  # noqa: RUF001
+"""

@@ -29,7 +29,7 @@ def test_getline():
 
 
 @pytest.mark.parametrize(
-    "counterStr, counterMap",
+    "counter_str, counter_map",
     [
         ("", empty),
         ("foo=1", {"foo": 1}),
@@ -77,6 +77,6 @@ def test_getline():
         ("text/html=50;;foo", {"text/html": 50}),
     ],
 )
-def test_counter_parsing(counterStr, counterMap):  # noqa: N803
+def test_counter_parsing(counter_str, counter_map):
     # https://github.com/kiwix/libkiwix/blob/master/test/counterParsing.cpp
-    assert parse(counterStr) == counterMap
+    assert parse(counter_str) == counter_map

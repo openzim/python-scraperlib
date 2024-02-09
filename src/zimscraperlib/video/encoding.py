@@ -32,11 +32,14 @@ def reencode(
 
     with tempfile.TemporaryDirectory() as tmp_dir:
         tmp_path = pathlib.Path(tmp_dir).joinpath(f"video.tmp{dst_path.suffix}")
-        args = (
-            ["ffmpeg", "-y", "-i", f"file:{src_path}"]  # noqa: RUF005
-            + ffmpeg_args
-            + [f"file:{tmp_path}"]
-        )
+        args = [
+            "ffmpeg",
+            "-y",
+            "-i",
+            f"file:{src_path}",
+            *ffmpeg_args,
+            f"file:{tmp_path}",
+        ]
         logger.debug(
             f"Encode {src_path} -> {dst_path} video format = {dst_path.suffix}"
         )

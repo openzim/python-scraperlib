@@ -5,7 +5,9 @@ import inspect
 import io
 import os
 import pathlib
+import re
 import shutil
+from subprocess import CalledProcessError
 
 import piexif
 import pytest
@@ -279,7 +281,7 @@ def test_change_image_format(
     assert dst_image.format == dst_fmt
 
 
-def test_change_image_format_defaults(png_image, jpg_image, tmp_path):  # noqa: ARG001
+def test_change_image_format_defaults(png_image, tmp_path):
     # PNG to JPEG (loosing alpha)
     dst = tmp_path.joinpath(f"{png_image.stem}.jpg")
     convert_image(png_image, dst)
@@ -521,7 +523,7 @@ def test_dynamic_jpeg_quality(jpg_image, tmp_path):
 
 
 def test_ensure_matches(webp_image):
-    with pytest.raises(ValueError, match="is not of format"):
+    with pytest.raises(ValueError, match=re.escape("is not of format")):
         ensure_matches(webp_image, "PNG")
 
 
@@ -547,13 +549,15 @@ def test_optimize_webp_gif_failure(tmp_path, webp_image, gif_image):
     dst = tmp_path.joinpath("image.img")
 
     # webp
-    with pytest.raises(Exception):  # noqa: B017
+    with pytest.raises(
+        TypeError, match=re.escape("an integer is required (got type str)")
+    ):
         optimize_webp(webp_image, dst, lossless="bad")  # pyright: ignore
     assert not dst.exists()
 
     # gif
     dst.touch()  # fake temp file created during optim (actually fails before)
-    with pytest.raises(Exception):  # noqa: B017
+    with pytest.raises(CalledProcessError):
         optimize_gif(gif_image, dst, optimize_level="bad")  # pyright: ignore
     assert not dst.exists()
 
@@ -561,7 +565,7 @@ def test_optimize_webp_gif_failure(tmp_path, webp_image, gif_image):
 def test_wrong_extension_optim(tmp_path, png_image):
     dst = tmp_path.joinpath("image.jpg")
     shutil.copy(png_image, dst)
-    with pytest.raises(Exception):  # noqa: B017
+    with pytest.raises(ValueError, match=re.escape("is not of format JPEG")):
         optimize_jpeg(dst, dst)
 
 

@@ -206,6 +206,8 @@ ban-relative-imports = "all"
 [tool.ruff.lint.per-file-ignores]
 # Tests can use magic values, assertions, and relative imports
 "tests/**/*" = ["PLR2004", "S101", "TID252"]
+# _libkiwix mimics libkiwix C++ code, names obey C++ conventions
+"src/zimscraperlib/zim/_libkiwix.py" = ["N802", "N803", "N806"]
 
 [tool.pytest.ini_options]
 minversion = "7.3"
