@@ -582,3 +582,15 @@ def test_is_valid_image(png_image, png_image2, jpg_image, font):
         assert is_valid_image(fh.read(), "PNG", (48, 48))
         fh.seek(0)
         assert is_valid_image(io.BytesIO(fh.read()), "PNG", (48, 48))
+
+
+def test_optimize_gif_no_optimize_level(gif_image, tmp_path):
+    optimize_gif(gif_image, tmp_path / "out.gif", delete_src=False, optimize_level=None)
+
+
+def test_optimize_gif_no_no_extensions(gif_image, tmp_path):
+    optimize_gif(gif_image, tmp_path / "out.gif", delete_src=False, no_extensions=None)
+
+
+def test_optimize_gif_no_interlace(gif_image, tmp_path):
+    optimize_gif(gif_image, tmp_path / "out.gif", delete_src=False, interlace=None)
