@@ -44,7 +44,6 @@ def prepare_ogvjs_folder(tmp_path, videojs_url, ogvjs_url, videojs_ogvjs_url):
     tmp_path.joinpath(member).rename(tmp_path.joinpath("videojs-ogvjs.js"))
 
 
-@pytest.mark.installed
 def test_installed_script():
     kwargs = {"universal_newlines": True, "stdout": subprocess.PIPE}
     script = subprocess.run(["/usr/bin/env", "fix_ogvjs_dist"], **kwargs, check=False)

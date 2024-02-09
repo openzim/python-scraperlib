@@ -35,7 +35,7 @@ jobs:
           pip install -e .[test,scripts]
 
       - name: Run the tests
-        run: inv coverage --args "--runslow --runinstalled -vvv"
+        run: inv coverage --args "--runslow -vvv"
 
       - name: Upload coverage report to codecov
         if: matrix.python == '3.12'
