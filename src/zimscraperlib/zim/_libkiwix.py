@@ -64,11 +64,10 @@ def parseASingleMimetypeCounter(string: str) -> MimetypeAndCounter:
     if k != len(string) - 1:
         mimeType = string[:k]
         counter = string[k + 1 :]
-        if counter:
-            try:
-                return MimetypeAndCounter(mimeType, int(counter))
-            except ValueError:
-                pass  # value is not castable to int
+        try:
+            return MimetypeAndCounter(mimeType, int(counter))
+        except ValueError:
+            pass  # value is not castable to int
     return MimetypeAndCounter("", 0)
 
 

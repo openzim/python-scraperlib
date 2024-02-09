@@ -69,6 +69,7 @@ def test_getline():
         ),
         ("text/html", empty),
         ("text/html=", empty),
+        ("text/html=0", {"text/html": 0}),
         ("text/html=foo", empty),
         ("text/html=123foo", empty),
         ("text/html=50;foo", {"text/html": 50}),
