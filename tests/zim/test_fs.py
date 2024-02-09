@@ -58,7 +58,13 @@ def test_make_zim_file_fail_noillustration(build_data):
     assert not build_data["fpath"].exists()
 
 
-def test_make_zim_file_working(build_data, png_image):
+@pytest.mark.parametrize(
+    "with_redirects, with_redirects_file",
+    [(True, True), (True, False), (False, True), (False, False)],
+)
+def test_make_zim_file_working(
+    build_data, png_image, with_redirects, with_redirects_file
+):
     build_data["build_dir"].mkdir()
 
     # add an image
@@ -73,11 +79,20 @@ def test_make_zim_file_working(build_data, png_image):
     with open(build_data["build_dir"] / "app.js", "w") as fh:
         fh.write("console.log(window);")
 
+    if not with_redirects:
+        build_data.pop("redirects")
+    if not with_redirects_file:
+        build_data.pop("redirects_file")
     make_zim_file(**build_data)
     assert build_data["fpath"].exists()
     reader = Archive(build_data["fpath"])
-    # welcome (actual) and two redirs
-    assert reader.entry_count == 8  # includes redirect
+    expected_entry_count = 4
+    if with_redirects:
+        expected_entry_count += 1
+    if with_redirects_file:
+        expected_entry_count += 3
+
+    assert reader.entry_count == expected_entry_count
 
     assert reader.get_item("style.css").mimetype == "text/css"
     assert reader.get_item("app.js").mimetype in (
