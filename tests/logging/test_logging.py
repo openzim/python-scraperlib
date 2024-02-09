@@ -142,3 +142,14 @@ def test_level_fallback(random_id, tmp_path):
     assert_message_file(logger, log_file, "warning", False)
     assert_message_file(logger, log_file, "error", False)
     assert_message_file(logger, log_file, "critical", True)
+
+
+def test_no_output(random_id):
+    logger = getLogger(name=random_id, console=None, file=None)
+    logger.error("error")
+
+
+def test_additional_deps(random_id):
+    assert logging.getLogger("something").level == logging.NOTSET
+    getLogger(name=random_id, additional_deps=["something"], console=None, file=None)
+    assert logging.getLogger("something").level == logging.WARNING
