@@ -187,6 +187,8 @@ class Creator(libzim.writer.Creator):
         mimetype: str = "text/plain;charset=UTF-8",
     ):
         self.validate_metadata(name, content)
+        if name == "Date" and isinstance(content, (datetime.date, datetime.datetime)):
+            content = content.strftime("%Y-%m-%d").encode("UTF-8")
         if name == "Tags" and not isinstance(content, str):
             content = ";".join(content)
         super().add_metadata(name, content, mimetype)
