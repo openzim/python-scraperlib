@@ -187,11 +187,8 @@ class Creator(libzim.writer.Creator):
         mimetype: str = "text/plain;charset=UTF-8",
     ):
         self.validate_metadata(name, content)
-        # handle necessary type conversions
         if name == "Tags" and not isinstance(content, str):
-            # join list of tags into a single string
             content = ";".join(content)
-        # NOTE: conversion of "Date" is handled in python-libzim
         super().add_metadata(name, content, mimetype)
 
     def config_metadata(
