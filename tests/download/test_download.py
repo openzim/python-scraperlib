@@ -58,7 +58,7 @@ def test_no_output_supplied(valid_http_url):
         stream_file(url=valid_http_url)
 
 
-def test_first_block_download(valid_http_url):
+def test_first_block_download_default_session(valid_http_url):
     byte_stream = io.BytesIO()
     size, ret = stream_file(
         url=valid_http_url, byte_stream=byte_stream, only_first_block=True
@@ -68,6 +68,29 @@ def test_first_block_download(valid_http_url):
     # otherwise, expected size is default block size
     expected = 3062 if ret.get("Content-Encoding") == "gzip" else 1024
     assert len(byte_stream.read()) <= expected
+
+
+def test_first_block_download_custom_session(mocker, valid_http_url):
+    byte_stream = io.BytesIO()
+    custom_session = mocker.Mock(spec=requests.Session)
+
+    expected_response = requests.Response()
+    expected_response.status_code = 200
+    expected_response.raw = io.BytesIO(b"Whatever\n")
+    custom_session.get.return_value = expected_response
+
+    mocker.patch("requests.Session")
+    stream_file(
+        url=valid_http_url,
+        byte_stream=byte_stream,
+        only_first_block=True,
+        session=custom_session,
+    )
+    # check that custom session has been used
+    custom_session.get.assert_called_once_with(
+        valid_http_url, stream=True, proxies=None, headers=None
+    )
+    requests.Session.assert_not_called()  # pyright: ignore
 
 
 @pytest.mark.slow
@@ -190,3 +213,61 @@ def test_youtube_download_contextmanager(tmp_path):
         )
     assert yt_downloader.executor._shutdown
     assert tmp_path.joinpath("video.mp4").exists()  # videmo doesn't offer webm
+
+
+@pytest.fixture
+def target_dir() -> pathlib.Path:
+    return pathlib.Path("adir1")
+
+
+@pytest.fixture
+def filepath() -> pathlib.Path:
+    return pathlib.Path("adir2/afile")
+
+
+@pytest.fixture
+def custom_outtmpl() -> str:
+    return "custom.%(ext)s"
+
+
+def test_get_options_target_dir(target_dir):
+    options = BestWebm.get_options(target_dir=target_dir)
+    assert options["outtmpl"] == "adir1/video.%(ext)s"
+
+
+def test_get_options_filepath(filepath):
+    options = BestWebm.get_options(filepath=filepath)
+    assert options["outtmpl"] == "adir2/afile"
+
+
+def test_get_options_target_dir_filepath(target_dir, filepath):
+    options = BestWebm.get_options(target_dir=target_dir, filepath=filepath)
+    assert options["outtmpl"] == "adir1/adir2/afile"
+
+
+def test_get_options_override_outtmpl_no_other_vars(custom_outtmpl):
+    original = BestWebm.get_options()
+    overriden = BestWebm.get_options(outtmpl=custom_outtmpl)
+    assert "outtmpl" in original
+    assert "outtmpl" in overriden
+    for key, value in original.items():
+        if key != "outtmpl":
+            assert overriden[key] == value
+        else:
+            assert overriden[key] == custom_outtmpl
+
+
+def test_get_options_override_outtmpl_other_vars(target_dir, filepath, custom_outtmpl):
+    original = BestWebm.get_options(target_dir=target_dir, filepath=filepath)
+    overriden = BestWebm.get_options(
+        target_dir=target_dir,
+        filepath=filepath,
+        outtmpl=custom_outtmpl,
+    )
+    assert "outtmpl" in original
+    assert "outtmpl" in overriden
+    for key, value in original.items():
+        if key != "outtmpl":
+            assert overriden[key] == value
+        else:
+            assert overriden[key] == custom_outtmpl
