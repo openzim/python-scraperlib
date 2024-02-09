@@ -95,7 +95,7 @@ class URLProvider(libzim.writer.ContentProvider):
     def get_size(self) -> int:
         return self.size  # pyright: ignore
 
-    def gen_blob(self) -> libzim.writer.Blob:
+    def gen_blob(self) -> libzim.writer.Blob:  # pragma: no cover
         for chunk in self.resp.iter_content(10 * 1024):
             if chunk:
                 yield libzim.writer.Blob(chunk)
