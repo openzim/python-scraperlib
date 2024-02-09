@@ -7,7 +7,7 @@
 import logging
 import pathlib
 import sys
-from typing import Union
+from typing import List, Union
 
 logging.basicConfig(format="%(levelname)s:%(message)s", level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -33,16 +33,17 @@ def fix_source_dir(source_vendors_path: Union[pathlib.Path, str]):
     logger.info("all done.")
 
 
-def run():
-    if len(sys.argv) < 2:  # noqa: PLR2004 # pragma: no cover
-        print(f"Usage: {sys.argv[0]} <source_vendors_path>")  # noqa: T201
+def run(args: List[str] = sys.argv):
+    if len(args) < 2:  # noqa: PLR2004
+        print(f"Usage: {args[0]} <source_vendors_path>")  # noqa: T201
         print(  # noqa: T201
             "\t<source_vendors_path>\tpath to your folder containing "
             "ogvjs/videojs/videojs-ogvjs."
         )
-        sys.exit(1)
-    return sys.exit(fix_source_dir(sys.argv[1]))
+        return 1
+    fix_source_dir(args[1])
+    return 0
 
 
 if __name__ == "__main__":
-    run()
+    sys.exit(run())
