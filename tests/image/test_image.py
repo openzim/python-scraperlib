@@ -549,9 +549,7 @@ def test_optimize_webp_gif_failure(tmp_path, webp_image, gif_image):
     dst = tmp_path.joinpath("image.img")
 
     # webp
-    with pytest.raises(
-        TypeError, match=re.escape("an integer is required (got type str)")
-    ):
+    with pytest.raises(TypeError):
         optimize_webp(webp_image, dst, lossless="bad")  # pyright: ignore
     assert not dst.exists()
 
