@@ -33,6 +33,7 @@ def reencode(
     with tempfile.TemporaryDirectory() as tmp_dir:
         tmp_path = pathlib.Path(tmp_dir).joinpath(f"video.tmp{dst_path.suffix}")
         args = [
+            "/usr/bin/env",
             "ffmpeg",
             "-y",
             "-i",

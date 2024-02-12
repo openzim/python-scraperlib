@@ -239,7 +239,7 @@ def optimize_gif(
     ensure_matches(src, "GIF")
 
     # use gifsicle
-    args = ["gifsicle"]
+    args = ["/usr/bin/env", "gifsicle"]
     if optimize_level:
         args += [f"-O{optimize_level}"]
     if max_colors:

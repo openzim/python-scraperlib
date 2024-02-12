@@ -13,6 +13,7 @@ def get_media_info(src_path):
     bitrate: file's main bitrate"""
 
     args = [
+        "/usr/bin/env",
         "ffprobe",
         "-i",
         f"file:{src_path}",
