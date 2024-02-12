@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # vim: ai ts=4 sts=4 et sw=4 nu
 
+from typing import ClassVar, Dict, Optional, Union
+
 """ presets for ImageOptimizer in zimscraperlib.image.optimization module """
 
 preset_type = "image"
@@ -18,7 +20,7 @@ class WebpLow:
     ext = "webp"
     mimetype = f"{preset_type}/webp"
 
-    options = {  # noqa: RUF012
+    options: ClassVar[Dict[str, Optional[Union[str, bool, int]]]] = {
         "lossless": False,
         "quality": 40,
         "method": 6,
@@ -37,7 +39,7 @@ class WebpMedium:
     ext = "webp"
     mimetype = f"{preset_type}/webp"
 
-    options = {  # noqa: RUF012
+    options: ClassVar[Dict[str, Optional[Union[str, bool, int]]]] = {
         "lossless": False,
         "quality": 50,
         "method": 6,
@@ -56,7 +58,7 @@ class WebpHigh:
     ext = "webp"
     mimetype = f"{preset_type}/webp"
 
-    options = {  # noqa: RUF012
+    options: ClassVar[Dict[str, Optional[Union[str, bool, int]]]] = {
         "lossless": False,
         "quality": 90,
         "method": 6,
@@ -77,7 +79,7 @@ class GifLow:
     ext = "gif"
     mimetype = f"{preset_type}/gif"
 
-    options = {  # noqa: RUF012
+    options: ClassVar[Dict[str, Optional[Union[str, bool, int]]]] = {
         "optimize_level": 3,
         "max_colors": 256,
         "lossiness": 80,
@@ -100,7 +102,7 @@ class GifMedium:
     ext = "gif"
     mimetype = f"{preset_type}/gif"
 
-    options = {  # noqa: RUF012
+    options: ClassVar[Dict[str, Optional[Union[str, bool, int]]]] = {
         "optimize_level": 3,
         "lossiness": 20,
         "no_extensions": True,
@@ -122,7 +124,7 @@ class GifHigh:
     ext = "gif"
     mimetype = f"{preset_type}/gif"
 
-    options = {  # noqa: RUF012
+    options: ClassVar[Dict[str, Optional[Union[str, bool, int]]]] = {
         "optimize_level": 2,
         "lossiness": None,
         "no_extensions": True,
@@ -141,7 +143,7 @@ class PngLow:
     ext = "png"
     mimetype = f"{preset_type}/png"
 
-    options = {  # noqa: RUF012
+    options: ClassVar[Dict[str, Optional[Union[str, bool, int]]]] = {
         "reduce_colors": True,
         "remove_transparency": False,
         "max_colors": 256,
@@ -160,7 +162,7 @@ class PngMedium:
     ext = "png"
     mimetype = f"{preset_type}/png"
 
-    options = {  # noqa: RUF012
+    options: ClassVar[Dict[str, Optional[Union[str, bool, int]]]] = {
         "reduce_colors": False,
         "remove_transparency": False,
         "fast_mode": False,
@@ -178,7 +180,7 @@ class PngHigh:
     ext = "png"
     mimetype = f"{preset_type}/png"
 
-    options = {  # noqa: RUF012
+    options: ClassVar[Dict[str, Optional[Union[str, bool, int]]]] = {
         "reduce_colors": False,
         "remove_transparency": False,
         "fast_mode": True,
@@ -197,7 +199,7 @@ class JpegLow:
     ext = "png"
     mimetype = f"{preset_type}/png"
 
-    options = {  # noqa: RUF012
+    options: ClassVar[Dict[str, Optional[Union[str, bool, int]]]] = {
         "quality": 45,
         "keep_exif": False,
         "fast_mode": True,
@@ -216,7 +218,7 @@ class JpegMedium:
     ext = "jpg"
     mimetype = f"{preset_type}/jpeg"
 
-    options = {  # noqa: RUF012
+    options: ClassVar[Dict[str, Optional[Union[str, bool, int]]]] = {
         "quality": 65,
         "keep_exif": False,
         "fast_mode": True,
@@ -235,7 +237,7 @@ class JpegHigh:
     ext = "jpg"
     mimetype = f"{preset_type}/jpeg"
 
-    options = {  # noqa: RUF012
+    options: ClassVar[Dict[str, Optional[Union[str, bool, int]]]] = {
         "quality": 80,
         "keep_exif": True,
         "fast_mode": True,

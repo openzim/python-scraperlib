@@ -7,7 +7,7 @@ import io
 import pathlib
 import subprocess
 from concurrent.futures import Future, ThreadPoolExecutor
-from typing import Dict, Optional, Union
+from typing import ClassVar, Dict, Optional, Union
 
 import requests
 import yt_dlp as youtube_dl
@@ -65,8 +65,8 @@ class YoutubeDownloader:
 
 
 class YoutubeConfig(dict):
-    options = {}  # noqa: RUF012
-    defaults = {  # noqa: RUF012
+    options: ClassVar[Dict[str, Optional[Union[str, bool, int]]]] = {}
+    defaults: ClassVar[Dict[str, Optional[Union[str, bool, int]]]] = {
         "writethumbnail": True,
         "write_all_thumbnails": True,
         "writesubtitles": True,
@@ -94,6 +94,8 @@ class YoutubeConfig(dict):
     ):
         if "outtmpl" not in options:
             outtmpl = cls.options.get("outtmpl", cls.defaults["outtmpl"])
+            if not isinstance(outtmpl, str):
+                raise ValueError(f"outtmpl must be a a str, {outtmpl.__class__} found")
             if filepath:
                 outtmpl = str(filepath)
             # send output to target_dir
@@ -107,14 +109,14 @@ class YoutubeConfig(dict):
 
 
 class BestWebm(YoutubeConfig):
-    options = {  # noqa: RUF012
+    options: ClassVar[Dict[str, Optional[Union[str, bool, int]]]] = {
         "preferredcodec": "webm",
         "format": "best[ext=webm]/bestvideo[ext=webm]+bestaudio[ext=webm]/best",
     }
 
 
 class BestMp4(YoutubeConfig):
-    options = {  # noqa: RUF012
+    options: ClassVar[Dict[str, Optional[Union[str, bool, int]]]] = {
         "preferredcodec": "mp4",
         "format": "best[ext=mp4]/bestvideo[ext=mp4]+bestaudio[ext=m4a]/best",
     }

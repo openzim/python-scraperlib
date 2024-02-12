@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # vim: ai ts=4 sts=4 et sw=4 nu
 
+from typing import ClassVar, Dict, Optional, Union
+
 from zimscraperlib.video.config import Config
 
 preset_type = "video"
@@ -18,7 +20,7 @@ class VoiceMp3Low(Config):
     ext = "mp3"
     mimetype = "audio/mp3"
 
-    options = {  # noqa: RUF012
+    options: ClassVar[Dict[str, Optional[Union[str, bool, int]]]] = {
         "-vn": "",  # remove video stream
         "-codec:a": "mp3",  # audio codec
         "-ar": "44100",  # audio sampling rate
@@ -39,7 +41,7 @@ class VideoWebmLow(Config):
     ext = "webm"
     mimetype = f"{preset_type}/webm"
 
-    options = {  # noqa: RUF012
+    options: ClassVar[Dict[str, Optional[Union[str, bool, int]]]] = {
         "-codec:v": "libvpx",  # video codec
         "-quality": "best",  # codec preset
         "-b:v": "300k",  # target video bitrate
@@ -67,7 +69,7 @@ class VideoMp4Low(Config):
     ext = "mp4"
     mimetype = f"{preset_type}/mp4"
 
-    options = {  # noqa: RUF012
+    options: ClassVar[Dict[str, Optional[Union[str, bool, int]]]] = {
         "-codec:v": "h264",  # video codec
         "-b:v": "300k",  # target video bitrate
         "-maxrate": "300k",  # max video bitrate
@@ -92,7 +94,7 @@ class VideoWebmHigh(Config):
     ext = "webm"
     mimetype = f"{preset_type}/webm"
 
-    options = {  # noqa: RUF012
+    options: ClassVar[Dict[str, Optional[Union[str, bool, int]]]] = {
         "-codec:v": "libvpx",  # video codec
         "-codec:a": "libvorbis",  # audio codec
         "-crf": "25",  # constant quality, lower value gives better qual and larger size
@@ -110,7 +112,7 @@ class VideoMp4High(Config):
     ext = "mp4"
     mimetype = f"{preset_type}/mp4"
 
-    options = {  # noqa: RUF012
+    options: ClassVar[Dict[str, Optional[Union[str, bool, int]]]] = {
         "-codec:v": "h264",  # video codec
         "-codec:a": "aac",  # audio codec
         "-crf": "20",  # constant quality, lower value gives better qual and larger size

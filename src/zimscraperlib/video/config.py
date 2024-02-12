@@ -1,14 +1,18 @@
 #!/usr/bin/env python3
 # vim: ai ts=4 sts=4 et sw=4 nu
 
+from typing import ClassVar, Dict, Optional, Union
+
 
 class Config(dict):
     VERSION = 1
     ext = "dat"
     mimetype = "application/data"
-    options = {}  # noqa: RUF012
-    defaults = {"-max_muxing_queue_size": "9999"}  # noqa: RUF012
-    mapping = {  # noqa: RUF012
+    options: ClassVar[Dict[str, Optional[Union[str, bool, int]]]] = {}
+    defaults: ClassVar[Dict[str, Optional[Union[str, bool, int]]]] = {
+        "-max_muxing_queue_size": "9999"
+    }
+    mapping: ClassVar[Dict[str, Optional[Union[str, bool, int]]]] = {
         "video_codec": "-codec:v",
         "audio_codec": "-codec:a",
         "max_video_bitrate": "-maxrate",

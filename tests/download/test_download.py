@@ -5,6 +5,7 @@ import concurrent.futures
 import io
 import pathlib
 import re
+from typing import ClassVar, Dict, Optional, Union
 
 import pytest
 import requests
@@ -228,6 +229,15 @@ def filepath() -> pathlib.Path:
 @pytest.fixture
 def custom_outtmpl() -> str:
     return "custom.%(ext)s"
+
+
+class WrongOuttmplType(BestWebm):
+    options: ClassVar[Dict[str, Optional[Union[str, bool, int]]]] = {"outtmpl": 123}
+
+
+def test_get_options_wrong_outtmpl_type():
+    with pytest.raises(ValueError):
+        WrongOuttmplType.get_options()
 
 
 def test_get_options_target_dir(target_dir):
