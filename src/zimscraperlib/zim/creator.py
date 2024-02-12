@@ -17,6 +17,7 @@
     - content stored on object
     - can be used to store a filepath and content read from it (not stored) """
 
+import collections.abc
 import datetime
 import pathlib
 import re
@@ -183,10 +184,19 @@ class Creator(libzim.writer.Creator):
     def add_metadata(
         self,
         name: str,
-        content: Union[str, bytes, datetime.date, datetime.datetime],
+        content: Union[str, bytes, datetime.date, datetime.datetime, Iterable[str]],
         mimetype: str = "text/plain;charset=UTF-8",
     ):
         self.validate_metadata(name, content)
+        if name == "Date" and isinstance(content, (datetime.date, datetime.datetime)):
+            content = content.strftime("%Y-%m-%d").encode("UTF-8")
+        if (
+            name == "Tags"
+            and not isinstance(content, str)
+            and not isinstance(content, bytes)
+            and isinstance(content, collections.abc.Iterable)
+        ):
+            content = ";".join(content)
         super().add_metadata(name, content, mimetype)
 
     def config_metadata(

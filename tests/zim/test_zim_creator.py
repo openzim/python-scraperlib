@@ -514,7 +514,26 @@ def test_check_metadata(tmp_path):
         Creator(tmp_path, "").config_dev_metadata(LongDescription="T" * 5000).start()
 
 
-def test_config_metadata(tmp_path, png_image):
+@pytest.mark.parametrize(
+    "tags",
+    [
+        (
+            "wikipedia;_category:wikipedia;_pictures:no;_videos:no;_details:yes;"
+            "_ftindex:yes"
+        ),
+        (
+            [
+                "wikipedia",
+                "_category:wikipedia",
+                "_pictures:no",
+                "_videos:no",
+                "_details:yes",
+                "_ftindex:yes",
+            ]
+        ),
+    ],
+)
+def test_config_metadata(tmp_path, png_image, tags):
     fpath = tmp_path / "test_config.zim"
     with open(png_image, "rb") as fh:
         png_data = fh.read()
@@ -529,8 +548,7 @@ def test_config_metadata(tmp_path, png_image):
         " from the english Wikipedia by 2009-11-10. The topics are...",
         Language="eng",
         License="CC-BY",
-        Tags="wikipedia;_category:wikipedia;_pictures:no;_videos:no;"
-        "_details:yes;_ftindex:yes",
+        Tags=tags,
         Flavour="nopic",
         Source="https://en.wikipedia.org/",
         Scraper="mwoffliner 1.2.3",
