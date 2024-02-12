@@ -514,7 +514,26 @@ def test_check_metadata(tmp_path):
         Creator(tmp_path, "").config_dev_metadata(LongDescription="T" * 5000).start()
 
 
-def test_config_metadata(tmp_path, png_image):
+@pytest.mark.parametrize(
+    "tags",
+    [
+        (
+            "wikipedia;_category:wikipedia;_pictures:no;_videos:no;_details:yes;"
+            "_ftindex:yes"
+        ),
+        (
+            [
+                "wikipedia",
+                "_category:wikipedia",
+                "_pictures:no",
+                "_videos:no",
+                "_details:yes",
+                "_ftindex:yes",
+            ]
+        ),
+    ],
+)
+def test_config_metadata(tmp_path, png_image, tags):
     fpath = tmp_path / "test_config.zim"
     with open(png_image, "rb") as fh:
         png_data = fh.read()
@@ -529,8 +548,7 @@ def test_config_metadata(tmp_path, png_image):
         " from the english Wikipedia by 2009-11-10. The topics are...",
         Language="eng",
         License="CC-BY",
-        Tags="wikipedia;_category:wikipedia;_pictures:no;_videos:no;"
-        "_details:yes;_ftindex:yes",
+        Tags=tags,
         Flavour="nopic",
         Source="https://en.wikipedia.org/",
         Scraper="mwoffliner 1.2.3",
@@ -571,54 +589,6 @@ def test_config_metadata(tmp_path, png_image):
     assert reader.get_text_metadata("Scraper") == "mwoffliner 1.2.3"
     assert reader.get_metadata("Illustration_48x48@1") == png_data
     assert reader.get_text_metadata("TestMetadata") == "Test Metadata"
-
-
-def test_creator_metadata_list_as_tags(tmp_path, png_image):
-    """
-    Test creator metadata setup when "Tags" is a list of strings.
-
-    The test case is based on test_config_metadata()
-
-    This is also a regression test for #125.
-    """
-    fpath = tmp_path / "test_config.zim"
-    with open(png_image, "rb") as fh:
-        png_data = fh.read()
-    creator = Creator(fpath, "").config_metadata(
-        Name="wikipedia_fr_football",
-        Title="English Wikipedia",
-        Creator="English speaking Wikipedia contributors",
-        Publisher="Wikipedia user Foobar",
-        Date="2009-11-21",
-        Description="All articles (without images) from the english Wikipedia",
-        LongDescription="This ZIM file contains all articles (without images)"
-        " from the english Wikipedia by 2009-11-10. The topics are...",
-        Language="eng",
-        License="CC-BY",
-        Tags=[
-            "wikipedia",
-            "_category:wikipedia",
-            "_pictures:no",
-            "_videos:no",
-            "_details:yes",
-            "_ftindex:yes",
-        ],
-        Flavour="nopic",
-        Source="https://en.wikipedia.org/",
-        Scraper="mwoffliner 1.2.3",
-        Illustration_48x48_at_1=png_data,
-        TestMetadata="Test Metadata",
-    )
-    with creator:
-        pass
-
-    assert fpath.exists()
-    reader = Archive(fpath)
-    assert (
-        reader.get_text_metadata("Tags")
-        == "wikipedia;_category:wikipedia;_pictures:no;_videos:no;"
-        "_details:yes;_ftindex:yes"
-    )
 
 
 @pytest.mark.parametrize(
