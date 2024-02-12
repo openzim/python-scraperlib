@@ -45,6 +45,11 @@ sudo apt install libmagic1 wget ffmpeg \
     libharfbuzz-dev libfribidi-dev libxcb1-dev gifsicle
 ```
 
+## Alpine
+```
+apk add ffmpeg gifsicle libmagic wget libjpeg
+```
+
 # Contribution
 
 This project adheres to openZIM's [Contribution Guidelines](https://github.com/openzim/overview/wiki/Contributing)
