@@ -31,7 +31,11 @@ def get_content_mimetype(content: bytes) -> str:
     """MIME Type of content retrieved from magic headers"""
 
     try:
-        detected_mime = magic.detect_from_content(content).mime_type
+        detected_mime = magic.from_buffer(content, mime=True)
+        if isinstance(
+            detected_mime, bytes
+        ):  # pragma: no cover (old python-magic versions where returning bytes)
+            detected_mime = detected_mime.decode()
     except UnicodeDecodeError:
         return "application/octet-stream"
     return MIME_OVERRIDES.get(detected_mime, detected_mime)
