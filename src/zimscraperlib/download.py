@@ -95,7 +95,7 @@ class YoutubeConfig(dict):
         if "outtmpl" not in options:
             outtmpl = cls.options.get("outtmpl", cls.defaults["outtmpl"])
             if not isinstance(outtmpl, str):
-                raise ValueError(f"outtmpl must be a a str, {outtmpl.__class__} found")
+                raise ValueError(f"outtmpl must be a a str, {type(outtmpl)} found")
             if filepath:
                 outtmpl = str(filepath)
             # send output to target_dir
