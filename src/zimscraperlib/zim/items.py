@@ -9,7 +9,7 @@ import pathlib
 import re
 import tempfile
 import urllib.parse
-from typing import Dict, Union
+from typing import Any
 
 import libzim.writer  # pyright: ignore
 
@@ -23,11 +23,9 @@ from zimscraperlib.zim.providers import (
 
 
 class Item(libzim.writer.Item):
-    """libzim.writer.Item returning props for path/title/mimetype plus a callback
+    """libzim.writer.Item returning props for path/title/mimetype"""
 
-    Calls your `callback` prop on deletion"""
-
-    def __init__(self, **kwargs: Dict[str, Union[str, bool, bytes]]):
+    def __init__(self, **kwargs: Any):
         super().__init__()
         for k, v in kwargs.items():
             setattr(self, k, v)
@@ -106,7 +104,7 @@ class URLItem(StaticItem):
         size, _ = stream_file(url.geturl(), fpath=fpath, byte_stream=stream)
         return fpath or stream, size
 
-    def __init__(self, url: str, **kwargs):
+    def __init__(self, url: str, **kwargs: Any):
         super().__init__(**kwargs)
         self.url = urllib.parse.urlparse(url)
         use_disk = getattr(self, "use_disk", False)

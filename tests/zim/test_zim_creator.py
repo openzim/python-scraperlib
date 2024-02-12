@@ -4,7 +4,6 @@
 import base64
 import datetime
 import io
-import os
 import pathlib
 import random
 import shutil
@@ -119,7 +118,7 @@ def test_noindexlanguage(tmp_path):
     creator = Creator(fpath, "welcome").config_dev_metadata(Language="bam")
     creator.config_indexing(False)
     with creator as creator:
-        creator.add_item(StaticItem(path="welcome", content="hello"))  # pyright: ignore
+        creator.add_item(StaticItem(path="welcome", content="hello"))
         creator.add_item_for("index", "Index", content="-", mimetype="text/html")
 
     reader = Archive(fpath)
@@ -165,15 +164,11 @@ def test_add_item_for_delete_fail(tmp_path, png_image):
     # copy file to local path
     shutil.copyfile(png_image, local_path)
 
-    def remove_source(item):
-        os.remove(item.filepath)
-
     with Creator(fpath, "welcome").config_dev_metadata() as creator:
         creator.add_item(
             StaticItem(
-                filepath=local_path,  # pyright: ignore
-                path="index",  # pyright: ignore
-                callback=remove_source,  # pyright: ignore
+                filepath=local_path,
+                path="index",
             ),
             callback=(delete_callback, local_path),
         )
@@ -188,18 +183,18 @@ def test_compression(tmp_path):
     with Creator(
         tmp_path / "test.zim", "welcome", compression="zstd"
     ).config_dev_metadata() as creator:
-        creator.add_item(StaticItem(path="welcome", content="hello"))  # pyright: ignore
+        creator.add_item(StaticItem(path="welcome", content="hello"))
 
     with Creator(
         fpath, "welcome", compression=Compression.zstd  # pyright: ignore
     ).config_dev_metadata() as creator:
-        creator.add_item(StaticItem(path="welcome", content="hello"))  # pyright: ignore
+        creator.add_item(StaticItem(path="welcome", content="hello"))
 
 
 def test_double_finish(tmp_path):
     fpath = tmp_path / "test.zim"
     with Creator(fpath, "welcome").config_dev_metadata() as creator:
-        creator.add_item(StaticItem(path="welcome", content="hello"))  # pyright: ignore
+        creator.add_item(StaticItem(path="welcome", content="hello"))
 
     # ensure we can finish an already finished creator
     creator.finish()
@@ -219,11 +214,7 @@ def test_sourcefile_removal(tmp_path, html_file):
         # copy html to folder
         src_path = pathlib.Path(tmpdir.name, "source.html")
         shutil.copyfile(html_file, src_path)
-        creator.add_item(
-            StaticItem(
-                filepath=src_path, path=src_path.name, ref=tmpdir  # pyright: ignore
-            )
-        )
+        creator.add_item(StaticItem(filepath=src_path, path=src_path.name, ref=tmpdir))
         del tmpdir
 
     assert not src_path.exists()
@@ -241,7 +232,7 @@ def test_sourcefile_removal_std(tmp_path, html_file):
                 StaticItem(
                     filepath=paths[-1],
                     path=paths[-1].name,
-                    mimetype="text/html",  # pyright: ignore
+                    mimetype="text/html",
                 ),
                 callback=(delete_callback, paths[-1]),
             )
