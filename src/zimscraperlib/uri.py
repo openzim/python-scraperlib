@@ -1,39 +1,39 @@
 """ URI handling module"""
 
 import urllib.parse
-from typing import Union
+from typing import Optional, Union
 
-from . import logger
-from .misc import first
+from zimscraperlib import logger
+from zimscraperlib.misc import first
 
 
 def rebuild_uri(
     uri: urllib.parse.ParseResult,
-    scheme: str = None,
-    username: str = None,
-    password: str = None,
-    hostname: str = None,
-    port: Union[str, int] = None,
-    path: str = None,
-    params: str = None,
-    query: str = None,
-    fragment: str = None,
-    failsafe: bool = False,
+    scheme: Optional[str] = None,
+    username: Optional[str] = None,
+    password: Optional[str] = None,
+    hostname: Optional[str] = None,
+    port: Optional[Union[str, int]] = None,
+    path: Optional[str] = None,
+    params: Optional[str] = None,
+    query: Optional[str] = None,
+    fragment: Optional[str] = None,
+    failsafe: bool = False,  # noqa: FBT001, FBT002
 ) -> urllib.parse.ParseResult:
     """new ParseResult named tuple from uri with requested part updated"""
     try:
-        username = first(username, uri.username, "")
-        password = first(password, uri.password, "")
-        hostname = first(hostname, uri.hostname, "")
-        port = first(port, uri.port, "")
+        username = first(username, uri.username, "")  # pyright: ignore
+        password = first(password, uri.password, "")  # pyright: ignore
+        hostname = first(hostname, uri.hostname, "")  # pyright: ignore
+        port = first(port, uri.port, "")  # pyright: ignore
         netloc = (
             f"{username}{':' if password else ''}{password}"
             f"{'@' if username or password else ''}{hostname}"
             f"{':' if port else ''}{port}"
         )
-        return urllib.parse.urlparse(
-            urllib.parse.urlunparse(
-                (
+        return urllib.parse.urlparse(  # pyright: ignore
+            urllib.parse.urlunparse(  # pyright: ignore
+                (  # pyright: ignore
                     first(scheme, uri.scheme),
                     netloc,
                     first(path, uri.path),

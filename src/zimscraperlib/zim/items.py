@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
 
@@ -12,10 +11,15 @@ import tempfile
 import urllib.parse
 from typing import Dict, Union
 
-import libzim.writer
+import libzim.writer  # pyright: ignore
 
-from ..download import stream_file
-from .providers import FileLikeProvider, FileProvider, StringProvider, URLProvider
+from zimscraperlib.download import stream_file
+from zimscraperlib.zim.providers import (
+    FileLikeProvider,
+    FileProvider,
+    StringProvider,
+    URLProvider,
+)
 
 
 class Item(libzim.writer.Item):
@@ -42,7 +46,7 @@ class Item(libzim.writer.Item):
         return getattr(self, "mimetype", "")
 
     def get_hints(self) -> dict:
-        return getattr(self, "hints", dict())
+        return getattr(self, "hints", {})
 
 
 class StaticItem(Item):
@@ -113,7 +117,7 @@ class URLItem(StaticItem):
                 url, byte_stream=io.BytesIO(), only_first_block=True
             )
         except Exception as exc:
-            raise IOError(f"Unable to access URL at {url}: {exc}")
+            raise OSError(f"Unable to access URL at {url}: {exc}") from None
 
         # HTML content will be indexed.
         # we proxy the content in the Item to prevent double-download of the resource

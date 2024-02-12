@@ -17,7 +17,9 @@ from collections import namedtuple
 from typing import Dict, List, Optional, Tuple
 
 MimetypeAndCounter = namedtuple("MimetypeAndCounter", ["mimetype", "value"])
-CounterMap = Dict[type(MimetypeAndCounter.mimetype), type(MimetypeAndCounter.value)]
+CounterMap = Dict[
+    type(MimetypeAndCounter.mimetype), type(MimetypeAndCounter.value)  # pyright: ignore
+]
 
 
 def getline(src: io.StringIO, delim: Optional[bool] = None) -> Tuple[bool, str]:
@@ -38,16 +40,18 @@ def getline(src: io.StringIO, delim: Optional[bool] = None) -> Tuple[bool, str]:
     return char == "", output
 
 
-def readFullMimetypeAndCounterString(src: io.StringIO) -> Tuple[bool, str]:
+def readFullMimetypeAndCounterString(
+    src: io.StringIO,
+) -> Tuple[bool, str]:
     """read a single mimetype-and-counter string from source
 
     Returns whether the source is EOF and the extracted string (or empty one)"""
     params = ""
-    eof, mtcStr = getline(src, ";")
+    eof, mtcStr = getline(src, ";")  # pyright: ignore
     if mtcStr.find("=") == -1:
-        while params.count("=") != 2:
-            eof, params = getline(src, ";")
-            if params.count("=") == 2:
+        while params.count("=") != 2:  # noqa: PLR2004
+            eof, params = getline(src, ";")  # pyright: ignore
+            if params.count("=") == 2:  # noqa: PLR2004
                 mtcStr += ";" + params
             if eof:
                 break
@@ -60,11 +64,10 @@ def parseASingleMimetypeCounter(string: str) -> MimetypeAndCounter:
     if k != len(string) - 1:
         mimeType = string[:k]
         counter = string[k + 1 :]
-        if counter:
-            try:
-                return MimetypeAndCounter(mimeType, int(counter))
-            except ValueError:
-                pass  # value is not castable to int
+        try:
+            return MimetypeAndCounter(mimeType, int(counter))
+        except ValueError:
+            pass  # value is not castable to int
     return MimetypeAndCounter("", 0)
 
 
@@ -72,7 +75,7 @@ def parseMimetypeCounter(
     counterData: str,
 ) -> CounterMap:
     """Mapping of MIME types with count for each from ZIM Counter metadata string"""
-    counters = dict()
+    counters = {}
     ss = io.StringIO(counterData)
     eof = False
     while not eof:

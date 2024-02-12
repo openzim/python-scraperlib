@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
 """ libzim Providers accepting a `ref` arg to keep it away from garbage collection
@@ -14,17 +13,17 @@ import io
 import pathlib
 from typing import Optional, Union
 
-import libzim.writer
+import libzim.writer  # pyright: ignore
 import requests
 
-from ..download import _get_retry_adapter, stream_file
+from zimscraperlib.download import _get_retry_adapter, stream_file
 
 
 class FileProvider(libzim.writer.FileProvider):
     def __init__(
         self,
         filepath: pathlib.Path,
-        size: Optional[int] = None,
+        size: Optional[int] = None,  # noqa: ARG002
         ref: Optional[object] = None,
     ):
         super().__init__(filepath)
@@ -59,10 +58,12 @@ class FileLikeProvider(libzim.writer.ContentProvider):
             self.fileobj.seek(0, io.SEEK_SET)
 
     def get_size(self) -> int:
-        return self.size
+        return self.size  # pyright: ignore
 
     def gen_blob(self) -> libzim.writer.Blob:
-        yield libzim.writer.Blob(self.fileobj.getvalue())  # pragma: nocover
+        yield libzim.writer.Blob(  # pragma: no cover
+            self.fileobj.getvalue()  # pyright: ignore
+        )
 
 
 class URLProvider(libzim.writer.ContentProvider):
@@ -92,9 +93,9 @@ class URLProvider(libzim.writer.ContentProvider):
             return None
 
     def get_size(self) -> int:
-        return self.size
+        return self.size  # pyright: ignore
 
-    def gen_blob(self) -> libzim.writer.Blob:  # pragma: nocover
+    def gen_blob(self) -> libzim.writer.Blob:  # pragma: no cover
         for chunk in self.resp.iter_content(10 * 1024):
             if chunk:
                 yield libzim.writer.Blob(chunk)

@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
 import pytest
@@ -40,7 +39,14 @@ def test_get_item(small_zim_file):
 def test_suggestions(small_zim_file):
     with Archive(small_zim_file) as zim:
         assert zim.get_suggestions_count("test") == 1
-        assert "main.html" in list(zim.get_suggestions("test"))
+        assert list(zim.get_suggestions("test")) == ["main.html"]
+
+
+def test_suggestions_end_index(small_zim_file):
+    with Archive(small_zim_file) as zim:
+        assert zim.get_suggestions_count("test") == 1
+        assert len(list(zim.get_suggestions("test", end=0))) == 0
+        assert list(zim.get_suggestions("test", end=1)) == ["main.html"]
 
 
 def test_search_no_fti(small_zim_file):
@@ -60,6 +66,15 @@ def test_search(real_zim_file):
     with Archive(real_zim_file) as zim:
         assert zim.get_search_results_count("test") > 0
         assert "A/Diesel_emissions_scandal" in list(zim.get_search_results("test"))
+
+
+@pytest.mark.slow
+def test_search_end_index(real_zim_file):
+    with Archive(real_zim_file) as zim:
+        assert list(zim.get_search_results("test", end=0)) == []
+        assert "A/Diesel_emissions_scandal" in list(
+            zim.get_search_results("test", end=1)
+        )
 
 
 def test_counters(small_zim_file):
@@ -98,7 +113,7 @@ def test_get_tags(small_zim_file, real_zim_file):
         assert zim.tags == zim.get_tags()
 
 
-def test_libkiwix_convertTags():
+def test_libkiwix_convert_tags():
     assert convertTags("") == [
         "_ftindex:no",
         "_pictures:yes",

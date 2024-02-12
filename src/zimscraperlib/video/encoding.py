@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
 
@@ -8,12 +7,17 @@ import shutil
 import subprocess
 import tempfile
 
-from .. import logger
-from ..logging import nicer_args_join
+from zimscraperlib import logger
+from zimscraperlib.logging import nicer_args_join
 
 
 def reencode(
-    src_path, dst_path, ffmpeg_args, delete_src=False, with_process=False, failsafe=True
+    src_path,
+    dst_path,
+    ffmpeg_args,
+    delete_src=False,  # noqa: FBT002
+    with_process=False,  # noqa: FBT002
+    failsafe=True,  # noqa: FBT002
 ):
     """Runs ffmpeg with given ffmpeg_args
 
@@ -28,20 +32,25 @@ def reencode(
 
     with tempfile.TemporaryDirectory() as tmp_dir:
         tmp_path = pathlib.Path(tmp_dir).joinpath(f"video.tmp{dst_path.suffix}")
-        args = (
-            ["ffmpeg", "-y", "-i", f"file:{src_path}"]
-            + ffmpeg_args
-            + [f"file:{tmp_path}"]
-        )
+        args = [
+            "/usr/bin/env",
+            "ffmpeg",
+            "-y",
+            "-i",
+            f"file:{src_path}",
+            *ffmpeg_args,
+            f"file:{tmp_path}",
+        ]
         logger.debug(
-            f"Encode {src_path} -> {dst_path} " f"video format = {dst_path.suffix}"
+            f"Encode {src_path} -> {dst_path} video format = {dst_path.suffix}"
         )
         logger.debug(nicer_args_join(args))
         ffmpeg = subprocess.run(
             args,
             stderr=subprocess.STDOUT,
             stdout=subprocess.PIPE,
-            universal_newlines=True,
+            text=True,
+            check=False,
         )
         if not failsafe:
             ffmpeg.check_returncode()

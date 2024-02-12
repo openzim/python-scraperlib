@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
 import locale
@@ -97,11 +96,11 @@ def test_selocale_unsupported(tmp_path):
             {
                 "iso-639-1": "",
                 "iso-639-2b": "afa",
-                "iso-639-2t": "afa",
+                "iso-639-2t": "",
                 "iso-639-3": "",
                 "iso-639-5": "afa",
                 "english": "Afro-Asiatic languages",
-                "iso_types": ["part2b", "part2t", "part5"],
+                "iso_types": ["part2b", "part5"],
                 "querytype": "purecode",
                 "query": "afa",
                 "native": "Afro-Asiatic languages",
@@ -112,7 +111,7 @@ def test_selocale_unsupported(tmp_path):
             {
                 "iso-639-1": "",
                 "iso-639-2b": "afa",
-                "iso-639-2t": "afa",
+                "iso-639-2t": "",
                 "iso-639-3": "",
                 "iso-639-5": "afa",
                 "english": "Afro-Asiatic languages",

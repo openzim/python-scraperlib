@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
 import base64
@@ -15,7 +14,7 @@ import tempfile
 import time
 
 import pytest
-from libzim.writer import Compression
+from libzim.writer import Compression  # pyright: ignore
 
 from zimscraperlib.constants import (
     DEFAULT_DEV_ZIM_METADATA,
@@ -52,7 +51,7 @@ def test_zim_creator(tmp_path, png_image, html_file, html_str):
     with open(png_image, "rb") as fh:
         png_data = fh.read()
     with Creator(fpath, main_path).config_dev_metadata(
-        Tags=tags, Illustration_48x48_at_1=png_data
+        Tags=tags, Illustration_48x48_at_1=png_data  # pyright: ignore
     ) as creator:
         # verbatim HTML from string
         creator.add_item_for("welcome", "wel", content=html_str, is_front=True)
@@ -120,7 +119,7 @@ def test_noindexlanguage(tmp_path):
     creator = Creator(fpath, "welcome").config_dev_metadata(Language="bam")
     creator.config_indexing(False)
     with creator as creator:
-        creator.add_item(StaticItem(path="welcome", content="hello"))
+        creator.add_item(StaticItem(path="welcome", content="hello"))  # pyright: ignore
         creator.add_item_for("index", "Index", content="-", mimetype="text/html")
 
     reader = Archive(fpath)
@@ -167,12 +166,15 @@ def test_add_item_for_delete_fail(tmp_path, png_image):
     shutil.copyfile(png_image, local_path)
 
     def remove_source(item):
-        print("##########", "remove_source")
         os.remove(item.filepath)
 
     with Creator(fpath, "welcome").config_dev_metadata() as creator:
         creator.add_item(
-            StaticItem(filepath=local_path, path="index", callback=remove_source),
+            StaticItem(
+                filepath=local_path,  # pyright: ignore
+                path="index",  # pyright: ignore
+                callback=remove_source,  # pyright: ignore
+            ),
             callback=(delete_callback, local_path),
         )
     assert not local_path.exists()
@@ -186,18 +188,18 @@ def test_compression(tmp_path):
     with Creator(
         tmp_path / "test.zim", "welcome", compression="zstd"
     ).config_dev_metadata() as creator:
-        creator.add_item(StaticItem(path="welcome", content="hello"))
+        creator.add_item(StaticItem(path="welcome", content="hello"))  # pyright: ignore
 
     with Creator(
-        fpath, "welcome", compression=Compression.zstd
+        fpath, "welcome", compression=Compression.zstd  # pyright: ignore
     ).config_dev_metadata() as creator:
-        creator.add_item(StaticItem(path="welcome", content="hello"))
+        creator.add_item(StaticItem(path="welcome", content="hello"))  # pyright: ignore
 
 
 def test_double_finish(tmp_path):
     fpath = tmp_path / "test.zim"
     with Creator(fpath, "welcome").config_dev_metadata() as creator:
-        creator.add_item(StaticItem(path="welcome", content="hello"))
+        creator.add_item(StaticItem(path="welcome", content="hello"))  # pyright: ignore
 
     # ensure we can finish an already finished creator
     creator.finish()
@@ -217,7 +219,11 @@ def test_sourcefile_removal(tmp_path, html_file):
         # copy html to folder
         src_path = pathlib.Path(tmpdir.name, "source.html")
         shutil.copyfile(html_file, src_path)
-        creator.add_item(StaticItem(filepath=src_path, path=src_path.name, ref=tmpdir))
+        creator.add_item(
+            StaticItem(
+                filepath=src_path, path=src_path.name, ref=tmpdir  # pyright: ignore
+            )
+        )
         del tmpdir
 
     assert not src_path.exists()
@@ -235,7 +241,7 @@ def test_sourcefile_removal_std(tmp_path, html_file):
                 StaticItem(
                     filepath=paths[-1],
                     path=paths[-1].name,
-                    mimetype="text/html",
+                    mimetype="text/html",  # pyright: ignore
                 ),
                 callback=(delete_callback, paths[-1]),
             )
@@ -324,7 +330,9 @@ def test_filelikeprovider_nosize(tmp_path, png_image_url):
 
     fpath = tmp_path / "test.zim"
     with Creator(fpath, "").config_dev_metadata() as creator:
-        creator.add_item(FileLikeProviderItem(fileobj=fileobj, path="one.png"))
+        creator.add_item(
+            FileLikeProviderItem(fileobj=fileobj, path="one.png")  # pyright: ignore
+        )
 
     zim = Archive(fpath)
     assert bytes(zim.get_item("one.png").content) == fileobj.getvalue()
@@ -338,7 +346,9 @@ def test_urlprovider(tmp_path, png_image_url):
 
     fpath = tmp_path / "test.zim"
     with Creator(fpath, "").config_dev_metadata() as creator:
-        creator.add_item(SpecialURLProviderItem(url=png_image_url, path="one.png"))
+        creator.add_item(
+            SpecialURLProviderItem(url=png_image_url, path="one.png")  # pyright: ignore
+        )
 
     zim = Archive(fpath)
     assert bytes(zim.get_item("one.png").content) == file_bytes
@@ -353,7 +363,7 @@ def test_urlprovider_nolength(tmp_path, png_image_url, png_image):
 
     # create and start an http server without Content-Length support
     server_fpath = tmp_path / "httpd.py"
-    port = random.randint(10000, 20000)
+    port = random.randint(10000, 20000)  # noqa: S311
     server_code = """
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
@@ -386,7 +396,7 @@ with HTTPServer(('', {port}), handler) as server:
         with tempfile.TemporaryDirectory() as tmp_dir, Creator(
             fpath, ""
         ).config_dev_metadata() as creator:
-            tmp_dir = pathlib.Path(tmp_dir)
+            tmp_dir = pathlib.Path(tmp_dir)  # noqa: PLW2901
             creator.add_item(
                 URLItem(
                     url=f"http://localhost:{port}/hoho.png",
@@ -401,7 +411,8 @@ with HTTPServer(('', {port}), handler) as server:
 
             creator.add_item(
                 SpecialURLProviderItem(
-                    url=f"http://localhost:{port}/home.png", mimetype="image/png"
+                    url=f"http://localhost:{port}/home.png",  # pyright: ignore
+                    mimetype="image/png",  # pyright: ignore
                 )
             )
     finally:
@@ -443,7 +454,7 @@ def test_callback_and_remove(tmp_path, html_file):
     class Store:
         called = 0
 
-    def cb(*args):
+    def cb(*args):  # noqa: ARG001
         Store.called += 1
 
     # duplicate test file as we'll want to remove twice
@@ -494,7 +505,7 @@ def test_without_metadata(tmp_path):
 
 def test_check_metadata(tmp_path):
     with pytest.raises(ValueError, match="Counter cannot be set"):
-        Creator(tmp_path, "").config_dev_metadata(Counter=1).start()
+        Creator(tmp_path, "").config_dev_metadata(Counter=1).start()  # pyright: ignore
 
     with pytest.raises(ValueError, match="Description is too long."):
         Creator(tmp_path, "").config_dev_metadata(Description="T" * 90).start()
@@ -580,10 +591,10 @@ def test_config_metadata(tmp_path, png_image):
         ("Title", "X" * 30, True),
         ("Title", "X" * 31, False),
         ("Date", 4, False),
-        ("Date", datetime.datetime.now(), True),
-        ("Date", datetime.datetime(1969, 12, 31, 23, 59), True),
+        ("Date", datetime.datetime.now(), True),  # noqa: DTZ005
+        ("Date", datetime.datetime(1969, 12, 31, 23, 59), True),  # noqa: DTZ001
         ("Date", datetime.date(1969, 12, 31), True),
-        ("Date", datetime.date.today(), True),
+        ("Date", datetime.date.today(), True),  # noqa: DTZ011
         ("Date", "1969-12-31", True),
         ("Date", "1969-13-31", False),
         ("Date", "2023/02/29", False),

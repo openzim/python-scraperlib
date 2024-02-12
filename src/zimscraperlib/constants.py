@@ -1,16 +1,15 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
 import base64
 import pathlib
 import re
 
+from zimscraperlib.__about__ import __version__
+
 ROOT_DIR = pathlib.Path(__file__).parent
 NAME = pathlib.Path(__file__).parent.name
-with open(ROOT_DIR.joinpath("VERSION"), "r") as fh:
-    VERSION = fh.read().strip()
-SCRAPER = f"{NAME} {VERSION}"
+SCRAPER = f"{NAME} {__version__}"
 
 UTF8 = "UTF-8"
 

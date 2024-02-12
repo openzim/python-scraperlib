@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
 import shutil
 import subprocess
-import sys
 import zipfile
 
 import pytest
 
 from zimscraperlib.download import save_large_file
+from zimscraperlib.fix_ogvjs_dist import run
 
 
 def prepare_ogvjs_folder(tmp_path, videojs_url, ogvjs_url, videojs_ogvjs_url):
@@ -45,42 +44,49 @@ def prepare_ogvjs_folder(tmp_path, videojs_url, ogvjs_url, videojs_ogvjs_url):
     tmp_path.joinpath(member).rename(tmp_path.joinpath("videojs-ogvjs.js"))
 
 
-@pytest.mark.installed
-def test_installed_script():
-    kwargs = {"universal_newlines": True, "stdout": subprocess.PIPE}
-    script = subprocess.run(["fix_ogvjs_dist"], **kwargs)  # nosec
+def test_ogvjs_installed_script_missing_param():
+    # run from installed script to check real conditions
+    script = subprocess.run(
+        ["/usr/bin/env", "fix_ogvjs_dist"],
+        text=True,
+        capture_output=True,
+        check=False,
+    )
     assert script.returncode == 1
     assert script.stdout.strip().startswith("Usage: ")
 
 
-def test_missing_param():
-    script = subprocess.run(
-        [
-            sys.executable,
-            "-m",
-            "zimscraperlib.fix_ogvjs_dist",
-        ]
-    )
-    assert script.returncode == 1
+def test_ogvjs_from_code_missing_params():
+    # run from code to mesure coverage easily
+
+    assert run(["fix_ogvjs_dist"]) == 1
 
 
 @pytest.mark.slow
-def test_fix_ogvjs_dist(tmp_path, videojs_url, ogvjs_url, videojs_ogvjs_url):
+def test_ogvjs_installed_script_ok(tmp_path, videojs_url, ogvjs_url, videojs_ogvjs_url):
+    # run from installed script to check real conditions
+
     prepare_ogvjs_folder(tmp_path, videojs_url, ogvjs_url, videojs_ogvjs_url)
 
-    # run to fix it from source (using installed script name)
     script = subprocess.run(
-        [
-            sys.executable,
-            "-m",
-            "zimscraperlib.fix_ogvjs_dist",
-            str(tmp_path),
-        ],
-        universal_newlines=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
+        ["/usr/bin/env", "fix_ogvjs_dist", str(tmp_path)],
+        text=True,
+        capture_output=True,
+        check=False,
     )
     assert script.returncode == 0
 
-    with open(tmp_path / "videojs-ogvjs.js", "r") as fh:
+    with open(tmp_path / "videojs-ogvjs.js") as fh:
+        assert "webm" in fh.read()
+
+
+@pytest.mark.slow
+def test_ogvjs_from_code_ok(tmp_path, videojs_url, ogvjs_url, videojs_ogvjs_url):
+    # run from code to mesure coverage easily
+
+    prepare_ogvjs_folder(tmp_path, videojs_url, ogvjs_url, videojs_ogvjs_url)
+
+    assert run(["fix_ogvjs_dist", str(tmp_path)]) == 0
+
+    with open(tmp_path / "videojs-ogvjs.js") as fh:
         assert "webm" in fh.read()

@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
 """ zimwriterfs-like tools to convert a build folder into a ZIM
@@ -32,12 +31,12 @@ import pathlib
 import re
 from typing import Optional, Sequence, Tuple
 
-from .. import logger
-from ..filesystem import get_file_mimetype
-from ..html import find_title_in_file
-from ..types import get_mime_for_name
-from .creator import Creator
-from .items import StaticItem
+from zimscraperlib import logger
+from zimscraperlib.filesystem import get_file_mimetype
+from zimscraperlib.html import find_title_in_file
+from zimscraperlib.types import get_mime_for_name
+from zimscraperlib.zim.creator import Creator
+from zimscraperlib.zim.items import StaticItem
 
 
 class FileItem(StaticItem):
@@ -47,8 +46,8 @@ class FileItem(StaticItem):
         self,
         root: pathlib.Path,
         filepath: pathlib.Path,
-    ):
-        super().__init__(root=root, filepath=filepath)
+    ):  # pyright: ignore
+        super().__init__(root=root, filepath=filepath)  # pyright: ignore
         # first look inside the file's magic headers
         self.mimetype = get_file_mimetype(self.filepath)
         # most web-specific files are plain text. In this case, use extension
@@ -99,11 +98,11 @@ def add_redirects_to_zim(
         zim_file.add_redirect(source_url, target_url, title)
 
     if redirects_file:
-        with open(redirects_file, "r") as fh:
+        with open(redirects_file) as fh:
             for line in fh.readlines():
                 namespace, path, title, target_url = re.match(
                     r"^(.)\t(.+)\t(.*)\t(.+)$", line
-                ).groups()
+                ).groups()  # pyright: ignore
                 if namespace.strip():
                     path = f"{namespace.strip()}/{path}"
                 zim_file.add_redirect(path, target_url, title)
@@ -117,20 +116,20 @@ def make_zim_file(
     illustration: str,
     title: str,
     description: str,
-    date: datetime.date = None,
+    date: datetime.date = None,  # noqa: RUF013  # pyright: ignore
     language: str = "eng",
     creator: str = "-",
     publisher="-",
-    tags: Sequence[str] = None,
-    source: str = None,
-    flavour: str = None,
-    scraper: str = None,
-    long_description: str = None,
-    without_fulltext_index: bool = False,
-    redirects: Sequence[Tuple[str, str, str]] = None,
-    redirects_file: pathlib.Path = None,
-    rewrite_links: bool = True,
-    workaround_nocancel: bool = True,
+    tags: Sequence[str] = None,  # noqa: RUF013  # pyright: ignore
+    source: str = None,  # noqa: RUF013  # pyright: ignore
+    flavour: str = None,  # noqa: RUF013  # pyright: ignore
+    scraper: str = None,  # noqa: RUF013  # pyright: ignore
+    long_description: str = None,  # noqa: RUF013  # pyright: ignore
+    without_fulltext_index: bool = False,  # noqa: FBT001, FBT002, ARG001
+    redirects: Sequence[Tuple[str, str, str]] = None,  # noqa: RUF013  # pyright: ignore
+    redirects_file: pathlib.Path = None,  # noqa: RUF013  # pyright: ignore
+    rewrite_links: bool = True,  # noqa: FBT001, FBT002, ARG001
+    workaround_nocancel: bool = True,  # noqa: FBT001, FBT002
 ):
     """Creates a zimwriterfs-like ZIM file at {fpath} from {build_dir}
 
@@ -144,11 +143,11 @@ def make_zim_file(
 
     # sanity checks
     if not build_dir.exists() or not build_dir.is_dir():
-        raise IOError(f"Incorrect build_dir: {build_dir}")
+        raise OSError(f"Incorrect build_dir: {build_dir}")
 
     illustration_path = build_dir / illustration
     if not illustration_path.exists() or not illustration_path.is_file():
-        raise IOError(f"Incorrect illustration: {illustration} ({illustration_path})")
+        raise OSError(f"Incorrect illustration: {illustration} ({illustration_path})")
 
     with open(illustration_path, "rb") as fh:
         illustration_data = fh.read()
@@ -161,7 +160,7 @@ def make_zim_file(
                 "Name": name,
                 "Title": title,
                 "Description": description,
-                "Date": date or datetime.date.today(),
+                "Date": date or datetime.date.today(),  # noqa: DTZ011
                 "Language": language,
                 "Creator": creator,
                 "Publisher": publisher,

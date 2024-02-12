@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
 import pathlib
@@ -7,17 +6,21 @@ import shutil
 import tempfile
 from typing import Optional, Tuple, Union
 
-from . import logger
-from .constants import MAXIMUM_DESCRIPTION_METADATA_LENGTH as MAX_DESC_LENGTH
-from .constants import MAXIMUM_LONG_DESCRIPTION_METADATA_LENGTH as MAX_LONG_DESC_LENGTH
-from .download import stream_file
+from zimscraperlib import logger
+from zimscraperlib.constants import (
+    MAXIMUM_DESCRIPTION_METADATA_LENGTH as MAX_DESC_LENGTH,
+)
+from zimscraperlib.constants import (
+    MAXIMUM_LONG_DESCRIPTION_METADATA_LENGTH as MAX_LONG_DESC_LENGTH,
+)
+from zimscraperlib.download import stream_file
 
 
 def handle_user_provided_file(
     source: Optional[Union[pathlib.Path, str]] = None,
     dest: Optional[pathlib.Path] = None,
     in_dir: Optional[pathlib.Path] = None,
-    nocopy: bool = False,
+    nocopy: bool = False,  # noqa: FBT001, FBT002
 ) -> Union[pathlib.Path, None]:
     """path to downloaded or copied a user provided file (URL or path)
 
@@ -43,7 +46,7 @@ def handle_user_provided_file(
     else:
         source = pathlib.Path(source).expanduser().resolve()
         if not source.exists():
-            raise IOError(f"{source} could not be found.")
+            raise OSError(f"{source} could not be found.")
         if nocopy:
             return source
 

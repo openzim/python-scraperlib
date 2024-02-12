@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
 import inspect
@@ -85,7 +84,7 @@ def test_config_build_from():
         assert idx != -1
         assert args[idx + 1] == str(getattr(config, attr))
     video_scale = config.video_scale
-    qmin, qmax = config.quantizer_scale_range
+    qmin, qmax = config.quantizer_scale_range  # pyright: ignore
     assert args.index("-qmin") != -1 and args[args.index("-qmin") + 1] == str(qmin)
     assert args.index("-qmax") != -1 and args[args.index("-qmax") + 1] == str(qmax)
     assert (
@@ -415,7 +414,7 @@ def test_reencode_return_ffmpeg_output(
             with_process=return_output,
         )
         if return_output:
-            success, process = ret
+            success, process = ret  # pyright: ignore
             assert success
             assert len(process.stdout) > 0
         else:

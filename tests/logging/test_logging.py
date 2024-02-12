@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
 import logging
@@ -19,7 +18,7 @@ def assert_message_console(logger, console, level, expected):
 def assert_message_file(logger, fpath, level, expected):
     msg = f"a {level} message"
     getattr(logger, level)(msg)
-    with open(fpath, "r") as file:
+    with open(fpath) as file:
         file.seek(0)
         if expected:
             assert msg in file.read()
@@ -101,14 +100,14 @@ def test_debug_level_file(random_id, tmp_path):
     assert_message_file(logger, log_file, "debug", True)
 
 
-def test_info_level_file(random_id, console, tmp_path):
+def test_info_level_file(random_id, tmp_path):
     log_file = tmp_path / "test.log"
     logger = getLogger(name=random_id, file=log_file, file_level=logging.INFO)
     assert_message_file(logger, log_file, "debug", False)
     assert_message_file(logger, log_file, "info", True)
 
 
-def test_warning_level_file(random_id, console, tmp_path):
+def test_warning_level_file(random_id, tmp_path):
     log_file = tmp_path / "test.log"
     logger = getLogger(name=random_id, file=log_file, file_level=logging.WARNING)
     assert_message_file(logger, log_file, "debug", False)
@@ -116,7 +115,7 @@ def test_warning_level_file(random_id, console, tmp_path):
     assert_message_file(logger, log_file, "warning", True)
 
 
-def test_error_level_file(random_id, console, tmp_path):
+def test_error_level_file(random_id, tmp_path):
     log_file = tmp_path / "test.log"
     logger = getLogger(name=random_id, file=log_file, file_level=logging.ERROR)
     assert_message_file(logger, log_file, "debug", False)
@@ -125,7 +124,7 @@ def test_error_level_file(random_id, console, tmp_path):
     assert_message_file(logger, log_file, "error", True)
 
 
-def test_critical_level_file(random_id, console, tmp_path):
+def test_critical_level_file(random_id, tmp_path):
     log_file = tmp_path / "test.log"
     logger = getLogger(name=random_id, file=log_file, file_level=logging.CRITICAL)
     assert_message_file(logger, log_file, "debug", False)
@@ -135,7 +134,7 @@ def test_critical_level_file(random_id, console, tmp_path):
     assert_message_file(logger, log_file, "critical", True)
 
 
-def test_level_fallback(random_id, console, tmp_path):
+def test_level_fallback(random_id, tmp_path):
     log_file = tmp_path / "test.log"
     logger = getLogger(name=random_id, file=log_file, level=logging.CRITICAL)
     assert_message_file(logger, log_file, "debug", False)
@@ -143,3 +142,14 @@ def test_level_fallback(random_id, console, tmp_path):
     assert_message_file(logger, log_file, "warning", False)
     assert_message_file(logger, log_file, "error", False)
     assert_message_file(logger, log_file, "critical", True)
+
+
+def test_no_output(random_id):
+    logger = getLogger(name=random_id, console=None, file=None)
+    logger.error("error")
+
+
+def test_additional_deps(random_id):
+    assert logging.getLogger("something").level == logging.NOTSET
+    getLogger(name=random_id, additional_deps=["something"], console=None, file=None)
+    assert logging.getLogger("something").level == logging.WARNING

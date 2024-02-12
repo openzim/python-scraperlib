@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
 import shutil
@@ -59,7 +58,13 @@ def test_make_zim_file_fail_noillustration(build_data):
     assert not build_data["fpath"].exists()
 
 
-def test_make_zim_file_working(build_data, png_image):
+@pytest.mark.parametrize(
+    "with_redirects, with_redirects_file",
+    [(True, True), (True, False), (False, True), (False, False)],
+)
+def test_make_zim_file_working(
+    build_data, png_image, with_redirects, with_redirects_file
+):
     build_data["build_dir"].mkdir()
 
     # add an image
@@ -74,11 +79,20 @@ def test_make_zim_file_working(build_data, png_image):
     with open(build_data["build_dir"] / "app.js", "w") as fh:
         fh.write("console.log(window);")
 
+    if not with_redirects:
+        build_data.pop("redirects")
+    if not with_redirects_file:
+        build_data.pop("redirects_file")
     make_zim_file(**build_data)
     assert build_data["fpath"].exists()
     reader = Archive(build_data["fpath"])
-    # welcome (actual) and two redirs
-    assert reader.entry_count == 8  # includes redirect
+    expected_entry_count = 4
+    if with_redirects:
+        expected_entry_count += 1
+    if with_redirects_file:
+        expected_entry_count += 3
+
+    assert reader.entry_count == expected_entry_count
 
     assert reader.get_item("style.css").mimetype == "text/css"
     assert reader.get_item("app.js").mimetype in (
@@ -123,7 +137,7 @@ finally:
     print("Program exiting")
 """
 
-    py = subprocess.run([sys.executable, "-c", pycode])
+    py = subprocess.run([sys.executable, "-c", pycode], check=False)
     # returncode will be either 0 or -11, depending on garbage collection
     # in scrapers, we want to be able to fail on errors and absolutely don't want to
     # create a ZIM file, so SEGFAULT on exit it (somewhat) OK

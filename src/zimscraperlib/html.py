@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
 """ Tools to work with HTML contents """
@@ -9,7 +8,7 @@ from typing import BinaryIO, TextIO, Union
 
 from bs4 import BeautifulSoup
 
-from .types import ARTICLE_MIME
+from zimscraperlib.types import ARTICLE_MIME
 
 
 def find_title_in(content: Union[str, BinaryIO, TextIO], mime_type: str) -> str:
@@ -19,7 +18,7 @@ def find_title_in(content: Union[str, BinaryIO, TextIO], mime_type: str) -> str:
     if mime_type != ARTICLE_MIME:
         return ""
     try:
-        return BeautifulSoup(content, "lxml").find("title").text
+        return BeautifulSoup(content, "lxml").find("title").text  # pyright: ignore
     except Exception:
         return ""
 
@@ -27,7 +26,7 @@ def find_title_in(content: Union[str, BinaryIO, TextIO], mime_type: str) -> str:
 def find_title_in_file(fpath: pathlib.Path, mime_type: str) -> str:
     """Extracted title from an HTML file"""
     try:
-        with open(fpath, "r") as fh:
+        with open(fpath) as fh:
             return find_title_in(fh, mime_type)
     except Exception:
         return ""
@@ -45,22 +44,22 @@ def find_language_in(content: Union[str, BinaryIO, TextIO], mime_type: str) -> s
         for key in keylist:
             node = soup.find(nodename)
             if node:
-                if not node.has_attr(key):
+                if not node.has_attr(key):  # pyright: ignore
                     continue
                 if (
                     nodename == "meta"
-                    and not node.attrs.get("http-equiv", "").lower()
+                    and not node.attrs.get("http-equiv", "").lower()  # pyright: ignore
                     == "content-language"
                 ):
                     continue
-                return node.attrs[key]
+                return node.attrs[key]  # pyright: ignore
     return ""
 
 
 def find_language_in_file(fpath: pathlib.Path, mime_type: str) -> str:
     """Extracted language from an HTML file"""
     try:
-        with open(fpath, "r") as fh:
+        with open(fpath) as fh:
             return find_language_in(fh, mime_type)
     except Exception:
         return ""

@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
 import colorsys
@@ -13,7 +12,7 @@ import PIL.Image
 
 
 def get_colors(
-    src: pathlib.Path, use_palette: Optional[bool] = True
+    src: pathlib.Path, use_palette: Optional[bool] = True  # noqa: FBT002
 ) -> Tuple[str, str]:
     """(main, secondary) HTML color codes from an image path"""
 
@@ -23,8 +22,10 @@ def get_colors(
 
     def solarize(r: int, g: int, b: int) -> Tuple[int, int, int]:
         # calculate solarized color for main
-        h, l, s = colorsys.rgb_to_hls(float(r) / 256, float(g) / 256, float(b) / 256)
-        r2, g2, b2 = [int(x * 256) for x in colorsys.hls_to_rgb(h, 0.95, s)]
+        h, l, s = colorsys.rgb_to_hls(  # noqa: E741
+            float(r) / 256, float(g) / 256, float(b) / 256
+        )
+        r2, g2, b2 = (int(x * 256) for x in colorsys.hls_to_rgb(h, 0.95, s))
         return r2, g2, b2
 
     ct = colorthief.ColorThief(src)
@@ -46,20 +47,25 @@ def get_colors(
 
 def is_hex_color(text: str) -> bool:
     """whether supplied text is a valid hex-formated color code"""
-    return re.search(r"^#(?:[0-9a-fA-F]{3}){1,2}$", text)
+    return re.search(r"^#(?:[0-9a-fA-F]{3}){1,2}$", text)  # pyright: ignore
 
 
-def format_for(src: Union[pathlib.Path, io.BytesIO], from_suffix: bool = True) -> str:
+def format_for(
+    src: Union[pathlib.Path, io.BytesIO],
+    from_suffix: bool = True,  # noqa: FBT001, FBT002
+) -> str:
     """Pillow format of a given filename, either Pillow-detected or from suffix"""
     if not from_suffix:
         with PIL.Image.open(src) as img:
-            return img.format
+            return img.format  # pyright: ignore
 
-    from PIL.Image import EXTENSION as ext_fmt_map
+    from PIL.Image import EXTENSION as ext_fmt_map  # noqa: N811
     from PIL.Image import init as init_pil
 
     init_pil()
-    return ext_fmt_map[src.suffix]  # might raise KeyError on unknown extension
+    return ext_fmt_map[
+        src.suffix  # pyright: ignore
+    ]  # might raise KeyError on unknown extension
 
 
 def is_valid_image(

@@ -47,27 +47,29 @@ sudo apt install libmagic1 wget ffmpeg \
 
 # Contribution
 
+This project adheres to openZIM's [Contribution Guidelines](https://github.com/openzim/overview/wiki/Contributing)
+
 ```shell
-pip -r requirements.txt
-pip install tox pre-commit
+pip install hatch
+pip install ".[dev]"
 pre-commit install
 # For tests
-tox
+invoke coverage
 ```
 
 # Users
 
 Non-exhaustive list of scrapers using it (check status when updating API):
 
-* [openzim/youtube](https://github.com/openzim/youtube)
+* [openzim/freecodecamp](https://github.com/openzim/freecodecamp)
+* [openzim/gutenberg](https://github.com/openzim/gutenberg)
+* [openzim/ifixit](https://github.com/openzim/ifixit)
+* [openzim/kolibri](https://github.com/openzim/kolibri)
 * [openzim/nautilus](https://github.com/openzim/nautilus)
-
-# releasing
-
-* Update your dependencies: `pip install -U setuptools wheel twine`
-* Make sure CHANGELOG.md is up-to-date
-* Bump version on `src/zimscraperlib/VERSION`
-* Build packages `python ./setup.py sdist bdist_wheel`
-* Upload to PyPI `twine upload dist/zimscraperlib-2.0.0*`.
-* Commit your Changelog + version bump changes
-* Tag version on git `git tag -a v2.0.0`
+* [openzim/nautilus](https://github.com/openzim/nautilus)
+* [openzim/openedx](https://github.com/openzim/openedx)
+* [openzim/sotoki](https://github.com/openzim/sotoki)
+* [openzim/ted](https://github.com/openzim/ted)
+* [openzim/warc2zim](https://github.com/openzim/warc2zim)
+* [openzim/wikihow](https://github.com/openzim/wikihow)
+* [openzim/youtube](https://github.com/openzim/youtube)

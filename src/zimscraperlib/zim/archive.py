@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
 """ ZIM Archive helper
@@ -12,12 +11,12 @@
 
 from typing import Dict, Iterable, List, Optional
 
-import libzim.reader
-import libzim.search  # Query, Searcher
-import libzim.suggestion  # SuggestionSearcher
+import libzim.reader  # pyright: ignore
+import libzim.search  # Query, Searcher  # pyright: ignore
+import libzim.suggestion  # SuggestionSearcher  # pyright: ignore
 
-from ._libkiwix import convertTags, parseMimetypeCounter
-from .items import Item
+from zimscraperlib.zim._libkiwix import convertTags, parseMimetypeCounter
+from zimscraperlib.zim.items import Item
 
 
 class Archive(libzim.reader.Archive):
@@ -40,11 +39,11 @@ class Archive(libzim.reader.Archive):
     def tags(self):
         return self.get_tags()
 
-    def get_tags(self, libkiwix: bool = False) -> List[str]:
+    def get_tags(self, libkiwix: bool = False) -> List[str]:  # noqa: FBT001, FBT002
         """List of ZIM tags, optionnaly expanded with libkiwix's hints"""
         try:
             tags_meta = self.get_text_metadata("Tags")
-        except RuntimeError:  # pragma: nocover
+        except RuntimeError:  # pragma: no cover
             tags_meta = ""
 
         if libkiwix:

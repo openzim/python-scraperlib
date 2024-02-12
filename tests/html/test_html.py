@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
 import pytest
@@ -16,7 +15,7 @@ def test_find_title(tmp_path, html_page):
     # find title in example HTML
     assert (
         find_title_in(html_page, "text/html")
-        == "Kiwix lets you access free knowledge – even offline"
+        == "Kiwix lets you access free knowledge - even offline"
     )
     # make sure non-HTML returns no title
     assert find_title_in(html_page, "text/plain") == ""
@@ -29,7 +28,7 @@ def test_find_title(tmp_path, html_page):
         fh.write(html_page)
     assert (
         find_title_in_file(fpath, "text/html")
-        == "Kiwix lets you access free knowledge – even offline"
+        == "Kiwix lets you access free knowledge - even offline"
     )
     # make sure non-HTML returns no title (from file)
     assert find_title_in_file(fpath, "text/plain") == ""

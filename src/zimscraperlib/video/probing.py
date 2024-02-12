@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
 
@@ -14,6 +13,7 @@ def get_media_info(src_path):
     bitrate: file's main bitrate"""
 
     args = [
+        "/usr/bin/env",
         "ffprobe",
         "-i",
         f"file:{src_path}",
@@ -28,9 +28,8 @@ def get_media_info(src_path):
     ]
     ffprobe = subprocess.run(
         args,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        universal_newlines=True,
+        capture_output=True,
+        text=True,
         check=False,
     )
     result = ffprobe.stdout.strip().split("\n")

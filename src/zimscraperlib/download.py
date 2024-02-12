@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
 from __future__ import annotations
@@ -8,12 +7,12 @@ import io
 import pathlib
 import subprocess
 from concurrent.futures import Future, ThreadPoolExecutor
-from typing import Dict, Optional, Union
+from typing import ClassVar, Dict, Optional, Union
 
 import requests
 import yt_dlp as youtube_dl
 
-from . import logger
+from zimscraperlib import logger
 
 
 class YoutubeDownloader:
@@ -43,7 +42,7 @@ class YoutubeDownloader:
         self,
         url: str,
         options: Optional[Dict],
-        wait: Optional[bool] = True,
+        wait: Optional[bool] = True,  # noqa: FBT002
     ) -> Union[bool, Future]:
         """Downloads video using initialized executor.
 
@@ -53,19 +52,21 @@ class YoutubeDownloader:
 
         Returns download result of future (wait=False)"""
 
-        future = self.executor.submit(self._run_youtube_dl, url, options)
+        future = self.executor.submit(
+            self._run_youtube_dl, url, options  # pyright: ignore
+        )
         if not wait:
             return future
         if not future.exception():
             # return the result
-            return future.result()
+            return future.result()  # pyright: ignore
         # raise the exception
-        raise future.exception()
+        raise future.exception()  # pyright: ignore
 
 
 class YoutubeConfig(dict):
-    options = {}
-    defaults = {
+    options: ClassVar[Dict[str, Optional[Union[str, bool, int]]]] = {}
+    defaults: ClassVar[Dict[str, Optional[Union[str, bool, int]]]] = {
         "writethumbnail": True,
         "write_all_thumbnails": True,
         "writesubtitles": True,
@@ -93,6 +94,8 @@ class YoutubeConfig(dict):
     ):
         if "outtmpl" not in options:
             outtmpl = cls.options.get("outtmpl", cls.defaults["outtmpl"])
+            if not isinstance(outtmpl, str):
+                raise ValueError(f"outtmpl must be a a str, {type(outtmpl)} found")
             if filepath:
                 outtmpl = str(filepath)
             # send output to target_dir
@@ -106,14 +109,14 @@ class YoutubeConfig(dict):
 
 
 class BestWebm(YoutubeConfig):
-    options = {
+    options: ClassVar[Dict[str, Optional[Union[str, bool, int]]]] = {
         "preferredcodec": "webm",
         "format": "best[ext=webm]/bestvideo[ext=webm]+bestaudio[ext=webm]/best",
     }
 
 
 class BestMp4(YoutubeConfig):
-    options = {
+    options: ClassVar[Dict[str, Optional[Union[str, bool, int]]]] = {
         "preferredcodec": "mp4",
         "format": "best[ext=mp4]/bestvideo[ext=mp4]+bestaudio[ext=m4a]/best",
     }
@@ -138,8 +141,10 @@ def save_large_file(url: str, fpath: pathlib.Path) -> None:
     )
 
 
-def _get_retry_adapter(max_retries: Optional[int] = 5) -> requests.adapters.BaseAdapter:
-    retries = requests.packages.urllib3.util.retry.Retry(
+def _get_retry_adapter(
+    max_retries: Optional[int] = 5,
+) -> requests.adapters.BaseAdapter:  # pyright: ignore
+    retries = requests.packages.urllib3.util.retry.Retry(  # pyright: ignore
         total=max_retries,  # total number of retries
         connect=max_retries,  # connection errors
         read=max_retries,  # read errors
@@ -156,7 +161,7 @@ def _get_retry_adapter(max_retries: Optional[int] = 5) -> requests.adapters.Base
         ],  # force retry on the following codes
     )
 
-    return requests.adapters.HTTPAdapter(max_retries=retries)
+    return requests.adapters.HTTPAdapter(max_retries=retries)  # pyright: ignore
 
 
 def get_session(max_retries: Optional[int] = 5) -> requests.Session:
@@ -172,11 +177,11 @@ def stream_file(
     byte_stream: Optional[io.BytesIO] = None,
     block_size: Optional[int] = 1024,
     proxies: Optional[dict] = None,
-    only_first_block: Optional[bool] = False,
+    only_first_block: Optional[bool] = False,  # noqa: FBT002
     max_retries: Optional[int] = 5,
     headers: Optional[Dict[str, str]] = None,
     session: Optional[requests.Session] = None,
-) -> tuple[int, requests.structures.CaseInsensitiveDict]:
+) -> tuple[int, requests.structures.CaseInsensitiveDict]:  # pyright: ignore
     """Stream data from a URL to either a BytesIO object or a file
     Arguments -
         fpath - Path of the file where data is sent
@@ -212,7 +217,7 @@ def stream_file(
 
     for data in resp.iter_content(block_size):
         total_downloaded += len(data)
-        fp.write(data)
+        fp.write(data)  # pyright: ignore
 
         # stop downloading/reading if we're just testing first block
         if only_first_block:
@@ -221,7 +226,7 @@ def stream_file(
     logger.debug(f"Downloaded {total_downloaded} bytes from {url}")
 
     if fpath:
-        fp.close()
+        fp.close()  # pyright: ignore
     else:
-        fp.seek(0)
+        fp.seek(0)  # pyright: ignore
     return total_downloaded, resp.headers

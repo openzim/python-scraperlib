@@ -3,15 +3,15 @@ import re
 from collections.abc import Iterable as IterableT
 from typing import Any, Iterable, Union
 
-from ..constants import (
+from zimscraperlib.constants import (
     ILLUSTRATIONS_METADATA_RE,
     MANDATORY_ZIM_METADATA_KEYS,
     MAXIMUM_DESCRIPTION_METADATA_LENGTH,
     MAXIMUM_LONG_DESCRIPTION_METADATA_LENGTH,
     RECOMMENDED_MAX_TITLE_LENGTH,
 )
-from ..i18n import is_valid_iso_639_3
-from ..image.probing import is_valid_image
+from zimscraperlib.i18n import is_valid_iso_639_3
+from zimscraperlib.image.probing import is_valid_image
 
 
 def validate_required_values(name: str, value: Any):
@@ -53,9 +53,14 @@ def validate_date(name: str, value: Union[datetime.datetime, datetime.date, str]
         elif isinstance(value, str):
             match = re.match(r"(?P<year>\d{4})-(?P<month>\d{2})-(?P<day>\d{2})", value)
             try:
-                datetime.date(**{k: int(v) for k, v in match.groupdict().items()})
+                datetime.date(
+                    **{
+                        k: int(v)
+                        for k, v in match.groupdict().items()  # pyright: ignore
+                    }
+                )
             except Exception as exc:
-                raise ValueError(f"Invalid {name} format: {exc}")
+                raise ValueError(f"Invalid {name} format: {exc}") from None
 
 
 def validate_language(name: str, value: Union[Iterable[str], str]):
@@ -68,7 +73,7 @@ def validate_language(name: str, value: Union[Iterable[str], str]):
                 raise ValueError(f"{code} is not ISO-639-3.")
 
 
-def validate_counter(name: str, value: str):
+def validate_counter(name: str, value: str):  # noqa: ARG001
     """ensures Counter metadata is not manually set"""
     if name == "Counter":
         raise ValueError(f"{name} cannot be set. libzim sets it.")
@@ -93,7 +98,7 @@ def validate_tags(name: str, value: Union[Iterable[str], str]):
     """ensures Tags metadata is either one or a list of strings"""
     if name == "Tags" and (
         not isinstance(value, IterableT)
-        or not all([isinstance(tag, str) for tag in value])
+        or not all(isinstance(tag, str) for tag in value)
     ):
         raise ValueError(f"Invalid type(s) for {name}")
 

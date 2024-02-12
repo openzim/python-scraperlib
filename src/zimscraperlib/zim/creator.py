@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
 """ ZIM Creator helper
@@ -24,18 +23,22 @@ import re
 import weakref
 from typing import Any, Callable, Iterable, Optional, Tuple, Union
 
-import libzim.writer
+import libzim.writer  # pyright: ignore
 
-from ..constants import (
+from zimscraperlib.constants import (
     DEFAULT_DEV_ZIM_METADATA,
     FRONT_ARTICLE_MIMETYPES,
     MANDATORY_ZIM_METADATA_KEYS,
 )
-from ..filesystem import delete_callback, get_content_mimetype, get_file_mimetype
-from ..i18n import is_valid_iso_639_3
-from ..types import get_mime_for_name
-from .items import StaticItem
-from .metadata import (
+from zimscraperlib.filesystem import (
+    delete_callback,
+    get_content_mimetype,
+    get_file_mimetype,
+)
+from zimscraperlib.i18n import is_valid_iso_639_3
+from zimscraperlib.types import get_mime_for_name
+from zimscraperlib.zim.items import StaticItem
+from zimscraperlib.zim.metadata import (
     validate_counter,
     validate_date,
     validate_description,
@@ -65,7 +68,9 @@ def mimetype_for(
     """mimetype as provided or guessed from fpath, path or content"""
     if not mimetype:
         mimetype = (
-            get_file_mimetype(fpath) if fpath else get_content_mimetype(content[:2048])
+            get_file_mimetype(fpath)
+            if fpath
+            else get_content_mimetype(content[:2048])  # pyright: ignore
         )
         # try to guess more-defined mime if it's text
         if (
@@ -78,7 +83,6 @@ def mimetype_for(
 
 
 class Creator(libzim.writer.Creator):
-
     """libzim.writer.Creator subclass
 
     Note: due to the lack of a cancel() method in the libzim itself, it is not possible
@@ -99,11 +103,11 @@ class Creator(libzim.writer.Creator):
         filename: pathlib.Path,
         main_path: str,
         compression: Optional[str] = None,
-        workaround_nocancel: Optional[bool] = True,
-        ignore_duplicates: Optional[bool] = False,
+        workaround_nocancel: Optional[bool] = True,  # noqa: FBT002
+        ignore_duplicates: Optional[bool] = False,  # noqa: FBT002
     ):
         super().__init__(filename=filename)
-        self._metadata = dict()
+        self._metadata = {}
         self.__indexing_configured = False
         self.can_finish = True
 
@@ -119,7 +123,9 @@ class Creator(libzim.writer.Creator):
         self.workaround_nocancel = workaround_nocancel
         self.ignore_duplicates = ignore_duplicates
 
-    def config_indexing(self, indexing: bool, language: Optional[str] = None):
+    def config_indexing(
+        self, indexing: bool, language: Optional[str] = None  # noqa: FBT001
+    ):
         """Toggle full-text and title indexing of entries
 
         Uses Language metadata's value (or "") if not set"""
@@ -131,7 +137,7 @@ class Creator(libzim.writer.Creator):
         return self
 
     def start(self):
-        if not all([self._metadata.get(key) for key in MANDATORY_ZIM_METADATA_KEYS]):
+        if not all(self._metadata.get(key) for key in MANDATORY_ZIM_METADATA_KEYS):
             raise ValueError("Mandatory metadata are not all set.")
 
         for name, value in self._metadata.items():
@@ -163,16 +169,16 @@ class Creator(libzim.writer.Creator):
         See https://wiki.openzim.org/wiki/Metadata"""
 
         validate_required_values(name, value)
-        validate_standard_str_types(name, value)
+        validate_standard_str_types(name, value)  # pyright: ignore
 
-        validate_title(name, value)
-        validate_date(name, value)
-        validate_language(name, value)
-        validate_counter(name, value)
-        validate_description(name, value)
-        validate_longdescription(name, value)
-        validate_tags(name, value)
-        validate_illustrations(name, value)
+        validate_title(name, value)  # pyright: ignore
+        validate_date(name, value)  # pyright: ignore
+        validate_language(name, value)  # pyright: ignore
+        validate_counter(name, value)  # pyright: ignore
+        validate_description(name, value)  # pyright: ignore
+        validate_longdescription(name, value)  # pyright: ignore
+        validate_tags(name, value)  # pyright: ignore
+        validate_illustrations(name, value)  # pyright: ignore
 
     def add_metadata(
         self,
@@ -186,21 +192,21 @@ class Creator(libzim.writer.Creator):
     def config_metadata(
         self,
         *,
-        Name: str,
-        Language: str,
-        Title: str,
-        Description: str,
-        LongDescription: Optional[str] = None,
-        Creator: str,
-        Publisher: str,
-        Date: Union[datetime.datetime, datetime.date, str],
-        Illustration_48x48_at_1: bytes,
-        Tags: Optional[Union[Iterable[str], str]] = None,
-        Scraper: Optional[str] = None,
-        Flavour: Optional[str] = None,
-        Source: Optional[str] = None,
-        License: Optional[str] = None,
-        Relation: Optional[str] = None,
+        Name: str,  # noqa: N803
+        Language: str,  # noqa: N803
+        Title: str,  # noqa: N803
+        Description: str,  # noqa: N803
+        LongDescription: Optional[str] = None,  # noqa: N803
+        Creator: str,  # noqa: N803
+        Publisher: str,  # noqa: N803
+        Date: Union[datetime.datetime, datetime.date, str],  # noqa: N803
+        Illustration_48x48_at_1: bytes,  # noqa: N803
+        Tags: Optional[Union[Iterable[str], str]] = None,  # noqa: N803
+        Scraper: Optional[str] = None,  # noqa: N803
+        Flavour: Optional[str] = None,  # noqa: N803
+        Source: Optional[str] = None,  # noqa: N803
+        License: Optional[str] = None,  # noqa: N803
+        Relation: Optional[str] = None,  # noqa: N803
         **extras: str,
     ):
         """Sets all mandatory Metadata as well as standard and any other text ones"""
@@ -241,9 +247,11 @@ class Creator(libzim.writer.Creator):
         mimetype: Optional[str] = None,
         is_front: Optional[bool] = None,
         should_compress: Optional[bool] = None,
-        delete_fpath: Optional[bool] = False,
+        delete_fpath: Optional[bool] = False,  # noqa: FBT002
         duplicate_ok: Optional[bool] = None,
-        callback: Optional[Union[callable, Tuple[callable, Any]]] = None,
+        callback: Optional[
+            Union[callable, Tuple[callable, Any]]  # pyright: ignore
+        ] = None,
     ):
         """Add a File or content at a specified path and get its path
 
@@ -355,7 +363,7 @@ class Creator(libzim.writer.Creator):
                 self.can_finish = False  # pragma: no cover
             raise
 
-    def finish(self, exc_type=None, exc_val=None, exc_tb=None):
+    def finish(self, exc_type=None, exc_val=None, exc_tb=None):  # noqa: ARG002
         """Triggers finalization of ZIM creation and create final ZIM file."""
         if not getattr(self, "can_finish", False):
             return

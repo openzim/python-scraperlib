@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
 import gettext
@@ -9,12 +8,13 @@ import re
 from typing import Dict, Optional, Tuple, Union
 
 import babel
-from iso639 import languages as iso639_languages
+import iso639
+import iso639.exceptions
 
 ISO_LEVELS = ["1", "2b", "2t", "3", "5"]
 
 
-class NotFound(ValueError):
+class NotFound(ValueError):  # noqa: N818
     pass
 
 
@@ -68,27 +68,45 @@ def get_iso_lang_data(lang: str) -> Tuple[Dict, Union[Dict, None]]:
 
     iso_types = []
 
-    for code_type in [f"part{lang_}" for lang_ in ISO_LEVELS] + ["name"]:
-        try:
-            iso639_languages.get(**{code_type: lang})
-            iso_types.append(code_type)
-        except KeyError:
-            pass
+    try:
+        isolang = iso639.Lang(lang)
+    except (
+        iso639.exceptions.InvalidLanguageValue,
+        iso639.exceptions.DeprecatedLanguageValue,
+    ) as exc:
+        raise NotFound("Not a valid iso language name/code") from exc
 
-    if not iso_types:
-        raise NotFound("Not a valid iso language name/code")
+    def replace_types(new_type: str) -> str:
+        # convert new iso_types from iso639-lang Pypi package to old iso_types from
+        # iso-639 package, since we were returning these values for a long time
+        if new_type == "pt1":
+            return "part1"
+        elif new_type == "pt2b":
+            return "part2b"
+        elif new_type == "pt2t":
+            return "part2t"
+        elif new_type == "pt3":
+            return "part3"
+        elif new_type == "pt5":
+            return "part5"
+        return new_type
 
-    language = iso639_languages.get(**{iso_types[0]: lang})
+    for code_type in [f"pt{lang_}" for lang_ in ISO_LEVELS] + ["name"]:
+        # the `if` condition below is a bit hackish but it is the only way to know
+        # if the passed value is matching a code type or not with new python-i639
+        # library and we do not expect weird things to happen here
+        if str(getattr(isolang, code_type)).lower() == lang.lower():
+            iso_types.append(replace_types(code_type))
 
     lang_data = {
-        f"iso-639-{lang_}": getattr(language, f"part{lang_}") for lang_ in ISO_LEVELS
+        f"iso-639-{lang_}": getattr(isolang, f"pt{lang_}") for lang_ in ISO_LEVELS
     }
-    lang_data.update({"english": language.name, "iso_types": iso_types})
+    lang_data.update({"english": isolang.name, "iso_types": iso_types})
 
-    if language.macro:
+    if isolang.macro():
         return (
             lang_data,
-            get_iso_lang_data(language.macro)[0],
+            get_iso_lang_data(isolang.macro().name)[0],
         )  # first item in the returned tuple
     return lang_data, None
 
@@ -103,7 +121,9 @@ def find_language_names(
         lang_data = get_language_details(query, failsafe=True) or {}
     try:
         query_locale = babel.Locale.parse(query)
-        return query_locale.get_display_name(), query_locale.get_display_name("en")
+        return query_locale.get_display_name(), query_locale.get_display_name(
+            "en"
+        )  # pyright: ignore
     except (babel.UnknownLocaleError, TypeError, ValueError, AttributeError):
         pass
 
@@ -111,7 +131,9 @@ def find_language_names(
     for iso_level in [f"iso-639-{lang_}" for lang_ in reversed(ISO_LEVELS)]:
         try:
             query_locale = babel.Locale.parse(lang_data.get(iso_level))
-            return query_locale.get_display_name(), query_locale.get_display_name("en")
+            return query_locale.get_display_name(), query_locale.get_display_name(
+                "en"
+            )  # pyright: ignore
         except (babel.UnknownLocaleError, TypeError, ValueError, AttributeError):
             pass
     default = lang_data.get("english", query)
@@ -127,7 +149,9 @@ def update_with_macro(lang_data: Dict, macro_data: Dict):
     return lang_data
 
 
-def get_language_details(query: str, failsafe: Optional[bool] = False) -> Dict:
+def get_language_details(
+    query: str, failsafe: Optional[bool] = False  # noqa: FBT002
+) -> Dict:
     """language details dict from query.
 
     Raises NotFound or return `und` language details if failsafe
@@ -143,7 +167,7 @@ def get_language_details(query: str, failsafe: Optional[bool] = False) -> Dict:
 
     """
 
-    if query.isalpha() and (2 <= len(query) <= 3):
+    if query.isalpha() and (2 <= len(query) <= 3):  # noqa: PLR2004
         # possibility of iso-639 code
         adjusted_query = query
         native_query = query
@@ -165,10 +189,10 @@ def get_language_details(query: str, failsafe: Optional[bool] = False) -> Dict:
         lang_data, macro_data = get_iso_lang_data(adjusted_query)
     except NotFound as exc:
         if failsafe:
-            return None
+            return None  # pyright: ignore
         raise exc
 
-    iso_data = update_with_macro(lang_data, macro_data)
+    iso_data = update_with_macro(lang_data, macro_data)  # pyright: ignore
     native_name, english_name = find_language_names(native_query, iso_data)
     iso_data.update(
         {

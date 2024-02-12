@@ -1,15 +1,18 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
+
+from typing import ClassVar, Dict, Optional, Union
 
 
 class Config(dict):
     VERSION = 1
     ext = "dat"
     mimetype = "application/data"
-    options = {}
-    defaults = {"-max_muxing_queue_size": "9999"}
-    mapping = {
+    options: ClassVar[Dict[str, Optional[Union[str, bool, int]]]] = {}
+    defaults: ClassVar[Dict[str, Optional[Union[str, bool, int]]]] = {
+        "-max_muxing_queue_size": "9999"
+    }
+    mapping: ClassVar[Dict[str, Optional[Union[str, bool, int]]]] = {
         "video_codec": "-codec:v",
         "audio_codec": "-codec:a",
         "max_video_bitrate": "-maxrate",
@@ -111,7 +114,7 @@ class Config(dict):
     @property
     def video_scale(self):
         # remove "scale='" and "'" and return the value in between
-        return self.get("-vf")[7:-1] if self.get("-vf") else None
+        return self.get("-vf")[7:-1] if self.get("-vf") else None  # pyright: ignore
 
     @video_scale.setter
     def video_scale(self, value):
@@ -129,8 +132,8 @@ class Config(dict):
         if (
             isinstance(qmin, int)
             and isinstance(qmax, int)
-            and -1 <= qmin <= 69
-            and -1 <= qmax <= 1024
+            and -1 <= qmin <= 69  # noqa: PLR2004
+            and -1 <= qmax <= 1024  # noqa: PLR2004
         ):
             self["-qmin"] = str(qmin)
             self["-qmax"] = str(qmax)
