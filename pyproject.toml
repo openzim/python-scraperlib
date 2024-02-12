@@ -240,3 +240,4 @@ exclude = [".env/**", ".venv/**"]
 extraPaths = ["src"]
 pythonVersion = "3.8"
 typeCheckingMode="basic"
+disableBytesTypePromotions = true
