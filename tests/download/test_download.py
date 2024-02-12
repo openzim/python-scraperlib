@@ -94,6 +94,7 @@ def test_first_block_download_custom_session(mocker, valid_http_url):
     requests.Session.assert_not_called()  # pyright: ignore
 
 
+@pytest.mark.skip(reason="name resolution issue for useragent.fr in Github Actions")
 @pytest.mark.slow
 def test_user_agent():
     ua = "zimscraperlib-test"
