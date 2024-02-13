@@ -19,7 +19,7 @@ def resize_image(
     dst: Optional[Union[pathlib.Path, io.BytesIO]] = None,
     method: Optional[str] = "width",
     allow_upscaling: Optional[bool] = True,  # noqa: FBT002
-    **params: Optional[dict],
+    **params: str,
 ) -> None:
     """resize an image to requested dimensions
 

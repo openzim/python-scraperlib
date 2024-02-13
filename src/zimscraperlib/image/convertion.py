@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 # vim: ai ts=4 sts=4 et sw=4 nu
 
+import io
 import pathlib
-from typing import Optional
+from typing import Union
 
 import PIL
 
@@ -13,7 +14,9 @@ from zimscraperlib.image.utils import save_image
 
 
 def convert_image(
-    src: pathlib.Path, dst: pathlib.Path, **params: Optional[dict]
+    src: Union[pathlib.Path, io.BytesIO],
+    dst: Union[pathlib.Path, io.BytesIO],
+    **params: str,
 ) -> None:
     """convert an image file from one format to another
     params: Image.save() parameters. Depends on dest format.

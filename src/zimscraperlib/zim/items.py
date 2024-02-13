@@ -9,7 +9,7 @@ import pathlib
 import re
 import tempfile
 import urllib.parse
-from typing import Dict, Union
+from typing import Any, Optional
 
 import libzim.writer  # pyright: ignore
 
@@ -23,12 +23,25 @@ from zimscraperlib.zim.providers import (
 
 
 class Item(libzim.writer.Item):
-    """libzim.writer.Item returning props for path/title/mimetype plus a callback
+    """libzim.writer.Item returning props for path/title/mimetype"""
 
-    Calls your `callback` prop on deletion"""
-
-    def __init__(self, **kwargs: Dict[str, Union[str, bool, bytes]]):
+    def __init__(
+        self,
+        path: Optional[str] = None,
+        title: Optional[str] = None,
+        mimetype: Optional[str] = None,
+        hints: Optional[dict] = None,
+        **kwargs: Any,
+    ):
         super().__init__()
+        if path:
+            kwargs["path"] = path
+        if title:
+            kwargs["title"] = title
+        if mimetype:
+            kwargs["mimetype"] = mimetype
+        if hints:
+            kwargs["hints"] = hints
         for k, v in kwargs.items():
             setattr(self, k, v)
 
@@ -57,21 +70,45 @@ class StaticItem(Item):
     more efficiently: now when the libzim destroys the CP, python will destroy
     the Item and we can be notified that we're effectively through with our content"""
 
+    def __init__(
+        self,
+        content: Optional[str] = None,
+        fileobj: Optional[io.IOBase] = None,
+        filepath: Optional[pathlib.Path] = None,
+        path: Optional[str] = None,
+        title: Optional[str] = None,
+        mimetype: Optional[str] = None,
+        hints: Optional[dict] = None,
+        **kwargs: Any,
+    ):
+        if content:
+            kwargs["content"] = content
+        if fileobj:
+            kwargs["fileobj"] = fileobj
+        if filepath:
+            kwargs["filepath"] = filepath
+        super().__init__(
+            path=path, title=title, mimetype=mimetype, hints=hints, **kwargs
+        )
+
     def get_contentprovider(self) -> libzim.writer.ContentProvider:
         # content was set manually
-        if getattr(self, "content", None) is not None:
-            return StringProvider(content=self.content, ref=self)
+        content = getattr(self, "content", None)
+        if content is not None:
+            return StringProvider(content=content, ref=self)
 
         # using a file-like object
-        if getattr(self, "fileobj", None):
+        fileobj = getattr(self, "fileobj", None)
+        if fileobj:
             return FileLikeProvider(
-                fileobj=self.fileobj, ref=self, size=getattr(self, "size", None)
+                fileobj=fileobj, ref=self, size=getattr(self, "size", None)
             )
 
         # we had to download locally to get size
-        if getattr(self, "filepath", None):
+        filepath = getattr(self, "filepath", None)
+        if filepath:
             return FileProvider(
-                filepath=self.filepath, ref=self, size=getattr(self, "size", None)
+                filepath=filepath, ref=self, size=getattr(self, "size", None)
             )
 
         raise NotImplementedError("No data to provide`")
@@ -106,8 +143,21 @@ class URLItem(StaticItem):
         size, _ = stream_file(url.geturl(), fpath=fpath, byte_stream=stream)
         return fpath or stream, size
 
-    def __init__(self, url: str, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(
+        self,
+        url: str,
+        path: Optional[str] = None,
+        title: Optional[str] = None,
+        mimetype: Optional[str] = None,
+        hints: Optional[dict] = None,
+        use_disk: Optional[bool] = None,
+        **kwargs: Any,
+    ):
+        if use_disk:
+            kwargs["use_disk"] = use_disk
+        super().__init__(
+            path=path, title=title, mimetype=mimetype, hints=hints, **kwargs
+        )
         self.url = urllib.parse.urlparse(url)
         use_disk = getattr(self, "use_disk", False)
 

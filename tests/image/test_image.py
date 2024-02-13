@@ -296,6 +296,30 @@ def test_change_image_format_defaults(png_image, tmp_path):
     assert dst_image.format == "WEBP"
 
 
+def test_convert_io_src_dst(png_image: pathlib.Path):
+    src = io.BytesIO(png_image.read_bytes())
+    dst = io.BytesIO()
+    convert_image(src, dst, fmt="PNG")
+    dst_image = Image.open(dst)
+    assert dst_image.format == "PNG"
+
+
+def test_convert_io_src_path_dst(png_image: pathlib.Path, tmp_path: pathlib.Path):
+    src = io.BytesIO(png_image.read_bytes())
+    dst = tmp_path / "test.png"
+    convert_image(src, dst, fmt="PNG")
+    dst_image = Image.open(dst)
+    assert dst_image.format == "PNG"
+
+
+def test_convert_path_src_io_dst(png_image: pathlib.Path):
+    src = png_image
+    dst = io.BytesIO()
+    convert_image(src, dst, fmt="PNG")
+    dst_image = Image.open(dst)
+    assert dst_image.format == "PNG"
+
+
 @pytest.mark.parametrize(
     "fmt,exp_size",
     [("png", 128), ("jpg", 128)],
