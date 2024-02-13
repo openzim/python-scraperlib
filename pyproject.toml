@@ -13,7 +13,7 @@ dependencies = [
   "colorthief==0.2.1",
   "python-resize-image>=1.1.19,<1.2",
   "Babel>=2.9,<3.0",
-  "file-magic>=0.4.0,<0.5",
+  "python-magic>=0.4.3,<0.5",
   "libzim>=3.4.0,<4.0",
   "beautifulsoup4>=4.9.3,<4.10", # upgrade to 4.10 and later to be done
   "lxml>=4.6.3,<4.10", # upgrade to 4.10 and later to be done
