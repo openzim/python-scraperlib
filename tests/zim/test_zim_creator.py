@@ -507,6 +507,12 @@ def test_check_metadata(tmp_path):
         Creator(tmp_path, "").config_dev_metadata(LongDescription="T" * 5000).start()
 
 
+def test_relax_metadata(tmp_path):
+    Creator(tmp_path, "", auto_metadata_check=False).config_dev_metadata(
+        Description="T" * 90
+    ).start()
+
+
 @pytest.mark.parametrize(
     "tags",
     [
