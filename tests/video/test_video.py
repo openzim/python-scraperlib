@@ -141,20 +141,18 @@ def test_preset_has_mime_and_ext():
 
 def test_preset_video_webm_low():
     config = VideoWebmLow()
-    assert config.VERSION == 1
+    assert config.VERSION == 2
     args = config.to_ffmpeg_args()
-    assert len(args) == 24
+    assert len(args) == 20
     options_map = [
         ("codec:v", "libvpx"),
         ("codec:a", "libvorbis"),
-        ("maxrate", "300k"),
-        ("minrate", "300k"),
-        ("b:v", "300k"),
+        ("b:v", "128k"),
         ("ar", "44100"),
         ("b:a", "48k"),
         ("quality", "best"),
-        ("qmin", "30"),
-        ("qmax", "42"),
+        ("qmin", "18"),
+        ("qmax", "40"),
         ("vf", "scale='480:trunc(ow/a/2)*2'"),
     ]
     for option, val in options_map:
