@@ -100,8 +100,8 @@ class Creator(libzim.writer.Creator):
     Use workaround_nocancel=False to disable the workaround.
 
     By default, all metadata are validated for compliance with openZIM guidelines and
-    conventions. Set auto_metadata_check=False to disable this validation (you can still
-    do checks manually with the validation methods or your own logic).
+    conventions. Set disable_metadata_checks=False to disable this validation (you can
+    still do checks manually with the validation methods or your own logic).
     """
 
     def __init__(
@@ -111,7 +111,7 @@ class Creator(libzim.writer.Creator):
         compression: Optional[str] = None,
         workaround_nocancel: Optional[bool] = True,  # noqa: FBT002
         ignore_duplicates: Optional[bool] = False,  # noqa: FBT002
-        auto_metadata_check: bool = True,  # noqa: FBT001, FBT002
+        disable_metadata_checks: bool = True,  # noqa: FBT001, FBT002
     ):
         super().__init__(filename=filename)
         self._metadata = {}
@@ -129,7 +129,7 @@ class Creator(libzim.writer.Creator):
 
         self.workaround_nocancel = workaround_nocancel
         self.ignore_duplicates = ignore_duplicates
-        self.auto_metadata_check = auto_metadata_check
+        self.disable_metadata_checks = disable_metadata_checks
 
     def config_indexing(
         self, indexing: bool, language: Optional[str] = None  # noqa: FBT001
@@ -148,7 +148,7 @@ class Creator(libzim.writer.Creator):
         if not all(self._metadata.get(key) for key in MANDATORY_ZIM_METADATA_KEYS):
             raise ValueError("Mandatory metadata are not all set.")
 
-        if self.auto_metadata_check:
+        if self.disable_metadata_checks:
             for name, value in self._metadata.items():
                 if value:
                     self.validate_metadata(name, value)
@@ -195,7 +195,7 @@ class Creator(libzim.writer.Creator):
         content: Union[str, bytes, datetime.date, datetime.datetime, Iterable[str]],
         mimetype: str = "text/plain;charset=UTF-8",
     ):
-        if self.auto_metadata_check:
+        if self.disable_metadata_checks:
             self.validate_metadata(name, content)
         if name == "Date" and isinstance(content, (datetime.date, datetime.datetime)):
             content = content.strftime("%Y-%m-%d").encode("UTF-8")

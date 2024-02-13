@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- New `auto_metadata_check` parameter in `zimscraperlib.zim.creator.Creator` initializer, allowing to disable metadata check at startup (assuming the user will validate them on its own) #119
+- New `disable_metadata_checks` parameter in `zimscraperlib.zim.creator.Creator` initializer, allowing to disable metadata check at startup (assuming the user will validate them on its own) #119
 
 ### Changed
 
