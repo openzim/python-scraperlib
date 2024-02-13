@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Suuport for Python 3.12, drop Python 3.7 #118
 - Replace "iso-369" iso639-lang by "iso639-lang" library
 - Rework the VideoWebmLow preset for faster encoding and smaller file size (preset has been bumped to version 2)
+- When reencoding a video, ffmpeg now uses only 1 CPU thread by default (new arg to `reencode` allows to override this default value)
 
 ## [3.2.0] - 2023-12-16
 
