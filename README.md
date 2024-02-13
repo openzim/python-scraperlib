@@ -50,6 +50,8 @@ sudo apt install libmagic1 wget ffmpeg \
 apk add ffmpeg gifsicle libmagic wget libjpeg
 ```
 
+**Nota:** i18n features do not work on Alpine, see https://github.com/openzim/python-scraperlib/issues/134 ; there is one corresponding test which is failing.
+
 # Contribution
 
 This project adheres to openZIM's [Contribution Guidelines](https://github.com/openzim/overview/wiki/Contributing)
