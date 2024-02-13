@@ -16,6 +16,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Rework the VideoWebmLow preset for faster encoding and smaller file size (preset has been bumped to version 2)
 - When reencoding a video, ffmpeg now uses only 1 CPU thread by default (new arg to `reencode` allows to override this default value)
 
+## Fixed
+
+- Fixed type hints of `zimscraperlib.zim.Item` and subclasses, and `zimscraperlib.image.optimization:convert_image`
+
 ## [3.2.0] - 2023-12-16
 
 ### Added
