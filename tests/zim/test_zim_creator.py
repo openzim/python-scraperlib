@@ -40,6 +40,8 @@ class SpecialURLProviderItem(StaticItem):
 
 class FileLikeProviderItem(StaticItem):
     def get_contentprovider(self):
+        if not self.fileobj:
+            raise AttributeError("fileobj cannot be None")
         return FileLikeProvider(self.fileobj)
 
 

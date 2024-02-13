@@ -47,7 +47,9 @@ class FileItem(StaticItem):
         root: pathlib.Path,
         filepath: pathlib.Path,
     ):
-        super().__init__(root=root, filepath=filepath)
+        super().__init__()
+        self.root = root
+        self.filepath = filepath
         # first look inside the file's magic headers
         self.mimetype = get_file_mimetype(self.filepath)
         # most web-specific files are plain text. In this case, use extension

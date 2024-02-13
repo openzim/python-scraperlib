@@ -9,7 +9,7 @@ import pathlib
 import re
 import tempfile
 import urllib.parse
-from typing import Any
+from typing import Any, Optional
 
 import libzim.writer  # pyright: ignore
 
@@ -25,8 +25,19 @@ from zimscraperlib.zim.providers import (
 class Item(libzim.writer.Item):
     """libzim.writer.Item returning props for path/title/mimetype"""
 
-    def __init__(self, **kwargs: Any):
+    def __init__(
+        self,
+        path: Optional[str] = None,
+        title: Optional[str] = None,
+        mimetype: Optional[str] = None,
+        hints: Optional[dict] = None,
+        **kwargs: Any,
+    ):
         super().__init__()
+        self.path = path
+        self.title = title
+        self.mimetype = mimetype
+        self.hints = hints
         for k, v in kwargs.items():
             setattr(self, k, v)
 
@@ -35,16 +46,16 @@ class Item(libzim.writer.Item):
         return self.get_mimetype().startswith("text/html")
 
     def get_path(self) -> str:
-        return getattr(self, "path", "")
+        return self.path or ""
 
     def get_title(self) -> str:
-        return getattr(self, "title", "")
+        return self.title or ""
 
     def get_mimetype(self) -> str:
-        return getattr(self, "mimetype", "")
+        return self.mimetype or ""
 
     def get_hints(self) -> dict:
-        return getattr(self, "hints", {})
+        return self.hints or {}
 
 
 class StaticItem(Item):
@@ -55,19 +66,37 @@ class StaticItem(Item):
     more efficiently: now when the libzim destroys the CP, python will destroy
     the Item and we can be notified that we're effectively through with our content"""
 
+    def __init__(
+        self,
+        content: Optional[str] = None,
+        fileobj: Optional[io.IOBase] = None,
+        filepath: Optional[pathlib.Path] = None,
+        path: Optional[str] = None,
+        title: Optional[str] = None,
+        mimetype: Optional[str] = None,
+        hints: Optional[dict] = None,
+        **kwargs: Any,
+    ):
+        super().__init__(
+            path=path, title=title, mimetype=mimetype, hints=hints, **kwargs
+        )
+        self.content = content
+        self.fileobj = fileobj
+        self.filepath = filepath
+
     def get_contentprovider(self) -> libzim.writer.ContentProvider:
         # content was set manually
-        if getattr(self, "content", None) is not None:
+        if self.content is not None:
             return StringProvider(content=self.content, ref=self)
 
         # using a file-like object
-        if getattr(self, "fileobj", None):
+        if self.fileobj:
             return FileLikeProvider(
                 fileobj=self.fileobj, ref=self, size=getattr(self, "size", None)
             )
 
         # we had to download locally to get size
-        if getattr(self, "filepath", None):
+        if self.filepath:
             return FileProvider(
                 filepath=self.filepath, ref=self, size=getattr(self, "size", None)
             )
@@ -104,10 +133,22 @@ class URLItem(StaticItem):
         size, _ = stream_file(url.geturl(), fpath=fpath, byte_stream=stream)
         return fpath or stream, size
 
-    def __init__(self, url: str, **kwargs: Any):
-        super().__init__(**kwargs)
+    def __init__(
+        self,
+        url: str,
+        path: Optional[str] = None,
+        title: Optional[str] = None,
+        mimetype: Optional[str] = None,
+        hints: Optional[dict] = None,
+        *,
+        use_disk: bool = False,
+        **kwargs: Any,
+    ):
+        super().__init__(
+            path=path, title=title, mimetype=mimetype, hints=hints, **kwargs
+        )
         self.url = urllib.parse.urlparse(url)
-        use_disk = getattr(self, "use_disk", False)
+        self.use_disk = use_disk
 
         # fetch headers to retrieve size and type
         try:
@@ -136,7 +177,7 @@ class URLItem(StaticItem):
         except Exception:
             # we couldn't retrieve size so we have to download resource to
             target, self.size = self.download_for_size(
-                self.url, on_disk=use_disk, tmp_dir=getattr(self, "tmp_dir", None)
+                self.url, on_disk=self.use_disk, tmp_dir=getattr(self, "tmp_dir", None)
             )
             # downloaded to disk and using a file path from now on
             if use_disk:
@@ -146,16 +187,11 @@ class URLItem(StaticItem):
                 self.fileobj = target
 
     def get_path(self) -> str:
-        return getattr(self, "path", re.sub(r"^/", "", self.url.path))
-
-    def get_title(self) -> str:
-        return getattr(self, "title", "")
+        return self.path or re.sub(r"^/", "", self.url.path)
 
     def get_mimetype(self) -> str:
-        return getattr(
-            self,
-            "mimetype",
-            self.headers.get("Content-Type", "application/octet-stream"),
+        return self.mimetype or self.headers.get(
+            "Content-Type", "application/octet-stream"
         )
 
     def get_contentprovider(self):
