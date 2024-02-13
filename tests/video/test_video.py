@@ -141,7 +141,7 @@ def test_preset_has_mime_and_ext():
 
 def test_preset_video_webm_low():
     config = VideoWebmLow()
-    assert config.VERSION == 1
+    assert config.VERSION == 2
     args = config.to_ffmpeg_args()
     assert len(args) == 20
     options_map = [

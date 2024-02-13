@@ -35,7 +35,7 @@ class VideoWebmLow(Config):
     128k target video bitrate but stay within quality boundaries.
     48k audio bitrate"""
 
-    VERSION = 1
+    VERSION = 2
 
     ext = "webm"
     mimetype = f"{preset_type}/webm"
