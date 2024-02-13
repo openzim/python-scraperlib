@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- New `disable_metadata_checks` parameter in `zimscraperlib.zim.creator.Creator` initializer, allowing to disable metadata check at startup (assuming the user will validate them on its own) #119
+
 ### Changed
 
 - Using openZIM Python bootstrap conventions (including hatch-openzim plugin) #120
@@ -15,6 +19,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Replace "file-magic" by "python-magic" library for Alpine Linux support and better maintenance
 - Rework the VideoWebmLow preset for faster encoding and smaller file size (preset has been bumped to version 2)
 - When reencoding a video, ffmpeg now uses only 1 CPU thread by default (new arg to `reencode` allows to override this default value)
+
+## Fixed
+
+- Fixed type hints of `zimscraperlib.zim.Item` and subclasses, and `zimscraperlib.image.optimization:convert_image`
 
 ## [3.2.0] - 2023-12-16
 
