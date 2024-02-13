@@ -34,10 +34,14 @@ class Item(libzim.writer.Item):
         **kwargs: Any,
     ):
         super().__init__()
-        self.path = path
-        self.title = title
-        self.mimetype = mimetype
-        self.hints = hints
+        if path:
+            kwargs["path"] = path
+        if title:
+            kwargs["title"] = title
+        if mimetype:
+            kwargs["mimetype"] = mimetype
+        if hints:
+            kwargs["hints"] = hints
         for k, v in kwargs.items():
             setattr(self, k, v)
 
@@ -46,16 +50,16 @@ class Item(libzim.writer.Item):
         return self.get_mimetype().startswith("text/html")
 
     def get_path(self) -> str:
-        return self.path or ""
+        return getattr(self, "path", "")
 
     def get_title(self) -> str:
-        return self.title or ""
+        return getattr(self, "title", "")
 
     def get_mimetype(self) -> str:
-        return self.mimetype or ""
+        return getattr(self, "mimetype", "")
 
     def get_hints(self) -> dict:
-        return self.hints or {}
+        return getattr(self, "hints", {})
 
 
 class StaticItem(Item):
@@ -77,28 +81,34 @@ class StaticItem(Item):
         hints: Optional[dict] = None,
         **kwargs: Any,
     ):
+        if content:
+            kwargs["content"] = content
+        if fileobj:
+            kwargs["fileobj"] = fileobj
+        if filepath:
+            kwargs["filepath"] = filepath
         super().__init__(
             path=path, title=title, mimetype=mimetype, hints=hints, **kwargs
         )
-        self.content = content
-        self.fileobj = fileobj
-        self.filepath = filepath
 
     def get_contentprovider(self) -> libzim.writer.ContentProvider:
         # content was set manually
-        if self.content is not None:
-            return StringProvider(content=self.content, ref=self)
+        content = getattr(self, "content", None)
+        if content is not None:
+            return StringProvider(content=content, ref=self)
 
         # using a file-like object
-        if self.fileobj:
+        fileobj = getattr(self, "fileobj", None)
+        if fileobj:
             return FileLikeProvider(
-                fileobj=self.fileobj, ref=self, size=getattr(self, "size", None)
+                fileobj=fileobj, ref=self, size=getattr(self, "size", None)
             )
 
         # we had to download locally to get size
-        if self.filepath:
+        filepath = getattr(self, "filepath", None)
+        if filepath:
             return FileProvider(
-                filepath=self.filepath, ref=self, size=getattr(self, "size", None)
+                filepath=filepath, ref=self, size=getattr(self, "size", None)
             )
 
         raise NotImplementedError("No data to provide`")
@@ -140,15 +150,16 @@ class URLItem(StaticItem):
         title: Optional[str] = None,
         mimetype: Optional[str] = None,
         hints: Optional[dict] = None,
-        *,
-        use_disk: bool = False,
+        use_disk: Optional[bool] = None,
         **kwargs: Any,
     ):
+        if use_disk:
+            kwargs["use_disk"] = use_disk
         super().__init__(
             path=path, title=title, mimetype=mimetype, hints=hints, **kwargs
         )
         self.url = urllib.parse.urlparse(url)
-        self.use_disk = use_disk
+        use_disk = getattr(self, "use_disk", False)
 
         # fetch headers to retrieve size and type
         try:
@@ -177,7 +188,7 @@ class URLItem(StaticItem):
         except Exception:
             # we couldn't retrieve size so we have to download resource to
             target, self.size = self.download_for_size(
-                self.url, on_disk=self.use_disk, tmp_dir=getattr(self, "tmp_dir", None)
+                self.url, on_disk=use_disk, tmp_dir=getattr(self, "tmp_dir", None)
             )
             # downloaded to disk and using a file path from now on
             if use_disk:
@@ -187,11 +198,16 @@ class URLItem(StaticItem):
                 self.fileobj = target
 
     def get_path(self) -> str:
-        return self.path or re.sub(r"^/", "", self.url.path)
+        return getattr(self, "path", re.sub(r"^/", "", self.url.path))
+
+    def get_title(self) -> str:
+        return getattr(self, "title", "")
 
     def get_mimetype(self) -> str:
-        return self.mimetype or self.headers.get(
-            "Content-Type", "application/octet-stream"
+        return getattr(
+            self,
+            "mimetype",
+            self.headers.get("Content-Type", "application/octet-stream"),
         )
 
     def get_contentprovider(self):
