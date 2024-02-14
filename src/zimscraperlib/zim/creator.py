@@ -303,14 +303,6 @@ class Creator(libzim.writer.Creator):
         if should_compress is not None:
             hints[libzim.writer.Hint.COMPRESS] = should_compress
 
-        kwargs = {
-            "path": path,
-            "title": title or "",
-            "mimetype": mimetype,
-            "filepath": fpath if fpath is not None else "",
-            "hints": hints,
-            "content": content,
-        }
         if delete_fpath and fpath:
             cb = [delete_callback, fpath]
             if callback and callable(callback):
@@ -320,7 +312,16 @@ class Creator(libzim.writer.Creator):
             callback = tuple(cb)
 
         self.add_item(
-            StaticItem(**kwargs), callback=callback, duplicate_ok=duplicate_ok
+            StaticItem(
+                path=path,
+                title=title,
+                mimetype=mimetype,
+                filepath=fpath,
+                hints=hints,
+                content=content,
+            ),
+            callback=callback,
+            duplicate_ok=duplicate_ok,
         )
         return path
 
