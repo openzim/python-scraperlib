@@ -189,6 +189,17 @@ def test_add_item_for_delete_fail(tmp_path, png_image):
     assert reader.get_item("index")
 
 
+def test_add_item_empty_content(tmp_path):
+    fpath = tmp_path / "test.zim"
+    # test with incorrect content type
+    with Creator(fpath, "welcome").config_dev_metadata() as creator:
+        creator.add_item_for(
+            path="welcome",
+            title="hello",
+            content="",
+        )
+
+
 def test_add_item_for_unsupported_content_type(tmp_path):
     fpath = tmp_path / "test.zim"
     # test with incorrect content type
