@@ -508,7 +508,7 @@ def test_check_metadata(tmp_path):
 
 
 def test_relax_metadata(tmp_path):
-    Creator(tmp_path, "", disable_metadata_checks=False).config_dev_metadata(
+    Creator(tmp_path, "", disable_metadata_checks=True).config_dev_metadata(
         Description="T" * 90
     ).start()
 
