@@ -31,7 +31,7 @@ class FileProvider(libzim.writer.FileProvider):
 
 
 class StringProvider(libzim.writer.StringProvider):
-    def __init__(self, content: str, ref: Optional[object] = None):
+    def __init__(self, content: Union[str, bytes], ref: Optional[object] = None):
         super().__init__(content)
         self.ref = ref
 

@@ -100,7 +100,7 @@ class Creator(libzim.writer.Creator):
     Use workaround_nocancel=False to disable the workaround.
 
     By default, all metadata are validated for compliance with openZIM guidelines and
-    conventions. Set disable_metadata_checks=False to disable this validation (you can
+    conventions. Set disable_metadata_checks=True to disable this validation (you can
     still do checks manually with the validation methods or your own logic).
     """
 
@@ -111,7 +111,7 @@ class Creator(libzim.writer.Creator):
         compression: Optional[str] = None,
         workaround_nocancel: Optional[bool] = True,  # noqa: FBT002
         ignore_duplicates: Optional[bool] = False,  # noqa: FBT002
-        disable_metadata_checks: bool = True,  # noqa: FBT001, FBT002
+        disable_metadata_checks: bool = False,  # noqa: FBT001, FBT002
     ):
         super().__init__(filename=filename)
         self._metadata = {}
@@ -148,7 +148,7 @@ class Creator(libzim.writer.Creator):
         if not all(self._metadata.get(key) for key in MANDATORY_ZIM_METADATA_KEYS):
             raise ValueError("Mandatory metadata are not all set.")
 
-        if self.disable_metadata_checks:
+        if not self.disable_metadata_checks:
             for name, value in self._metadata.items():
                 if value:
                     self.validate_metadata(name, value)
@@ -195,7 +195,7 @@ class Creator(libzim.writer.Creator):
         content: Union[str, bytes, datetime.date, datetime.datetime, Iterable[str]],
         mimetype: str = "text/plain;charset=UTF-8",
     ):
-        if self.disable_metadata_checks:
+        if not self.disable_metadata_checks:
             self.validate_metadata(name, content)
         if name == "Date" and isinstance(content, (datetime.date, datetime.datetime)):
             content = content.strftime("%Y-%m-%d").encode("UTF-8")
@@ -303,14 +303,6 @@ class Creator(libzim.writer.Creator):
         if should_compress is not None:
             hints[libzim.writer.Hint.COMPRESS] = should_compress
 
-        kwargs = {
-            "path": path,
-            "title": title or "",
-            "mimetype": mimetype,
-            "filepath": fpath if fpath is not None else "",
-            "hints": hints,
-            "content": content,
-        }
         if delete_fpath and fpath:
             cb = [delete_callback, fpath]
             if callback and callable(callback):
@@ -320,7 +312,16 @@ class Creator(libzim.writer.Creator):
             callback = tuple(cb)
 
         self.add_item(
-            StaticItem(**kwargs), callback=callback, duplicate_ok=duplicate_ok
+            StaticItem(
+                path=path,
+                title=title,
+                mimetype=mimetype,
+                filepath=fpath,
+                hints=hints,
+                content=content,
+            ),
+            callback=callback,
+            duplicate_ok=duplicate_ok,
         )
         return path
 

@@ -9,7 +9,7 @@ import pathlib
 import re
 import tempfile
 import urllib.parse
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 import libzim.writer  # pyright: ignore
 
@@ -34,13 +34,13 @@ class Item(libzim.writer.Item):
         **kwargs: Any,
     ):
         super().__init__()
-        if path:
+        if path is not None:
             kwargs["path"] = path
-        if title:
+        if title is not None:
             kwargs["title"] = title
-        if mimetype:
+        if mimetype is not None:
             kwargs["mimetype"] = mimetype
-        if hints:
+        if hints is not None:
             kwargs["hints"] = hints
         for k, v in kwargs.items():
             setattr(self, k, v)
@@ -72,7 +72,7 @@ class StaticItem(Item):
 
     def __init__(
         self,
-        content: Optional[str] = None,
+        content: Optional[Union[str, bytes]] = None,
         fileobj: Optional[io.IOBase] = None,
         filepath: Optional[pathlib.Path] = None,
         path: Optional[str] = None,
@@ -81,11 +81,11 @@ class StaticItem(Item):
         hints: Optional[dict] = None,
         **kwargs: Any,
     ):
-        if content:
+        if content is not None:
             kwargs["content"] = content
-        if fileobj:
+        if fileobj is not None:
             kwargs["fileobj"] = fileobj
-        if filepath:
+        if filepath is not None:
             kwargs["filepath"] = filepath
         super().__init__(
             path=path, title=title, mimetype=mimetype, hints=hints, **kwargs
@@ -95,6 +95,8 @@ class StaticItem(Item):
         # content was set manually
         content = getattr(self, "content", None)
         if content is not None:
+            if not isinstance(content, (str, bytes)):
+                raise AttributeError(f"Unexpected type for content: {type(content)}")
             return StringProvider(content=content, ref=self)
 
         # using a file-like object
@@ -153,7 +155,7 @@ class URLItem(StaticItem):
         use_disk: Optional[bool] = None,
         **kwargs: Any,
     ):
-        if use_disk:
+        if use_disk is not None:
             kwargs["use_disk"] = use_disk
         super().__init__(
             path=path, title=title, mimetype=mimetype, hints=hints, **kwargs
