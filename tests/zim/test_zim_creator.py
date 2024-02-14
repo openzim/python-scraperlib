@@ -45,7 +45,7 @@ class FileLikeProviderItem(StaticItem):
         return FileLikeProvider(self.fileobj)
 
 
-def test_zim_creator(tmp_path, png_image, html_file, html_str):
+def test_zim_creator(tmp_path, png_image, html_file, html_str: str, html_str_cn: str):
     fpath = tmp_path / "test.zim"
     main_path = "welcome"
     tags = ";".join(["toto", "tata"])
@@ -56,6 +56,13 @@ def test_zim_creator(tmp_path, png_image, html_file, html_str):
     ) as creator:
         # verbatim HTML from string
         creator.add_item_for("welcome", "wel", content=html_str, is_front=True)
+        # verbatim HTML from bytes
+        creator.add_item_for(
+            "welcome1", "wel1", content=html_str.encode(), is_front=True
+        )
+        creator.add_item_for(
+            "welcome2", "wel2", content=html_str_cn.encode("gb2312"), is_front=True
+        )
         # verbatim HTML from file
         creator.add_item_for("welcome3", "wel3", fpath=html_file)
         creator.add_item_for("welcome4", "wel4", fpath=html_file)
@@ -98,6 +105,8 @@ def test_zim_creator(tmp_path, png_image, html_file, html_str):
 
     # ensure non-rewritten articles have not been rewritten
     assert bytes(reader.get_item("welcome").content).decode(UTF8) == html_str
+    assert bytes(reader.get_item("welcome1").content).decode(UTF8) == html_str
+    assert bytes(reader.get_item("welcome2").content).decode("gb2312") == html_str_cn
     assert bytes(reader.get_item("welcome3").content).decode(UTF8) == html_str
 
     # ensure illustration is present and corrext
@@ -178,6 +187,19 @@ def test_add_item_for_delete_fail(tmp_path, png_image):
 
     reader = Archive(fpath)
     assert reader.get_item("index")
+
+
+def test_add_item_for_unsupported_content_type(tmp_path):
+    fpath = tmp_path / "test.zim"
+    # test with incorrect content type
+    with Creator(fpath, "welcome").config_dev_metadata() as creator:
+        with pytest.raises(RuntimeError):
+            creator.add_item_for(
+                path="welcome",
+                title="hello",
+                mimetype="text/plain",
+                content=123,  # pyright: ignore[reportArgumentType]
+            )
 
 
 def test_compression(tmp_path):

@@ -9,7 +9,7 @@ import pathlib
 import re
 import tempfile
 import urllib.parse
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 import libzim.writer  # pyright: ignore
 
@@ -72,7 +72,7 @@ class StaticItem(Item):
 
     def __init__(
         self,
-        content: Optional[str] = None,
+        content: Optional[Union[str, bytes]] = None,
         fileobj: Optional[io.IOBase] = None,
         filepath: Optional[pathlib.Path] = None,
         path: Optional[str] = None,
@@ -95,6 +95,8 @@ class StaticItem(Item):
         # content was set manually
         content = getattr(self, "content", None)
         if content is not None:
+            if not isinstance(content, (str, bytes)):
+                raise AttributeError(f"Unexpected type for content: {type(content)}")
             return StringProvider(content=content, ref=self)
 
         # using a file-like object
