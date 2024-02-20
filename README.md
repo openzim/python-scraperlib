@@ -5,6 +5,7 @@ zimscraperlib
 [![CodeFactor](https://www.codefactor.io/repository/github/openzim/python-scraperlib/badge)](https://www.codefactor.io/repository/github/openzim/python-scraperlib)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![PyPI version shields.io](https://img.shields.io/pypi/v/zimscraperlib.svg)](https://pypi.org/project/zimscraperlib/)
+[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/zimscraperlib.svg)](https://pypi.org/project/zimscraperlib)
 [![codecov](https://codecov.io/gh/openzim/python-scraperlib/branch/master/graph/badge.svg)](https://codecov.io/gh/openzim/python-scraperlib)
 
 Collection of python code to re-use across python-based scrapers
