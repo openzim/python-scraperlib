@@ -26,10 +26,13 @@
     Meaning you should exit right after an exception in your code (during zim creation)
     Use workaround_nocancel=False to disable the workaround. """
 
+from __future__ import annotations
+
 import datetime
 import pathlib
 import re
-from typing import Optional, Sequence, Tuple
+from collections.abc import Sequence
+from typing import Optional
 
 from zimscraperlib import logger
 from zimscraperlib.filesystem import get_file_mimetype
@@ -90,7 +93,7 @@ def add_to_zim(
 
 def add_redirects_to_zim(
     zim_file: Creator,
-    redirects: Optional[Sequence[Tuple[str, str, Optional[str]]]] = None,
+    redirects: Optional[Sequence[tuple[str, str, Optional[str]]]] = None,
     redirects_file: Optional[pathlib.Path] = None,
 ):
     """add redirects from list of source/target or redirects file to zim"""
@@ -128,7 +131,7 @@ def make_zim_file(
     scraper: str = None,  # noqa: RUF013  # pyright: ignore
     long_description: str = None,  # noqa: RUF013  # pyright: ignore
     without_fulltext_index: bool = False,  # noqa: FBT001, FBT002, ARG001
-    redirects: Sequence[Tuple[str, str, str]] = None,  # noqa: RUF013  # pyright: ignore
+    redirects: Sequence[tuple[str, str, str]] = None,  # noqa: RUF013  # pyright: ignore
     redirects_file: pathlib.Path = None,  # noqa: RUF013  # pyright: ignore
     rewrite_links: bool = True,  # noqa: FBT001, FBT002, ARG001
     workaround_nocancel: bool = True,  # noqa: FBT001, FBT002

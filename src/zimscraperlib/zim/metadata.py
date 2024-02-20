@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import datetime
 import re
-from collections.abc import Iterable as IterableT
-from typing import Any, Iterable, Union
+from collections.abc import Iterable
+from typing import Any, Union
 
 from zimscraperlib.constants import (
     ILLUSTRATIONS_METADATA_RE,
@@ -97,7 +99,7 @@ def validate_longdescription(name: str, value: str):
 def validate_tags(name: str, value: Union[Iterable[str], str]):
     """ensures Tags metadata is either one or a list of strings"""
     if name == "Tags" and (
-        not isinstance(value, IterableT)
+        not isinstance(value, Iterable)
         or not all(isinstance(tag, str) for tag in value)
     ):
         raise ValueError(f"Invalid type(s) for {name}")

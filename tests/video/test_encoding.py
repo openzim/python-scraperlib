@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import re
 from pathlib import Path
-from typing import List, Optional
+from typing import Optional
 
 import pytest
 
@@ -67,9 +69,9 @@ from zimscraperlib.video.encoding import _build_ffmpeg_args
 def test_build_ffmpeg_args(
     src_path: Path,
     tmp_path: Path,
-    ffmpeg_args: List[str],
+    ffmpeg_args: list[str],
     threads: Optional[int],
-    expected: Optional[List[str]],
+    expected: Optional[list[str]],
 ):
     if expected:
         assert (

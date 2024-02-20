@@ -17,12 +17,14 @@
     - content stored on object
     - can be used to store a filepath and content read from it (not stored) """
 
-import collections.abc
+from __future__ import annotations
+
 import datetime
 import pathlib
 import re
 import weakref
-from typing import Any, Callable, Iterable, Optional, Tuple, Union
+from collections.abc import Callable, Iterable
+from typing import Any, Optional, Union
 
 import libzim.writer  # pyright: ignore
 
@@ -203,7 +205,7 @@ class Creator(libzim.writer.Creator):
             name == "Tags"
             and not isinstance(content, str)
             and not isinstance(content, bytes)
-            and isinstance(content, collections.abc.Iterable)
+            and isinstance(content, Iterable)
         ):
             content = ";".join(content)
         super().add_metadata(name, content, mimetype)
@@ -269,7 +271,7 @@ class Creator(libzim.writer.Creator):
         delete_fpath: Optional[bool] = False,  # noqa: FBT002
         duplicate_ok: Optional[bool] = None,
         callback: Optional[
-            Union[callable, Tuple[callable, Any]]  # pyright: ignore
+            Union[callable, tuple[callable, Any]]  # pyright: ignore
         ] = None,
     ):
         """Add a File or content at a specified path and get its path
@@ -329,7 +331,7 @@ class Creator(libzim.writer.Creator):
         self,
         item: libzim.writer.Item,
         duplicate_ok: Optional[bool] = None,
-        callback: Optional[Union[Callable, Tuple[Callable, Any]]] = None,
+        callback: Optional[Union[Callable, tuple[Callable, Any]]] = None,
     ):
         """Add a libzim.writer.Item
 

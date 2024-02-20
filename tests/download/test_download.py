@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 # vim: ai ts=4 sts=4 et sw=4 nu
 
+from __future__ import annotations
+
 import concurrent.futures
 import io
 import pathlib
 import re
-from typing import ClassVar, Dict, Optional, Union
+from typing import ClassVar, Optional, Union
 
 import pytest
 import requests
@@ -232,7 +234,7 @@ def custom_outtmpl() -> str:
 
 
 class WrongOuttmplType(BestWebm):
-    options: ClassVar[Dict[str, Optional[Union[str, bool, int]]]] = {"outtmpl": 123}
+    options: ClassVar[dict[str, Optional[Union[str, bool, int]]]] = {"outtmpl": 123}
 
 
 def test_get_options_wrong_outtmpl_type():

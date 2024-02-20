@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 # vim: ai ts=4 sts=4 et sw=4 nu
 
+from __future__ import annotations
+
 import pathlib
 import shutil
 import tempfile
-from typing import Optional, Tuple, Union
+from typing import Optional, Union
 
 from zimscraperlib import logger
 from zimscraperlib.constants import (
@@ -60,7 +62,7 @@ def compute_descriptions(
     default_description: str,
     user_description: Optional[str],
     user_long_description: Optional[str],
-) -> Tuple[str, Optional[str]]:
+) -> tuple[str, Optional[str]]:
     """Computes short and long descriptions compliant with ZIM standard.
 
     Based on provided parameters, the function computes a short and a long description

@@ -7,7 +7,8 @@
 
 import os
 import pathlib
-from typing import Any, Callable, Optional, Union
+from collections.abc import Callable
+from typing import Any, Optional, Union
 
 import magic
 

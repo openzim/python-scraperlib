@@ -22,12 +22,13 @@
     can still run on default settings which give
       a bit less size than the original images but maintain a high quality. """
 
+from __future__ import annotations
 
 import io
 import os
 import pathlib
 import subprocess
-from typing import Optional, Tuple, Union
+from typing import Optional, Union
 
 import piexif
 from optimize_images.img_aux_processing import do_reduce_colors, rebuild_palette
@@ -57,7 +58,7 @@ def optimize_png(
     max_colors: Optional[int] = 256,
     fast_mode: Optional[bool] = True,  # noqa: FBT002
     remove_transparency: Optional[bool] = False,  # noqa: FBT002
-    background_color: Optional[Tuple[int, int, int]] = (255, 255, 255),
+    background_color: Optional[tuple[int, int, int]] = (255, 255, 255),
     **options,  # noqa: ARG001
 ) -> Union[pathlib.Path, io.BytesIO]:
     """method to optimize PNG files using a pure python external optimizer

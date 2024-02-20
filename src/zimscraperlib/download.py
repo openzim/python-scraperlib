@@ -7,7 +7,7 @@ import io
 import pathlib
 import subprocess
 from concurrent.futures import Future, ThreadPoolExecutor
-from typing import ClassVar, Dict, Optional, Union
+from typing import ClassVar, Optional, Union
 
 import requests
 import yt_dlp as youtube_dl
@@ -34,14 +34,14 @@ class YoutubeDownloader:
         """shuts down the executor, awaiting completion"""
         self.executor.shutdown(wait=True)
 
-    def _run_youtube_dl(self, url: str, options: Dict) -> None:
+    def _run_youtube_dl(self, url: str, options: dict) -> None:
         with youtube_dl.YoutubeDL(options) as ydl:
             ydl.download([url])
 
     def download(
         self,
         url: str,
-        options: Optional[Dict],
+        options: Optional[dict],
         wait: Optional[bool] = True,  # noqa: FBT002
     ) -> Union[bool, Future]:
         """Downloads video using initialized executor.
@@ -65,8 +65,8 @@ class YoutubeDownloader:
 
 
 class YoutubeConfig(dict):
-    options: ClassVar[Dict[str, Optional[Union[str, bool, int]]]] = {}
-    defaults: ClassVar[Dict[str, Optional[Union[str, bool, int]]]] = {
+    options: ClassVar[dict[str, Optional[Union[str, bool, int]]]] = {}
+    defaults: ClassVar[dict[str, Optional[Union[str, bool, int]]]] = {
         "writethumbnail": True,
         "write_all_thumbnails": True,
         "writesubtitles": True,
@@ -109,14 +109,14 @@ class YoutubeConfig(dict):
 
 
 class BestWebm(YoutubeConfig):
-    options: ClassVar[Dict[str, Optional[Union[str, bool, int]]]] = {
+    options: ClassVar[dict[str, Optional[Union[str, bool, int]]]] = {
         "preferredcodec": "webm",
         "format": "best[ext=webm]/bestvideo[ext=webm]+bestaudio[ext=webm]/best",
     }
 
 
 class BestMp4(YoutubeConfig):
-    options: ClassVar[Dict[str, Optional[Union[str, bool, int]]]] = {
+    options: ClassVar[dict[str, Optional[Union[str, bool, int]]]] = {
         "preferredcodec": "mp4",
         "format": "best[ext=mp4]/bestvideo[ext=mp4]+bestaudio[ext=m4a]/best",
     }
@@ -179,7 +179,7 @@ def stream_file(
     proxies: Optional[dict] = None,
     only_first_block: Optional[bool] = False,  # noqa: FBT002
     max_retries: Optional[int] = 5,
-    headers: Optional[Dict[str, str]] = None,
+    headers: Optional[dict[str, str]] = None,
     session: Optional[requests.Session] = None,
 ) -> tuple[int, requests.structures.CaseInsensitiveDict]:  # pyright: ignore
     """Stream data from a URL to either a BytesIO object or a file

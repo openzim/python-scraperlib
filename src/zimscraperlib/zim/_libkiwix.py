@@ -12,9 +12,11 @@ https://github.com/kiwix/libkiwix/blob/master/src/tools/archiveTools.cpp
 https://github.com/kiwix/libkiwix/blob/master/src/tools/otherTools.cpp
 """
 
+from __future__ import annotations
+
 import io
 from collections import namedtuple
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, Optional
 
 MimetypeAndCounter = namedtuple("MimetypeAndCounter", ["mimetype", "value"])
 CounterMap = Dict[
@@ -22,7 +24,7 @@ CounterMap = Dict[
 ]
 
 
-def getline(src: io.StringIO, delim: Optional[bool] = None) -> Tuple[bool, str]:
+def getline(src: io.StringIO, delim: Optional[bool] = None) -> tuple[bool, str]:
     """C++ stdlib getline() ~clone
 
     Reads `src` until it finds `delim`.
@@ -42,7 +44,7 @@ def getline(src: io.StringIO, delim: Optional[bool] = None) -> Tuple[bool, str]:
 
 def readFullMimetypeAndCounterString(
     src: io.StringIO,
-) -> Tuple[bool, str]:
+) -> tuple[bool, str]:
     """read a single mimetype-and-counter string from source
 
     Returns whether the source is EOF and the extracted string (or empty one)"""
@@ -87,7 +89,7 @@ def parseMimetypeCounter(
     return counters
 
 
-def convertTags(tags_str: str) -> List[str]:
+def convertTags(tags_str: str) -> list[str]:
     """List of tags expanded with libkiwix's additional hints for pic/vid/det/index"""
     tags = tags_str.split(";")
     tagsList = []

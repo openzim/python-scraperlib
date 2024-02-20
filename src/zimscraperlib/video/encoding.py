@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 # vim: ai ts=4 sts=4 et sw=4 nu
 
+from __future__ import annotations
 
 import pathlib
 import shutil
 import subprocess
 import tempfile
-from typing import List, Optional
+from typing import Optional
 
 from zimscraperlib import logger
 from zimscraperlib.logging import nicer_args_join
@@ -15,9 +16,9 @@ from zimscraperlib.logging import nicer_args_join
 def _build_ffmpeg_args(
     src_path: pathlib.Path,
     tmp_path: pathlib.Path,
-    ffmpeg_args: List[str],
+    ffmpeg_args: list[str],
     threads: Optional[int],
-) -> List[str]:
+) -> list[str]:
     if threads:
         if "-threads" in ffmpeg_args:
             raise AttributeError("Cannot set the number of threads, already set")

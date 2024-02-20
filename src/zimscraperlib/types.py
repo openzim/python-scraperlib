@@ -15,13 +15,15 @@
     Should your scraper need additional mapping, use mimetypes.add_type() and it will
     be automatically used. """
 
+from __future__ import annotations
+
 import mimetypes
 import pathlib
-from typing import List, Optional, Union
+from typing import Optional, Union
 
 ARTICLE_MIME: str = "text/html"
 FALLBACK_MIME: str = "application/octet-stream"
-FONT_MIMES: List[str] = [
+FONT_MIMES: list[str] = [
     "font/ttf",
     "application/font-ttf",
     "font/sfnt",

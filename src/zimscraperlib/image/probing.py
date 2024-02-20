@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 # vim: ai ts=4 sts=4 et sw=4 nu
 
+from __future__ import annotations
+
 import colorsys
 import io
 import pathlib
 import re
-from typing import Optional, Tuple, Union
+from typing import Optional, Union
 
 import colorthief
 import PIL.Image
@@ -13,14 +15,14 @@ import PIL.Image
 
 def get_colors(
     src: pathlib.Path, use_palette: Optional[bool] = True  # noqa: FBT002
-) -> Tuple[str, str]:
+) -> tuple[str, str]:
     """(main, secondary) HTML color codes from an image path"""
 
     def rgb_to_hex(r: int, g: int, b: int) -> str:
         """hexadecimal HTML-friendly color code for RGB tuple"""
         return "#{}{}{}".format(*[str(hex(x)[2:]).zfill(2) for x in (r, g, b)]).upper()
 
-    def solarize(r: int, g: int, b: int) -> Tuple[int, int, int]:
+    def solarize(r: int, g: int, b: int) -> tuple[int, int, int]:
         # calculate solarized color for main
         h, l, s = colorsys.rgb_to_hls(  # noqa: E741
             float(r) / 256, float(g) / 256, float(b) / 256
@@ -71,7 +73,7 @@ def format_for(
 def is_valid_image(
     image: Union[pathlib.Path, io.IOBase, bytes],
     imformat: str,
-    size: Optional[Tuple[int, int]] = None,
+    size: Optional[tuple[int, int]] = None,
 ) -> bool:
     """whether image is a valid imformat (PNG) image, optionnaly of requested size"""
     if isinstance(image, bytes):

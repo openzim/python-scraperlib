@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 # vim: ai ts=4 sts=4 et sw=4 nu
 
+from __future__ import annotations
+
 import gettext
 import locale
 import pathlib
 import re
-from typing import Dict, Optional, Tuple, Union
+from typing import Optional, Union
 
 import babel
 import iso639
@@ -58,7 +60,7 @@ def setlocale(root_dir: pathlib.Path, locale_name: str):
     return Locale.setup(root_dir / "locale", locale_name)
 
 
-def get_iso_lang_data(lang: str) -> Tuple[Dict, Union[Dict, None]]:
+def get_iso_lang_data(lang: str) -> tuple[dict, Union[dict, None]]:
     """ISO-639-x languages details for lang. Raises NotFound
 
     Included keys: iso-639-1, iso-639-2b, iso-639-2t, iso-639-3, iso-639-5
@@ -112,8 +114,8 @@ def get_iso_lang_data(lang: str) -> Tuple[Dict, Union[Dict, None]]:
 
 
 def find_language_names(
-    query: str, lang_data: Optional[Dict] = None
-) -> Tuple[str, str]:
+    query: str, lang_data: Optional[dict] = None
+) -> tuple[str, str]:
     """(native, english) language names for lang with help from language_details dict
 
     Falls back to English name if available or query if not"""
@@ -140,7 +142,7 @@ def find_language_names(
     return default, default
 
 
-def update_with_macro(lang_data: Dict, macro_data: Dict):
+def update_with_macro(lang_data: dict, macro_data: dict):
     """update empty keys from lang_data with ones of macro_data"""
     if macro_data:
         for key, value in macro_data.items():
@@ -151,7 +153,7 @@ def update_with_macro(lang_data: Dict, macro_data: Dict):
 
 def get_language_details(
     query: str, failsafe: Optional[bool] = False  # noqa: FBT002
-) -> Dict:
+) -> dict:
     """language details dict from query.
 
     Raises NotFound or return `und` language details if failsafe
