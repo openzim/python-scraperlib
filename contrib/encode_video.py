@@ -1,6 +1,7 @@
+from __future__ import annotations
+
 import sys
 from pathlib import Path
-from typing import List
 
 from zimscraperlib import logger
 from zimscraperlib.video import presets, reencode
@@ -25,7 +26,7 @@ def encode_video(src_path: Path, dst_path: Path, preset: str):
         logger.error(f"conversion failed:\n{process.stdout}")
 
 
-def run(args: List[str] = sys.argv):
+def run(args: list[str] = sys.argv):
     if len(args) < 4:  # noqa: PLR2004
         print(f"Usage: {args[0]} <src_path> <dst_path> <preset>")  # noqa: T201
         print(  # noqa: T201

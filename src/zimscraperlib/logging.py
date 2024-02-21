@@ -5,8 +5,9 @@ import io
 import logging
 import pathlib
 import sys
+from collections.abc import Iterable
 from logging.handlers import RotatingFileHandler
-from typing import Iterable, Optional
+from typing import Optional
 
 from zimscraperlib.constants import NAME
 

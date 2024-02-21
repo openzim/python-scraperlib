@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 import re
-from typing import Iterable, Union
+from collections.abc import Iterable
+from typing import Union
 
 import pytest
 

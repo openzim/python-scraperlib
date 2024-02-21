@@ -9,7 +9,10 @@
     - direct access to search results and number of results
     - public Entry access by Id"""
 
-from typing import Dict, Iterable, List, Optional
+from __future__ import annotations
+
+from collections.abc import Iterable
+from typing import Optional
 
 import libzim.reader  # pyright: ignore
 import libzim.search  # Query, Searcher  # pyright: ignore
@@ -27,7 +30,7 @@ class Archive(libzim.reader.Archive):
         pass
 
     @property
-    def metadata(self) -> Dict[str, str]:
+    def metadata(self) -> dict[str, str]:
         """key: value for all non-illustration metadata listed in .metadata_keys"""
         return {
             key: self.get_text_metadata(key)
@@ -39,7 +42,7 @@ class Archive(libzim.reader.Archive):
     def tags(self):
         return self.get_tags()
 
-    def get_tags(self, libkiwix: bool = False) -> List[str]:  # noqa: FBT001, FBT002
+    def get_tags(self, libkiwix: bool = False) -> list[str]:  # noqa: FBT001, FBT002
         """List of ZIM tags, optionnaly expanded with libkiwix's hints"""
         try:
             tags_meta = self.get_text_metadata("Tags")
@@ -100,7 +103,7 @@ class Archive(libzim.reader.Archive):
         return search.getEstimatedMatches()
 
     @property
-    def counters(self) -> Dict[str, int]:
+    def counters(self) -> dict[str, int]:
         try:
             return parseMimetypeCounter(self.get_text_metadata("Counter"))
         except RuntimeError:  # pragma: no cover (no ZIM avail to test itl)

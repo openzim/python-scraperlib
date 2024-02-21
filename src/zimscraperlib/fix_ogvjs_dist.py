@@ -4,10 +4,12 @@
 
 """ quick script to fix videojs-ogvjs so that it triggers on webm mimetype """
 
+from __future__ import annotations
+
 import logging
 import pathlib
 import sys
-from typing import List, Union
+from typing import Union
 
 logging.basicConfig(format="%(levelname)s:%(message)s", level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -33,7 +35,7 @@ def fix_source_dir(source_vendors_path: Union[pathlib.Path, str]):
     logger.info("all done.")
 
 
-def run(args: List[str] = sys.argv):
+def run(args: list[str] = sys.argv):
     if len(args) < 2:  # noqa: PLR2004
         print(f"Usage: {args[0]} <source_vendors_path>")  # noqa: T201
         print(  # noqa: T201
