@@ -10,10 +10,16 @@ from typing import Optional, Union
 
 from zimscraperlib import logger
 from zimscraperlib.constants import (
+    CONTACT,
+)
+from zimscraperlib.constants import (
     MAXIMUM_DESCRIPTION_METADATA_LENGTH as MAX_DESC_LENGTH,
 )
 from zimscraperlib.constants import (
     MAXIMUM_LONG_DESCRIPTION_METADATA_LENGTH as MAX_LONG_DESC_LENGTH,
+)
+from zimscraperlib.constants import (
+    SCRAPER as PROJECT_NAME,
 )
 from zimscraperlib.download import stream_file
 
@@ -44,7 +50,8 @@ def handle_user_provided_file(
 
     if str(source).startswith("http"):
         logger.debug(f"download {source} -> {dest}")
-        stream_file(url=str(source), fpath=dest)
+        headers = {"User-Agent": f"{PROJECT_NAME.replace(' ','/')} ({CONTACT})"}
+        stream_file(url=str(source), fpath=dest, headers=headers)
     else:
         source = pathlib.Path(source).expanduser().resolve()
         if not source.exists():
