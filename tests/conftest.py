@@ -120,6 +120,16 @@ def webp_image():
     return file_src("ninja.webp")
 
 
+@pytest.fixture(scope="module")
+def valid_user_agent():
+    return "name/version (contact)"
+
+
+@pytest.fixture(scope="module")
+def invalid_user_agent():
+    return "name version) (contact)"
+
+
 @pytest.fixture(scope="session")
 def small_zim_file(tmpdir_factory):
     from zimscraperlib.download import stream_file
