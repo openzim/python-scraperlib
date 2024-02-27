@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Do not modify the ffmpeg_args in reencode function #144
+
 ## [3.3.0] - 2024-02-14
 
 ### Added
