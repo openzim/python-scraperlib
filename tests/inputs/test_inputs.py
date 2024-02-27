@@ -91,7 +91,7 @@ def test_remote_default_user_agent(valid_http_url, monkeypatch):
         assert headers is not None
         user_agent = headers.get("User-Agent")
         assert isinstance(user_agent, str)
-        assert user_agent.startswith(PROJECT_NAME)
+        assert user_agent.startswith(f"{PROJECT_NAME}/")
         assert user_agent.endswith(f"({CONTACT})")
 
     monkeypatch.setattr(
@@ -101,6 +101,23 @@ def test_remote_default_user_agent(valid_http_url, monkeypatch):
         raising=True,
     )
     handle_user_provided_file(source=valid_http_url)
+
+
+def test_remote_provided_user_agent(valid_http_url, valid_user_agent, monkeypatch):
+    def mock_stream_file(**kwargs):
+        headers = kwargs.get("headers")
+        assert headers is not None
+        user_agent = headers.get("User-Agent")
+        assert isinstance(user_agent, str)
+        assert user_agent == valid_user_agent
+
+    monkeypatch.setattr(
+        zimscraperlib.inputs,  # pyright: ignore[reportAttributeAccessIssue]
+        "stream_file",
+        mock_stream_file,
+        raising=True,
+    )
+    handle_user_provided_file(source=valid_http_url, user_agent=valid_user_agent)
 
 
 def test_remote_provided_none_user_agent(valid_http_url, monkeypatch):
