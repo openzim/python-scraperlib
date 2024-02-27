@@ -7,6 +7,7 @@ import pathlib
 import shutil
 import subprocess
 import tempfile
+from copy import deepcopy
 from typing import Optional
 
 from zimscraperlib import logger
@@ -19,6 +20,7 @@ def _build_ffmpeg_args(
     ffmpeg_args: list[str],
     threads: Optional[int],
 ) -> list[str]:
+    ffmpeg_args = deepcopy(ffmpeg_args)
     if threads:
         if "-threads" in ffmpeg_args:
             raise AttributeError("Cannot set the number of threads, already set")

@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Set a user-agent for `handle_user_provided_file` #103
+
+### Changed
+
+- Migrate to generic syntax in all std collections #140
+
+### Fixed
+
+- Do not modify the ffmpeg_args in reencode function #144
+
 ## [3.3.0] - 2024-02-14
 
 ### Added

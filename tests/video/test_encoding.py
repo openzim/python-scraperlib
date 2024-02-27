@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import re
+from copy import deepcopy
 from pathlib import Path
 from typing import Optional
 
 import pytest
 
 from zimscraperlib.video.encoding import _build_ffmpeg_args
+from zimscraperlib.video.presets import VideoWebmLow
 
 
 @pytest.mark.parametrize(
@@ -94,3 +96,17 @@ def test_build_ffmpeg_args(
                 ffmpeg_args=ffmpeg_args,
                 threads=threads,
             )
+
+
+def test_ffmpeg_args_not_modified():
+    """_build_ffmpeg_args hould not alter the original ffmpeg_args"""
+    preset = VideoWebmLow()
+    ffmpeg_args = preset.to_ffmpeg_args()
+    ffmpeg_args_orig = deepcopy(ffmpeg_args)
+    src_path = Path("file1.mp4")
+    tmp_path = Path("file2.mp4")
+
+    _build_ffmpeg_args(
+        src_path=src_path, tmp_path=tmp_path, ffmpeg_args=ffmpeg_args, threads=1
+    )
+    assert ffmpeg_args == ffmpeg_args_orig
