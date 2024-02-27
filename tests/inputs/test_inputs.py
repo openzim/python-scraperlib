@@ -6,11 +6,16 @@ from typing import Optional
 
 import pytest
 
+import zimscraperlib
+from zimscraperlib.constants import CONTACT
 from zimscraperlib.constants import (
     MAXIMUM_DESCRIPTION_METADATA_LENGTH as MAX_DESC_LENGTH,
 )
 from zimscraperlib.constants import (
     MAXIMUM_LONG_DESCRIPTION_METADATA_LENGTH as MAX_LONG_DESC_LENGTH,
+)
+from zimscraperlib.constants import (
+    NAME as PROJECT_NAME,
 )
 from zimscraperlib.inputs import compute_descriptions, handle_user_provided_file
 
@@ -78,6 +83,54 @@ def test_remote_indir(tmp_path, valid_http_url):
     assert fpath is not None
     assert fpath.exists()
     assert fpath.parent == tmp_path
+
+
+def test_remote_default_user_agent(valid_http_url, monkeypatch):
+    def mock_stream_file(**kwargs):
+        headers = kwargs.get("headers")
+        assert headers is not None
+        user_agent = headers.get("User-Agent")
+        assert isinstance(user_agent, str)
+        assert user_agent.startswith(f"{PROJECT_NAME}/")
+        assert user_agent.endswith(f"({CONTACT})")
+
+    monkeypatch.setattr(
+        zimscraperlib.inputs,  # pyright: ignore[reportAttributeAccessIssue]
+        "stream_file",
+        mock_stream_file,
+        raising=True,
+    )
+    handle_user_provided_file(source=valid_http_url)
+
+
+def test_remote_provided_user_agent(valid_http_url, valid_user_agent, monkeypatch):
+    def mock_stream_file(**kwargs):
+        headers = kwargs.get("headers")
+        assert headers is not None
+        user_agent = headers.get("User-Agent")
+        assert isinstance(user_agent, str)
+        assert user_agent == valid_user_agent
+
+    monkeypatch.setattr(
+        zimscraperlib.inputs,  # pyright: ignore[reportAttributeAccessIssue]
+        "stream_file",
+        mock_stream_file,
+        raising=True,
+    )
+    handle_user_provided_file(source=valid_http_url, user_agent=valid_user_agent)
+
+
+def test_remote_provided_none_user_agent(valid_http_url, monkeypatch):
+    def mock_stream_file(**kwargs):
+        assert kwargs.get("headers") is None
+
+    monkeypatch.setattr(
+        zimscraperlib.inputs,  # pyright: ignore[reportAttributeAccessIssue]
+        "stream_file",
+        mock_stream_file,
+        raising=True,
+    )
+    handle_user_provided_file(source=valid_http_url, user_agent=None)
 
 
 TEXT_NOT_USED = "text not used"

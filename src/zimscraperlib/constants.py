@@ -10,6 +10,8 @@ from zimscraperlib.__about__ import __version__
 ROOT_DIR = pathlib.Path(__file__).parent
 NAME = pathlib.Path(__file__).parent.name
 SCRAPER = f"{NAME} {__version__}"
+CONTACT = "dev@openzim.org"
+DEFAULT_USER_AGENT = f"{NAME}/{__version__} ({CONTACT})"
 
 UTF8 = "UTF-8"
 
