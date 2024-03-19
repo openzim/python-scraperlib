@@ -134,9 +134,7 @@ def make_zim_file(
     redirects: Sequence[tuple[str, str, str]] = None,  # noqa: RUF013  # pyright: ignore
     redirects_file: pathlib.Path = None,  # noqa: RUF013  # pyright: ignore
     rewrite_links: bool = True,  # noqa: FBT001, FBT002, ARG001
-    workaround_nocancel: Optional[bool] = True,  # noqa: FBT002
-    compression: Optional[str] = None,
-    ignore_duplicates: Optional[bool] = False,  # noqa: FBT002
+    workaround_nocancel: bool = True,  # noqa: FBT001, FBT002
     disable_metadata_checks: bool = False,  # noqa: FBT001, FBT002
 ):
     """Creates a zimwriterfs-like ZIM file at {fpath} from {build_dir}
@@ -163,9 +161,6 @@ def make_zim_file(
     zim_file = Creator(
         filename=fpath,
         main_path=main_page,
-        compression=compression,
-        workaround_nocancel=workaround_nocancel,
-        ignore_duplicates=ignore_duplicates,
         disable_metadata_checks=disable_metadata_checks,
     ).config_metadata(
         **{
