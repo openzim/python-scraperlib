@@ -36,20 +36,20 @@ scripts = [
   "invoke==2.2.0",
 ]
 lint = [
-  "black==24.1.1",
-  "ruff==0.2.1",
+  "black==24.3.0",
+  "ruff==0.3.3",
 ]
 check = [
-  "pyright==1.1.350",
+  "pyright==1.1.354",
 ]
 test = [
-  "pytest==8.0.0",
+  "pytest==8.1.1",
   "pytest-mock==3.12.0",
-  "coverage==7.4.1",
+  "coverage==7.4.4",
 ]
 dev = [
-  "pre-commit==3.5.0",
-  "debugpy==1.8.0",
+  "pre-commit==3.6.2",
+  "debugpy==1.8.1",
   "zimscraperlib[scripts]",
   "zimscraperlib[lint]",
   "zimscraperlib[test]",
