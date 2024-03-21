@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Add support for `disable_metadata_checks` arguments in `make_zim_file` function ("zimwritefs-mode")
+- Add support for `disable_metadata_checks` and `ignore_duplicates` arguments in `make_zim_file` function ("zimwritefs-mode")
 
 ### Changed
 
