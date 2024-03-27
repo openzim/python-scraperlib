@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 # vim: ai ts=4 sts=4 et sw=4 nu
 
+from __future__ import annotations
+
 import io
 import logging
 import pathlib
 import sys
 from collections.abc import Iterable
 from logging.handlers import RotatingFileHandler
-from typing import Optional
 
 from zimscraperlib.constants import NAME
 
@@ -17,16 +18,16 @@ VERBOSE_DEPENDENCIES = ["urllib3", "PIL", "boto3", "botocore", "s3transfer"]
 
 def getLogger(  # noqa: N802
     name: str,
-    level: Optional[int] = logging.INFO,
-    console: Optional[io.TextIOBase] = sys.stdout,  # pyright: ignore
-    log_format: Optional[str] = DEFAULT_FORMAT,
-    file: Optional[pathlib.Path] = False,  # noqa: FBT002  # pyright: ignore
-    file_level: Optional[int] = None,
-    file_format: Optional[str] = None,
-    file_max: Optional[int] = 2**20,
-    file_nb_backup: Optional[int] = 1,
-    deps_level: Optional[int] = logging.WARNING,  # noqa: ARG001
-    additional_deps: Optional[Iterable] = None,
+    level: int | None = logging.INFO,
+    console: io.TextIOBase | None = sys.stdout,  # pyright: ignore
+    log_format: str | None = DEFAULT_FORMAT,
+    file: pathlib.Path | None = False,  # noqa: FBT002  # pyright: ignore
+    file_level: int | None = None,
+    file_format: str | None = None,
+    file_max: int | None = 2**20,
+    file_nb_backup: int | None = 1,
+    deps_level: int | None = logging.WARNING,  # noqa: ARG001
+    additional_deps: Iterable | None = None,
 ):
     """configured logger for most usages
 

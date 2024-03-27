@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 # vim: ai ts=4 sts=4 et sw=4 nu
 
+from __future__ import annotations
+
 import io
 import pathlib
-from typing import Optional, Union
 
 import PIL
 from resizeimage import resizeimage
@@ -13,12 +14,12 @@ from zimscraperlib.image.utils import save_image
 
 
 def resize_image(
-    src: Union[pathlib.Path, io.BytesIO],
+    src: pathlib.Path | io.BytesIO,
     width: int,
-    height: Optional[int] = None,
-    dst: Optional[Union[pathlib.Path, io.BytesIO]] = None,
-    method: Optional[str] = "width",
-    allow_upscaling: Optional[bool] = True,  # noqa: FBT002
+    height: int | None = None,
+    dst: pathlib.Path | io.BytesIO | None = None,
+    method: str | None = "width",
+    allow_upscaling: bool | None = True,  # noqa: FBT002
     **params: str,
 ) -> None:
     """resize an image to requested dimensions

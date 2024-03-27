@@ -7,7 +7,7 @@ import concurrent.futures
 import io
 import pathlib
 import re
-from typing import ClassVar, Optional, Union
+from typing import ClassVar
 
 import pytest
 import requests
@@ -234,7 +234,7 @@ def custom_outtmpl() -> str:
 
 
 class WrongOuttmplType(BestWebm):
-    options: ClassVar[dict[str, Optional[Union[str, bool, int]]]] = {"outtmpl": 123}
+    options: ClassVar[dict[str, str | bool | int | None]] = {"outtmpl": 123}
 
 
 def test_get_options_wrong_outtmpl_type():

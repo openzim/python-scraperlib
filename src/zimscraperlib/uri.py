@@ -1,7 +1,8 @@
 """ URI handling module"""
 
+from __future__ import annotations
+
 import urllib.parse
-from typing import Optional, Union
 
 from zimscraperlib import logger
 from zimscraperlib.misc import first
@@ -9,15 +10,15 @@ from zimscraperlib.misc import first
 
 def rebuild_uri(
     uri: urllib.parse.ParseResult,
-    scheme: Optional[str] = None,
-    username: Optional[str] = None,
-    password: Optional[str] = None,
-    hostname: Optional[str] = None,
-    port: Optional[Union[str, int]] = None,
-    path: Optional[str] = None,
-    params: Optional[str] = None,
-    query: Optional[str] = None,
-    fragment: Optional[str] = None,
+    scheme: str | None = None,
+    username: str | None = None,
+    password: str | None = None,
+    hostname: str | None = None,
+    port: str | int | None = None,
+    path: str | None = None,
+    params: str | None = None,
+    query: str | None = None,
+    fragment: str | None = None,
     failsafe: bool = False,  # noqa: FBT001, FBT002
 ) -> urllib.parse.ParseResult:
     """new ParseResult named tuple from uri with requested part updated"""

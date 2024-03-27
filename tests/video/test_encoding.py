@@ -3,7 +3,6 @@ from __future__ import annotations
 import re
 from copy import deepcopy
 from pathlib import Path
-from typing import Optional
 
 import pytest
 
@@ -72,8 +71,8 @@ def test_build_ffmpeg_args(
     src_path: Path,
     tmp_path: Path,
     ffmpeg_args: list[str],
-    threads: Optional[int],
-    expected: Optional[list[str]],
+    threads: int | None,
+    expected: list[str] | None,
 ):
     if expected:
         assert (

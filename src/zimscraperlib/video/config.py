@@ -3,18 +3,18 @@
 
 from __future__ import annotations
 
-from typing import ClassVar, Optional, Union
+from typing import ClassVar
 
 
 class Config(dict):
     VERSION = 1
     ext = "dat"
     mimetype = "application/data"
-    options: ClassVar[dict[str, Optional[Union[str, bool, int]]]] = {}
-    defaults: ClassVar[dict[str, Optional[Union[str, bool, int]]]] = {
+    options: ClassVar[dict[str, str | bool | int | None]] = {}
+    defaults: ClassVar[dict[str, str | bool | int | None]] = {
         "-max_muxing_queue_size": "9999"
     }
-    mapping: ClassVar[dict[str, Optional[Union[str, bool, int]]]] = {
+    mapping: ClassVar[dict[str, str | bool | int | None]] = {
         "video_codec": "-codec:v",
         "audio_codec": "-codec:a",
         "max_video_bitrate": "-maxrate",

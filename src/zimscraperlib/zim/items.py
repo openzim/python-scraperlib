@@ -3,13 +3,14 @@
 
 
 """ libzim Item helpers """
+from __future__ import annotations
 
 import io
 import pathlib
 import re
 import tempfile
 import urllib.parse
-from typing import Any, Optional, Union
+from typing import Any
 
 import libzim.writer  # pyright: ignore
 
@@ -27,10 +28,10 @@ class Item(libzim.writer.Item):
 
     def __init__(
         self,
-        path: Optional[str] = None,
-        title: Optional[str] = None,
-        mimetype: Optional[str] = None,
-        hints: Optional[dict] = None,
+        path: str | None = None,
+        title: str | None = None,
+        mimetype: str | None = None,
+        hints: dict | None = None,
         **kwargs: Any,
     ):
         super().__init__()
@@ -72,13 +73,13 @@ class StaticItem(Item):
 
     def __init__(
         self,
-        content: Optional[Union[str, bytes]] = None,
-        fileobj: Optional[io.IOBase] = None,
-        filepath: Optional[pathlib.Path] = None,
-        path: Optional[str] = None,
-        title: Optional[str] = None,
-        mimetype: Optional[str] = None,
-        hints: Optional[dict] = None,
+        content: str | bytes | None = None,
+        fileobj: io.IOBase | None = None,
+        filepath: pathlib.Path | None = None,
+        path: str | None = None,
+        title: str | None = None,
+        mimetype: str | None = None,
+        hints: dict | None = None,
         **kwargs: Any,
     ):
         if content is not None:
@@ -148,11 +149,11 @@ class URLItem(StaticItem):
     def __init__(
         self,
         url: str,
-        path: Optional[str] = None,
-        title: Optional[str] = None,
-        mimetype: Optional[str] = None,
-        hints: Optional[dict] = None,
-        use_disk: Optional[bool] = None,
+        path: str | None = None,
+        title: str | None = None,
+        mimetype: str | None = None,
+        hints: dict | None = None,
+        use_disk: bool | None = None,
         **kwargs: Any,
     ):
         if use_disk is not None:

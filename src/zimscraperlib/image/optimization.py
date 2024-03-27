@@ -28,7 +28,6 @@ import io
 import os
 import pathlib
 import subprocess
-from typing import Optional, Union
 
 import piexif
 from optimize_images.img_aux_processing import do_reduce_colors, rebuild_palette
@@ -52,15 +51,15 @@ def ensure_matches(
 
 
 def optimize_png(
-    src: Union[pathlib.Path, io.BytesIO],
-    dst: Optional[pathlib.Path] = None,
-    reduce_colors: Optional[bool] = False,  # noqa: FBT002
-    max_colors: Optional[int] = 256,
-    fast_mode: Optional[bool] = True,  # noqa: FBT002
-    remove_transparency: Optional[bool] = False,  # noqa: FBT002
-    background_color: Optional[tuple[int, int, int]] = (255, 255, 255),
+    src: pathlib.Path | io.BytesIO,
+    dst: pathlib.Path | None = None,
+    reduce_colors: bool | None = False,  # noqa: FBT002
+    max_colors: int | None = 256,
+    fast_mode: bool | None = True,  # noqa: FBT002
+    remove_transparency: bool | None = False,  # noqa: FBT002
+    background_color: tuple[int, int, int] | None = (255, 255, 255),
     **options,  # noqa: ARG001
-) -> Union[pathlib.Path, io.BytesIO]:
+) -> pathlib.Path | io.BytesIO:
     """method to optimize PNG files using a pure python external optimizer
 
     Arguments:
@@ -99,13 +98,13 @@ def optimize_png(
 
 
 def optimize_jpeg(
-    src: Union[pathlib.Path, io.BytesIO],
-    dst: Optional[pathlib.Path] = None,
-    quality: Optional[int] = 85,
-    fast_mode: Optional[bool] = True,  # noqa: FBT002
-    keep_exif: Optional[bool] = True,  # noqa: FBT002
+    src: pathlib.Path | io.BytesIO,
+    dst: pathlib.Path | None = None,
+    quality: int | None = 85,
+    fast_mode: bool | None = True,  # noqa: FBT002
+    keep_exif: bool | None = True,  # noqa: FBT002
     **options,  # noqa: ARG001
-) -> Union[pathlib.Path, io.BytesIO]:
+) -> pathlib.Path | io.BytesIO:
     """method to optimize JPEG files using a pure python external optimizer
     quality: JPEG quality (integer between 1 and 100)
         values: 50 | 55 | 35 | 100 | XX
@@ -169,13 +168,13 @@ def optimize_jpeg(
 
 
 def optimize_webp(
-    src: Union[pathlib.Path, io.BytesIO],
-    dst: Optional[pathlib.Path] = None,
-    lossless: Optional[bool] = False,  # noqa: FBT002
-    quality: Optional[int] = 60,
-    method: Optional[int] = 6,
+    src: pathlib.Path | io.BytesIO,
+    dst: pathlib.Path | None = None,
+    lossless: bool | None = False,  # noqa: FBT002
+    quality: int | None = 60,
+    method: int | None = 6,
     **options,  # noqa: ARG001
-) -> Union[pathlib.Path, io.BytesIO]:
+) -> pathlib.Path | io.BytesIO:
     """method to optimize WebP using Pillow options
     lossless: Whether to use lossless compression (boolean)
         values: True | False
@@ -214,11 +213,11 @@ def optimize_webp(
 def optimize_gif(
     src: pathlib.Path,
     dst: pathlib.Path,
-    optimize_level: Optional[int] = 1,
-    lossiness: Optional[int] = None,
-    interlace: Optional[bool] = True,  # noqa: FBT002
-    no_extensions: Optional[bool] = True,  # noqa: FBT002
-    max_colors: Optional[int] = None,
+    optimize_level: int | None = 1,
+    lossiness: int | None = None,
+    interlace: bool | None = True,  # noqa: FBT002
+    no_extensions: bool | None = True,  # noqa: FBT002
+    max_colors: int | None = None,
     **options,  # noqa: ARG001
 ) -> pathlib.Path:
     """method to optimize GIFs using gifsicle >= 1.92
@@ -267,8 +266,8 @@ def optimize_gif(
 def optimize_image(
     src: pathlib.Path,
     dst: pathlib.Path,
-    delete_src: Optional[bool] = False,  # noqa: FBT002
-    convert: Optional[Union[bool, str]] = False,  # noqa: FBT002
+    delete_src: bool | None = False,  # noqa: FBT002
+    convert: bool | str | None = False,  # noqa: FBT002
     **options,
 ) -> bool:  # pyright: ignore
     """Optimize image, automatically selecting correct optimizer

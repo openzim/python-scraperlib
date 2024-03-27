@@ -7,7 +7,6 @@ import gettext
 import locale
 import pathlib
 import re
-from typing import Optional, Union
 
 import babel
 import iso639
@@ -60,7 +59,7 @@ def setlocale(root_dir: pathlib.Path, locale_name: str):
     return Locale.setup(root_dir / "locale", locale_name)
 
 
-def get_iso_lang_data(lang: str) -> tuple[dict, Union[dict, None]]:
+def get_iso_lang_data(lang: str) -> tuple[dict, dict | None]:
     """ISO-639-x languages details for lang. Raises NotFound
 
     Included keys: iso-639-1, iso-639-2b, iso-639-2t, iso-639-3, iso-639-5
@@ -113,9 +112,7 @@ def get_iso_lang_data(lang: str) -> tuple[dict, Union[dict, None]]:
     return lang_data, None
 
 
-def find_language_names(
-    query: str, lang_data: Optional[dict] = None
-) -> tuple[str, str]:
+def find_language_names(query: str, lang_data: dict | None = None) -> tuple[str, str]:
     """(native, english) language names for lang with help from language_details dict
 
     Falls back to English name if available or query if not"""
@@ -152,7 +149,7 @@ def update_with_macro(lang_data: dict, macro_data: dict):
 
 
 def get_language_details(
-    query: str, failsafe: Optional[bool] = False  # noqa: FBT002
+    query: str, failsafe: bool | None = False  # noqa: FBT002
 ) -> dict:
     """language details dict from query.
 

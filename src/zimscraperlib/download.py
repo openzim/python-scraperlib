@@ -7,7 +7,7 @@ import io
 import pathlib
 import subprocess
 from concurrent.futures import Future, ThreadPoolExecutor
-from typing import ClassVar, Optional, Union
+from typing import ClassVar
 
 import requests
 import yt_dlp as youtube_dl
@@ -21,7 +21,7 @@ class YoutubeDownloader:
     Shutdown method must be run explicitly to
     free any occupied resources"""
 
-    def __init__(self, threads: Optional[int] = 1) -> None:
+    def __init__(self, threads: int | None = 1) -> None:
         self.executor = ThreadPoolExecutor(max_workers=threads)
 
     def __enter__(self):
@@ -41,9 +41,9 @@ class YoutubeDownloader:
     def download(
         self,
         url: str,
-        options: Optional[dict],
-        wait: Optional[bool] = True,  # noqa: FBT002
-    ) -> Union[bool, Future]:
+        options: dict | None,
+        wait: bool | None = True,  # noqa: FBT002
+    ) -> bool | Future:
         """Downloads video using initialized executor.
 
         url: URL or Video ID
@@ -65,8 +65,8 @@ class YoutubeDownloader:
 
 
 class YoutubeConfig(dict):
-    options: ClassVar[dict[str, Optional[Union[str, bool, int]]]] = {}
-    defaults: ClassVar[dict[str, Optional[Union[str, bool, int]]]] = {
+    options: ClassVar[dict[str, str | bool | int | None]] = {}
+    defaults: ClassVar[dict[str, str | bool | int | None]] = {
         "writethumbnail": True,
         "write_all_thumbnails": True,
         "writesubtitles": True,
@@ -88,8 +88,8 @@ class YoutubeConfig(dict):
     @classmethod
     def get_options(
         cls,
-        target_dir: Optional[pathlib.Path] = None,
-        filepath: Optional[pathlib.Path] = None,
+        target_dir: pathlib.Path | None = None,
+        filepath: pathlib.Path | None = None,
         **options,
     ):
         if "outtmpl" not in options:
@@ -109,14 +109,14 @@ class YoutubeConfig(dict):
 
 
 class BestWebm(YoutubeConfig):
-    options: ClassVar[dict[str, Optional[Union[str, bool, int]]]] = {
+    options: ClassVar[dict[str, str | bool | int | None]] = {
         "preferredcodec": "webm",
         "format": "best[ext=webm]/bestvideo[ext=webm]+bestaudio[ext=webm]/best",
     }
 
 
 class BestMp4(YoutubeConfig):
-    options: ClassVar[dict[str, Optional[Union[str, bool, int]]]] = {
+    options: ClassVar[dict[str, str | bool | int | None]] = {
         "preferredcodec": "mp4",
         "format": "best[ext=mp4]/bestvideo[ext=mp4]+bestaudio[ext=m4a]/best",
     }
@@ -142,7 +142,7 @@ def save_large_file(url: str, fpath: pathlib.Path) -> None:
 
 
 def _get_retry_adapter(
-    max_retries: Optional[int] = 5,
+    max_retries: int | None = 5,
 ) -> requests.adapters.BaseAdapter:  # pyright: ignore
     retries = requests.packages.urllib3.util.retry.Retry(  # pyright: ignore
         total=max_retries,  # total number of retries
@@ -164,7 +164,7 @@ def _get_retry_adapter(
     return requests.adapters.HTTPAdapter(max_retries=retries)  # pyright: ignore
 
 
-def get_session(max_retries: Optional[int] = 5) -> requests.Session:
+def get_session(max_retries: int | None = 5) -> requests.Session:
     """Session to hold cookies and connection pool together"""
     session = requests.Session()
     session.mount("http", _get_retry_adapter(max_retries))  # tied to http and https
@@ -173,14 +173,14 @@ def get_session(max_retries: Optional[int] = 5) -> requests.Session:
 
 def stream_file(
     url: str,
-    fpath: Optional[pathlib.Path] = None,
-    byte_stream: Optional[io.BytesIO] = None,
-    block_size: Optional[int] = 1024,
-    proxies: Optional[dict] = None,
-    only_first_block: Optional[bool] = False,  # noqa: FBT002
-    max_retries: Optional[int] = 5,
-    headers: Optional[dict[str, str]] = None,
-    session: Optional[requests.Session] = None,
+    fpath: pathlib.Path | None = None,
+    byte_stream: io.BytesIO | None = None,
+    block_size: int | None = 1024,
+    proxies: dict | None = None,
+    only_first_block: bool | None = False,  # noqa: FBT002
+    max_retries: int | None = 5,
+    headers: dict[str, str] | None = None,
+    session: requests.Session | None = None,
 ) -> tuple[int, requests.structures.CaseInsensitiveDict]:  # pyright: ignore
     """Stream data from a URL to either a BytesIO object or a file
     Arguments -

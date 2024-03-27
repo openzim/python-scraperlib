@@ -9,13 +9,12 @@ from __future__ import annotations
 import logging
 import pathlib
 import sys
-from typing import Union
 
 logging.basicConfig(format="%(levelname)s:%(message)s", level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 
-def fix_source_dir(source_vendors_path: Union[pathlib.Path, str]):
+def fix_source_dir(source_vendors_path: pathlib.Path | str):
     """update ogvjs plugin to trigger on webm mimetype"""
     root = pathlib.Path(source_vendors_path)
     logger.info("fixing videosjs-ogvjs.js")

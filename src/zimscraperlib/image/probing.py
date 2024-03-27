@@ -7,14 +7,13 @@ import colorsys
 import io
 import pathlib
 import re
-from typing import Optional, Union
 
 import colorthief
 import PIL.Image
 
 
 def get_colors(
-    src: pathlib.Path, use_palette: Optional[bool] = True  # noqa: FBT002
+    src: pathlib.Path, use_palette: bool | None = True  # noqa: FBT002
 ) -> tuple[str, str]:
     """(main, secondary) HTML color codes from an image path"""
 
@@ -53,7 +52,7 @@ def is_hex_color(text: str) -> bool:
 
 
 def format_for(
-    src: Union[pathlib.Path, io.BytesIO],
+    src: pathlib.Path | io.BytesIO,
     from_suffix: bool = True,  # noqa: FBT001, FBT002
 ) -> str:
     """Pillow format of a given filename, either Pillow-detected or from suffix"""
@@ -71,9 +70,9 @@ def format_for(
 
 
 def is_valid_image(
-    image: Union[pathlib.Path, io.IOBase, bytes],
+    image: pathlib.Path | io.IOBase | bytes,
     imformat: str,
-    size: Optional[tuple[int, int]] = None,
+    size: tuple[int, int] | None = None,
 ) -> bool:
     """whether image is a valid imformat (PNG) image, optionnaly of requested size"""
     if isinstance(image, bytes):

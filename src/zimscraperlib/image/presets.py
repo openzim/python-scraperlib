@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 
-from typing import ClassVar, Optional, Union
+from typing import ClassVar
 
 """ presets for ImageOptimizer in zimscraperlib.image.optimization module """
 
@@ -22,7 +22,7 @@ class WebpLow:
     ext = "webp"
     mimetype = f"{preset_type}/webp"
 
-    options: ClassVar[dict[str, Optional[Union[str, bool, int]]]] = {
+    options: ClassVar[dict[str, str | bool | int | None]] = {
         "lossless": False,
         "quality": 40,
         "method": 6,
@@ -41,7 +41,7 @@ class WebpMedium:
     ext = "webp"
     mimetype = f"{preset_type}/webp"
 
-    options: ClassVar[dict[str, Optional[Union[str, bool, int]]]] = {
+    options: ClassVar[dict[str, str | bool | int | None]] = {
         "lossless": False,
         "quality": 50,
         "method": 6,
@@ -60,7 +60,7 @@ class WebpHigh:
     ext = "webp"
     mimetype = f"{preset_type}/webp"
 
-    options: ClassVar[dict[str, Optional[Union[str, bool, int]]]] = {
+    options: ClassVar[dict[str, str | bool | int | None]] = {
         "lossless": False,
         "quality": 90,
         "method": 6,
@@ -81,7 +81,7 @@ class GifLow:
     ext = "gif"
     mimetype = f"{preset_type}/gif"
 
-    options: ClassVar[dict[str, Optional[Union[str, bool, int]]]] = {
+    options: ClassVar[dict[str, str | bool | int | None]] = {
         "optimize_level": 3,
         "max_colors": 256,
         "lossiness": 80,
@@ -104,7 +104,7 @@ class GifMedium:
     ext = "gif"
     mimetype = f"{preset_type}/gif"
 
-    options: ClassVar[dict[str, Optional[Union[str, bool, int]]]] = {
+    options: ClassVar[dict[str, str | bool | int | None]] = {
         "optimize_level": 3,
         "lossiness": 20,
         "no_extensions": True,
@@ -126,7 +126,7 @@ class GifHigh:
     ext = "gif"
     mimetype = f"{preset_type}/gif"
 
-    options: ClassVar[dict[str, Optional[Union[str, bool, int]]]] = {
+    options: ClassVar[dict[str, str | bool | int | None]] = {
         "optimize_level": 2,
         "lossiness": None,
         "no_extensions": True,
@@ -145,7 +145,7 @@ class PngLow:
     ext = "png"
     mimetype = f"{preset_type}/png"
 
-    options: ClassVar[dict[str, Optional[Union[str, bool, int]]]] = {
+    options: ClassVar[dict[str, str | bool | int | None]] = {
         "reduce_colors": True,
         "remove_transparency": False,
         "max_colors": 256,
@@ -164,7 +164,7 @@ class PngMedium:
     ext = "png"
     mimetype = f"{preset_type}/png"
 
-    options: ClassVar[dict[str, Optional[Union[str, bool, int]]]] = {
+    options: ClassVar[dict[str, str | bool | int | None]] = {
         "reduce_colors": False,
         "remove_transparency": False,
         "fast_mode": False,
@@ -182,7 +182,7 @@ class PngHigh:
     ext = "png"
     mimetype = f"{preset_type}/png"
 
-    options: ClassVar[dict[str, Optional[Union[str, bool, int]]]] = {
+    options: ClassVar[dict[str, str | bool | int | None]] = {
         "reduce_colors": False,
         "remove_transparency": False,
         "fast_mode": True,
@@ -201,7 +201,7 @@ class JpegLow:
     ext = "png"
     mimetype = f"{preset_type}/png"
 
-    options: ClassVar[dict[str, Optional[Union[str, bool, int]]]] = {
+    options: ClassVar[dict[str, str | bool | int | None]] = {
         "quality": 45,
         "keep_exif": False,
         "fast_mode": True,
@@ -220,7 +220,7 @@ class JpegMedium:
     ext = "jpg"
     mimetype = f"{preset_type}/jpeg"
 
-    options: ClassVar[dict[str, Optional[Union[str, bool, int]]]] = {
+    options: ClassVar[dict[str, str | bool | int | None]] = {
         "quality": 65,
         "keep_exif": False,
         "fast_mode": True,
@@ -239,7 +239,7 @@ class JpegHigh:
     ext = "jpg"
     mimetype = f"{preset_type}/jpeg"
 
-    options: ClassVar[dict[str, Optional[Union[str, bool, int]]]] = {
+    options: ClassVar[dict[str, str | bool | int | None]] = {
         "quality": 80,
         "keep_exif": True,
         "fast_mode": True,

@@ -6,7 +6,6 @@ from __future__ import annotations
 import pathlib
 import shutil
 import tempfile
-from typing import Optional, Union
 
 from zimscraperlib import logger
 from zimscraperlib.constants import DEFAULT_USER_AGENT
@@ -20,12 +19,12 @@ from zimscraperlib.download import stream_file
 
 
 def handle_user_provided_file(
-    source: Optional[Union[pathlib.Path, str]] = None,
-    dest: Optional[pathlib.Path] = None,
-    in_dir: Optional[pathlib.Path] = None,
+    source: pathlib.Path | str | None = None,
+    dest: pathlib.Path | None = None,
+    in_dir: pathlib.Path | None = None,
     nocopy: bool = False,  # noqa: FBT001, FBT002
-    user_agent: Optional[str] = DEFAULT_USER_AGENT,
-) -> Union[pathlib.Path, None]:
+    user_agent: str | None = DEFAULT_USER_AGENT,
+) -> pathlib.Path | None:
     """path to downloaded or copied a user provided file (URL or path)
 
     args:
@@ -63,9 +62,9 @@ def handle_user_provided_file(
 
 def compute_descriptions(
     default_description: str,
-    user_description: Optional[str],
-    user_long_description: Optional[str],
-) -> tuple[str, Optional[str]]:
+    user_description: str | None,
+    user_long_description: str | None,
+) -> tuple[str, str | None]:
     """Computes short and long descriptions compliant with ZIM standard.
 
     Based on provided parameters, the function computes a short and a long description

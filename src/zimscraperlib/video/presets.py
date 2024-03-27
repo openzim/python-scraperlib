@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 
-from typing import ClassVar, Optional, Union
+from typing import ClassVar
 
 from zimscraperlib.video.config import Config
 
@@ -22,7 +22,7 @@ class VoiceMp3Low(Config):
     ext = "mp3"
     mimetype = "audio/mp3"
 
-    options: ClassVar[dict[str, Optional[Union[str, bool, int]]]] = {
+    options: ClassVar[dict[str, str | bool | int | None]] = {
         "-vn": "",  # remove video stream
         "-codec:a": "mp3",  # audio codec
         "-ar": "44100",  # audio sampling rate
@@ -42,7 +42,7 @@ class VideoWebmLow(Config):
     ext = "webm"
     mimetype = f"{preset_type}/webm"
 
-    options: ClassVar[dict[str, Optional[Union[str, bool, int]]]] = {
+    options: ClassVar[dict[str, str | bool | int | None]] = {
         "-codec:v": "libvpx",  # video codec
         "-quality": "best",  # codec preset
         "-b:v": "128k",  # Adjust quantizer within min/max to target this bitrate
@@ -68,7 +68,7 @@ class VideoMp4Low(Config):
     ext = "mp4"
     mimetype = f"{preset_type}/mp4"
 
-    options: ClassVar[dict[str, Optional[Union[str, bool, int]]]] = {
+    options: ClassVar[dict[str, str | bool | int | None]] = {
         "-codec:v": "h264",  # video codec
         "-b:v": "300k",  # target video bitrate
         "-maxrate": "300k",  # max video bitrate
@@ -93,7 +93,7 @@ class VideoWebmHigh(Config):
     ext = "webm"
     mimetype = f"{preset_type}/webm"
 
-    options: ClassVar[dict[str, Optional[Union[str, bool, int]]]] = {
+    options: ClassVar[dict[str, str | bool | int | None]] = {
         "-codec:v": "libvpx",  # video codec
         "-codec:a": "libvorbis",  # audio codec
         "-crf": "25",  # constant quality, lower value gives better qual and larger size
@@ -111,7 +111,7 @@ class VideoMp4High(Config):
     ext = "mp4"
     mimetype = f"{preset_type}/mp4"
 
-    options: ClassVar[dict[str, Optional[Union[str, bool, int]]]] = {
+    options: ClassVar[dict[str, str | bool | int | None]] = {
         "-codec:v": "h264",  # video codec
         "-codec:a": "aac",  # audio codec
         "-crf": "20",  # constant quality, lower value gives better qual and larger size
