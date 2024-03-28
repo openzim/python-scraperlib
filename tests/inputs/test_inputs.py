@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 # vim: ai ts=4 sts=4 et sw=4 nu
 
+from __future__ import annotations
+
 import pathlib
-from typing import Optional
 
 import pytest
 
@@ -14,9 +15,7 @@ from zimscraperlib.constants import (
 from zimscraperlib.constants import (
     MAXIMUM_LONG_DESCRIPTION_METADATA_LENGTH as MAX_LONG_DESC_LENGTH,
 )
-from zimscraperlib.constants import (
-    NAME as PROJECT_NAME,
-)
+from zimscraperlib.constants import NAME as PROJECT_NAME
 from zimscraperlib.inputs import compute_descriptions, handle_user_provided_file
 
 
@@ -277,7 +276,7 @@ LONG_TEXT = (
 )
 def test_description(
     user_description: str,
-    user_long_description: Optional[str],
+    user_long_description: str | None,
     default_description: str,
     *,
     raises: bool,

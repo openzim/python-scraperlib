@@ -24,7 +24,7 @@ import pathlib
 import re
 import weakref
 from collections.abc import Callable, Iterable
-from typing import Any, Optional, Union
+from typing import Any
 
 import libzim.writer  # pyright: ignore
 
@@ -64,9 +64,9 @@ DUPLICATE_EXC_STR = re.compile(
 
 def mimetype_for(
     path: str,
-    content: Optional[Union[bytes, str]] = None,
-    fpath: Optional[pathlib.Path] = None,
-    mimetype: Optional[str] = None,
+    content: bytes | str | None = None,
+    fpath: pathlib.Path | None = None,
+    mimetype: str | None = None,
 ) -> str:
     """mimetype as provided or guessed from fpath, path or content"""
     if not mimetype:
@@ -110,9 +110,9 @@ class Creator(libzim.writer.Creator):
         self,
         filename: pathlib.Path,
         main_path: str,
-        compression: Optional[str] = None,
-        workaround_nocancel: Optional[bool] = True,  # noqa: FBT002
-        ignore_duplicates: Optional[bool] = False,  # noqa: FBT002
+        compression: str | None = None,
+        workaround_nocancel: bool | None = True,  # noqa: FBT002
+        ignore_duplicates: bool | None = False,  # noqa: FBT002
         disable_metadata_checks: bool = False,  # noqa: FBT001, FBT002
     ):
         super().__init__(filename=filename)
@@ -134,7 +134,7 @@ class Creator(libzim.writer.Creator):
         self.disable_metadata_checks = disable_metadata_checks
 
     def config_indexing(
-        self, indexing: bool, language: Optional[str] = None  # noqa: FBT001
+        self, indexing: bool, language: str | None = None  # noqa: FBT001
     ):
         """Toggle full-text and title indexing of entries
 
@@ -172,7 +172,7 @@ class Creator(libzim.writer.Creator):
     def validate_metadata(
         self,
         name: str,
-        value: Union[bytes, str, datetime.datetime, datetime.date, Iterable[str]],
+        value: bytes | str | datetime.datetime | datetime.date | Iterable[str],
     ):
         """Ensures metadata value for name is conform with the openZIM spec on Metadata
 
@@ -194,7 +194,7 @@ class Creator(libzim.writer.Creator):
     def add_metadata(
         self,
         name: str,
-        content: Union[str, bytes, datetime.date, datetime.datetime, Iterable[str]],
+        content: str | bytes | datetime.date | datetime.datetime | Iterable[str],
         mimetype: str = "text/plain;charset=UTF-8",
     ):
         if not self.disable_metadata_checks:
@@ -217,17 +217,17 @@ class Creator(libzim.writer.Creator):
         Language: str,  # noqa: N803
         Title: str,  # noqa: N803
         Description: str,  # noqa: N803
-        LongDescription: Optional[str] = None,  # noqa: N803
+        LongDescription: str | None = None,  # noqa: N803
         Creator: str,  # noqa: N803
         Publisher: str,  # noqa: N803
-        Date: Union[datetime.datetime, datetime.date, str],  # noqa: N803
+        Date: datetime.datetime | datetime.date | str,  # noqa: N803
         Illustration_48x48_at_1: bytes,  # noqa: N803
-        Tags: Optional[Union[Iterable[str], str]] = None,  # noqa: N803
-        Scraper: Optional[str] = None,  # noqa: N803
-        Flavour: Optional[str] = None,  # noqa: N803
-        Source: Optional[str] = None,  # noqa: N803
-        License: Optional[str] = None,  # noqa: N803
-        Relation: Optional[str] = None,  # noqa: N803
+        Tags: Iterable[str] | str | None = None,  # noqa: N803
+        Scraper: str | None = None,  # noqa: N803
+        Flavour: str | None = None,  # noqa: N803
+        Source: str | None = None,  # noqa: N803
+        License: str | None = None,  # noqa: N803
+        Relation: str | None = None,  # noqa: N803
         **extras: str,
     ):
         """Sets all mandatory Metadata as well as standard and any other text ones"""
@@ -262,17 +262,15 @@ class Creator(libzim.writer.Creator):
     def add_item_for(
         self,
         path: str,
-        title: Optional[str] = None,
-        fpath: Optional[pathlib.Path] = None,
-        content: Optional[Union[bytes, str]] = None,
-        mimetype: Optional[str] = None,
-        is_front: Optional[bool] = None,
-        should_compress: Optional[bool] = None,
-        delete_fpath: Optional[bool] = False,  # noqa: FBT002
-        duplicate_ok: Optional[bool] = None,
-        callback: Optional[
-            Union[callable, tuple[callable, Any]]  # pyright: ignore
-        ] = None,
+        title: str | None = None,
+        fpath: pathlib.Path | None = None,
+        content: bytes | str | None = None,
+        mimetype: str | None = None,
+        is_front: bool | None = None,
+        should_compress: bool | None = None,
+        delete_fpath: bool | None = False,  # noqa: FBT002
+        duplicate_ok: bool | None = None,
+        callback: Callable | tuple[Callable, Any] | None = None,
     ):
         """Add a File or content at a specified path and get its path
 
@@ -330,8 +328,8 @@ class Creator(libzim.writer.Creator):
     def add_item(
         self,
         item: libzim.writer.Item,
-        duplicate_ok: Optional[bool] = None,
-        callback: Optional[Union[Callable, tuple[Callable, Any]]] = None,
+        duplicate_ok: bool | None = None,
+        callback: Callable | tuple[Callable, Any] | None = None,
     ):
         """Add a libzim.writer.Item
 
@@ -360,9 +358,9 @@ class Creator(libzim.writer.Creator):
         self,
         path: str,
         target_path: str,
-        title: Optional[str] = "",
-        is_front: Optional[bool] = None,
-        duplicate_ok: Optional[bool] = None,
+        title: str | None = "",
+        is_front: bool | None = None,
+        duplicate_ok: bool | None = None,
     ):
         """Add a redirect from path to target_path
 

@@ -2,16 +2,17 @@
 # vim: ai ts=4 sts=4 et sw=4 nu
 
 """ Tools to work with HTML contents """
+from __future__ import annotations
 
 import pathlib
-from typing import BinaryIO, TextIO, Union
+from typing import BinaryIO, TextIO
 
 from bs4 import BeautifulSoup
 
 from zimscraperlib.types import ARTICLE_MIME
 
 
-def find_title_in(content: Union[str, BinaryIO, TextIO], mime_type: str) -> str:
+def find_title_in(content: str | BinaryIO | TextIO, mime_type: str) -> str:
     """Extracted title from HTML content
 
     blank on failure to extract and non-HTML files"""
@@ -32,7 +33,7 @@ def find_title_in_file(fpath: pathlib.Path, mime_type: str) -> str:
         return ""
 
 
-def find_language_in(content: Union[str, BinaryIO, TextIO], mime_type: str) -> str:
+def find_language_in(content: str | BinaryIO | TextIO, mime_type: str) -> str:
     """Extracted language from HTML content
 
     blank on failure to extract and non-HTML files"""

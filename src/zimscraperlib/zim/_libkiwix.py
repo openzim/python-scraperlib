@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import io
 from collections import namedtuple
-from typing import Dict, Optional
+from typing import Dict
 
 MimetypeAndCounter = namedtuple("MimetypeAndCounter", ["mimetype", "value"])
 CounterMap = Dict[
@@ -24,7 +24,7 @@ CounterMap = Dict[
 ]
 
 
-def getline(src: io.StringIO, delim: Optional[bool] = None) -> tuple[bool, str]:
+def getline(src: io.StringIO, delim: bool | None = None) -> tuple[bool, str]:
     """C++ stdlib getline() ~clone
 
     Reads `src` until it finds `delim`.

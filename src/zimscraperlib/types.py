@@ -19,7 +19,6 @@ from __future__ import annotations
 
 import mimetypes
 import pathlib
-from typing import Optional, Union
 
 ARTICLE_MIME: str = "text/html"
 FALLBACK_MIME: str = "application/octet-stream"
@@ -38,8 +37,8 @@ FONT_MIMES: list[str] = [
 
 
 def get_mime_for_name(
-    filename: Union[str, pathlib.Path],
-    fallback: Optional[str] = FALLBACK_MIME,
+    filename: str | pathlib.Path,
+    fallback: str | None = FALLBACK_MIME,
     no_ext_to=ARTICLE_MIME,
 ) -> str:
     """MIME-Type string from a filename

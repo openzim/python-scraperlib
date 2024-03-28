@@ -12,7 +12,6 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
-from typing import Optional
 
 import libzim.reader  # pyright: ignore
 import libzim.search  # Query, Searcher  # pyright: ignore
@@ -71,7 +70,7 @@ class Archive(libzim.reader.Archive):
         return bytes(self.get_item(path).content)
 
     def get_suggestions(
-        self, query: str, start: int = 0, end: Optional[int] = None
+        self, query: str, start: int = 0, end: int | None = None
     ) -> Iterable[str]:
         """paths iterator over suggestion matches for query"""
         suggestion = libzim.suggestion.SuggestionSearcher(self).suggest(query)
@@ -85,7 +84,7 @@ class Archive(libzim.reader.Archive):
         return suggestion.getEstimatedMatches()
 
     def get_search_results(
-        self, query: str, start: int = 0, end: Optional[int] = None
+        self, query: str, start: int = 0, end: int | None = None
     ) -> Iterable[str]:
         """paths iterator over search results for query"""
         search = libzim.search.Searcher(self).search(

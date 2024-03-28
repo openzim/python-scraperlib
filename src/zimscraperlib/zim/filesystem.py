@@ -32,7 +32,6 @@ import datetime
 import pathlib
 import re
 from collections.abc import Sequence
-from typing import Optional
 
 from zimscraperlib import logger
 from zimscraperlib.filesystem import get_file_mimetype
@@ -93,8 +92,8 @@ def add_to_zim(
 
 def add_redirects_to_zim(
     zim_file: Creator,
-    redirects: Optional[Sequence[tuple[str, str, Optional[str]]]] = None,
-    redirects_file: Optional[pathlib.Path] = None,
+    redirects: Sequence[tuple[str, str, str | None]] | None = None,
+    redirects_file: pathlib.Path | None = None,
 ):
     """add redirects from list of source/target or redirects file to zim"""
     if redirects is None:

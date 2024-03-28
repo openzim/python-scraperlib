@@ -8,7 +8,6 @@ import shutil
 import subprocess
 import tempfile
 from copy import deepcopy
-from typing import Optional
 
 from zimscraperlib import logger
 from zimscraperlib.logging import nicer_args_join
@@ -18,7 +17,7 @@ def _build_ffmpeg_args(
     src_path: pathlib.Path,
     tmp_path: pathlib.Path,
     ffmpeg_args: list[str],
-    threads: Optional[int],
+    threads: int | None,
 ) -> list[str]:
     ffmpeg_args = deepcopy(ffmpeg_args)
     if threads:
@@ -45,7 +44,7 @@ def reencode(
     delete_src=False,  # noqa: FBT002
     with_process=False,  # noqa: FBT002
     failsafe=True,  # noqa: FBT002
-    threads: Optional[int] = 1,
+    threads: int | None = 1,
 ):
     """Runs ffmpeg with given ffmpeg_args
 

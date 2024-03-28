@@ -9,9 +9,10 @@
         (and thus Provider instanced twice)
     - to release whatever needs to be once we know data won't be fetched anymore """
 
+from __future__ import annotations
+
 import io
 import pathlib
-from typing import Optional, Union
 
 import libzim.writer  # pyright: ignore
 import requests
@@ -23,15 +24,15 @@ class FileProvider(libzim.writer.FileProvider):
     def __init__(
         self,
         filepath: pathlib.Path,
-        size: Optional[int] = None,  # noqa: ARG002
-        ref: Optional[object] = None,
+        size: int | None = None,  # noqa: ARG002
+        ref: object | None = None,
     ):
         super().__init__(filepath)
         self.ref = ref
 
 
 class StringProvider(libzim.writer.StringProvider):
-    def __init__(self, content: Union[str, bytes], ref: Optional[object] = None):
+    def __init__(self, content: str | bytes, ref: object | None = None):
         super().__init__(content)
         self.ref = ref
 
@@ -45,8 +46,8 @@ class FileLikeProvider(libzim.writer.ContentProvider):
     def __init__(
         self,
         fileobj: io.IOBase,
-        size: Optional[int] = None,
-        ref: Optional[object] = None,
+        size: int | None = None,
+        ref: object | None = None,
     ):
         super().__init__()
         self.ref = ref
@@ -71,9 +72,7 @@ class URLProvider(libzim.writer.ContentProvider):
 
     Useful for non-indexed content for which feed() is called only once"""
 
-    def __init__(
-        self, url: str, size: Optional[int] = None, ref: Optional[object] = None
-    ):
+    def __init__(self, url: str, size: int | None = None, ref: object | None = None):
         super().__init__()
         self.url = url
         self.size = size if size is not None else self.get_size_of(url)
@@ -85,7 +84,7 @@ class URLProvider(libzim.writer.ContentProvider):
         self.resp.raise_for_status()
 
     @staticmethod
-    def get_size_of(url) -> Union[int, None]:
+    def get_size_of(url) -> int | None:
         _, headers = stream_file(url, byte_stream=io.BytesIO(), only_first_block=True)
         try:
             return int(headers["Content-Length"])

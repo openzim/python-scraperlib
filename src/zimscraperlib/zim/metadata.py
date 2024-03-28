@@ -3,7 +3,7 @@ from __future__ import annotations
 import datetime
 import re
 from collections.abc import Iterable
-from typing import Any, Union
+from typing import Any
 
 from zimscraperlib.constants import (
     ILLUSTRATIONS_METADATA_RE,
@@ -47,7 +47,7 @@ def validate_title(name: str, value: str):
         raise ValueError(f"{name} is too long.")
 
 
-def validate_date(name: str, value: Union[datetime.datetime, datetime.date, str]):
+def validate_date(name: str, value: datetime.datetime | datetime.date | str):
     """ensures Date metadata can be casted to an ISO 8601 string"""
     if name == "Date":
         if not isinstance(value, (datetime.datetime, datetime.date, str)):
@@ -65,7 +65,7 @@ def validate_date(name: str, value: Union[datetime.datetime, datetime.date, str]
                 raise ValueError(f"Invalid {name} format: {exc}") from None
 
 
-def validate_language(name: str, value: Union[Iterable[str], str]):
+def validate_language(name: str, value: Iterable[str] | str):
     """ensures Language metadata is a single or list of ISO-639-3 codes"""
     if name == "Language":
         if isinstance(value, str):
@@ -96,7 +96,7 @@ def validate_longdescription(name: str, value: str):
         raise ValueError(f"{name} is too long.")
 
 
-def validate_tags(name: str, value: Union[Iterable[str], str]):
+def validate_tags(name: str, value: Iterable[str] | str):
     """ensures Tags metadata is either one or a list of strings"""
     if name == "Tags" and (
         not isinstance(value, Iterable)
