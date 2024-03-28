@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Simplify type annotations by replacing Union and Optional with pipe character ("|") for improved readability and clarity
+
 ## [3.3.2] - 2024-03-25
 
 ### Added

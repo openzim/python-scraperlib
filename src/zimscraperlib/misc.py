@@ -1,6 +1,6 @@
-from __future__ import annotations
-
 """ Miscelaneous utils"""
+
+from __future__ import annotations
 
 
 def first(*args: object | None) -> object:
