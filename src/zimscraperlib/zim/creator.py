@@ -20,6 +20,7 @@
 from __future__ import annotations
 
 import datetime
+import logging
 import pathlib
 import re
 import weakref
@@ -53,6 +54,9 @@ from zimscraperlib.zim.metadata import (
     validate_tags,
     validate_title,
 )
+
+# Shared logger
+logger = logging.getLogger("scraperlib")
 
 DUPLICATE_EXC_STR = re.compile(
     r"^Impossible to add(.+)"
@@ -190,6 +194,7 @@ class Creator(libzim.writer.Creator):
         validate_longdescription(name, value)  # pyright: ignore
         validate_tags(name, value)  # pyright: ignore
         validate_illustrations(name, value)  # pyright: ignore
+        logger.debug(f"{name}: {value}")
 
     def add_metadata(
         self,
