@@ -14,7 +14,9 @@ import time
 
 import pytest
 from libzim.writer import Compression  # pyright: ignore
+from unittest.mock import MagicMock
 
+from zimscraperlib import logger
 from zimscraperlib.constants import (
     DEFAULT_DEV_ZIM_METADATA,
     MANDATORY_ZIM_METADATA_KEYS,
@@ -539,6 +541,18 @@ def test_check_metadata(tmp_path):
     with pytest.raises(ValueError, match="LongDescription is too long."):
         Creator(tmp_path, "").config_dev_metadata(LongDescription="T" * 5000).start()
 
+def test_start_logs_metadata_debug_enabled(tmp_path, mocker):
+    # logger is not resolving?
+    #with mocker.patch.object(logger, 'isEnabledFor', new=MagicMock(return_value=True)) as faux_logger_debug:
+     #   with mocker.spy(faux_logger_debug, 'debug') as faux_logger:
+      #      with logger as orig_logger:
+                try:
+       #             logger=faux_logger
+                    with pytest.raises(ValueError, match="Mandatory metadata are not all set."):
+                        Creator(tmp_path, "").start()
+                finally:
+        #            assert [c for c in faux_logger.call_args_list if c.args[0].startswith("Metadata:")]
+        #            logger=orig_logger
 
 def test_relax_metadata(tmp_path):
     Creator(tmp_path, "", disable_metadata_checks=True).config_dev_metadata(

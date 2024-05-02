@@ -20,15 +20,16 @@
 from __future__ import annotations
 
 import datetime
+import logging as stdlogging
 import pathlib
 import re
 import weakref
 from collections.abc import Callable, Iterable
-from logging import getLogger
 from typing import Any
 
 import libzim.writer  # pyright: ignore
 
+from zimscraperlib import logger
 from zimscraperlib.constants import (
     DEFAULT_DEV_ZIM_METADATA,
     FRONT_ARTICLE_MIMETYPES,
@@ -148,10 +149,10 @@ class Creator(libzim.writer.Creator):
         return self
 
     def start(self):
-        logger = getLogger()
-        if logger.isEnabledFor(logger.DEBUG):
+        # not sure why DEBUG isn't resolving.
+        if logger.isEnabledFor(10):  # stdlogging dot d e b u g 
             for name, value in self._metadata.items():
-                    logger.debug(f"Metadata: {name} = {value}")
+                logger.debug(f"Metadata: {name} = {value}")
 
         if not all(self._metadata.get(key) for key in MANDATORY_ZIM_METADATA_KEYS):
             raise ValueError("Mandatory metadata are not all set.")
