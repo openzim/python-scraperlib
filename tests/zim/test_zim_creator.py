@@ -4,6 +4,7 @@
 import base64
 import datetime
 import io
+import logging
 import pathlib
 import random
 import shutil
@@ -11,12 +12,11 @@ import subprocess
 import sys
 import tempfile
 import time
+from unittest.mock import call, patch
 
 import pytest
 from libzim.writer import Compression  # pyright: ignore
-from unittest.mock import MagicMock
 
-from zimscraperlib import logger
 from zimscraperlib.constants import (
     DEFAULT_DEV_ZIM_METADATA,
     MANDATORY_ZIM_METADATA_KEYS,
@@ -541,18 +541,79 @@ def test_check_metadata(tmp_path):
     with pytest.raises(ValueError, match="LongDescription is too long."):
         Creator(tmp_path, "").config_dev_metadata(LongDescription="T" * 5000).start()
 
-def test_start_logs_metadata_debug_enabled(tmp_path, mocker):
-    # logger is not resolving?
-    #with mocker.patch.object(logger, 'isEnabledFor', new=MagicMock(return_value=True)) as faux_logger_debug:
-     #   with mocker.spy(faux_logger_debug, 'debug') as faux_logger:
-      #      with logger as orig_logger:
-                try:
-       #             logger=faux_logger
-                    with pytest.raises(ValueError, match="Mandatory metadata are not all set."):
-                        Creator(tmp_path, "").start()
-                finally:
-        #            assert [c for c in faux_logger.call_args_list if c.args[0].startswith("Metadata:")]
-        #            logger=orig_logger
+
+@pytest.mark.parametrize(
+    "tags",
+    [
+        (
+            "wikipedia;_category:wikipedia;_pictures:no;_videos:no;_details:yes;"
+            "_ftindex:yes"
+        ),
+        (
+            [
+                "wikipedia",
+                "_category:wikipedia",
+                "_pictures:no",
+                "_videos:no",
+                "_details:yes",
+                "_ftindex:yes",
+            ]
+        ),
+    ],
+)
+@patch("zimscraperlib.zim.creator.logger", autospec=True)
+def test_start_logs_metadata_log_contents(mocked_logger, png_image, tags, tmp_path):
+    mocked_logger.isEnabledFor.side_effect = lambda level: level == logging.DEBUG
+    fpath = tmp_path / "test_config.zim"
+    with open(png_image, "rb") as fh:
+        png_data = fh.read()
+    with Creator(fpath, "").config_metadata(
+        Name="wikipedia_fr_football",
+        Title="English Wikipedia",
+        Creator="English speaking Wikipedia contributors",
+        Publisher="Wikipedia user Foobar",
+        Date="2009-11-21",
+        Description="All articles (without images) from the english Wikipedia",
+        LongDescription="This ZIM file contains all articles (without images)"
+        " from the english Wikipedia by 2009-11-10. The topics are...",
+        Language="eng",
+        License="CC-BY",
+        Tags=tags,
+        Flavour="nopic",
+        Source="https://en.wikipedia.org/",
+        Scraper="mwoffliner 1.2.3",
+        Illustration_48x48_at_1=png_data,
+        TestMetadata="Test Metadata",
+    ) as creator:
+        with pytest.raises(ValueError, match="Mandatory metadata are not all set."):
+            creator.start()
+    mocked_logger.debug.assert_has_calls(
+        [
+            call("Metadata: Creator = English speaking Wikipedia contributors"),
+            call("Metadata: Date = 2009-11-21"),
+            call(
+                "Metadata: Description = All articles (without images) from the "
+                "english Wikipedia"
+            ),
+            call("Metadata: Flavour = nopic"),
+            call("Metadata: Illustration_48x48_at_1 = TODO"),
+            call("Metadata: Language = eng"),
+            call("Metadata: License = CC-BY"),
+            call(
+                "Metadata: LongDescription = This ZIM file contains all articles "
+                "(without images) from the english Wikipedia by 2009-11-10. "
+                "The topics are..."
+            ),
+            call("Metadata: Name = wikipedia_fr_football"),
+            call("Metadata: Publisher = Wikipedia user Foobar"),
+            call("Metadata: Scraper = mwoffliner 1.2.3"),
+            call("Metadata: Source = https://en.wikipedia.org/"),
+            call("Metadata: TestMetadata = Test Metadata"),
+            call("Metadata: Title = English Wikipedia"),
+            call(f"Metadata: Tags = {tags}"),
+        ]
+    )
+
 
 def test_relax_metadata(tmp_path):
     Creator(tmp_path, "", disable_metadata_checks=True).config_dev_metadata(

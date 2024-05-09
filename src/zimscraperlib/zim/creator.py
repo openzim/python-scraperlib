@@ -20,14 +20,16 @@
 from __future__ import annotations
 
 import datetime
-import logging as stdlogging
+import io
 import pathlib
 import re
 import weakref
 from collections.abc import Callable, Iterable
+from logging import DEBUG
 from typing import Any
 
 import libzim.writer  # pyright: ignore
+import PIL.Image
 
 from zimscraperlib import logger
 from zimscraperlib.constants import (
@@ -148,11 +150,30 @@ class Creator(libzim.writer.Creator):
         self.__indexing_configured = True
         return self
 
+    def _maybe_metadata_from_maybe_illustration(self, name, value):
+        if not isinstance(name, str) or not name.startswith("Illustration_"):
+            return None
+        if isinstance(value, bytes):
+            image = io.BytesIO(value)
+        try:
+            img = PIL.Image.open(image)
+            return img.format
+        except Exception:
+            return None
+
+    def _log_metadata(self):
+        if logger.isEnabledFor(DEBUG):
+            for name, value in sorted(self._metadata.items()):
+                illustration_metadata = self._maybe_metadata_from_maybe_illustration(
+                    name, value
+                )
+                if illustration_metadata is not None:
+                    logger.debug(f"Metadata: {name} Metadata = {illustration_metadata}")
+                else:
+                    logger.debug(f"Metadata: {name} = {value}")
+
     def start(self):
-        # not sure why DEBUG isn't resolving.
-        if logger.isEnabledFor(10):  # stdlogging dot d e b u g 
-            for name, value in self._metadata.items():
-                logger.debug(f"Metadata: {name} = {value}")
+        self._log_metadata()
 
         if not all(self._metadata.get(key) for key in MANDATORY_ZIM_METADATA_KEYS):
             raise ValueError("Mandatory metadata are not all set.")
