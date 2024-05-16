@@ -567,7 +567,9 @@ def test_start_logs_metadata_log_contents(mocked_logger, png_image, tags, tmp_pa
     fpath = tmp_path / "test_config.zim"
     with open(png_image, "rb") as fh:
         png_data = fh.read()
-    with Creator(fpath, "").config_metadata(
+    # Using `with creator:` would call start() twice, complicating
+    # the assert below.
+    creator = Creator(fpath, "").config_metadata(
         Name="wikipedia_fr_football",
         Title="English Wikipedia",
         Creator="English speaking Wikipedia contributors",
@@ -584,9 +586,9 @@ def test_start_logs_metadata_log_contents(mocked_logger, png_image, tags, tmp_pa
         Scraper="mwoffliner 1.2.3",
         Illustration_48x48_at_1=png_data,
         TestMetadata="Test Metadata",
-    ) as creator:
-        with pytest.raises(ValueError, match="Mandatory metadata are not all set."):
-            creator.start()
+    )
+    creator.start()
+    creator.finish()
     mocked_logger.debug.assert_has_calls(
         [
             call("Metadata: Creator = English speaking Wikipedia contributors"),
@@ -596,7 +598,7 @@ def test_start_logs_metadata_log_contents(mocked_logger, png_image, tags, tmp_pa
                 "english Wikipedia"
             ),
             call("Metadata: Flavour = nopic"),
-            call("Metadata: Illustration_48x48_at_1 = TODO"),
+            call("Metadata: Illustration_48x48@1 MD = PNG"),
             call("Metadata: Language = eng"),
             call("Metadata: License = CC-BY"),
             call(
@@ -606,11 +608,12 @@ def test_start_logs_metadata_log_contents(mocked_logger, png_image, tags, tmp_pa
             ),
             call("Metadata: Name = wikipedia_fr_football"),
             call("Metadata: Publisher = Wikipedia user Foobar"),
+            call("Metadata: Relation = None"),
             call("Metadata: Scraper = mwoffliner 1.2.3"),
             call("Metadata: Source = https://en.wikipedia.org/"),
+            call(f"Metadata: Tags = {tags}"),
             call("Metadata: TestMetadata = Test Metadata"),
             call("Metadata: Title = English Wikipedia"),
-            call(f"Metadata: Tags = {tags}"),
         ]
     )
 

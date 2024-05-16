@@ -168,7 +168,7 @@ class Creator(libzim.writer.Creator):
                     name, value
                 )
                 if illustration_metadata is not None:
-                    logger.debug(f"Metadata: {name} Metadata = {illustration_metadata}")
+                    logger.debug(f"Metadata: {name} MD = {illustration_metadata}")
                 else:
                     logger.debug(f"Metadata: {name} = {value}")
 
