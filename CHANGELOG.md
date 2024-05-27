@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `zimwriterfs` script that mimics zim-tools's zimwriterfs
+
 ### Changed
 - Simplify type annotations by replacing Union and Optional with pipe character ("|") for improved readability and clarity
 
