@@ -29,7 +29,6 @@ from logging import DEBUG
 from typing import Any
 
 import libzim.writer  # pyright: ignore
-import PIL.Image
 
 from zimscraperlib import logger
 from zimscraperlib.constants import (
@@ -43,6 +42,7 @@ from zimscraperlib.filesystem import (
     get_file_mimetype,
 )
 from zimscraperlib.i18n import is_valid_iso_639_3
+from zimscraperlib.image.probing import format_for
 from zimscraperlib.types import get_mime_for_name
 from zimscraperlib.zim.items import StaticItem
 from zimscraperlib.zim.metadata import (
@@ -150,27 +150,26 @@ class Creator(libzim.writer.Creator):
         self.__indexing_configured = True
         return self
 
-    def _maybe_metadata_from_maybe_illustration(self, name, value):
-        if not isinstance(name, str) or not name.startswith("Illustration_"):
+    def _get_illustration_metadata(
+        self,
+        name: str,
+        value: bytes | str | datetime.datetime | datetime.date | Iterable[str],
+    ) -> str | None:
+        """Return image format for debug logging of illustration metadata"""
+        if not name.startswith("Illustration_"):
             return None
-        if isinstance(value, bytes):
-            image = io.BytesIO(value)
-        try:
-            img = PIL.Image.open(image)
-            return img.format
-        except Exception:
-            return None
+        if not isinstance(value, bytes):
+            return f"Unexpected image datatype, {value.__class__.__name__}"
+        return (
+            format_for(io.BytesIO(value), from_suffix=False)
+            or f"Unknown image format, {len(value)} bytes"
+        )
 
     def _log_metadata(self):
         if logger.isEnabledFor(DEBUG):
             for name, value in sorted(self._metadata.items()):
-                illustration_metadata = self._maybe_metadata_from_maybe_illustration(
-                    name, value
-                )
-                if illustration_metadata is not None:
-                    logger.debug(f"Metadata: {name} MD = {illustration_metadata}")
-                else:
-                    logger.debug(f"Metadata: {name} = {value}")
+                illus_md = self._get_illustration_metadata(name, value)
+                logger.debug(f"Metadata: {name} = {(illus_md if illus_md else value)}")
 
     def start(self):
         self._log_metadata()

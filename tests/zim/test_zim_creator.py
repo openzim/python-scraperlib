@@ -567,8 +567,6 @@ def test_start_logs_metadata_log_contents(mocked_logger, png_image, tags, tmp_pa
     fpath = tmp_path / "test_config.zim"
     with open(png_image, "rb") as fh:
         png_data = fh.read()
-    # Using `with creator:` would call start() twice, complicating
-    # the assert below.
     creator = Creator(fpath, "").config_metadata(
         Name="wikipedia_fr_football",
         Title="English Wikipedia",
@@ -598,7 +596,7 @@ def test_start_logs_metadata_log_contents(mocked_logger, png_image, tags, tmp_pa
                 "english Wikipedia"
             ),
             call("Metadata: Flavour = nopic"),
-            call("Metadata: Illustration_48x48@1 MD = PNG"),
+            call("Metadata: Illustration_48x48@1 = PNG"),
             call("Metadata: Language = eng"),
             call("Metadata: License = CC-BY"),
             call(
