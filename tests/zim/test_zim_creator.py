@@ -596,7 +596,7 @@ def test_start_logs_metadata_log_contents(mocked_logger, png_image, tags, tmp_pa
                 "english Wikipedia"
             ),
             call("Metadata: Flavour = nopic"),
-            call("Metadata: Illustration_48x48@1 = PNG"),
+            call("Metadata: Illustration_48x48@1 = PNG 48x48"),
             call("Metadata: Language = eng"),
             call("Metadata: License = CC-BY"),
             call(

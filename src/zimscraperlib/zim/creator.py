@@ -21,14 +21,15 @@ from __future__ import annotations
 
 import datetime
 import io
+import logging
 import pathlib
 import re
 import weakref
 from collections.abc import Callable, Iterable
-from logging import DEBUG
 from typing import Any
 
 import libzim.writer  # pyright: ignore
+import PIL.Image
 
 from zimscraperlib import logger
 from zimscraperlib.constants import (
@@ -42,7 +43,6 @@ from zimscraperlib.filesystem import (
     get_file_mimetype,
 )
 from zimscraperlib.i18n import is_valid_iso_639_3
-from zimscraperlib.image.probing import format_for
 from zimscraperlib.types import get_mime_for_name
 from zimscraperlib.zim.items import StaticItem
 from zimscraperlib.zim.metadata import (
@@ -150,29 +150,34 @@ class Creator(libzim.writer.Creator):
         self.__indexing_configured = True
         return self
 
-    def _get_illustration_metadata(
+    def _is_illustration_metadata_name(self, name: str) -> bool:
+        """Return True if name is a valid illustration metadata name"""
+        return name.startswith("Illustration_")
+
+    def _get_illustration_metadata_details(
         self,
-        name: str,
-        value: bytes | str | datetime.datetime | datetime.date | Iterable[str],
+        value: bytes,
     ) -> str | None:
         """Return image format for debug logging of illustration metadata"""
-        if not name.startswith("Illustration_"):
-            return None
-        if not isinstance(value, bytes):
-            return f"Unexpected image datatype, {value.__class__.__name__}"
-        return (
-            format_for(io.BytesIO(value), from_suffix=False)
-            or f"Unknown image format, {len(value)} bytes"
-        )
+        try:
+            with PIL.Image.open(io.BytesIO(value)) as img:
+                if img is not None:
+                    return f"{img.format} {img.size[0]}x{img.size[1]}"
+        except PIL.UnidentifiedImageError as e:
+            return f"Image format issue: {e}"
+        return f"Unknown image format, {len(value)} bytes"
 
     def _log_metadata(self):
-        if logger.isEnabledFor(DEBUG):
-            for name, value in sorted(self._metadata.items()):
-                illus_md = self._get_illustration_metadata(name, value)
-                logger.debug(f"Metadata: {name} = {(illus_md if illus_md else value)}")
+        for name, value in sorted(self._metadata.items()):
+            if self._is_illustration_metadata_name(name) and isinstance(value, bytes):
+                illus_md = self._get_illustration_metadata_details(value)
+            else:
+                illus_md = None
+            logger.debug(f"Metadata: {name} = {(illus_md if illus_md else value)}")
 
     def start(self):
-        self._log_metadata()
+        if logger.isEnabledFor(logging.DEBUG):
+            self._log_metadata()
 
         if not all(self._metadata.get(key) for key in MANDATORY_ZIM_METADATA_KEYS):
             raise ValueError("Mandatory metadata are not all set.")
