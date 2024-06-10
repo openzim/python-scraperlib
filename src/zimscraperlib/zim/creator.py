@@ -66,6 +66,9 @@ DUPLICATE_EXC_STR = re.compile(
 )
 
 
+TUPLE_SIZE_2D = 2
+
+
 def mimetype_for(
     path: str,
     content: bytes | str | None = None,
@@ -161,9 +164,13 @@ class Creator(libzim.writer.Creator):
         """Return image format for debug logging of illustration metadata"""
         try:
             with PIL.Image.open(io.BytesIO(value)) as img:
-                if img is not None:
+                if (
+                    img is not None
+                    and img.size is tuple
+                    and len(img.size) >= TUPLE_SIZE_2D
+                ):
                     return f"{img.format} {img.size[0]}x{img.size[1]}"
-        except PIL.UnidentifiedImageError as e:
+        except BaseException as e:
             return f"Image format issue: {e}"
         return f"Unknown image format, {len(value)} bytes"
 
