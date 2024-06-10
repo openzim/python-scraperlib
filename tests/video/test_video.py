@@ -151,19 +151,21 @@ def test_preset_has_mime_and_ext():
 
 def test_preset_video_webm_low():
     config = VideoWebmLow()
-    assert config.VERSION == 2
+    assert config.VERSION == 3
     args = config.to_ffmpeg_args()
-    assert len(args) == 20
+    assert len(args) == 24
     options_map = [
-        ("codec:v", "libvpx"),
+        ("codec:v", "libvpx-vp9"),
         ("codec:a", "libvorbis"),
-        ("b:v", "128k"),
+        ("b:v", "140k"),
         ("ar", "44100"),
         ("b:a", "48k"),
-        ("quality", "best"),
-        ("qmin", "18"),
+        ("quality", "good"),
+        ("qmin", "30"),
         ("qmax", "40"),
         ("vf", "scale='480:trunc(ow/a/2)*2'"),
+        ("g", "240"),
+        ("speed", "4"),
     ]
     for option, val in options_map:
         idx = args.index(f"-{option}")
@@ -172,24 +174,30 @@ def test_preset_video_webm_low():
 
     # test updating values
     config = VideoWebmLow(**{"-ar": "50000"})
-    config["-bufsize"] = "900k"
+    config["-qmin"] = "25"
     args = config.to_ffmpeg_args()
     idx = args.index("-ar")
     assert idx != -1 and args[idx + 1] == "50000"
-    idx = args.index("-bufsize")
-    assert idx != -1 and args[idx + 1] == "900k"
+    idx = args.index("-qmin")
+    assert idx != -1 and args[idx + 1] == "25"
 
 
 def test_preset_video_webm_high():
     config = VideoWebmHigh()
-    assert config.VERSION == 1
+    assert config.VERSION == 2
     args = config.to_ffmpeg_args()
-    assert len(args) == 10
+    assert len(args) == 22
     options_map = [
-        ("codec:v", "libvpx"),
+        ("codec:v", "libvpx-vp9"),
         ("codec:a", "libvorbis"),
-        ("b:v", "0"),
-        ("crf", "25"),
+        ("b:v", "340k"),
+        ("ar", "44100"),
+        ("b:a", "48k"),
+        ("quality", "good"),
+        ("qmin", "26"),
+        ("qmax", "54"),
+        ("g", "240"),
+        ("speed", "1"),
     ]
     for option, val in options_map:
         idx = args.index(f"-{option}")
@@ -197,10 +205,10 @@ def test_preset_video_webm_high():
         assert args[idx + 1] == val
 
     # test updating values
-    config = VideoWebmHigh(**{"-crf": "51"})
+    config = VideoWebmHigh(**{"-qmax": "51"})
     config["-b:v"] = "300k"
     args = config.to_ffmpeg_args()
-    idx = args.index("-crf")
+    idx = args.index("-qmax")
     assert idx != -1 and args[idx + 1] == "51"
     idx = args.index("-b:v")
     assert idx != -1 and args[idx + 1] == "300k"
@@ -314,7 +322,7 @@ def test_preset_voice_mp3_low():
             "video.mp4",
             "video.webm",
             VideoWebmLow().to_ffmpeg_args(),
-            {"codecs": ["vp8", "vorbis"], "duration": 2},
+            {"codecs": ["vp9", "vorbis"], "duration": 2},
         ),
         (
             "video.webm",
