@@ -1,5 +1,5 @@
 [build-system]
-requires = ["hatchling", "hatch-openzim"]
+requires = ["hatchling", "hatch-openzim>=0.2"]
 build-backend = "hatchling.build"
 
 [project]
@@ -25,11 +25,10 @@ dynamic = ["authors", "classifiers", "keywords", "license", "version", "urls"]
 
 [tool.hatch.metadata.hooks.openzim-metadata]
 kind = "scraper"
-# not yet supported in hatch-openzim 0.1
-# additional-classifiers = [
-#   "Development Status :: 5 - Production/Stable",
-#   "Intended Audience :: Developers",
-# ]
+additional-classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Intended Audience :: Developers",
+]
 
 [project.optional-dependencies]
 scripts = [
