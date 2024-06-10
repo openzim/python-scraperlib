@@ -24,6 +24,7 @@ def report_cov(ctx: Context, *, html: bool = False):
     """report coverage"""
     ctx.run("coverage combine", warn=True, pty=use_pty)
     ctx.run("coverage report --show-missing", pty=use_pty)
+    ctx.run("coverage xml", pty=use_pty)
     if html:
         ctx.run("coverage html", pty=use_pty)
 
@@ -92,7 +93,7 @@ def fix_black(ctx: Context, args: str = "."):
 def fix_ruff(ctx: Context, args: str = "."):
     """fix all ruff rules"""
     args = args or "."  # needed for hatch script
-    ctx.run(f"ruff --fix {args}", pty=use_pty)
+    ctx.run(f"ruff check --fix {args}", pty=use_pty)
 
 
 @task(
