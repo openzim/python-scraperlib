@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Simplify type annotations by replacing Union and Optional with pipe character ("|") for improved readability and clarity
 
+### Fixed
+- Add back the `--runinstalled` flag for test execution to allow smooth testing on other build chains (#139)
+
 ## [3.3.2] - 2024-03-25
 
 ### Added

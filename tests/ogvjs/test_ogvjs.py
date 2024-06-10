@@ -44,6 +44,7 @@ def prepare_ogvjs_folder(tmp_path, videojs_url, ogvjs_url, videojs_ogvjs_url):
     tmp_path.joinpath(member).rename(tmp_path.joinpath("videojs-ogvjs.js"))
 
 
+@pytest.mark.installed
 def test_ogvjs_installed_script_missing_param():
     # run from installed script to check real conditions
     script = subprocess.run(
@@ -63,6 +64,7 @@ def test_ogvjs_from_code_missing_params():
 
 
 @pytest.mark.slow
+@pytest.mark.installed
 def test_ogvjs_installed_script_ok(tmp_path, videojs_url, ogvjs_url, videojs_ogvjs_url):
     # run from installed script to check real conditions
 
