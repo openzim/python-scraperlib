@@ -55,7 +55,9 @@ apk add ffmpeg gifsicle libmagic wget libjpeg
 
 # Contribution
 
-This project adheres to openZIM's [Contribution Guidelines](https://github.com/openzim/overview/wiki/Contributing)
+This project adheres to openZIM's [Contribution Guidelines](https://github.com/openzim/overview/wiki/Contributing).
+
+This project has implemented openZIM's [Python bootstrap, conventions and policies](https://github.com/openzim/_python-bootstrap/docs/Policy.md) **v1.0.2**.
 
 ```shell
 pip install hatch

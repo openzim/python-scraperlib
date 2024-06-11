@@ -35,12 +35,13 @@ jobs:
           pip install -e .[test,scripts]
 
       - name: Run the tests
-        run: inv coverage --args "--runslow -vvv"
+        run: inv coverage --args "--runslow --runinstalled -vvv"
 
       - name: Upload coverage report to codecov
         if: matrix.python == '3.12'
         uses: codecov/codecov-action@v3
         with:
+          fail_ci_if_error: true
           token: ${{ secrets.CODECOV_TOKEN }}
 
   build_python:
