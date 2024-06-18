@@ -8,7 +8,15 @@ import sys
 import pytest
 
 from zimscraperlib.zim.archive import Archive
-from zimscraperlib.zim.filesystem import FileItem, make_zim_file
+from zimscraperlib.zim.filesystem import (
+    BadZimFilenameError,
+    BadZimFolderError,
+    FileItem,
+    ZimFolderNotFoundError,
+    ZimFolderNotWritableError,
+    make_zim_file,
+    validate_zimfile_creatable,
+)
 
 
 def test_fileitem(tmp_path, png_image):
@@ -143,3 +151,39 @@ finally:
     # create a ZIM file, so SEGFAULT on exit it (somewhat) OK
     assert py.returncode in (0, 11, -6, -11)  # SIGSEV is 11
     assert not build_data["fpath"].exists()
+
+
+@pytest.fixture(scope="module")
+def valid_zim_filename():
+    return "myfile.zim"
+
+
+def test_validate_zimfile_creatable_ok(tmp_path, valid_zim_filename):
+
+    validate_zimfile_creatable(tmp_path, valid_zim_filename)
+
+
+def test_validate_zimfile_creatable_folder_not_exists(tmp_path, valid_zim_filename):
+
+    with pytest.raises(ZimFolderNotFoundError):
+        validate_zimfile_creatable(tmp_path / "foo", valid_zim_filename)
+
+
+def test_validate_zimfile_creatable_bad_folder(tmp_path, valid_zim_filename):
+
+    with pytest.raises(BadZimFolderError):
+        (tmp_path / "foo.txt").touch()
+        validate_zimfile_creatable(tmp_path / "foo.txt", valid_zim_filename)
+
+
+def test_validate_zimfile_creatable_folder_not_writable(tmp_path, valid_zim_filename):
+
+    with pytest.raises(ZimFolderNotWritableError):
+        (tmp_path / "foo").mkdir(mode=111)
+        validate_zimfile_creatable(tmp_path / "foo", valid_zim_filename)
+
+
+def test_validate_zimfile_creatable_bad_name(tmp_path):
+
+    with pytest.raises(BadZimFilenameError):
+        validate_zimfile_creatable(tmp_path, "t\0t\0.zim")
