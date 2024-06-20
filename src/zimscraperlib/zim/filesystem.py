@@ -213,31 +213,31 @@ def make_zim_file(
         zim_file.finish()
 
 
-class BadZimfileDataError(Exception):
+class IncorrectZIMPathError(Exception):
     """A generic exception for any problem encountered in validate_zimfile_creatable"""
 
     pass
 
 
-class ZimFolderNotFoundError(BadZimfileDataError):
+class MissingZIMFolderError(IncorrectZIMPathError):
     """Exception raised in validate_zimfile_creatable when folder does not exists"""
 
     pass
 
 
-class BadZimFolderError(BadZimfileDataError):
+class NotADirectoryZIMFolderError(IncorrectZIMPathError):
     """Exception raised in validate_zimfile_creatable when folder is not a directory"""
 
     pass
 
 
-class ZimFolderNotWritableError(BadZimfileDataError):
+class NotWritableZIMFolderError(IncorrectZIMPathError):
     """Exception raised in validate_zimfile_creatable when folder is not writable"""
 
     pass
 
 
-class BadZimFilenameError(BadZimfileDataError):
+class IncorrectZIMFilenameError(IncorrectZIMPathError):
     """
     Exception raised in validate_zimfile_creatable when filename is not creatable
 
@@ -251,27 +251,27 @@ class BadZimFilenameError(BadZimfileDataError):
 def validate_zimfile_creatable(folder: str | pathlib.Path, filename: str):
     """Validate that a ZIM can be created in given folder with given filename
 
-    Any problem encountered raises an exception inheriting from BadZimfileDataError
+    Any problem encountered raises an exception inheriting from IncorrectZIMPathError
 
     Checks that:
-    - folder passed exists (or raise ZimFolderNotFoundError exception)
-    - folder passed is a directory (or raise BadZimFolderError exception)
+    - folder passed exists (or raise MissingZIMFolderError exception)
+    - folder passed is a directory (or raise NotADirectoryZIMFolderError exception)
     - folder is writable, i.e. it is possible to create a file in folder (or raise
-    ZimFolderNotWritableError exception with inner exception details)
+    NotWritableZIMFolderError exception with inner exception details)
     - filename is creatable, i.e. there is no bad characters in filename (or raise
-    BadZimFilenameError exception with inner exception details)
+    IncorrectZIMFilenameError exception with inner exception details)
     """
     folder = pathlib.Path(folder)
 
     # ensure folder exists
     if not folder.exists():
-        raise ZimFolderNotFoundError(
+        raise MissingZIMFolderError(
             f"Folder to create the ZIM does not exist: {folder}"
         )
 
     # ensure folder is a directory
     if not folder.is_dir():
-        raise BadZimFolderError(
+        raise NotADirectoryZIMFolderError(
             f"Folder to create the ZIM is not a directory: {folder}"
         )
 
@@ -281,16 +281,18 @@ def validate_zimfile_creatable(folder: str | pathlib.Path, filename: str):
         # ensure folder is writable
         with tempfile.NamedTemporaryFile(dir=folder, delete=True) as fh:
             logger.debug(f"Output is writable. Temporary file used for test: {fh.name}")
-    except Exception as e:
-        raise ZimFolderNotWritableError(
+    except Exception as exc:
+        raise NotWritableZIMFolderError(
             f"Folder to create the ZIM is not writable: {folder}"
-        ) from e
+        ) from exc
 
     # ensure ZIM file is creatable with the given name
-    file_path = folder / filename
+    fpath = folder / filename
     try:
-        logger.debug(f"Confirming ZIM file can be created at {file_path}")
-        file_path.touch()
-        file_path.unlink()
-    except Exception as e:
-        raise BadZimFilenameError(f"ZIM filename is not creatable: {file_path}") from e
+        logger.debug(f"Confirming ZIM file can be created at {fpath}")
+        fpath.touch()
+        fpath.unlink()
+    except Exception as exc:
+        raise IncorrectZIMFilenameError(
+            f"ZIM filename is not creatable: {fpath}"
+        ) from exc
