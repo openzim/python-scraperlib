@@ -9,11 +9,11 @@ import pytest
 
 from zimscraperlib.zim.archive import Archive
 from zimscraperlib.zim.filesystem import (
-    BadZimFilenameError,
-    BadZimFolderError,
     FileItem,
-    ZimFolderNotFoundError,
-    ZimFolderNotWritableError,
+    IncorrectZIMFilenameError,
+    MissingZIMFolderError,
+    NotADirectoryZIMFolderError,
+    NotWritableZIMFolderError,
     make_zim_file,
     validate_zimfile_creatable,
 )
@@ -165,25 +165,25 @@ def test_validate_zimfile_creatable_ok(tmp_path, valid_zim_filename):
 
 def test_validate_zimfile_creatable_folder_not_exists(tmp_path, valid_zim_filename):
 
-    with pytest.raises(ZimFolderNotFoundError):
+    with pytest.raises(MissingZIMFolderError):
         validate_zimfile_creatable(tmp_path / "foo", valid_zim_filename)
 
 
 def test_validate_zimfile_creatable_bad_folder(tmp_path, valid_zim_filename):
 
-    with pytest.raises(BadZimFolderError):
+    with pytest.raises(NotADirectoryZIMFolderError):
         (tmp_path / "foo.txt").touch()
         validate_zimfile_creatable(tmp_path / "foo.txt", valid_zim_filename)
 
 
 def test_validate_zimfile_creatable_folder_not_writable(tmp_path, valid_zim_filename):
 
-    with pytest.raises(ZimFolderNotWritableError):
+    with pytest.raises(NotWritableZIMFolderError):
         (tmp_path / "foo").mkdir(mode=111)
         validate_zimfile_creatable(tmp_path / "foo", valid_zim_filename)
 
 
 def test_validate_zimfile_creatable_bad_name(tmp_path):
 
-    with pytest.raises(BadZimFilenameError):
+    with pytest.raises(IncorrectZIMFilenameError):
         validate_zimfile_creatable(tmp_path, "t\0t\0.zim")
