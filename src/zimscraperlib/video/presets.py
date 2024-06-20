@@ -37,21 +37,23 @@ class VideoWebmLow(Config):
     128k target video bitrate but stay within quality boundaries.
     48k audio bitrate"""
 
-    VERSION = 2
+    VERSION = 3
 
     ext = "webm"
     mimetype = f"{preset_type}/webm"
 
     options: ClassVar[dict[str, str | bool | int | None]] = {
-        "-codec:v": "libvpx",  # video codec
-        "-quality": "best",  # codec preset
-        "-b:v": "128k",  # Adjust quantizer within min/max to target this bitrate
-        "-qmin": "18",  # Reduce the bitrate on very still videos
+        "-codec:v": "libvpx-vp9",  # video codec
+        "-b:v": "140k",  # Adjust quantizer within min/max to target this bitrate
+        "-qmin": "30",  # Reduce the bitrate on very still videos
         "-qmax": "40",  # Increase the bitrate on very busy videos
+        "-g": "240",  # Number of frames allowed between keyframes
+        "-quality": "good",  # codec preset
+        "-speed": "4",  # Encoding speed (compromise between quality and encoding time)
         "-vf": "scale='480:trunc(ow/a/2)*2'",  # frame size
         "-codec:a": "libvorbis",  # audio codec
-        "-ar": "44100",  # audio sampling rate
         "-b:a": "48k",  # target audio bitrate
+        "-ar": "44100",  # audio sampling rate
     }
 
 
@@ -88,16 +90,22 @@ class VideoWebmHigh(Config):
 
     25 constant quality"""
 
-    VERSION = 1
+    VERSION = 2
 
     ext = "webm"
     mimetype = f"{preset_type}/webm"
 
     options: ClassVar[dict[str, str | bool | int | None]] = {
-        "-codec:v": "libvpx",  # video codec
+        "-codec:v": "libvpx-vp9",  # video codec
+        "-b:v": "340k",  # Adjust quantizer within min/max to target this bitrate
+        "-qmin": "26",  # Reduce the bitrate on very still videos
+        "-qmax": "54",  # Increase the bitrate on very busy videos
+        "-g": "240",  # Number of frames allowed between keyframes
+        "-quality": "good",  # codec preset
+        "-speed": "1",  # Encoding speed (compromise between quality and encoding time)
         "-codec:a": "libvorbis",  # audio codec
-        "-crf": "25",  # constant quality, lower value gives better qual and larger size
-        "-b:v": "0",  # must be passed if using constant quality mode via -cbr for codec
+        "-b:a": "48k",  # target audio bitrate
+        "-ar": "44100",  # audio sampling rate
     }
 
 

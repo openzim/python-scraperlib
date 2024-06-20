@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+
+- Migrate the **VideoWebmLow** and **VideoWebmHigh** presets to VP9 for smaller file size #79
+  - New preset versions are v3 and v2 respectively
 - Simplify type annotations by replacing Union and Optional with pipe character ("|") for improved readability and clarity
 
 ### Fixed
