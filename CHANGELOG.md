@@ -9,17 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- `zim.creator.Creator._log_metadata()` to log (DEBUG) all metadata set on `_metadata` (prior to start())
+- `zim.creator.Creator._log_metadata()` to log (DEBUG) all metadata set on `_metadata` (prior to start()) #155
+- New utility function to confirm ZIM can be created at given location / name #163
 
 ### Changed
 
 - Migrate the **VideoWebmLow** and **VideoWebmHigh** presets to VP9 for smaller file size #79
   - New preset versions are v3 and v2 respectively
-- Simplify type annotations by replacing Union and Optional with pipe character ("|") for improved readability and clarity
-- Calling `Creator._log_metadata()` on `Creator.start()` if running in DEBUG
+- Simplify type annotations by replacing Union and Optional with pipe character ("|") for improved readability and clarity #150
+- Calling `Creator._log_metadata()` on `Creator.start()` if running in DEBUG #155
 
 ### Fixed
-- Add back the `--runinstalled` flag for test execution to allow smooth testing on other build chains (#139)
+
+- Add back the `--runinstalled` flag for test execution to allow smooth testing on other build chains #139
 
 ## [3.3.2] - 2024-03-25
 
