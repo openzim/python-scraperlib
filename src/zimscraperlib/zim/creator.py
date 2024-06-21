@@ -20,6 +20,8 @@
 from __future__ import annotations
 
 import datetime
+import io
+import logging
 import pathlib
 import re
 import weakref
@@ -27,7 +29,9 @@ from collections.abc import Callable, Iterable
 from typing import Any
 
 import libzim.writer  # pyright: ignore
+import PIL.Image
 
+from zimscraperlib import logger
 from zimscraperlib.constants import (
     DEFAULT_DEV_ZIM_METADATA,
     FRONT_ARTICLE_MIMETYPES,
@@ -146,7 +150,56 @@ class Creator(libzim.writer.Creator):
         self.__indexing_configured = True
         return self
 
+    def _log_metadata(self):
+        """Log (DEBUG) all metadata set on (_metadata ~ config_metadata())
+
+        Does not log metadata set post-start (via add_metadata())"""
+        for name, value in sorted(self._metadata.items()):
+            # illustration mandates an Image
+            if re.match(r"^Illustration_(\d+)x(\d+)@(\d+)$", name):
+                try:
+                    with PIL.Image.open(io.BytesIO(value)) as img:
+                        logger.debug(
+                            f"Metadata: {name} is a {len(value)} bytes "
+                            f"{img.size[0]}x{img.size[1]}px {img.format} Image"
+                        )
+                except Exception:
+                    logger.debug(
+                        f"Metadata: {name} is a {len(value)} bytes "
+                        f"{get_content_mimetype(value[:64])} blob "
+                        "not recognized as an Image"
+                    )
+                continue
+
+            # bytes are either encoded string or arbitrary data
+            if isinstance(value, bytes):
+                mimetype = get_content_mimetype(value[:64])
+                if not mimetype.startswith("text/"):
+                    logger.debug(
+                        f"Metadata: {name} is a {len(value)} bytes {mimetype} blob"
+                    )
+                    continue
+                try:
+                    logger.debug(f"Metadata: {name} = {value.decode('UTF-8')}")
+                except Exception:
+                    logger.debug(
+                        f"Metadata: {name} is a {len(value)} bytes {mimetype} blob "
+                        "not decodable as an UTF-8 string"
+                    )
+                continue
+
+            # rest is either printable or unexpected
+            try:
+                logger.debug(f"Metadata: {name} = {value!s}")
+            except Exception:
+                logger.debug(
+                    f"Metadata: {name} is unexpected data type: {type(value).__name__}"
+                )
+
     def start(self):
+        if logger.isEnabledFor(logging.DEBUG):  # pragma: no cover
+            self._log_metadata()
+
         if not all(self._metadata.get(key) for key in MANDATORY_ZIM_METADATA_KEYS):
             raise ValueError("Mandatory metadata are not all set.")
 

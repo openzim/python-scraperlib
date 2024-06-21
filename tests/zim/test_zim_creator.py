@@ -4,6 +4,7 @@
 import base64
 import datetime
 import io
+import logging
 import pathlib
 import random
 import shutil
@@ -11,6 +12,7 @@ import subprocess
 import sys
 import tempfile
 import time
+from unittest.mock import call, patch
 
 import pytest
 from libzim.writer import Compression  # pyright: ignore
@@ -538,6 +540,105 @@ def test_check_metadata(tmp_path):
 
     with pytest.raises(ValueError, match="LongDescription is too long."):
         Creator(tmp_path, "").config_dev_metadata(LongDescription="T" * 5000).start()
+
+
+@pytest.mark.parametrize(
+    "tags",
+    [
+        (
+            "wikipedia;_category:wikipedia;_pictures:no;_videos:no;_details:yes;"
+            "_ftindex:yes"
+        ),
+        (
+            [
+                "wikipedia",
+                "_category:wikipedia",
+                "_pictures:no",
+                "_videos:no",
+                "_details:yes",
+                "_ftindex:yes",
+            ]
+        ),
+    ],
+)
+@patch("zimscraperlib.zim.creator.logger", autospec=True)
+def test_start_logs_metadata_log_contents(mocked_logger, png_image, tags, tmp_path):
+    mocked_logger.isEnabledFor.side_effect = lambda level: level == logging.DEBUG
+    fpath = tmp_path / "test_config.zim"
+    with open(png_image, "rb") as fh:
+        png_data = fh.read()
+    creator = Creator(fpath, "", disable_metadata_checks=True).config_metadata(
+        Name="wikipedia_fr_football",
+        Title="English Wikipedia",
+        Creator="English speaking Wikipedia contributors",
+        Publisher="Wikipedia user Foobar",
+        Date="2009-11-21",
+        Description="All articles (without images) from the english Wikipedia",
+        LongDescription="This ZIM file contains all articles (without images)"
+        " from the english Wikipedia by 2009-11-10. The topics are...",
+        Language="eng",
+        License="CC-BY",
+        Tags=tags,
+        Flavour="nopic",
+        Source="https://en.wikipedia.org/",
+        Scraper="mwoffliner 1.2.3",
+        Illustration_48x48_at_1=png_data,
+        TestMetadata="Test Metadata",
+    )
+
+    class NotPrintable:
+        def __str__(self):
+            raise ValueError("Not printable I said")
+
+    creator._metadata.update(
+        {
+            "Illustration_96x96@1": b"%PDF-1.5\n%\xe2\xe3\xcf\xd3",
+            "Chars": b"\xc5\xa1\xc9\x94\xc9\x9b",
+            "Chars-32": b"\xff\xfe\x00\x00a\x01\x00\x00T\x02\x00\x00[\x02\x00\x00",
+            "Video": b"\x00\x00\x00 ftypisom\x00\x00\x02\x00isomiso2avc1mp41\x00",
+            "Toupie": NotPrintable(),
+        }
+    )
+    creator._log_metadata()
+    # /!\ this must be alpha sorted
+    mocked_logger.debug.assert_has_calls(
+        [
+            call("Metadata: Chars = šɔɛ"),
+            call(
+                "Metadata: Chars-32 is a 16 bytes text/plain blob "
+                "not decodable as an UTF-8 string"
+            ),
+            call("Metadata: Creator = English speaking Wikipedia contributors"),
+            call("Metadata: Date = 2009-11-21"),
+            call(
+                "Metadata: Description = All articles (without images) from the "
+                "english Wikipedia"
+            ),
+            call("Metadata: Flavour = nopic"),
+            call("Metadata: Illustration_48x48@1 is a 3274 bytes 48x48px PNG Image"),
+            call(
+                "Metadata: Illustration_96x96@1 is a 14 bytes "
+                "application/pdf blob not recognized as an Image"
+            ),
+            call("Metadata: Language = eng"),
+            call("Metadata: License = CC-BY"),
+            call(
+                "Metadata: LongDescription = This ZIM file contains all articles "
+                "(without images) from the english Wikipedia by 2009-11-10. "
+                "The topics are..."
+            ),
+            call("Metadata: Name = wikipedia_fr_football"),
+            call("Metadata: Publisher = Wikipedia user Foobar"),
+            call("Metadata: Relation = None"),
+            call("Metadata: Scraper = mwoffliner 1.2.3"),
+            call("Metadata: Source = https://en.wikipedia.org/"),
+            call(f"Metadata: Tags = {tags}"),
+            call("Metadata: TestMetadata = Test Metadata"),
+            call("Metadata: Title = English Wikipedia"),
+            call("Metadata: Toupie is unexpected data type: NotPrintable"),
+            call("Metadata: Video is a 33 bytes video/mp4 blob"),
+        ]
+    )
 
 
 def test_relax_metadata(tmp_path):
