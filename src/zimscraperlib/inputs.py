@@ -6,6 +6,7 @@ from __future__ import annotations
 import pathlib
 import shutil
 import tempfile
+from collections.abc import Iterable
 
 from zimscraperlib import logger
 from zimscraperlib.constants import DEFAULT_USER_AGENT
@@ -111,3 +112,26 @@ def compute_descriptions(
             user_description = user_description[:-1] + "…"
 
     return (user_description, user_long_description)
+
+
+def compute_tags(
+    default_tags: Iterable[str],
+    user_tags: str | None,
+) -> set[str]:
+    """Computes a list of tags string compliant with ZIM standard.
+
+    Based on default tags (set by the scraper) and user provided tags (usually retrived
+    from the CLI arguments), the function computes a tag string to be used as metadata
+    which is compliant with the ZIM standard. It removes duplicates and empty values,
+    and strip leading and trailing whitespaces.
+
+    args:
+        default_tags: the list of default tags always set for a given scraper
+        user_tags:    the tags, separated by semi-colon, as given by user at CLI args
+
+    Returns a set of tags, ready to be passed to the creator
+    """
+
+    return {
+        tag.strip() for tag in list(default_tags) + (user_tags or "").split(";") if tag
+    }

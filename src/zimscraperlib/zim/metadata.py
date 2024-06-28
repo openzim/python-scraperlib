@@ -103,6 +103,17 @@ def validate_tags(name: str, value: Iterable[str] | str):
         or not all(isinstance(tag, str) for tag in value)
     ):
         raise ValueError(f"Invalid type(s) for {name}")
+    if (
+        name == "Tags"
+        and not isinstance(value, str)
+        and isinstance(value, Iterable)
+        and len(set(value)) != len(list(value))
+    ):
+        raise ValueError(f"Duplicate tags are not valid: {value}")
+    if name == "Tags" and isinstance(value, str):
+        values = value.split(";")
+        if len(set(values)) != len(list(values)):
+            raise ValueError(f"Duplicate tags are not valid: {value}")
 
 
 def validate_illustrations(name: str, value: bytes):
