@@ -167,8 +167,8 @@ def test_large_download_https(tmp_path, valid_https_url):
 @pytest.mark.parametrize(
     "url,video_id",
     [
-        ("https://vimeo.com/619427082", "619427082"),
-        ("https://vimeo.com/619427082", "619427082"),
+        ("https://tube.jeena.net/w/tyekuoPZqb7BtkyNPwVHJL", "tyekuoPZqb7BtkyNPwVHJL"),
+        ("https://tube.jeena.net/w/tyekuoPZqb7BtkyNPwVHJL", "tyekuoPZqb7BtkyNPwVHJL"),
     ],
 )
 def test_youtube_download_serial(url, video_id, tmp_path):
@@ -186,7 +186,7 @@ def test_youtube_download_serial(url, video_id, tmp_path):
 def test_youtube_download_nowait(tmp_path):
     with YoutubeDownloader(threads=1) as yt_downloader:
         future = yt_downloader.download(
-            "https://vimeo.com/619427082",
+            "https://tube.jeena.net/w/tyekuoPZqb7BtkyNPwVHJL",
             BestMp4.get_options(target_dir=tmp_path),
             wait=False,
         )
@@ -212,10 +212,11 @@ def test_youtube_download_error():
 def test_youtube_download_contextmanager(tmp_path):
     with YoutubeDownloader(threads=1) as yt_downloader:
         yt_downloader.download(
-            "https://vimeo.com/619427082", BestWebm.get_options(target_dir=tmp_path)
+            "https://tube.jeena.net/w/tyekuoPZqb7BtkyNPwVHJL",
+            BestWebm.get_options(target_dir=tmp_path),
         )
     assert yt_downloader.executor._shutdown
-    assert tmp_path.joinpath("video.mp4").exists()  # videmo doesn't offer webm
+    assert tmp_path.joinpath("video.mp4").exists()  # jeena doesn't offer webm
 
 
 @pytest.fixture
