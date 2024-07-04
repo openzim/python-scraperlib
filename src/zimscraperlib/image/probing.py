@@ -7,6 +7,7 @@ import colorsys
 import io
 import pathlib
 import re
+from typing import IO
 
 import colorthief
 import PIL.Image
@@ -52,7 +53,7 @@ def is_hex_color(text: str) -> bool:
 
 
 def format_for(
-    src: pathlib.Path | io.BytesIO,
+    src: pathlib.Path | IO[bytes],
     from_suffix: bool = True,  # noqa: FBT001, FBT002
 ) -> str:
     """Pillow format of a given filename, either Pillow-detected or from suffix"""
@@ -70,7 +71,7 @@ def format_for(
 
 
 def is_valid_image(
-    image: pathlib.Path | io.IOBase | bytes,
+    image: pathlib.Path | IO[bytes] | bytes,
     imformat: str,
     size: tuple[int, int] | None = None,
 ) -> bool:

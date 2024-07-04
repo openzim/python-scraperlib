@@ -5,6 +5,8 @@ import re
 from collections.abc import Iterable
 from typing import Any
 
+import regex
+
 from zimscraperlib.constants import (
     ILLUSTRATIONS_METADATA_RE,
     MANDATORY_ZIM_METADATA_KEYS,
@@ -14,6 +16,11 @@ from zimscraperlib.constants import (
 )
 from zimscraperlib.i18n import is_valid_iso_639_3
 from zimscraperlib.image.probing import is_valid_image
+
+
+def nb_grapheme_for(value: str) -> int:
+    """Number of graphemes (visually perceived characters) in a given string"""
+    return len(regex.findall(r"\X", value))
 
 
 def validate_required_values(name: str, value: Any):
@@ -43,7 +50,7 @@ def validate_standard_str_types(name: str, value: str):
 
 def validate_title(name: str, value: str):
     """ensures Title metadata is within recommended length"""
-    if name == "Title" and len(value) > RECOMMENDED_MAX_TITLE_LENGTH:
+    if name == "Title" and nb_grapheme_for(value) > RECOMMENDED_MAX_TITLE_LENGTH:
         raise ValueError(f"{name} is too long.")
 
 
@@ -83,7 +90,10 @@ def validate_counter(name: str, value: str):  # noqa: ARG001
 
 def validate_description(name: str, value: str):
     """ensures Description metadata is with required length"""
-    if name == "Description" and len(value) > MAXIMUM_DESCRIPTION_METADATA_LENGTH:
+    if (
+        name == "Description"
+        and nb_grapheme_for(value) > MAXIMUM_DESCRIPTION_METADATA_LENGTH
+    ):
         raise ValueError(f"{name} is too long.")
 
 
@@ -91,7 +101,7 @@ def validate_longdescription(name: str, value: str):
     """ensures LongDescription metadata is with required length"""
     if (
         name == "LongDescription"
-        and len(value) > MAXIMUM_LONG_DESCRIPTION_METADATA_LENGTH
+        and nb_grapheme_for(value) > MAXIMUM_LONG_DESCRIPTION_METADATA_LENGTH
     ):
         raise ValueError(f"{name} is too long.")
 
