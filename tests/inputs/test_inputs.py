@@ -16,7 +16,11 @@ from zimscraperlib.constants import (
     MAXIMUM_LONG_DESCRIPTION_METADATA_LENGTH as MAX_LONG_DESC_LENGTH,
 )
 from zimscraperlib.constants import NAME as PROJECT_NAME
-from zimscraperlib.inputs import compute_descriptions, handle_user_provided_file
+from zimscraperlib.inputs import (
+    compute_descriptions,
+    compute_tags,
+    handle_user_provided_file,
+)
 
 
 def test_with_none():
@@ -296,3 +300,28 @@ def test_description(
 
     assert description == expected_description
     assert long_description == expected_long_description
+
+
+@pytest.mark.parametrize(
+    "default_tags, user_tags, expected_tags",
+    [
+        pytest.param(
+            {"tag1", "tag2"},
+            "tag3;tag4",
+            {"tag1", "tag2", "tag3", "tag4"},
+            id="case1",
+        ),
+        pytest.param(
+            {" tag1", "  tag2 "},
+            " ta:g,4;tag2 ",
+            {"tag1", "tag2", "ta:g,4"},
+            id="case2",
+        ),
+    ],
+)
+def test_compute_tags(
+    default_tags: set[str],
+    user_tags: str,
+    expected_tags: set[str],
+):
+    assert compute_tags(default_tags, user_tags) == expected_tags
