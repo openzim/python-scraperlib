@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Add utility function to compute ZIM Tags #164, including deduplication #156
+
+### Fixed
+
+- Metadata length validation is buggy for unicode strings #158
+- Pillow 10.4.0 reveals improper type hints for image probing functions #177
+
 ## [3.4.0] - 2024-06-21
 
 ### Added
