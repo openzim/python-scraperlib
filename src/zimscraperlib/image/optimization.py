@@ -35,7 +35,7 @@ from optimize_images.img_aux_processing import remove_transparency as remove_alp
 from optimize_images.img_dynamic_quality import jpeg_dynamic_quality
 from PIL import Image
 
-from zimscraperlib.image.convertion import convert_image
+from zimscraperlib.image.conversion import convert_image
 from zimscraperlib.image.probing import format_for
 from zimscraperlib.image.utils import save_image
 

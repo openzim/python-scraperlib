@@ -15,6 +15,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Automatically index PDF documents content #167
 - Automatically set proper title on PDF documents #168
 
+## Changed
+- **BREAKING** Renamed `zimscraperlib.image.convertion` to `zimscraperlib.image.conversion` to fix typo
+- **BREAKING** Many changes in type hints to match the real underlying code
+- **BREAKING** Force all boolean arguments to be keyword-only in function calls for clarity / disambiguation (see ruff rule FBT002)
+- Prefer to use `IO[bytes]` to `io.BytesIO` when possible since it is more generic
+
 ### Fixed
 
 - Metadata length validation is buggy for unicode strings #158

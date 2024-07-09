@@ -15,7 +15,7 @@ from PIL import Image
 from resizeimage.imageexceptions import ImageSizeError
 
 from zimscraperlib.image import presets
-from zimscraperlib.image.convertion import convert_image, create_favicon
+from zimscraperlib.image.conversion import convert_image, create_favicon
 from zimscraperlib.image.optimization import (
     ensure_matches,
     optimize_gif,

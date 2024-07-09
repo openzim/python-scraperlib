@@ -3,10 +3,10 @@
 
 from __future__ import annotations
 
-import io
 import pathlib
+from typing import IO
 
-import PIL
+from PIL.Image import open as pilopen
 
 from zimscraperlib.constants import ALPHA_NOT_SUPPORTED
 from zimscraperlib.image.probing import format_for
@@ -15,8 +15,8 @@ from zimscraperlib.image.utils import save_image
 
 
 def convert_image(
-    src: pathlib.Path | io.BytesIO,
-    dst: pathlib.Path | io.BytesIO,
+    src: pathlib.Path | IO[bytes],
+    dst: pathlib.Path | IO[bytes],
     **params: str,
 ) -> None:
     """convert an image file from one format to another
@@ -29,12 +29,10 @@ def convert_image(
      to RGB. ex: RGB, ARGB, CMYK (and other PIL colorspaces)"""
 
     colorspace = params.get("colorspace")  # requested colorspace
-    fmt = (
-        params.pop("fmt").upper() if "fmt" in params else None  # pyright: ignore
-    )  # requested format
+    fmt = params.pop("fmt").upper() if "fmt" in params else None  # requested format
     if not fmt:
         fmt = format_for(dst)
-    with PIL.Image.open(src) as image:  # pyright: ignore
+    with pilopen(src) as image:
         if image.mode == "RGBA" and fmt in ALPHA_NOT_SUPPORTED or colorspace:
             image = image.convert(colorspace or "RGB")  # noqa: PLW2901
         save_image(image, dst, fmt, **params)
@@ -45,13 +43,13 @@ def create_favicon(src: pathlib.Path, dst: pathlib.Path) -> None:
     if dst.suffix != ".ico":
         raise ValueError("favicon extension must be ICO")
 
-    img = PIL.Image.open(src)  # pyright: ignore
+    img = pilopen(src)
     w, h = img.size
     # resize image to square first
     if w != h:
         size = min([w, h])
         resized = dst.parent.joinpath(f"{src.stem}.tmp.{src.suffix}")
         resize_image(src, size, size, resized, "contain")
-        img = PIL.Image.open(resized)  # pyright: ignore
+        img = pilopen(resized)
     # now convert to ICO
     save_image(img, dst, "ICO")
