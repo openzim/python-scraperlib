@@ -6,7 +6,7 @@ from __future__ import annotations
 import io
 import pathlib
 
-import PIL
+from PIL.Image import open as pilopen
 from resizeimage import resizeimage
 
 from zimscraperlib.constants import ALPHA_NOT_SUPPORTED
@@ -19,14 +19,15 @@ def resize_image(
     height: int | None = None,
     dst: pathlib.Path | io.BytesIO | None = None,
     method: str | None = "width",
-    allow_upscaling: bool | None = True,  # noqa: FBT002
+    *,
+    allow_upscaling: bool | None = True,
     **params: str,
 ) -> None:
     """resize an image to requested dimensions
 
     methods: width, height, cover, thumbnail
     allow upscaling: upscale image first, preserving aspect ratio if required"""
-    with PIL.Image.open(src) as image:  # pyright: ignore
+    with pilopen(src) as image:
         # preserve image format as resize() does not transmit it into new object
         image_format = image.format
         image_mode = image.mode
@@ -59,9 +60,12 @@ def resize_image(
     if dst is None and isinstance(src, io.BytesIO):
         src.seek(0)
 
+    if image_format is None:  # pragma: no cover
+        raise ValueError("Impossible to guess format from src image")
+
     save_image(
         resized,
-        dst if dst is not None else src,  # pyright: ignore
+        dst if dst is not None else src,
         image_format,
         **params,
     )

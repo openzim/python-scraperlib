@@ -76,13 +76,13 @@ def mimetype_for(
     content: bytes | str | None = None,
     fpath: pathlib.Path | None = None,
     mimetype: str | None = None,
-) -> str:
+) -> str | None:
     """mimetype as provided or guessed from fpath, path or content"""
     if not mimetype:
         mimetype = (
             get_file_mimetype(fpath)
             if fpath
-            else get_content_mimetype(content[:2048])  # pyright: ignore
+            else get_content_mimetype(content[:2048]) if content else None
         )
         # try to guess more-defined mime if it's text
         if (
@@ -90,7 +90,9 @@ def mimetype_for(
             or mimetype == "application/octet-stream"
             or mimetype.startswith("text/")
         ):
-            mimetype = get_mime_for_name(fpath if fpath else path, mimetype, mimetype)
+            mimetype = get_mime_for_name(
+                filename=fpath if fpath else path, fallback=mimetype, no_ext_to=mimetype
+            )
     return mimetype
 
 
@@ -120,9 +122,10 @@ class Creator(libzim.writer.Creator):
         filename: pathlib.Path,
         main_path: str,
         compression: str | None = None,
-        workaround_nocancel: bool | None = True,  # noqa: FBT002
-        ignore_duplicates: bool | None = False,  # noqa: FBT002
-        disable_metadata_checks: bool = False,  # noqa: FBT001, FBT002
+        *,
+        workaround_nocancel: bool | None = True,
+        ignore_duplicates: bool | None = False,
+        disable_metadata_checks: bool = False,
     ):
         super().__init__(filename=filename)
         self._metadata = {}
@@ -230,7 +233,15 @@ class Creator(libzim.writer.Creator):
     def validate_metadata(
         self,
         name: str,
-        value: bytes | str | datetime.datetime | datetime.date | Iterable[str],
+        value: (
+            int
+            | float
+            | bytes
+            | str
+            | datetime.datetime
+            | datetime.date
+            | Iterable[str]
+        ),
     ):
         """Ensures metadata value for name is conform with the openZIM spec on Metadata
 
@@ -238,7 +249,7 @@ class Creator(libzim.writer.Creator):
         See https://wiki.openzim.org/wiki/Metadata"""
 
         validate_required_values(name, value)
-        validate_standard_str_types(name, value)  # pyright: ignore
+        validate_standard_str_types(name, value)
 
         validate_title(name, value)  # pyright: ignore
         validate_date(name, value)  # pyright: ignore
@@ -273,6 +284,7 @@ class Creator(libzim.writer.Creator):
             content = ";".join(content)
         super().add_metadata(name, content, mimetype)
 
+    # there are many N803 problems, but they are intentional to match real tag name
     def config_metadata(
         self,
         *,
@@ -291,7 +303,16 @@ class Creator(libzim.writer.Creator):
         Source: str | None = None,  # noqa: N803
         License: str | None = None,  # noqa: N803
         Relation: str | None = None,  # noqa: N803
-        **extras: str,
+        **extras: (
+            None
+            | float
+            | int
+            | bytes
+            | str
+            | datetime.datetime
+            | datetime.date
+            | Iterable[str]
+        ),
     ):
         """Sets all mandatory Metadata as well as standard and any other text ones"""
         self._metadata.update(
@@ -323,7 +344,19 @@ class Creator(libzim.writer.Creator):
                 ).strip(" \r\n\t")
         return self
 
-    def config_dev_metadata(self, **extras: str):
+    def config_dev_metadata(
+        self,
+        **extras: (
+            None
+            | int
+            | float
+            | bytes
+            | str
+            | datetime.datetime
+            | datetime.date
+            | Iterable[str]
+        ),
+    ):
         """Calls config_metadata with default (yet overridable) values for dev"""
         devel_default_metadata = DEFAULT_DEV_ZIM_METADATA.copy()
         devel_default_metadata.update(extras)
@@ -333,12 +366,13 @@ class Creator(libzim.writer.Creator):
         self,
         path: str,
         title: str | None = None,
+        *,
         fpath: pathlib.Path | None = None,
         content: bytes | str | None = None,
         mimetype: str | None = None,
         is_front: bool | None = None,
         should_compress: bool | None = None,
-        delete_fpath: bool | None = False,  # noqa: FBT002
+        delete_fpath: bool | None = False,
         duplicate_ok: bool | None = None,
         callback: Callable | tuple[Callable, Any] | None = None,
         index_data: IndexData | None = None,

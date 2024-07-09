@@ -7,24 +7,22 @@ from __future__ import annotations
 import pathlib
 from typing import BinaryIO, TextIO
 
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, element
 
 from zimscraperlib.types import ARTICLE_MIME
 
 
-def find_title_in(content: str | BinaryIO | TextIO, mime_type: str) -> str:
+def find_title_in(content: str | BinaryIO | TextIO, mime_type: str | None) -> str:
     """Extracted title from HTML content
 
     blank on failure to extract and non-HTML files"""
     if mime_type != ARTICLE_MIME:
         return ""
-    try:
-        return BeautifulSoup(content, "lxml").find("title").text  # pyright: ignore
-    except Exception:
-        return ""
+    title_tag = BeautifulSoup(content, "lxml").find("title")
+    return title_tag.text if title_tag else ""
 
 
-def find_title_in_file(fpath: pathlib.Path, mime_type: str) -> str:
+def find_title_in_file(fpath: pathlib.Path, mime_type: str | None) -> str:
     """Extracted title from an HTML file"""
     try:
         with open(fpath) as fh:
@@ -45,15 +43,17 @@ def find_language_in(content: str | BinaryIO | TextIO, mime_type: str) -> str:
         for key in keylist:
             node = soup.find(nodename)
             if node:
-                if not node.has_attr(key):  # pyright: ignore
+                if not isinstance(node, element.Tag) or (
+                    isinstance(node, element.Tag) and not node.has_attr(key)
+                ):
                     continue
                 if (
                     nodename == "meta"
-                    and not node.attrs.get("http-equiv", "").lower()  # pyright: ignore
+                    and not node.attrs.get("http-equiv", "").lower()
                     == "content-language"
                 ):
                     continue
-                return node.attrs[key]  # pyright: ignore
+                return node.attrs[key]
     return ""
 
 

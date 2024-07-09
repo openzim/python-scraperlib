@@ -23,8 +23,9 @@ def handle_user_provided_file(
     source: pathlib.Path | str | None = None,
     dest: pathlib.Path | None = None,
     in_dir: pathlib.Path | None = None,
-    nocopy: bool = False,  # noqa: FBT001, FBT002
     user_agent: str | None = DEFAULT_USER_AGENT,
+    *,
+    nocopy: bool = False,
 ) -> pathlib.Path | None:
     """path to downloaded or copied a user provided file (URL or path)
 

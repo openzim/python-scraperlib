@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # vim: ai ts=4 sts=4 et sw=4 nu
 
+from __future__ import annotations
+
 import inspect
 import io
 import os
@@ -18,6 +20,7 @@ from zimscraperlib.image import presets
 from zimscraperlib.image.conversion import convert_image, create_favicon
 from zimscraperlib.image.optimization import (
     ensure_matches,
+    get_optimization_method,
     optimize_gif,
     optimize_image,
     optimize_jpeg,
@@ -54,24 +57,22 @@ def get_image_size(fpath):
     return Image.open(fpath).size
 
 
-def get_optimization_method(fmt):
-    return {
-        "gif": optimize_gif,
-        "jpg": optimize_jpeg,
-        "webp": optimize_webp,
-        "png": optimize_png,
-    }.get(fmt)
-
-
 def get_src_dst(
-    tmp_path, fmt, png_image=None, jpg_image=None, gif_image=None, webp_image=None
-):
-    return (
-        {"png": png_image, "jpg": jpg_image, "webp": webp_image, "gif": gif_image}.get(
-            fmt
-        ),
-        tmp_path / f"out.{fmt}",
-    )
+    tmp_path: pathlib.Path,
+    fmt,
+    png_image: pathlib.Path | None = None,
+    jpg_image: pathlib.Path | None = None,
+    gif_image: pathlib.Path | None = None,
+    webp_image: pathlib.Path | None = None,
+) -> tuple[pathlib.Path, pathlib.Path]:
+    options = {"png": png_image, "jpg": jpg_image, "webp": webp_image, "gif": gif_image}
+    if fmt not in options:
+        raise LookupError(f"Unsupported fmt passed: {fmt}")
+    src = options[fmt]
+    if not src:
+        raise LookupError(f"fmt passed has no corresponding argument: {fmt}")
+    else:
+        return (src, tmp_path / f"out.{fmt}")
 
 
 @pytest.mark.parametrize(
@@ -95,38 +96,36 @@ def test_is_hex_color(value, valid):
 
 def test_colors_noimage():
     with pytest.raises(FileNotFoundError):
-        get_colors("nofile.here")  # pyright: ignore
+        get_colors(pathlib.Path("nofile.here"))
 
 
 def test_colors_png_nopalette(png_image):
-    assert get_colors(png_image, False) == ("#04659B", "#E7F6FF")
+    assert get_colors(png_image, use_palette=False) == ("#04659B", "#E7F6FF")
 
 
 def test_colors_jpg_nopalette(jpg_image):
-    assert get_colors(jpg_image, False) == ("#C1BBB3", "#F4F3F1")
+    assert get_colors(jpg_image, use_palette=False) == ("#C1BBB3", "#F4F3F1")
 
 
 def test_colors_png_palette(png_image):
-    assert get_colors(png_image, True) == ("#9E0404", "#E7F6FF")
+    assert get_colors(png_image, use_palette=True) == ("#9E0404", "#E7F6FF")
 
 
 def test_colors_jpg_palette(jpg_image):
-    assert get_colors(jpg_image, True) == ("#221C1B", "#F4F3F1")
+    assert get_colors(jpg_image, use_palette=True) == ("#221C1B", "#F4F3F1")
 
 
 @pytest.mark.parametrize(
-    "fmt,params",
-    [("png", None), ("jpg", {"quality": 50})],
+    "src_fmt,dst_fmt,params",
+    [
+        ("png", "png", None),
+        ("jpg", "JPEG", {"quality": 50}),
+    ],
 )
-def test_save_image(png_image, jpg_image, tmp_path, fmt, params):
-    src, dst = get_src_dst(tmp_path, fmt, png_image=png_image, jpg_image=jpg_image)
-    img = Image.open(src)  # pyright: ignore
-    if params:
-        save_image(
-            img, dst, "JPEG" if fmt == "jpg" else fmt, **params  # pyright: ignore
-        )
-    else:
-        save_image(img, dst, "JPEG" if fmt == "jpg" else fmt)  # pyright: ignore
+def test_save_image(png_image, jpg_image, tmp_path, src_fmt, dst_fmt, params):
+    src, dst = get_src_dst(tmp_path, src_fmt, png_image=png_image, jpg_image=jpg_image)
+    img = Image.open(src)
+    save_image(img, dst, fmt=dst_fmt, **(params or {}))
     assert pathlib.Path(dst).exists()
 
 
@@ -138,7 +137,7 @@ def test_resize_thumbnail(png_image, jpg_image, tmp_path, fmt):
     src, dst = get_src_dst(tmp_path, fmt, png_image=png_image, jpg_image=jpg_image)
 
     width, height = 100, 50
-    resize_image(src, width, height, dst=dst, method="thumbnail")  # pyright: ignore
+    resize_image(src, width, height, dst=dst, method="thumbnail")
     tw, th = get_image_size(dst)
     assert tw <= width
     assert th <= height
@@ -152,8 +151,8 @@ def test_resize_bytestream(png_image, jpg_image, tmp_path, fmt):
     src, dst = get_src_dst(tmp_path, fmt, png_image=png_image, jpg_image=jpg_image)
 
     # copy image content into a bytes stream
-    img = io.BytesIO()  # pyright: ignore
-    with open(src, "rb") as srch:  # pyright: ignore
+    img = io.BytesIO()
+    with open(src, "rb") as srch:
         img.write(srch.read())
 
     # resize in place (no dst)
@@ -172,7 +171,7 @@ def test_resize_width(png_image, jpg_image, tmp_path, fmt):
     src, dst = get_src_dst(tmp_path, fmt, png_image=png_image, jpg_image=jpg_image)
 
     width, height = 100, 50
-    resize_image(src, width, height, dst=dst, method="width")  # pyright: ignore
+    resize_image(src, width, height, dst=dst, method="width")
     tw, _ = get_image_size(dst)
     assert tw == width
 
@@ -185,7 +184,7 @@ def test_resize_height(png_image, jpg_image, tmp_path, fmt):
     src, dst = get_src_dst(tmp_path, fmt, png_image=png_image, jpg_image=jpg_image)
 
     width, height = 100, 50
-    resize_image(src, width, height, dst=dst, method="height")  # pyright: ignore
+    resize_image(src, width, height, dst=dst, method="height")
     _, th = get_image_size(dst)
     assert th == height
 
@@ -198,7 +197,7 @@ def test_resize_crop(png_image, jpg_image, tmp_path, fmt):
     src, dst = get_src_dst(tmp_path, fmt, png_image=png_image, jpg_image=jpg_image)
 
     width, height = 5, 50
-    resize_image(src, width, height, dst=dst, method="crop")  # pyright: ignore
+    resize_image(src, width, height, dst=dst, method="crop")
     tw, th = get_image_size(dst)
     assert tw == width
     assert th == height
@@ -212,7 +211,7 @@ def test_resize_cover(png_image, jpg_image, tmp_path, fmt):
     src, dst = get_src_dst(tmp_path, fmt, png_image=png_image, jpg_image=jpg_image)
 
     width, height = 5, 50
-    resize_image(src, width, height, dst=dst, method="cover")  # pyright: ignore
+    resize_image(src, width, height, dst=dst, method="cover")
     tw, th = get_image_size(dst)
     assert tw == width
     assert th == height
@@ -226,7 +225,7 @@ def test_resize_contain(png_image, jpg_image, tmp_path, fmt):
     src, dst = get_src_dst(tmp_path, fmt, png_image=png_image, jpg_image=jpg_image)
 
     width, height = 5, 50
-    resize_image(src, width, height, dst=dst, method="contain")  # pyright: ignore
+    resize_image(src, width, height, dst=dst, method="contain")
     tw, th = get_image_size(dst)
     assert tw <= width
     assert th <= height
@@ -240,7 +239,7 @@ def test_resize_upscale(png_image, jpg_image, tmp_path, fmt):
     src, dst = get_src_dst(tmp_path, fmt, png_image=png_image, jpg_image=jpg_image)
 
     width, height = 500, 1000
-    resize_image(src, width, height, dst=dst, method="cover")  # pyright: ignore
+    resize_image(src, width, height, dst=dst, method="cover")
     tw, th = get_image_size(dst)
     assert tw == width
     assert th == height
@@ -256,7 +255,7 @@ def test_resize_small_image_error(png_image, jpg_image, tmp_path, fmt):
     width, height = 500, 1000
     with pytest.raises(ImageSizeError):
         resize_image(
-            src,  # pyright: ignore
+            src,
             width,
             height,
             dst=dst,
@@ -274,7 +273,7 @@ def test_change_image_format(
 ):
     src, _ = get_src_dst(tmp_path, src_fmt, png_image=png_image, jpg_image=jpg_image)
     dst = tmp_path / f"out.{dst_fmt.lower()}"
-    convert_image(src, dst, fmt=dst_fmt, colorspace=colorspace)  # pyright: ignore
+    convert_image(src, dst, fmt=dst_fmt, colorspace=colorspace)
     dst_image = Image.open(dst)
     if colorspace:
         assert dst_image.mode == colorspace
@@ -312,6 +311,15 @@ def test_convert_io_src_path_dst(png_image: pathlib.Path, tmp_path: pathlib.Path
     assert dst_image.format == "PNG"
 
 
+def test_convert_io_src_bad_dst(png_image: pathlib.Path, tmp_path: pathlib.Path):
+    src = io.BytesIO(png_image.read_bytes())
+    dst = tmp_path / "test.raster"
+    with pytest.raises(
+        ValueError, match="Impossible to guess destination image format"
+    ):
+        convert_image(src, dst)
+
+
 def test_convert_path_src_io_dst(png_image: pathlib.Path):
     src = png_image
     dst = io.BytesIO()
@@ -327,7 +335,7 @@ def test_convert_path_src_io_dst(png_image: pathlib.Path):
 def test_create_favicon(png_image2, jpg_image, tmp_path, fmt, exp_size):
     src, dst = get_src_dst(tmp_path, fmt, png_image=png_image2, jpg_image=jpg_image)
     dst = dst.parent.joinpath("favicon.ico")
-    create_favicon(src, dst)  # pyright: ignore
+    create_favicon(src, dst)
 
     im = Image.open(dst)
     assert im.format == "ICO"
@@ -343,7 +351,7 @@ def test_create_favicon_square(square_png_image, square_jpg_image, tmp_path, fmt
         tmp_path, fmt, png_image=square_png_image, jpg_image=square_jpg_image
     )
     dst = dst.parent.joinpath("favicon.ico")
-    create_favicon(src, dst)  # pyright: ignore
+    create_favicon(src, dst)
 
     im = Image.open(dst)
     assert im.format == "ICO"
@@ -359,7 +367,7 @@ def test_wrong_extension(square_png_image, square_jpg_image, tmp_path, fmt):
         tmp_path, fmt, png_image=square_png_image, jpg_image=square_jpg_image
     )
     with pytest.raises(ValueError):
-        create_favicon(src, dst)  # pyright: ignore
+        create_favicon(src, dst)
 
 
 @pytest.mark.parametrize(
@@ -377,8 +385,8 @@ def test_optimize_image_default(
         gif_image=gif_image,
         webp_image=webp_image,
     )
-    optimize_image(src, dst, delete_src=False)  # pyright: ignore
-    assert os.path.getsize(dst) < os.path.getsize(src)  # pyright: ignore
+    optimize_image(src, dst, delete_src=False)
+    assert os.path.getsize(dst) < os.path.getsize(src)
 
 
 def test_optimize_image_del_src(png_image, tmp_path):
@@ -398,6 +406,14 @@ def test_optimize_image_allow_convert(png_image, tmp_path):
     optimize_image(src, dst, delete_src=True, convert=True)
     assert not src.exists()
     assert dst.exists() and os.path.getsize(dst) > 0
+
+
+def test_optimize_image_bad_dst(png_image, tmp_path):
+    shutil.copy(png_image, tmp_path)
+    src = tmp_path / png_image.name
+    dst = tmp_path / "out.raster"
+    with pytest.raises(ValueError, match="Impossible to guess format from dst image"):
+        optimize_image(src, dst, delete_src=True, convert=True)
 
 
 @pytest.mark.parametrize(
@@ -494,18 +510,25 @@ def test_preset(
         gif_image=gif_image,
         webp_image=webp_image,
     )
-    optimize_image(src, dst, delete_src=False, **preset.options)  # pyright: ignore
-    assert os.path.getsize(dst) < os.path.getsize(src)  # pyright: ignore
+    optimize_image(src, dst, delete_src=False, **preset.options)
+    assert os.path.getsize(dst) < os.path.getsize(src)
 
     if fmt in ["jpg", "webp", "png"]:
-        image_bytes = ""  # pyright: ignore
-        with open(src, "rb") as fl:  # pyright: ignore
+        image_bytes = ""
+        with open(src, "rb") as fl:
             image_bytes = fl.read()
         byte_stream = io.BytesIO(image_bytes)
-        dst_bytes = get_optimization_method(fmt)(
-            src=byte_stream, **preset.options
-        )  # pyright: ignore
+        dst_bytes = get_optimization_method(fmt)(src=byte_stream, **preset.options)
         assert dst_bytes.getbuffer().nbytes < byte_stream.getbuffer().nbytes
+
+
+def test_optimize_image_unsupported_format():
+    src = pathlib.Path(__file__).parent.parent / "files" / "single_wave_icon.gbr"
+    dst = pathlib.Path("image.png")
+    with pytest.raises(
+        NotImplementedError, match="Image format 'gbr' cannot yet be optimized"
+    ):
+        optimize_image(src, dst, delete_src=False)
 
 
 def test_preset_has_mime_and_ext():
@@ -533,9 +556,9 @@ def test_jpeg_exif_preserve(jpg_exif_image, tmp_path):
     with open(jpg_exif_image, "rb") as fl:
         src_bytes = fl.read()
     optimized_img = optimize_jpeg(src=io.BytesIO(src_bytes))
-    assert piexif.load(optimized_img.getvalue())["Exif"] and (  # pyright: ignore
-        piexif.load(src_bytes)["Exif"]
-        == piexif.load(optimized_img.getvalue())["Exif"]  # pyright: ignore
+    assert isinstance(optimized_img, io.BytesIO)
+    assert piexif.load(optimized_img.getvalue())["Exif"] and (
+        piexif.load(src_bytes)["Exif"] == piexif.load(optimized_img.getvalue())["Exif"]
     )
 
 
@@ -555,7 +578,7 @@ def test_ensure_matches(webp_image):
     "fmt,expected",
     [("png", "PNG"), ("jpg", "JPEG"), ("gif", "GIF"), ("webp", "WEBP")],
 )
-def test_format_for(
+def test_format_for_real_images_suffix(
     png_image, jpg_image, gif_image, webp_image, tmp_path, fmt, expected
 ):
     src, _ = get_src_dst(
@@ -566,7 +589,65 @@ def test_format_for(
         gif_image=gif_image,
         webp_image=webp_image,
     )
-    assert format_for(src) == expected  # pyright: ignore
+    assert format_for(src) == expected
+
+
+@pytest.mark.parametrize(
+    "fmt,expected",
+    [("png", "PNG"), ("jpg", "JPEG"), ("gif", "GIF"), ("webp", "WEBP")],
+)
+def test_format_for_real_images_content_path(
+    png_image, jpg_image, gif_image, webp_image, tmp_path, fmt, expected
+):
+    src, _ = get_src_dst(
+        tmp_path,
+        fmt,
+        png_image=png_image,
+        jpg_image=jpg_image,
+        gif_image=gif_image,
+        webp_image=webp_image,
+    )
+    assert format_for(src, from_suffix=False) == expected
+
+
+@pytest.mark.parametrize(
+    "fmt,expected",
+    [("png", "PNG"), ("jpg", "JPEG"), ("gif", "GIF"), ("webp", "WEBP")],
+)
+def test_format_for_real_images_content_bytes(
+    png_image, jpg_image, gif_image, webp_image, tmp_path, fmt, expected
+):
+    src, _ = get_src_dst(
+        tmp_path,
+        fmt,
+        png_image=png_image,
+        jpg_image=jpg_image,
+        gif_image=gif_image,
+        webp_image=webp_image,
+    )
+    assert format_for(io.BytesIO(src.read_bytes()), from_suffix=False) == expected
+
+
+@pytest.mark.parametrize(
+    "src,expected",
+    [
+        ("image.png", "PNG"),
+        ("image.jpg", "JPEG"),
+        ("image.gif", "GIF"),
+        ("image.webp", "WEBP"),
+        ("image.raster", None),
+    ],
+)
+def test_format_for_from_suffix(src, expected):
+    assert format_for(src=pathlib.Path(src), from_suffix=True) == expected
+
+
+def test_format_for_cannot_use_suffix_with_byte_array():
+    with pytest.raises(
+        ValueError,
+        match="Cannot guess image format from file suffix when byte array is passed",
+    ):
+        assert format_for(src=io.BytesIO(), from_suffix=True)
 
 
 def test_optimize_webp_gif_failure(tmp_path, webp_image, gif_image):
@@ -574,13 +655,17 @@ def test_optimize_webp_gif_failure(tmp_path, webp_image, gif_image):
 
     # webp
     with pytest.raises(TypeError):
-        optimize_webp(webp_image, dst, lossless="bad")  # pyright: ignore
+        optimize_webp(
+            webp_image, dst, lossless="bad"  # pyright: ignore[reportArgumentType]
+        )
     assert not dst.exists()
 
     # gif
     dst.touch()  # fake temp file created during optim (actually fails before)
     with pytest.raises(CalledProcessError):
-        optimize_gif(gif_image, dst, optimize_level="bad")  # pyright: ignore
+        optimize_gif(
+            gif_image, dst, optimize_level="bad"  # pyright: ignore[reportArgumentType]
+        )
     assert not dst.exists()
 
 
@@ -598,7 +683,7 @@ def test_is_valid_image(png_image, png_image2, jpg_image, font):
     assert is_valid_image(png_image, "PNG", (48, 48))
     assert not is_valid_image(png_image2, "PNG", (48, 48))
     assert not is_valid_image(b"", "PNG")
-    assert not is_valid_image(34, "PNG")  # pyright: ignore
+    assert not is_valid_image(34, "PNG")  # pyright: ignore[reportArgumentType]
     assert not is_valid_image(font, "PNG")
     with open(png_image, "rb") as fh:
         assert is_valid_image(fh.read(), "PNG", (48, 48))

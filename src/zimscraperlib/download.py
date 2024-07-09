@@ -9,6 +9,9 @@ from concurrent.futures import Future, ThreadPoolExecutor
 from typing import IO, ClassVar
 
 import requests
+import requests.adapters
+import requests.structures
+import urllib3.util
 import yt_dlp as youtube_dl
 
 from zimscraperlib import logger
@@ -41,7 +44,8 @@ class YoutubeDownloader:
         self,
         url: str,
         options: dict | None,
-        wait: bool | None = True,  # noqa: FBT002
+        *,
+        wait: bool | None = True,
     ) -> bool | Future:
         """Downloads video using initialized executor.
 
@@ -51,9 +55,7 @@ class YoutubeDownloader:
 
         Returns download result of future (wait=False)"""
 
-        future = self.executor.submit(
-            self._run_youtube_dl, url, options  # pyright: ignore
-        )
+        future = self.executor.submit(self._run_youtube_dl, url, options or {})
         if not wait:
             return future
         if not future.exception():
@@ -142,8 +144,8 @@ def save_large_file(url: str, fpath: pathlib.Path) -> None:
 
 def _get_retry_adapter(
     max_retries: int | None = 5,
-) -> requests.adapters.BaseAdapter:  # pyright: ignore
-    retries = requests.packages.urllib3.util.retry.Retry(  # pyright: ignore
+) -> requests.adapters.BaseAdapter:
+    retries = urllib3.util.retry.Retry(
         total=max_retries,  # total number of retries
         connect=max_retries,  # connection errors
         read=max_retries,  # read errors
@@ -160,7 +162,7 @@ def _get_retry_adapter(
         ],  # force retry on the following codes
     )
 
-    return requests.adapters.HTTPAdapter(max_retries=retries)  # pyright: ignore
+    return requests.adapters.HTTPAdapter(max_retries=retries)
 
 
 def get_session(max_retries: int | None = 5) -> requests.Session:
@@ -176,11 +178,12 @@ def stream_file(
     byte_stream: IO[bytes] | None = None,
     block_size: int | None = 1024,
     proxies: dict | None = None,
-    only_first_block: bool | None = False,  # noqa: FBT002
     max_retries: int | None = 5,
     headers: dict[str, str] | None = None,
     session: requests.Session | None = None,
-) -> tuple[int, requests.structures.CaseInsensitiveDict]:  # pyright: ignore
+    *,
+    only_first_block: bool | None = False,
+) -> tuple[int, requests.structures.CaseInsensitiveDict]:
     """Stream data from a URL to either a BytesIO object or a file
     Arguments -
         fpath - Path of the file where data is sent
@@ -211,12 +214,14 @@ def stream_file(
     total_downloaded = 0
     if fpath is not None:
         fp = open(fpath, "wb")
-    else:
+    elif (
+        byte_stream is not None
+    ):  # pragma: no branch (we use a precise condition to help type checker)
         fp = byte_stream
 
     for data in resp.iter_content(block_size):
         total_downloaded += len(data)
-        fp.write(data)  # pyright: ignore
+        fp.write(data)
 
         # stop downloading/reading if we're just testing first block
         if only_first_block:
@@ -225,7 +230,7 @@ def stream_file(
     logger.debug(f"Downloaded {total_downloaded} bytes from {url}")
 
     if fpath:
-        fp.close()  # pyright: ignore
+        fp.close()
     else:
-        fp.seek(0)  # pyright: ignore
+        fp.seek(0)
     return total_downloaded, resp.headers

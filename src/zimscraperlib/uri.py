@@ -19,22 +19,23 @@ def rebuild_uri(
     params: str | None = None,
     query: str | None = None,
     fragment: str | None = None,
-    failsafe: bool = False,  # noqa: FBT001, FBT002
+    *,
+    failsafe: bool = False,
 ) -> urllib.parse.ParseResult:
     """new ParseResult named tuple from uri with requested part updated"""
     try:
-        username = first(username, uri.username, "")  # pyright: ignore
-        password = first(password, uri.password, "")  # pyright: ignore
-        hostname = first(hostname, uri.hostname, "")  # pyright: ignore
-        port = first(port, uri.port, "")  # pyright: ignore
+        username = first(username, uri.username)
+        password = first(password, uri.password)
+        hostname = first(hostname, uri.hostname)
+        port = first(port, uri.port)
         netloc = (
             f"{username}{':' if password else ''}{password}"
             f"{'@' if username or password else ''}{hostname}"
             f"{':' if port else ''}{port}"
         )
-        return urllib.parse.urlparse(  # pyright: ignore
-            urllib.parse.urlunparse(  # pyright: ignore
-                (  # pyright: ignore
+        return urllib.parse.urlparse(
+            urllib.parse.urlunparse(
+                (
                     first(scheme, uri.scheme),
                     netloc,
                     first(path, uri.path),

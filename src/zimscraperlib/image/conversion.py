@@ -32,6 +32,8 @@ def convert_image(
     fmt = params.pop("fmt").upper() if "fmt" in params else None  # requested format
     if not fmt:
         fmt = format_for(dst)
+    if not fmt:
+        raise ValueError("Impossible to guess destination image format")
     with pilopen(src) as image:
         if image.mode == "RGBA" and fmt in ALPHA_NOT_SUPPORTED or colorspace:
             image = image.convert(colorspace or "RGB")  # noqa: PLW2901

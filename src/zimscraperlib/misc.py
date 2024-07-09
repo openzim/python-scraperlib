@@ -2,7 +2,11 @@
 
 from __future__ import annotations
 
+from typing import TypeVar
 
-def first(*args: object | None) -> object:
-    """first non-None value from *args ; fallback to empty string"""
-    return next((item for item in args if item is not None), "")
+T = TypeVar("T")
+
+
+def first(*args: T | None, default: T = "") -> T:
+    """Return the first non-None value from *args; fallback to an empty string."""
+    return next((item for item in args if item is not None), default)

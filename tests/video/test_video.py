@@ -430,7 +430,8 @@ def test_reencode_return_ffmpeg_output(
             with_process=return_output,
         )
         if return_output:
-            success, process = ret  # pyright: ignore
+            assert not isinstance(ret, bool)
+            success, process = ret
             assert success
             assert len(process.stdout) > 0
         else:

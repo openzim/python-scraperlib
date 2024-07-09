@@ -5,8 +5,7 @@ import io
 
 import pytest
 
-from zimscraperlib.zim._libkiwix import getline
-from zimscraperlib.zim._libkiwix import parseMimetypeCounter as parse  # noqa: N813
+from zimscraperlib.zim._libkiwix import getline, parseMimetypeCounter
 
 empty = {}
 
@@ -19,13 +18,13 @@ def test_geline_nodelim():
 
 def test_getline():
     ins = io.StringIO("text/javascript=8;text/html=3;application/warc-headers=28364;")
-    assert getline(ins, ";") == (False, "text/javascript=8")  # pyright: ignore
-    assert getline(ins, ";") == (False, "text/html=3")  # pyright: ignore
-    assert getline(ins, ";") == (  # pyright: ignore
+    assert getline(ins, ";") == (False, "text/javascript=8")
+    assert getline(ins, ";") == (False, "text/html=3")
+    assert getline(ins, ";") == (
         False,
         "application/warc-headers=28364",
     )
-    assert getline(ins, ";") == (True, "")  # pyright: ignore
+    assert getline(ins, ";") == (True, "")
 
 
 @pytest.mark.parametrize(
@@ -80,4 +79,4 @@ def test_getline():
 )
 def test_counter_parsing(counter_str, counter_map):
     # https://github.com/kiwix/libkiwix/blob/master/test/counterParsing.cpp
-    assert parse(counter_str) == counter_map
+    assert parseMimetypeCounter(counter_str) == counter_map

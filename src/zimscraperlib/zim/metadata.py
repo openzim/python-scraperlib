@@ -29,7 +29,12 @@ def validate_required_values(name: str, value: Any):
         raise ValueError(f"Missing value for {name}")
 
 
-def validate_standard_str_types(name: str, value: str):
+def validate_standard_str_types(
+    name: str,
+    value: (
+        int | float | bytes | str | datetime.datetime | datetime.date | Iterable[str]
+    ),
+):
     """ensures standard string metadata are indeed str"""
     if name in (
         "Name",
@@ -61,13 +66,10 @@ def validate_date(name: str, value: datetime.datetime | datetime.date | str):
             raise ValueError(f"Invalid type for {name}.")
         elif isinstance(value, str):
             match = re.match(r"(?P<year>\d{4})-(?P<month>\d{2})-(?P<day>\d{2})", value)
+            if not match:
+                raise ValueError(f"Invalid {name} format, not matching regex")
             try:
-                datetime.date(
-                    **{
-                        k: int(v)
-                        for k, v in match.groupdict().items()  # pyright: ignore
-                    }
-                )
+                datetime.date(**{k: int(v) for k, v in match.groupdict().items()})
             except Exception as exc:
                 raise ValueError(f"Invalid {name} format: {exc}") from None
 
@@ -82,7 +84,7 @@ def validate_language(name: str, value: Iterable[str] | str):
                 raise ValueError(f"{code} is not ISO-639-3.")
 
 
-def validate_counter(name: str, value: str):  # noqa: ARG001
+def validate_counter(name: str, _: str):
     """ensures Counter metadata is not manually set"""
     if name == "Counter":
         raise ValueError(f"{name} cannot be set. libzim sets it.")

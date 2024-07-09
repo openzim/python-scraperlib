@@ -15,7 +15,7 @@ import iso639.exceptions
 ISO_LEVELS = ["1", "2b", "2t", "3", "5"]
 
 
-class NotFound(ValueError):  # noqa: N818
+class NotFoundError(ValueError):
     pass
 
 
@@ -81,7 +81,7 @@ def get_iso_lang_data(lang: str) -> tuple[dict, dict | None]:
         iso639.exceptions.InvalidLanguageValue,
         iso639.exceptions.DeprecatedLanguageValue,
     ) as exc:
-        raise NotFound("Not a valid iso language name/code") from exc
+        raise NotFoundError("Not a valid iso language name/code") from exc
 
     def replace_types(new_type: str) -> str:
         # convert new iso_types from iso639-lang Pypi package to old iso_types from
@@ -118,7 +118,9 @@ def get_iso_lang_data(lang: str) -> tuple[dict, dict | None]:
     return lang_data, None
 
 
-def find_language_names(query: str, lang_data: dict | None = None) -> tuple[str, str]:
+def find_language_names(
+    query: str, lang_data: dict | None = None
+) -> tuple[str | None, str | None]:
     """(native, english) language names for lang with help from language_details dict
 
     Falls back to English name if available or query if not"""
@@ -126,9 +128,7 @@ def find_language_names(query: str, lang_data: dict | None = None) -> tuple[str,
         lang_data = get_language_details(query, failsafe=True) or {}
     try:
         query_locale = babel.Locale.parse(query)
-        return query_locale.get_display_name(), query_locale.get_display_name(
-            "en"
-        )  # pyright: ignore
+        return query_locale.get_display_name(), query_locale.get_display_name("en")
     except (babel.UnknownLocaleError, TypeError, ValueError, AttributeError):
         pass
 
@@ -136,16 +136,14 @@ def find_language_names(query: str, lang_data: dict | None = None) -> tuple[str,
     for iso_level in [f"iso-639-{lang_}" for lang_ in reversed(ISO_LEVELS)]:
         try:
             query_locale = babel.Locale.parse(lang_data.get(iso_level))
-            return query_locale.get_display_name(), query_locale.get_display_name(
-                "en"
-            )  # pyright: ignore
+            return query_locale.get_display_name(), query_locale.get_display_name("en")
         except (babel.UnknownLocaleError, TypeError, ValueError, AttributeError):
             pass
     default = lang_data.get("english", query)
     return default, default
 
 
-def update_with_macro(lang_data: dict, macro_data: dict):
+def update_with_macro(lang_data: dict, macro_data: dict | None):
     """update empty keys from lang_data with ones of macro_data"""
     if macro_data:
         for key, value in macro_data.items():
@@ -154,9 +152,7 @@ def update_with_macro(lang_data: dict, macro_data: dict):
     return lang_data
 
 
-def get_language_details(
-    query: str, failsafe: bool | None = False  # noqa: FBT002
-) -> dict:
+def get_language_details(query: str, *, failsafe: bool | None = False) -> dict | None:
     """language details dict from query.
 
     Raises NotFound or return `und` language details if failsafe
@@ -192,12 +188,12 @@ def get_language_details(
 
     try:
         lang_data, macro_data = get_iso_lang_data(adjusted_query)
-    except NotFound as exc:
+    except NotFoundError as exc:
         if failsafe:
-            return None  # pyright: ignore
+            return None
         raise exc
 
-    iso_data = update_with_macro(lang_data, macro_data)  # pyright: ignore
+    iso_data = update_with_macro(lang_data, macro_data)
     native_name, english_name = find_language_names(native_query, iso_data)
     iso_data.update(
         {

@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # vim: ai ts=4 sts=4 et sw=4 nu
 
+from __future__ import annotations
+
 import base64
 import datetime
 import io
@@ -54,7 +56,7 @@ def test_zim_creator(tmp_path, png_image, html_file, html_str: str, html_str_cn:
     with open(png_image, "rb") as fh:
         png_data = fh.read()
     with Creator(fpath, main_path).config_dev_metadata(
-        Tags=tags, Illustration_48x48_at_1=png_data  # pyright: ignore
+        Tags=tags, Illustration_48x48_at_1=png_data
     ) as creator:
         # verbatim HTML from string
         creator.add_item_for("welcome", "wel", content=html_str, is_front=True)
@@ -360,9 +362,7 @@ def test_filelikeprovider_nosize(tmp_path, png_image_url):
 
     fpath = tmp_path / "test.zim"
     with Creator(fpath, "").config_dev_metadata() as creator:
-        creator.add_item(
-            FileLikeProviderItem(fileobj=fileobj, path="one.png")  # pyright: ignore
-        )
+        creator.add_item(FileLikeProviderItem(fileobj=fileobj, path="one.png"))
 
     zim = Archive(fpath)
     assert bytes(zim.get_item("one.png").content) == fileobj.getvalue()
@@ -376,9 +376,7 @@ def test_urlprovider(tmp_path, png_image_url):
 
     fpath = tmp_path / "test.zim"
     with Creator(fpath, "").config_dev_metadata() as creator:
-        creator.add_item(
-            SpecialURLProviderItem(url=png_image_url, path="one.png")  # pyright: ignore
-        )
+        creator.add_item(SpecialURLProviderItem(url=png_image_url, path="one.png"))
 
     zim = Archive(fpath)
     assert bytes(zim.get_item("one.png").content) == file_bytes
@@ -441,8 +439,8 @@ with HTTPServer(('', {port}), handler) as server:
 
             creator.add_item(
                 SpecialURLProviderItem(
-                    url=f"http://localhost:{port}/home.png",  # pyright: ignore
-                    mimetype="image/png",  # pyright: ignore
+                    url=f"http://localhost:{port}/home.png",
+                    mimetype="image/png",
                 )
             )
     finally:
@@ -535,7 +533,7 @@ def test_without_metadata(tmp_path):
 
 def test_check_metadata(tmp_path):
     with pytest.raises(ValueError, match="Counter cannot be set"):
-        Creator(tmp_path, "").config_dev_metadata(Counter=1).start()  # pyright: ignore
+        Creator(tmp_path, "").config_dev_metadata(Counter=1).start()
 
     with pytest.raises(ValueError, match="Description is too long."):
         Creator(tmp_path, "").config_dev_metadata(Description="T" * 90).start()
@@ -802,6 +800,7 @@ def test_config_metadata_control_characters(tmp_path):
         ("Date", "1969-12-31", True),
         ("Date", "1969-13-31", False),
         ("Date", "2023/02/29", False),
+        ("Date", "2023-55-99", False),
         ("Language", "xxx", False),
         ("Language", "rmr", False),
         ("Language", "eng", True),

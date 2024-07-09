@@ -11,6 +11,7 @@ from typing import ClassVar
 
 import pytest
 import requests
+import requests.structures
 from yt_dlp import DownloadError
 
 from zimscraperlib.download import (
@@ -33,9 +34,7 @@ def assert_downloaded_file(url, file):
 
 
 def assert_headers(returned_headers):
-    assert isinstance(
-        returned_headers, requests.structures.CaseInsensitiveDict  # pyright: ignore
-    )
+    assert isinstance(returned_headers, requests.structures.CaseInsensitiveDict)
     assert returned_headers["Content-Type"] == "image/x-icon"
 
 

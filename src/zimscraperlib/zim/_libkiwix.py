@@ -24,7 +24,7 @@ CounterMap = Dict[
 ]
 
 
-def getline(src: io.StringIO, delim: bool | None = None) -> tuple[bool, str]:
+def getline(src: io.StringIO, delim: str | None = None) -> tuple[bool, str]:
     """C++ stdlib getline() ~clone
 
     Reads `src` until it finds `delim`.
@@ -49,10 +49,10 @@ def readFullMimetypeAndCounterString(
 
     Returns whether the source is EOF and the extracted string (or empty one)"""
     params = ""
-    eof, mtcStr = getline(src, ";")  # pyright: ignore
+    eof, mtcStr = getline(src, ";")
     if mtcStr.find("=") == -1:
         while params.count("=") != 2:  # noqa: PLR2004
-            eof, params = getline(src, ";")  # pyright: ignore
+            eof, params = getline(src, ";")
             if params.count("=") == 2:  # noqa: PLR2004
                 mtcStr += ";" + params
             if eof:
