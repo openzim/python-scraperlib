@@ -3,11 +3,10 @@
 
 from __future__ import annotations
 
-import io
 import pathlib
 import subprocess
 from concurrent.futures import Future, ThreadPoolExecutor
-from typing import ClassVar
+from typing import IO, ClassVar
 
 import requests
 import yt_dlp as youtube_dl
@@ -174,7 +173,7 @@ def get_session(max_retries: int | None = 5) -> requests.Session:
 def stream_file(
     url: str,
     fpath: pathlib.Path | None = None,
-    byte_stream: io.BytesIO | None = None,
+    byte_stream: IO[bytes] | None = None,
     block_size: int | None = 1024,
     proxies: dict | None = None,
     only_first_block: bool | None = False,  # noqa: FBT002
