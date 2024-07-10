@@ -724,6 +724,57 @@ def test_config_metadata(tmp_path, png_image, tags):
     assert reader.get_text_metadata("TestMetadata") == "Test Metadata"
 
 
+def test_config_metadata_control_characters(tmp_path):
+    fpath = tmp_path / "test_config.zim"
+    creator = Creator(fpath, "").config_dev_metadata(
+        Description="\t\n\r\n \tA description \awith  \bcontrol characters\v",
+        LongDescription="A description \rwith \a\ncontrol characters\tsss\t\n\r\n \t",
+        Creator="  A creator ",
+    )
+    assert creator._metadata["Description"] == "A description with  control characters"
+    assert (
+        creator._metadata["LongDescription"]
+        == "A description \rwith \ncontrol characters\tsss"
+    )
+    assert creator._metadata["Creator"] == "A creator"
+    with creator:
+        creator.add_metadata(
+            "Description_1",
+            "\t\n\r\n \tA description \awith  \bcontrol characters\v",
+        )
+        creator.add_metadata(
+            "LongDescription_1",
+            "A description \rwith \a\ncontrol characters\tsss\t\n\r\n \t",
+        )
+        creator.add_metadata(
+            "Creator_1",
+            "  A creator ",
+        )
+        pass
+
+    assert fpath.exists()
+
+    reader = Archive(fpath)
+    assert (
+        reader.get_text_metadata("Description")
+        == "A description with  control characters"
+    )
+    assert (
+        reader.get_text_metadata("LongDescription")
+        == "A description \rwith \ncontrol characters\tsss"
+    )
+    assert reader.get_text_metadata("Creator") == "A creator"
+    assert (
+        reader.get_text_metadata("Description_1")
+        == "A description with  control characters"
+    )
+    assert (
+        reader.get_text_metadata("LongDescription_1")
+        == "A description \rwith \ncontrol characters\tsss"
+    )
+    assert reader.get_text_metadata("Creator_1") == "A creator"
+
+
 @pytest.mark.parametrize(
     "name,value,valid",
     [

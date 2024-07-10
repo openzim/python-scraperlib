@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Add utility function to compute ZIM Tags #164, including deduplication #156
+- Metadata does not automatically drops control characters #159
 
 ### Fixed
 
