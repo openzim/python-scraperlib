@@ -56,7 +56,13 @@ def setlocale(root_dir: pathlib.Path, locale_name: str):
     """set the desired locale for gettext.
 
     call this early"""
-    return Locale.setup(root_dir / "locale", locale_name)
+    try:
+        return Locale.setup(root_dir / "locale", locale_name)
+    except locale.Error as exc:
+        raise locale.Error(
+            f"Failed to setup '{locale_name}' locale. If this locale is not installed "
+            "on this system, please install it first."
+        ) from exc
 
 
 def get_iso_lang_data(lang: str) -> tuple[dict, dict | None]:

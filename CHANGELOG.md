@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Metadata length validation is buggy for unicode strings #158
 - Pillow 10.4.0 reveals improper type hints for image probing functions #177
+- Enhance error when locale fails to setup #157
 
 ## [3.4.0] - 2024-06-21
 
