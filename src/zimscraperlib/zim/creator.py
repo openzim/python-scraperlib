@@ -45,6 +45,7 @@ from zimscraperlib.filesystem import (
 )
 from zimscraperlib.i18n import is_valid_iso_639_3
 from zimscraperlib.types import get_mime_for_name
+from zimscraperlib.zim.indexing import IndexData
 from zimscraperlib.zim.items import StaticItem
 from zimscraperlib.zim.metadata import (
     validate_counter,
@@ -340,6 +341,9 @@ class Creator(libzim.writer.Creator):
         delete_fpath: bool | None = False,  # noqa: FBT002
         duplicate_ok: bool | None = None,
         callback: Callable | tuple[Callable, Any] | None = None,
+        index_data: IndexData | None = None,
+        *,
+        auto_index: bool = True,
     ):
         """Add a File or content at a specified path and get its path
 
@@ -388,6 +392,8 @@ class Creator(libzim.writer.Creator):
                 filepath=fpath,
                 hints=hints,
                 content=content,
+                index_data=index_data,
+                auto_index=auto_index,
             ),
             callback=callback,
             duplicate_ok=duplicate_ok,

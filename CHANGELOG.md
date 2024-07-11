@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Add utility function to compute ZIM Tags #164, including deduplication #156
 - Metadata does not automatically drops control characters #159
+- New `indexing.IndexData` class to hold title, content and keywords to pass to libzim to index an item
+- Automatically index PDF documents content #167
+- Automatically set proper title on PDF documents #168
 
 ### Fixed
 

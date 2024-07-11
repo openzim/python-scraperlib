@@ -15,6 +15,8 @@ from typing import Any
 import libzim.writer  # pyright: ignore
 
 from zimscraperlib.download import stream_file
+from zimscraperlib.filesystem import get_content_mimetype, get_file_mimetype
+from zimscraperlib.zim.indexing import IndexData, get_pdf_index_data
 from zimscraperlib.zim.providers import (
     FileLikeProvider,
     FileProvider,
@@ -69,7 +71,17 @@ class StaticItem(Item):
     Sets a `ref` to itself on the File/String content providers so it outlives them
     We need Item to survive its ContentProvider so that we can track lifecycle
     more efficiently: now when the libzim destroys the CP, python will destroy
-    the Item and we can be notified that we're effectively through with our content"""
+    the Item and we can be notified that we're effectively through with our content
+
+    By default, content is automatically indexed (either by the libzim itself for
+    supported documents - text or html for now or by the python-scraperlib - only PDF
+    supported for now). If you do not want this, set `auto_index` to False to disable
+    both indexing (libzim and python-scraperlib).
+
+    It is also possible to pass index_data to configure custom indexing of the item.
+
+    If item title is not set by caller, it is automatically populated from index_data.
+    """
 
     def __init__(
         self,
@@ -80,6 +92,9 @@ class StaticItem(Item):
         title: str | None = None,
         mimetype: str | None = None,
         hints: dict | None = None,
+        index_data: IndexData | None = None,
+        *,
+        auto_index: bool = True,
         **kwargs: Any,
     ):
         if content is not None:
@@ -91,6 +106,20 @@ class StaticItem(Item):
         super().__init__(
             path=path, title=title, mimetype=mimetype, hints=hints, **kwargs
         )
+        if index_data:
+            self.get_indexdata = lambda: index_data
+        elif not auto_index:
+            self.get_indexdata = lambda: IndexData("", "")  # index nothing
+        else:
+            self._get_auto_index()  # consider to add auto index
+
+        # Populate item title from index data if title is not set by caller
+        if (
+            (not hasattr(self, "title") or not self.title)
+            and hasattr(self, "get_indexdata")
+            and self.get_indexdata().get_title()
+        ):
+            self.title = self.get_indexdata().get_title()
 
     def get_contentprovider(self) -> libzim.writer.ContentProvider:
         # content was set manually
@@ -115,6 +144,53 @@ class StaticItem(Item):
             )
 
         raise NotImplementedError("No data to provide`")
+
+    def _get_auto_index(self):
+        """Populate item index data and title automatically from content"""
+
+        # content was set manually
+        content = getattr(self, "content", None)
+        if content is not None:
+            if not isinstance(content, (str, bytes)):
+                raise RuntimeError(
+                    f"Unexpected type for content: {type(content)}"
+                )  # pragma: no cover
+            mimetype = get_content_mimetype(
+                content.encode("utf-8") if isinstance(content, str) else content
+            )
+            if mimetype == "application/pdf":
+                index_data = get_pdf_index_data(content=content)
+                self.get_indexdata = lambda: index_data
+            else:
+                return
+
+        # using a file-like object
+        fileobj = getattr(self, "fileobj", None)
+        if fileobj:
+            if not isinstance(fileobj, io.BytesIO):
+                raise RuntimeError(
+                    f"Unexpected type for content: {type(fileobj)}"
+                )  # pragma: no cover
+            mimetype = get_content_mimetype(fileobj.getvalue())
+            if mimetype == "application/pdf":
+                index_data = get_pdf_index_data(fileobj=fileobj)
+                self.get_indexdata = lambda: index_data
+            else:
+                return
+
+        # using a file path
+        filepath = getattr(self, "filepath", None)
+        if filepath:
+            if not isinstance(filepath, pathlib.Path):
+                raise RuntimeError(
+                    f"Unexpected type for content: {type(filepath)}"
+                )  # pragma: no cover
+            mimetype = get_file_mimetype(filepath)
+            if mimetype == "application/pdf":
+                index_data = get_pdf_index_data(filepath=filepath)
+                self.get_indexdata = lambda: index_data
+            else:
+                return
 
 
 class URLItem(StaticItem):
