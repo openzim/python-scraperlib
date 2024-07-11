@@ -17,7 +17,11 @@ from PIL import Image
 from resizeimage.imageexceptions import ImageSizeError
 
 from zimscraperlib.image import presets
-from zimscraperlib.image.conversion import convert_image, create_favicon
+from zimscraperlib.image.conversion import (
+    convert_image,
+    convert_svg2png,
+    create_favicon,
+)
 from zimscraperlib.image.optimization import (
     ensure_matches,
     get_optimization_method,
@@ -326,6 +330,42 @@ def test_convert_path_src_io_dst(png_image: pathlib.Path):
     convert_image(src, dst, fmt="PNG")
     dst_image = Image.open(dst)
     assert dst_image.format == "PNG"
+
+
+def test_convert_svg_io_src_path_dst(svg_image: pathlib.Path, tmp_path: pathlib.Path):
+    src = io.BytesIO(svg_image.read_bytes())
+    dst = tmp_path / "test.png"
+    convert_svg2png(src, dst)
+    dst_image = Image.open(dst)
+    assert dst_image.format == "PNG"
+
+
+def test_convert_svg_io_src_io_dst(svg_image: pathlib.Path):
+    src = io.BytesIO(svg_image.read_bytes())
+    dst = io.BytesIO()
+    convert_svg2png(src, dst)
+    dst_image = Image.open(dst)
+    assert dst_image.format == "PNG"
+
+
+def test_convert_svg_path_src_path_dst(svg_image: pathlib.Path, tmp_path: pathlib.Path):
+    src = svg_image
+    dst = tmp_path / "test.png"
+    convert_svg2png(src, dst, width=96, height=96)
+    dst_image = Image.open(dst)
+    assert dst_image.format == "PNG"
+    assert dst_image.width == 96
+    assert dst_image.height == 96
+
+
+def test_convert_svg_path_src_io_dst(svg_image: pathlib.Path):
+    src = svg_image
+    dst = io.BytesIO()
+    convert_svg2png(src, dst, width=96, height=96)
+    dst_image = Image.open(dst)
+    assert dst_image.format == "PNG"
+    assert dst_image.width == 96
+    assert dst_image.height == 96
 
 
 @pytest.mark.parametrize(
