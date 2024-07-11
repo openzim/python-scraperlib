@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `optimization.get_optimization_method` to get the proper optimization method to call for a given image format
 - New `creator.Creator.convert_and_check_metadata` to convert metadata to bytes or str for known use cases and check proper type is passed to libzim
 - Add svg2png image conversion function #113
+- Add `conversion.convert_svg2png` image conversion function + support for SVG in `probing.format_for` #113
 
 ## Changed
 

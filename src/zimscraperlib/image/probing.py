@@ -12,6 +12,8 @@ from typing import IO
 import colorthief
 import PIL.Image
 
+from zimscraperlib.filesystem import get_content_mimetype, get_file_mimetype
+
 
 def get_colors(
     src: pathlib.Path, *, use_palette: bool | None = True
@@ -59,8 +61,23 @@ def format_for(
 ) -> str | None:
     """Pillow format of a given filename, either Pillow-detected or from suffix"""
     if not from_suffix:
-        with PIL.Image.open(src) as img:
-            return img.format
+        try:
+            with PIL.Image.open(src) as img:
+                return img.format
+        except PIL.UnidentifiedImageError:
+            # Fallback based on mimetype for SVG which are not supported by PIL
+            if (
+                isinstance(src, pathlib.Path)
+                and get_file_mimetype(src) == "image/svg+xml"
+            ):
+                return "SVG"
+            elif (
+                isinstance(src, io.BytesIO)
+                and get_content_mimetype(src.getvalue()) == "image/svg+xml"
+            ):
+                return "SVG"
+            else:  # pragma: no cover
+                raise
 
     if not isinstance(src, pathlib.Path):
         raise ValueError(
@@ -70,8 +87,11 @@ def format_for(
     from PIL.Image import EXTENSION as PIL_FMT_EXTENSION
     from PIL.Image import init as init_pil
 
-    init_pil()
-    return PIL_FMT_EXTENSION[src.suffix] if src.suffix in PIL_FMT_EXTENSION else None
+    init_pil()  # populate the PIL_FMT_EXTENSION dictionary
+
+    known_extensions = {".svg": "SVG"}
+    known_extensions.update(PIL_FMT_EXTENSION)
+    return known_extensions[src.suffix] if src.suffix in known_extensions else None
 
 
 def is_valid_image(
