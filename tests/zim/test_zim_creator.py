@@ -535,6 +535,9 @@ def test_check_metadata(tmp_path):
     with pytest.raises(ValueError, match="Counter cannot be set"):
         Creator(tmp_path, "").config_dev_metadata(Counter=1).start()
 
+    with pytest.raises(ValueError, match="Invalid type for Foo"):
+        Creator(tmp_path, "").config_dev_metadata(Foo=1).start()
+
     with pytest.raises(ValueError, match="Description is too long."):
         Creator(tmp_path, "").config_dev_metadata(Description="T" * 90).start()
 
@@ -750,6 +753,10 @@ def test_config_metadata_control_characters(tmp_path):
             "Creator_1",
             "  A creator ",
         )
+        creator.add_metadata(
+            "Binary1",
+            bytes.fromhex("01FA"),
+        )
         pass
 
     assert fpath.exists()
@@ -773,6 +780,7 @@ def test_config_metadata_control_characters(tmp_path):
         == "A description \rwith \ncontrol characters\tsss"
     )
     assert reader.get_text_metadata("Creator_1") == "A creator"
+    assert bytes.hex(reader.get_metadata("Binary1")) == "01fa"
 
 
 @pytest.mark.parametrize(

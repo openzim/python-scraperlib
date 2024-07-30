@@ -332,3 +332,23 @@ def test_indexing_item_pdf_custom_title(tmp_path, encrypted_pdf_file):
     assert reader.get_search_results_count("the") == 1
     assert reader.get_search_results_count("microsoft") == 1
     assert reader.get_search_results_count("c8clark") == 1
+
+
+@pytest.mark.parametrize(
+    "content, wordcount, expected_wordcount",
+    [
+        ("foo", None, 1),
+        ("foo bar", None, 2),
+        ("  foo    bar  ", None, 2),
+        (
+            "foo bar",
+            123,
+            123,
+        ),  # wordcount is passed so it is not automatically computed
+    ],
+)
+def test_index_data_wordcount(content, wordcount, expected_wordcount):
+    assert (
+        IndexData(title="foo", content=content, wordcount=wordcount).get_wordcount()
+        == expected_wordcount
+    )
