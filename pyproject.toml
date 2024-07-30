@@ -23,6 +23,7 @@ dependencies = [
   # limited and we use only a very small subset of it.
   "regex>=2020.7.14",
   "pymupdf>=1.24.0,<2.0",
+  "CairoSVG>=2.2.0,<3.0",
   # youtube-dl should be updated as frequently as possible
   "yt-dlp"
 ]

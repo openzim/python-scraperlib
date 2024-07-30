@@ -17,7 +17,11 @@ from PIL import Image
 from resizeimage.imageexceptions import ImageSizeError
 
 from zimscraperlib.image import presets
-from zimscraperlib.image.conversion import convert_image, create_favicon
+from zimscraperlib.image.conversion import (
+    convert_image,
+    convert_svg2png,
+    create_favicon,
+)
 from zimscraperlib.image.optimization import (
     ensure_matches,
     get_optimization_method,
@@ -64,8 +68,15 @@ def get_src_dst(
     jpg_image: pathlib.Path | None = None,
     gif_image: pathlib.Path | None = None,
     webp_image: pathlib.Path | None = None,
+    svg_image: pathlib.Path | None = None,
 ) -> tuple[pathlib.Path, pathlib.Path]:
-    options = {"png": png_image, "jpg": jpg_image, "webp": webp_image, "gif": gif_image}
+    options = {
+        "png": png_image,
+        "jpg": jpg_image,
+        "webp": webp_image,
+        "gif": gif_image,
+        "svg": svg_image,
+    }
     if fmt not in options:
         raise LookupError(f"Unsupported fmt passed: {fmt}")
     src = options[fmt]
@@ -328,6 +339,42 @@ def test_convert_path_src_io_dst(png_image: pathlib.Path):
     assert dst_image.format == "PNG"
 
 
+def test_convert_svg_io_src_path_dst(svg_image: pathlib.Path, tmp_path: pathlib.Path):
+    src = io.BytesIO(svg_image.read_bytes())
+    dst = tmp_path / "test.png"
+    convert_svg2png(src, dst)
+    dst_image = Image.open(dst)
+    assert dst_image.format == "PNG"
+
+
+def test_convert_svg_io_src_io_dst(svg_image: pathlib.Path):
+    src = io.BytesIO(svg_image.read_bytes())
+    dst = io.BytesIO()
+    convert_svg2png(src, dst)
+    dst_image = Image.open(dst)
+    assert dst_image.format == "PNG"
+
+
+def test_convert_svg_path_src_path_dst(svg_image: pathlib.Path, tmp_path: pathlib.Path):
+    src = svg_image
+    dst = tmp_path / "test.png"
+    convert_svg2png(src, dst, width=96, height=96)
+    dst_image = Image.open(dst)
+    assert dst_image.format == "PNG"
+    assert dst_image.width == 96
+    assert dst_image.height == 96
+
+
+def test_convert_svg_path_src_io_dst(svg_image: pathlib.Path):
+    src = svg_image
+    dst = io.BytesIO()
+    convert_svg2png(src, dst, width=96, height=96)
+    dst_image = Image.open(dst)
+    assert dst_image.format == "PNG"
+    assert dst_image.width == 96
+    assert dst_image.height == 96
+
+
 @pytest.mark.parametrize(
     "fmt,exp_size",
     [("png", 128), ("jpg", 128)],
@@ -576,10 +623,10 @@ def test_ensure_matches(webp_image):
 
 @pytest.mark.parametrize(
     "fmt,expected",
-    [("png", "PNG"), ("jpg", "JPEG"), ("gif", "GIF"), ("webp", "WEBP")],
+    [("png", "PNG"), ("jpg", "JPEG"), ("gif", "GIF"), ("webp", "WEBP"), ("svg", "SVG")],
 )
 def test_format_for_real_images_suffix(
-    png_image, jpg_image, gif_image, webp_image, tmp_path, fmt, expected
+    png_image, jpg_image, gif_image, webp_image, svg_image, tmp_path, fmt, expected
 ):
     src, _ = get_src_dst(
         tmp_path,
@@ -588,16 +635,17 @@ def test_format_for_real_images_suffix(
         jpg_image=jpg_image,
         gif_image=gif_image,
         webp_image=webp_image,
+        svg_image=svg_image,
     )
     assert format_for(src) == expected
 
 
 @pytest.mark.parametrize(
     "fmt,expected",
-    [("png", "PNG"), ("jpg", "JPEG"), ("gif", "GIF"), ("webp", "WEBP")],
+    [("png", "PNG"), ("jpg", "JPEG"), ("gif", "GIF"), ("webp", "WEBP"), ("svg", "SVG")],
 )
 def test_format_for_real_images_content_path(
-    png_image, jpg_image, gif_image, webp_image, tmp_path, fmt, expected
+    png_image, jpg_image, gif_image, webp_image, svg_image, tmp_path, fmt, expected
 ):
     src, _ = get_src_dst(
         tmp_path,
@@ -606,16 +654,17 @@ def test_format_for_real_images_content_path(
         jpg_image=jpg_image,
         gif_image=gif_image,
         webp_image=webp_image,
+        svg_image=svg_image,
     )
     assert format_for(src, from_suffix=False) == expected
 
 
 @pytest.mark.parametrize(
     "fmt,expected",
-    [("png", "PNG"), ("jpg", "JPEG"), ("gif", "GIF"), ("webp", "WEBP")],
+    [("png", "PNG"), ("jpg", "JPEG"), ("gif", "GIF"), ("webp", "WEBP"), ("svg", "SVG")],
 )
 def test_format_for_real_images_content_bytes(
-    png_image, jpg_image, gif_image, webp_image, tmp_path, fmt, expected
+    png_image, jpg_image, gif_image, webp_image, svg_image, tmp_path, fmt, expected
 ):
     src, _ = get_src_dst(
         tmp_path,
@@ -624,6 +673,7 @@ def test_format_for_real_images_content_bytes(
         jpg_image=jpg_image,
         gif_image=gif_image,
         webp_image=webp_image,
+        svg_image=svg_image,
     )
     assert format_for(io.BytesIO(src.read_bytes()), from_suffix=False) == expected
 
@@ -635,6 +685,7 @@ def test_format_for_real_images_content_bytes(
         ("image.jpg", "JPEG"),
         ("image.gif", "GIF"),
         ("image.webp", "WEBP"),
+        ("image.svg", "SVG"),
         ("image.raster", None),
     ],
 )

@@ -3,9 +3,11 @@
 
 from __future__ import annotations
 
+import io
 import pathlib
 from typing import IO
 
+import cairosvg.svg
 from PIL.Image import open as pilopen
 
 from zimscraperlib.constants import ALPHA_NOT_SUPPORTED
@@ -38,6 +40,39 @@ def convert_image(
         if image.mode == "RGBA" and fmt in ALPHA_NOT_SUPPORTED or colorspace:
             image = image.convert(colorspace or "RGB")  # noqa: PLW2901
         save_image(image, dst, fmt, **params)
+
+
+def convert_svg2png(
+    src: str | pathlib.Path | io.BytesIO,
+    dst: pathlib.Path | IO[bytes],
+    width: int | None = None,
+    height: int | None = None,
+):
+    """Convert a SVG to a PNG
+
+    Output width and height might be specified if resize is needed.
+    PNG background is transparent.
+    """
+    kwargs = {}
+    if isinstance(src, pathlib.Path):
+        src = str(src)
+    if isinstance(src, str):
+        kwargs["url"] = src
+    else:
+        kwargs["bytestring"] = src.getvalue()
+    if width:
+        kwargs["output_width"] = width
+    if height:
+        kwargs["output_height"] = height
+    if isinstance(dst, pathlib.Path):
+        cairosvg.svg2png(write_to=str(dst), **kwargs)
+    else:
+        result = cairosvg.svg2png(**kwargs)
+        if not isinstance(result, bytes):
+            raise Exception(
+                "Unexpected type returned by cairosvg.svg2png"
+            )  # pragma: no cover
+        dst.write(result)
 
 
 def create_favicon(src: pathlib.Path, dst: pathlib.Path) -> None:
