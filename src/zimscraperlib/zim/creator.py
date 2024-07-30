@@ -30,6 +30,7 @@ from typing import Any
 
 import libzim.writer  # pyright: ignore
 import PIL.Image
+import regex
 
 from zimscraperlib import logger
 from zimscraperlib.constants import (
@@ -64,6 +65,9 @@ DUPLICATE_EXC_STR = re.compile(
     r"existing dirent's title is(.+)",
     re.MULTILINE | re.DOTALL,
 )
+
+# All control characters are disallowed in str metadata except \n, \r and \t
+UNWANTED_CONTROL_CHARACTERS_REGEX = regex.compile(r"(?![\n\t\r])\p{C}")
 
 
 def mimetype_for(
@@ -250,6 +254,11 @@ class Creator(libzim.writer.Creator):
         content: str | bytes | datetime.date | datetime.datetime | Iterable[str],
         mimetype: str = "text/plain;charset=UTF-8",
     ):
+        # drop control characters before passing them to libzim
+        if isinstance(content, str):
+            content = UNWANTED_CONTROL_CHARACTERS_REGEX.sub("", content).strip(
+                " \r\n\t"
+            )
         if not self.disable_metadata_checks:
             self.validate_metadata(name, content)
         if name == "Date" and isinstance(content, (datetime.date, datetime.datetime)):
@@ -304,6 +313,13 @@ class Creator(libzim.writer.Creator):
             }
         )
         self._metadata.update(extras)
+        for metadata_key, metadata_value in self._metadata.items():
+            # drop control characters so that proper value is stored in memory and
+            # logged in DEBUG mode ; also strip blank characters
+            if isinstance(metadata_value, str):
+                self._metadata[metadata_key] = UNWANTED_CONTROL_CHARACTERS_REGEX.sub(
+                    "", metadata_value
+                ).strip(" \r\n\t")
         return self
 
     def config_dev_metadata(self, **extras: str):
