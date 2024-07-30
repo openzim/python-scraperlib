@@ -286,10 +286,8 @@ class Creator(libzim.writer.Creator):
         mimetype: str = "text/plain;charset=UTF-8",
     ):
         # drop control characters before passing them to libzim
-        if isinstance(content, str):
-            content = UNWANTED_CONTROL_CHARACTERS_REGEX.sub("", content).strip(
-                " \r\n\t"
-            )
+        if isinstance(value, str):
+            value = UNWANTED_CONTROL_CHARACTERS_REGEX.sub("", value).strip(" \r\n\t")
         if not self.disable_metadata_checks:
             self.validate_metadata(name, value)
 
@@ -387,7 +385,6 @@ class Creator(libzim.writer.Creator):
         duplicate_ok: bool | None = None,
         callback: Callable | tuple[Callable, Any] | None = None,
         index_data: IndexData | None = None,
-        *,
         auto_index: bool = True,
     ):
         """Add a File or content at a specified path and get its path
