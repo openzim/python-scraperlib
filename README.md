@@ -30,6 +30,7 @@ zimscraperlib>=1.1,<1.2
 * Pillow
 * FFmpeg
 * gifsicle (>=1.92)
+* locale (with at least `fr_FR.UTF-8` and `pt_BR.utf8` locales installed for tests to pass)
 
 ## macOS
 
@@ -51,7 +52,7 @@ sudo apt install libmagic1 wget ffmpeg \
 apk add ffmpeg gifsicle libmagic wget libjpeg
 ```
 
-**Nota:** i18n features do not work on Alpine, see https://github.com/openzim/python-scraperlib/issues/134 ; there is one corresponding test which is failing.
+**Nota:** Alpine does not have `locale` support, so i18n features do not work on Alpine, see https://github.com/openzim/python-scraperlib/issues/134 ; there is one corresponding test which is failing.
 
 # Contribution
 
