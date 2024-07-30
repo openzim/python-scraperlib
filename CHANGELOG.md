@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - New `creator.Creator.convert_and_check_metadata` to convert metadata to bytes or str for known use cases and check proper type is passed to libzim
 - Add svg2png image conversion function #113
 - Add `conversion.convert_svg2png` image conversion function + support for SVG in `probing.format_for` #113
+- Add `i18n.Lang` class used as typed result of i18n operations #151
 
 ## Changed
 
@@ -31,6 +32,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **BREAKING** `creator.Creator.add_metadata` and `creator.Creator.validate_metadata` now only accepts `bytes | str` as value (it must have been converted before call)
 - **BREAKING** second argument of `creator.Creator.add_metadata` has been renamed to `value` instead of `content` to align with other methods
 - When a type issue arises in metadata checks, wrong value type is displayed in exception
+- **BREAKING** `i18n.get_language_details()`, `i18n.get_iso_lang_data()`, `i18n.find_language_names()` and `i18n.update_with_macro` now process / return a new typed `Lang` class #151
+- **BREAKING** Rename `i18.NotFound` to `i18n.NotFoundError`
 
 ### Fixed
 
