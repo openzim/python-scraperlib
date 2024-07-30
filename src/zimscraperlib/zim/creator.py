@@ -226,22 +226,14 @@ class Creator(libzim.writer.Creator):
         del self._metadata["Illustration_48x48@1"]
         for name, value in self._metadata.items():
             if value:
-                self.add_metadata(name, value)
+                self.add_metadata(name, self.convert_and_check_metadata(name, value))
 
         return self
 
     def validate_metadata(
         self,
         name: str,
-        value: (
-            int
-            | float
-            | bytes
-            | str
-            | datetime.datetime
-            | datetime.date
-            | Iterable[str]
-        ),
+        value: bytes | str,
     ):
         """Ensures metadata value for name is conform with the openZIM spec on Metadata
 
@@ -260,10 +252,37 @@ class Creator(libzim.writer.Creator):
         validate_tags(name, value)  # pyright: ignore
         validate_illustrations(name, value)  # pyright: ignore
 
+    def convert_and_check_metadata(
+        self,
+        name: str,
+        value: str | bytes | datetime.date | datetime.datetime | Iterable[str],
+    ) -> str | bytes:
+        """Convert metadata to appropriate type for few known usecase and check type
+
+        Date: converts date and datetime to string YYYY-MM-DD
+        Tags: converts iterable to string with semi-colon separator
+
+        Also checks that final type is appropriate for libzim (str or bytes)
+        """
+        if name == "Date" and isinstance(value, (datetime.date, datetime.datetime)):
+            value = value.strftime("%Y-%m-%d")
+        if (
+            name == "Tags"
+            and not isinstance(value, str)
+            and not isinstance(value, bytes)
+            and isinstance(value, Iterable)
+        ):
+            value = ";".join(value)
+
+        if not isinstance(value, str) and not isinstance(value, bytes):
+            raise ValueError(f"Invalid type for {name}: {type(value)}")
+
+        return value
+
     def add_metadata(
         self,
         name: str,
-        content: str | bytes | datetime.date | datetime.datetime | Iterable[str],
+        value: str | bytes,
         mimetype: str = "text/plain;charset=UTF-8",
     ):
         # drop control characters before passing them to libzim
@@ -272,17 +291,9 @@ class Creator(libzim.writer.Creator):
                 " \r\n\t"
             )
         if not self.disable_metadata_checks:
-            self.validate_metadata(name, content)
-        if name == "Date" and isinstance(content, (datetime.date, datetime.datetime)):
-            content = content.strftime("%Y-%m-%d").encode("UTF-8")
-        if (
-            name == "Tags"
-            and not isinstance(content, str)
-            and not isinstance(content, bytes)
-            and isinstance(content, Iterable)
-        ):
-            content = ";".join(content)
-        super().add_metadata(name, content, mimetype)
+            self.validate_metadata(name, value)
+
+        super().add_metadata(name, value, mimetype)
 
     # there are many N803 problems, but they are intentional to match real tag name
     def config_metadata(
