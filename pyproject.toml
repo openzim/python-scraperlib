@@ -18,10 +18,11 @@ dependencies = [
   "beautifulsoup4>=4.9.3,<5.0",
   "lxml>=4.6.3,<6.0",
   "optimize-images>=1.3.6,<2.0",
-  # regex has nNo upper-bound due to "date-based" release numbers, no semver, so their
+  # regex has no upper-bound due to "date-based" release numbers, no semver, so their
   # promise is that they will never (or always) break the API, and the API is very
   # limited and we use only a very small subset of it.
   "regex>=2020.7.14",
+  "pymupdf>=1.24.0,<2.0",
   # youtube-dl should be updated as frequently as possible
   "yt-dlp"
 ]

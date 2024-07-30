@@ -133,6 +133,32 @@ def webp_image():
 
 
 @pytest.fixture(scope="module")
+def encrypted_pdf_file():
+    """Return an encrypted PDF
+
+    encrypted.pdf is a PDF encrypted with only a owner password (restricting edit/print)
+    we want to be sure we are capable to also index this kind of PDF documents, since
+    they are readable by most popular readers without any issue (view is unrestricted).
+    """
+    return file_src("encrypted.pdf")
+
+
+@pytest.fixture(scope="module")
+def encrypted_pdf_content():
+    return file_src("encrypted.txt")
+
+
+@pytest.fixture(scope="module")
+def big_pdf_file():
+    return file_src("milderm.pdf")
+
+
+@pytest.fixture(scope="module")
+def big_pdf_content():
+    return file_src("milderm.txt")
+
+
+@pytest.fixture(scope="module")
 def valid_user_agent():
     return "name/version (contact)"
 

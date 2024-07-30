@@ -202,7 +202,8 @@ def test_add_item_empty_content(tmp_path):
         )
 
 
-def test_add_item_for_unsupported_content_type(tmp_path):
+@pytest.mark.parametrize("auto_index", [False, True])
+def test_add_item_for_unsupported_content_type(auto_index, tmp_path):
     fpath = tmp_path / "test.zim"
     # test with incorrect content type
     with Creator(fpath, "welcome").config_dev_metadata() as creator:
@@ -212,6 +213,7 @@ def test_add_item_for_unsupported_content_type(tmp_path):
                 title="hello",
                 mimetype="text/plain",
                 content=123,  # pyright: ignore[reportArgumentType]
+                auto_index=auto_index,
             )
 
 
