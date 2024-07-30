@@ -3,12 +3,12 @@
 
 from __future__ import annotations
 
-import io
 import logging
 import pathlib
 import sys
 from collections.abc import Iterable
 from logging.handlers import RotatingFileHandler
+from typing import TextIO
 
 from zimscraperlib.constants import NAME
 
@@ -16,18 +16,18 @@ DEFAULT_FORMAT = "[%(name)s::%(asctime)s] %(levelname)s:%(message)s"
 VERBOSE_DEPENDENCIES = ["urllib3", "PIL", "boto3", "botocore", "s3transfer"]
 
 
-def getLogger(  # noqa: N802
+def getLogger(  # noqa: N802 (intentionally matches the stdlib getLogger name)
     name: str,
-    level: int | None = logging.INFO,
-    console: io.TextIOBase | None = sys.stdout,  # pyright: ignore
+    level: int = logging.INFO,
+    console: TextIO | None = sys.stdout,
     log_format: str | None = DEFAULT_FORMAT,
-    file: pathlib.Path | None = False,  # noqa: FBT002  # pyright: ignore
+    file: pathlib.Path | None = None,
     file_level: int | None = None,
     file_format: str | None = None,
-    file_max: int | None = 2**20,
-    file_nb_backup: int | None = 1,
-    deps_level: int | None = logging.WARNING,  # noqa: ARG001
-    additional_deps: Iterable | None = None,
+    file_max: int = 2**20,
+    file_nb_backup: int = 1,
+    deps_level: int = logging.WARNING,
+    additional_deps: Iterable[str] | None = None,
 ):
     """configured logger for most usages
 
@@ -41,16 +41,17 @@ def getLogger(  # noqa: N802
     - deps_level: log level for idendified verbose dependencies
     - additional_deps: additional modules names of verbose dependencies
         to assign deps_level to"""
-    if additional_deps is None:
+
+    if not additional_deps:
         additional_deps = []
 
     # align zimscraperlib logging level to that of scraper
-    logging.Logger(NAME).setLevel(level)  # pyright: ignore
+    logging.Logger(NAME).setLevel(level)
 
     # set arbitrary level for some known verbose dependencies
     # prevents them from polluting logs
-    for logger_name in set(VERBOSE_DEPENDENCIES + additional_deps):  # pyright: ignore
-        logging.getLogger(logger_name).setLevel(logging.WARNING)
+    for logger_name in set(VERBOSE_DEPENDENCIES + list(additional_deps)):
+        logging.getLogger(logger_name).setLevel(deps_level)
 
     logger = logging.Logger(name)
     logger.setLevel(logging.DEBUG)
@@ -59,25 +60,25 @@ def getLogger(  # noqa: N802
     if console:
         console_handler = logging.StreamHandler(console)
         console_handler.setFormatter(logging.Formatter(log_format))
-        console_handler.setLevel(level)  # pyright: ignore
+        console_handler.setLevel(level)
         logger.addHandler(console_handler)
 
     if file:
-        file_handler = RotatingFileHandler(  # pyright: ignore
+        file_handler = RotatingFileHandler(
             file,
-            maxBytes=file_max,  # pyright: ignore
-            backupCount=file_nb_backup,  # pyright: ignore
+            maxBytes=file_max,
+            backupCount=file_nb_backup,
         )
         file_handler.setFormatter(logging.Formatter(file_format or log_format))
-        file_handler.setLevel(file_level or level)  # pyright: ignore
+        file_handler.setLevel(file_level or level)
         logger.addHandler(file_handler)
 
     return logger
 
 
-def nicer_args_join(args: Iterable) -> str:
+def nicer_args_join(args: list[str]) -> str:
     """slightly better concateated list of subprocess args for display"""
-    nargs = args[0:1]  # pyright: ignore
-    for arg in args[1:]:  # pyright: ignore
+    nargs = args[0:1]
+    for arg in args[1:]:
         nargs.append(arg if arg.startswith("-") else f'"{arg}"')
     return " ".join(nargs)

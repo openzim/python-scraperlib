@@ -76,13 +76,13 @@ def mimetype_for(
     content: bytes | str | None = None,
     fpath: pathlib.Path | None = None,
     mimetype: str | None = None,
-) -> str:
+) -> str | None:
     """mimetype as provided or guessed from fpath, path or content"""
     if not mimetype:
         mimetype = (
             get_file_mimetype(fpath)
             if fpath
-            else get_content_mimetype(content[:2048])  # pyright: ignore
+            else get_content_mimetype(content[:2048]) if content else None
         )
         # try to guess more-defined mime if it's text
         if (
@@ -90,7 +90,9 @@ def mimetype_for(
             or mimetype == "application/octet-stream"
             or mimetype.startswith("text/")
         ):
-            mimetype = get_mime_for_name(fpath if fpath else path, mimetype, mimetype)
+            mimetype = get_mime_for_name(
+                filename=fpath if fpath else path, fallback=mimetype, no_ext_to=mimetype
+            )
     return mimetype
 
 
@@ -120,9 +122,10 @@ class Creator(libzim.writer.Creator):
         filename: pathlib.Path,
         main_path: str,
         compression: str | None = None,
-        workaround_nocancel: bool | None = True,  # noqa: FBT002
-        ignore_duplicates: bool | None = False,  # noqa: FBT002
-        disable_metadata_checks: bool = False,  # noqa: FBT001, FBT002
+        *,
+        workaround_nocancel: bool | None = True,
+        ignore_duplicates: bool | None = False,
+        disable_metadata_checks: bool = False,
     ):
         super().__init__(filename=filename)
         self._metadata = {}
@@ -223,14 +226,14 @@ class Creator(libzim.writer.Creator):
         del self._metadata["Illustration_48x48@1"]
         for name, value in self._metadata.items():
             if value:
-                self.add_metadata(name, value)
+                self.add_metadata(name, self.convert_and_check_metadata(name, value))
 
         return self
 
     def validate_metadata(
         self,
         name: str,
-        value: bytes | str | datetime.datetime | datetime.date | Iterable[str],
+        value: bytes | str,
     ):
         """Ensures metadata value for name is conform with the openZIM spec on Metadata
 
@@ -238,7 +241,7 @@ class Creator(libzim.writer.Creator):
         See https://wiki.openzim.org/wiki/Metadata"""
 
         validate_required_values(name, value)
-        validate_standard_str_types(name, value)  # pyright: ignore
+        validate_standard_str_types(name, value)
 
         validate_title(name, value)  # pyright: ignore
         validate_date(name, value)  # pyright: ignore
@@ -249,10 +252,37 @@ class Creator(libzim.writer.Creator):
         validate_tags(name, value)  # pyright: ignore
         validate_illustrations(name, value)  # pyright: ignore
 
+    def convert_and_check_metadata(
+        self,
+        name: str,
+        value: str | bytes | datetime.date | datetime.datetime | Iterable[str],
+    ) -> str | bytes:
+        """Convert metadata to appropriate type for few known usecase and check type
+
+        Date: converts date and datetime to string YYYY-MM-DD
+        Tags: converts iterable to string with semi-colon separator
+
+        Also checks that final type is appropriate for libzim (str or bytes)
+        """
+        if name == "Date" and isinstance(value, (datetime.date, datetime.datetime)):
+            value = value.strftime("%Y-%m-%d")
+        if (
+            name == "Tags"
+            and not isinstance(value, str)
+            and not isinstance(value, bytes)
+            and isinstance(value, Iterable)
+        ):
+            value = ";".join(value)
+
+        if not isinstance(value, str) and not isinstance(value, bytes):
+            raise ValueError(f"Invalid type for {name}: {type(value)}")
+
+        return value
+
     def add_metadata(
         self,
         name: str,
-        content: str | bytes | datetime.date | datetime.datetime | Iterable[str],
+        value: str | bytes,
         mimetype: str = "text/plain;charset=UTF-8",
     ):
         # drop control characters before passing them to libzim
@@ -261,18 +291,11 @@ class Creator(libzim.writer.Creator):
                 " \r\n\t"
             )
         if not self.disable_metadata_checks:
-            self.validate_metadata(name, content)
-        if name == "Date" and isinstance(content, (datetime.date, datetime.datetime)):
-            content = content.strftime("%Y-%m-%d").encode("UTF-8")
-        if (
-            name == "Tags"
-            and not isinstance(content, str)
-            and not isinstance(content, bytes)
-            and isinstance(content, Iterable)
-        ):
-            content = ";".join(content)
-        super().add_metadata(name, content, mimetype)
+            self.validate_metadata(name, value)
 
+        super().add_metadata(name, value, mimetype)
+
+    # there are many N803 problems, but they are intentional to match real tag name
     def config_metadata(
         self,
         *,
@@ -291,7 +314,16 @@ class Creator(libzim.writer.Creator):
         Source: str | None = None,  # noqa: N803
         License: str | None = None,  # noqa: N803
         Relation: str | None = None,  # noqa: N803
-        **extras: str,
+        **extras: (
+            None
+            | float
+            | int
+            | bytes
+            | str
+            | datetime.datetime
+            | datetime.date
+            | Iterable[str]
+        ),
     ):
         """Sets all mandatory Metadata as well as standard and any other text ones"""
         self._metadata.update(
@@ -323,7 +355,19 @@ class Creator(libzim.writer.Creator):
                 ).strip(" \r\n\t")
         return self
 
-    def config_dev_metadata(self, **extras: str):
+    def config_dev_metadata(
+        self,
+        **extras: (
+            None
+            | int
+            | float
+            | bytes
+            | str
+            | datetime.datetime
+            | datetime.date
+            | Iterable[str]
+        ),
+    ):
         """Calls config_metadata with default (yet overridable) values for dev"""
         devel_default_metadata = DEFAULT_DEV_ZIM_METADATA.copy()
         devel_default_metadata.update(extras)
@@ -333,12 +377,13 @@ class Creator(libzim.writer.Creator):
         self,
         path: str,
         title: str | None = None,
+        *,
         fpath: pathlib.Path | None = None,
         content: bytes | str | None = None,
         mimetype: str | None = None,
         is_front: bool | None = None,
         should_compress: bool | None = None,
-        delete_fpath: bool | None = False,  # noqa: FBT002
+        delete_fpath: bool | None = False,
         duplicate_ok: bool | None = None,
         callback: Callable | tuple[Callable, Any] | None = None,
         index_data: IndexData | None = None,

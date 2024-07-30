@@ -14,6 +14,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - New `indexing.IndexData` class to hold title, content and keywords to pass to libzim to index an item
 - Automatically index PDF documents content #167
 - Automatically set proper title on PDF documents #168
+- Expose new `optimization.get_optimization_method` to get the proper optimization method to call for a given image format
+- Add `optimization.get_optimization_method` to get the proper optimization method to call for a given image format
+- New `creator.Creator.convert_and_check_metadata` to convert metadata to bytes or str for known use cases and check proper type is passed to libzim
+
+## Changed
+
+- **BREAKING** Renamed `zimscraperlib.image.convertion` to `zimscraperlib.image.conversion` to fix typo
+- **BREAKING** Many changes in type hints to match the real underlying code
+- **BREAKING** Force all boolean arguments (and some other non-obvious parameters) to be keyword-only in function calls for clarity / disambiguation (see ruff rule FBT002)
+- Prefer to use `IO[bytes]` to `io.BytesIO` when possible since it is more generic
+- **BREAKING** `i18n.NotFound` renamed `i18n.NotFoundError`
+- **BREAKING** `types.get_mime_for_name` now returns `str | None`
+- **BREAKING** `creator.Creator.add_metadata` and `creator.Creator.validate_metadata` now only accepts `bytes | str` as value (it must have been converted before call)
+- **BREAKING** second argument of `creator.Creator.add_metadata` has been renamed to `value` instead of `content` to align with other methods
+- When a type issue arises in metadata checks, wrong value type is displayed in exception
 
 ### Fixed
 

@@ -41,7 +41,7 @@ class Archive(libzim.reader.Archive):
     def tags(self):
         return self.get_tags()
 
-    def get_tags(self, libkiwix: bool = False) -> list[str]:  # noqa: FBT001, FBT002
+    def get_tags(self, *, libkiwix: bool = False) -> list[str]:
         """List of ZIM tags, optionnaly expanded with libkiwix's hints"""
         try:
             tags_meta = self.get_text_metadata("Tags")

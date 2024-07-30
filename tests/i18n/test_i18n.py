@@ -7,7 +7,7 @@ import pathlib
 import pytest
 
 from zimscraperlib.i18n import (
-    NotFound,
+    NotFoundError,
     _,
     find_language_names,
     get_language_details,
@@ -187,7 +187,7 @@ def test_selocale_unsupported(tmp_path):
 def test_lang_details(query, expected):
     if expected is None:
         assert get_language_details(query, failsafe=True) == expected
-        with pytest.raises(NotFound):
+        with pytest.raises(NotFoundError):
             get_language_details(query)
     else:
         assert get_language_details(query) == expected

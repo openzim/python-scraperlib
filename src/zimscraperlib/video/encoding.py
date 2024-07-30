@@ -38,14 +38,15 @@ def _build_ffmpeg_args(
 
 
 def reencode(
-    src_path,
-    dst_path,
-    ffmpeg_args,
-    delete_src=False,  # noqa: FBT002
-    with_process=False,  # noqa: FBT002
-    failsafe=True,  # noqa: FBT002
+    src_path: pathlib.Path,
+    dst_path: pathlib.Path,
+    ffmpeg_args: list[str],
     threads: int | None = 1,
-):
+    *,
+    delete_src: bool = False,
+    with_process: bool = False,
+    failsafe: bool = True,
+) -> tuple[bool, subprocess.CompletedProcess[str]] | bool:
     """Runs ffmpeg with given ffmpeg_args
 
     Arguments -

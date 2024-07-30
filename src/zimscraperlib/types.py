@@ -39,8 +39,8 @@ FONT_MIMES: list[str] = [
 def get_mime_for_name(
     filename: str | pathlib.Path,
     fallback: str | None = FALLBACK_MIME,
-    no_ext_to=ARTICLE_MIME,
-) -> str:
+    no_ext_to: str | None = ARTICLE_MIME,
+) -> str | None:
     """MIME-Type string from a filename
 
     filename is a string, not a path (doesn't need to exist)
@@ -51,11 +51,9 @@ def get_mime_for_name(
         filename = pathlib.Path(filename)
         if not filename.suffix:
             return no_ext_to
-        return (
-            mimetypes.guess_type(f"{filename.stem}{filename.suffix}")[0] or fallback
-        )  # pyright: ignore
+        return mimetypes.guess_type(f"{filename.stem}{filename.suffix}")[0] or fallback
     except Exception:
-        return fallback  # pyright: ignore
+        return fallback
 
 
 def init_types():

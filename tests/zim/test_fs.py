@@ -37,6 +37,8 @@ def test_redirects_file(tmp_path, png_image, build_data):
     with open(build_data["redirects_file"], "w") as fh:
         # write a redirect with a namespace (old ns scheme)
         fh.write("A\tAccueil\t\tcommons48.png\n")
+        # write a redirect not matching regex
+        fh.write("this_is_not_matching")
 
     # call make_zim_file with redirects_file
     make_zim_file(

@@ -24,10 +24,12 @@
 
 from __future__ import annotations
 
+import functools
 import io
 import os
 import pathlib
 import subprocess
+from typing import Callable
 
 import piexif
 from optimize_images.img_aux_processing import do_reduce_colors, rebuild_palette
@@ -35,13 +37,13 @@ from optimize_images.img_aux_processing import remove_transparency as remove_alp
 from optimize_images.img_dynamic_quality import jpeg_dynamic_quality
 from PIL import Image
 
-from zimscraperlib.image.convertion import convert_image
+from zimscraperlib.image.conversion import convert_image
 from zimscraperlib.image.probing import format_for
 from zimscraperlib.image.utils import save_image
 
 
 def ensure_matches(
-    src: pathlib.Path,
+    src: pathlib.Path | io.BytesIO,
     fmt: str,
 ) -> None:
     """Raise ValueError if src is not of image type `fmt`"""
@@ -52,13 +54,14 @@ def ensure_matches(
 
 def optimize_png(
     src: pathlib.Path | io.BytesIO,
-    dst: pathlib.Path | None = None,
-    reduce_colors: bool | None = False,  # noqa: FBT002
-    max_colors: int | None = 256,
-    fast_mode: bool | None = True,  # noqa: FBT002
-    remove_transparency: bool | None = False,  # noqa: FBT002
-    background_color: tuple[int, int, int] | None = (255, 255, 255),
-    **options,  # noqa: ARG001
+    dst: pathlib.Path | io.BytesIO | None = None,
+    max_colors: int = 256,
+    background_color: tuple[int, int, int] = (255, 255, 255),
+    *,
+    reduce_colors: bool | None = False,
+    fast_mode: bool | None = True,
+    remove_transparency: bool | None = False,
+    **_,
 ) -> pathlib.Path | io.BytesIO:
     """method to optimize PNG files using a pure python external optimizer
 
@@ -76,34 +79,35 @@ def optimize_png(
         if remove_transparency is True (tuple containing RGB values)
             values: (255, 255, 255) | (221, 121, 108) | (XX, YY, ZZ)"""
 
-    ensure_matches(src, "PNG")  # pyright: ignore
+    ensure_matches(src, "PNG")
 
     img = Image.open(src)
 
     if remove_transparency:
-        img = remove_alpha(img, background_color)  # pyright: ignore
+        img = remove_alpha(img, background_color)
 
     if reduce_colors:
-        img, _, _ = do_reduce_colors(img, max_colors)  # pyright: ignore
+        img, _, _ = do_reduce_colors(img, max_colors)
 
     if not fast_mode and img.mode == "P":
         img, _ = rebuild_palette(img)
 
     if dst is None:
-        dst = io.BytesIO()  # pyright: ignore
-    img.save(dst, optimize=True, format="PNG")  # pyright: ignore
-    if isinstance(dst, io.BytesIO):
+        dst = io.BytesIO()
+    img.save(dst, optimize=True, format="PNG")
+    if not isinstance(dst, pathlib.Path):
         dst.seek(0)
-    return dst  # pyright: ignore
+    return dst
 
 
 def optimize_jpeg(
     src: pathlib.Path | io.BytesIO,
-    dst: pathlib.Path | None = None,
+    dst: pathlib.Path | io.BytesIO | None = None,
     quality: int | None = 85,
-    fast_mode: bool | None = True,  # noqa: FBT002
-    keep_exif: bool | None = True,  # noqa: FBT002
-    **options,  # noqa: ARG001
+    *,
+    fast_mode: bool | None = True,
+    keep_exif: bool | None = True,
+    **_,
 ) -> pathlib.Path | io.BytesIO:
     """method to optimize JPEG files using a pure python external optimizer
     quality: JPEG quality (integer between 1 and 100)
@@ -114,7 +118,7 @@ def optimize_jpeg(
                get dynamic quality value to ensure better compression
         values: True | False"""
 
-    ensure_matches(src, "JPEG")  # pyright: ignore
+    ensure_matches(src, "JPEG")
 
     img = Image.open(src)
     orig_size = (
@@ -124,7 +128,7 @@ def optimize_jpeg(
     )
 
     had_exif = False
-    if (isinstance(src, io.BytesIO) and piexif.load(src.getvalue())["Exif"]) or (
+    if (not isinstance(src, pathlib.Path) and piexif.load(src.getvalue())["Exif"]) or (
         isinstance(src, pathlib.Path) and piexif.load(str(src))["Exif"]
     ):
         had_exif = True
@@ -138,10 +142,10 @@ def optimize_jpeg(
         quality_setting, _ = jpeg_dynamic_quality(img)
 
     if dst is None:
-        dst = io.BytesIO()  # pyright: ignore
+        dst = io.BytesIO()
 
     img.save(
-        dst,  # pyright: ignore
+        dst,
         quality=quality_setting,
         optimize=True,
         progressive=use_progressive_jpg,
@@ -157,23 +161,22 @@ def optimize_jpeg(
                 str(src.resolve()) if isinstance(src, pathlib.Path) else src.getvalue()
             ),
             image=(
-                str(dst.resolve())
-                if isinstance(dst, pathlib.Path)
-                else dst.getvalue()  # pyright: ignore
+                str(dst.resolve()) if isinstance(dst, pathlib.Path) else dst.getvalue()
             ),
             new_file=dst,
         )
 
-    return dst  # pyright: ignore
+    return dst
 
 
 def optimize_webp(
     src: pathlib.Path | io.BytesIO,
-    dst: pathlib.Path | None = None,
-    lossless: bool | None = False,  # noqa: FBT002
+    dst: pathlib.Path | io.BytesIO | None = None,
     quality: int | None = 60,
     method: int | None = 6,
-    **options,  # noqa: ARG001
+    *,
+    lossless: bool | None = False,
+    **_,
 ) -> pathlib.Path | io.BytesIO:
     """method to optimize WebP using Pillow options
     lossless: Whether to use lossless compression (boolean)
@@ -188,7 +191,7 @@ def optimize_webp(
     refer to the link for more details
     https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html#webp"""
 
-    ensure_matches(src, "WEBP")  # pyright: ignore
+    ensure_matches(src, "WEBP")
     params = {
         "lossless": lossless,
         "quality": quality,
@@ -197,17 +200,22 @@ def optimize_webp(
 
     webp_image = Image.open(src)
     if dst is None:
-        dst = io.BytesIO()  # pyright: ignore
-        webp_image.save(dst, format="WEBP", **params)  # pyright: ignore
-        dst.seek(0)  # pyright: ignore
+        dst = io.BytesIO()
+        webp_image.save(dst, format="WEBP", **params)
+        dst.seek(0)
     else:
         try:
-            save_image(webp_image, dst, fmt="WEBP", **params)  # pyright: ignore
+            save_image(webp_image, dst, fmt="WEBP", **params)
         except Exception as exc:
-            if src.resolve() != dst.resolve() and dst.exists():  # pyright: ignore
+            if (
+                isinstance(src, pathlib.Path)
+                and isinstance(dst, pathlib.Path)
+                and src.resolve() != dst.resolve()
+                and dst.exists()
+            ):
                 dst.unlink()  # pragma: no cover
             raise exc
-    return dst  # pyright: ignore
+    return dst
 
 
 def optimize_gif(
@@ -215,10 +223,11 @@ def optimize_gif(
     dst: pathlib.Path,
     optimize_level: int | None = 1,
     lossiness: int | None = None,
-    interlace: bool | None = True,  # noqa: FBT002
-    no_extensions: bool | None = True,  # noqa: FBT002
     max_colors: int | None = None,
-    **options,  # noqa: ARG001
+    *,
+    interlace: bool | None = True,
+    no_extensions: bool | None = True,
+    **_,
 ) -> pathlib.Path:
     """method to optimize GIFs using gifsicle >= 1.92
     optimize_level: Optimization level;
@@ -266,10 +275,11 @@ def optimize_gif(
 def optimize_image(
     src: pathlib.Path,
     dst: pathlib.Path,
-    delete_src: bool | None = False,  # noqa: FBT002
-    convert: bool | str | None = False,  # noqa: FBT002
+    *,
+    delete_src: bool | None = False,
+    convert: bool | str | None = False,
     **options,
-) -> bool:  # pyright: ignore
+):
     """Optimize image, automatically selecting correct optimizer
 
     delete_src: whether to remove src file upon success (boolean)
@@ -280,21 +290,41 @@ def optimize_image(
                 "FMT": convert to format FMT (use Pillow names)"""
 
     src_format, dst_format = format_for(src, from_suffix=False), format_for(dst)
+
+    if src_format is None:  # pragma: no cover
+        # never supposed to happens since we get format from suffix, but good for type
+        # checker + code safety / clean errors
+        raise ValueError("Impossible to guess format from src image")
+    if dst_format is None:
+        raise ValueError("Impossible to guess format from dst image")
     # if requested, convert src to requested format into dst path
     if convert and src_format != dst_format:
         src_format = dst_format = convert if isinstance(convert, str) else dst_format
-        convert_image(src, dst, fmt=src_format)  # pyright: ignore
+        convert_image(src, dst, fmt=src_format)
         src_img = pathlib.Path(dst)
     else:
         src_img = pathlib.Path(src)
 
-    {  # pyright: ignore
-        "JPEG": optimize_jpeg,
-        "PNG": optimize_png,
-        "GIF": optimize_gif,
-        "WEBP": optimize_webp,
-    }.get(src_format)(src_img, dst, **options)
+    get_optimization_method(src_format)(src_img, dst, **options)
 
     # delete src image if requested
     if delete_src and src.exists() and src.resolve() != dst.resolve():
         src.unlink()
+
+
+def get_optimization_method(fmt: str) -> Callable:
+    """Return the proper optimization method to call for a given image format"""
+
+    def raise_error(*_, orig_format):
+        raise NotImplementedError(
+            f"Image format '{orig_format}' cannot yet be optimized"
+        )
+
+    fmt = fmt.lower().strip()
+    return {
+        "gif": optimize_gif,
+        "jpg": optimize_jpeg,
+        "jpeg": optimize_jpeg,
+        "webp": optimize_webp,
+        "png": optimize_png,
+    }.get(fmt, functools.partial(raise_error, orig_format=fmt))

@@ -14,7 +14,7 @@ import PIL.Image
 
 
 def get_colors(
-    src: pathlib.Path, use_palette: bool | None = True  # noqa: FBT002
+    src: pathlib.Path, *, use_palette: bool | None = True
 ) -> tuple[str, str]:
     """(main, secondary) HTML color codes from an image path"""
 
@@ -49,25 +49,29 @@ def get_colors(
 
 def is_hex_color(text: str) -> bool:
     """whether supplied text is a valid hex-formated color code"""
-    return re.search(r"^#(?:[0-9a-fA-F]{3}){1,2}$", text)  # pyright: ignore
+    return bool(re.search(r"^#(?:[0-9a-fA-F]{3}){1,2}$", text))
 
 
 def format_for(
     src: pathlib.Path | IO[bytes],
-    from_suffix: bool = True,  # noqa: FBT001, FBT002
-) -> str:
+    *,
+    from_suffix: bool = True,
+) -> str | None:
     """Pillow format of a given filename, either Pillow-detected or from suffix"""
     if not from_suffix:
         with PIL.Image.open(src) as img:
-            return img.format  # pyright: ignore
+            return img.format
 
-    from PIL.Image import EXTENSION as ext_fmt_map  # noqa: N811
+    if not isinstance(src, pathlib.Path):
+        raise ValueError(
+            "Cannot guess image format from file suffix when byte array is passed"
+        )
+
+    from PIL.Image import EXTENSION as PIL_FMT_EXTENSION
     from PIL.Image import init as init_pil
 
     init_pil()
-    return ext_fmt_map[
-        src.suffix  # pyright: ignore
-    ]  # might raise KeyError on unknown extension
+    return PIL_FMT_EXTENSION[src.suffix] if src.suffix in PIL_FMT_EXTENSION else None
 
 
 def is_valid_image(

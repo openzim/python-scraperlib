@@ -282,7 +282,7 @@ class URLItem(StaticItem):
     def get_title(self) -> str:
         return getattr(self, "title", "")
 
-    def get_mimetype(self) -> str:
+    def get_mimetype(self) -> str | None:
         return getattr(
             self,
             "mimetype",

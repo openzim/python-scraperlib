@@ -45,7 +45,7 @@ class FileLikeProvider(libzim.writer.ContentProvider):
 
     def __init__(
         self,
-        fileobj: io.IOBase,
+        fileobj: io.BytesIO,
         size: int | None = None,
         ref: object | None = None,
     ):
@@ -62,9 +62,7 @@ class FileLikeProvider(libzim.writer.ContentProvider):
         return self.size  # pyright: ignore
 
     def gen_blob(self) -> libzim.writer.Blob:
-        yield libzim.writer.Blob(  # pragma: no cover
-            self.fileobj.getvalue()  # pyright: ignore
-        )
+        yield libzim.writer.Blob(self.fileobj.getvalue())  # pragma: no cover
 
 
 class URLProvider(libzim.writer.ContentProvider):

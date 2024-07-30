@@ -30,7 +30,7 @@ def get_file_mimetype(fpath: pathlib.Path) -> str:
         return get_content_mimetype(fh.read(2048))
 
 
-def get_content_mimetype(content: bytes) -> str:
+def get_content_mimetype(content: bytes | str) -> str:
     """MIME Type of content retrieved from magic headers"""
 
     try:

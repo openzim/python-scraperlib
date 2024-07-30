@@ -11,7 +11,7 @@ from zimscraperlib.html import (
 )
 
 
-def test_find_title(tmp_path, html_page):
+def test_find_title(tmp_path, html_page, html_page_without_title):
     # find title in example HTML
     assert (
         find_title_in(html_page, "text/html")
@@ -21,6 +21,8 @@ def test_find_title(tmp_path, html_page):
     assert find_title_in(html_page, "text/plain") == ""
     # make sure non-html, even if using html mime returns no title
     assert find_title_in("title: Kiwix", "text/html") == ""
+    # make sure HTML without title returns no title
+    assert find_title_in(html_page_without_title, "text/html") == ""
 
     # find title in local file
     fpath = tmp_path / "test.html"

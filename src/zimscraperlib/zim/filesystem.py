@@ -104,16 +104,22 @@ def add_redirects_to_zim(
 
     if redirects_file:
         with open(redirects_file) as fh:
-            for line in fh.readlines():
-                namespace, path, title, target_url = re.match(
-                    r"^(.)\t(.+)\t(.*)\t(.+)$", line
-                ).groups()  # pyright: ignore
+            for linenumber, line in enumerate(fh.readlines()):
+                match = re.match(r"^(.)\t(.+)\t(.*)\t(.+)$", line)
+                if not match:
+                    logger.warning(
+                        f"Redirects file: line {linenumber} does not match expected "
+                        f"regexp: {line}"
+                    )
+                    continue
+                namespace, path, title, target_url = match.groups()
                 if namespace.strip():
                     path = f"{namespace.strip()}/{path}"
                 zim_file.add_redirect(path, target_url, title)
 
 
 def make_zim_file(
+    *,
     build_dir: pathlib.Path,
     fpath: pathlib.Path,
     name: str,
@@ -121,22 +127,22 @@ def make_zim_file(
     illustration: str,
     title: str,
     description: str,
-    date: datetime.date = None,  # noqa: RUF013  # pyright: ignore
+    date: datetime.date | None = None,
     language: str = "eng",
     creator: str = "-",
     publisher="-",
-    tags: Sequence[str] = None,  # noqa: RUF013  # pyright: ignore
-    source: str = None,  # noqa: RUF013  # pyright: ignore
-    flavour: str = None,  # noqa: RUF013  # pyright: ignore
-    scraper: str = None,  # noqa: RUF013  # pyright: ignore
-    long_description: str = None,  # noqa: RUF013  # pyright: ignore
-    without_fulltext_index: bool = False,  # noqa: FBT001, FBT002, ARG001
-    redirects: Sequence[tuple[str, str, str]] = None,  # noqa: RUF013  # pyright: ignore
-    redirects_file: pathlib.Path = None,  # noqa: RUF013  # pyright: ignore
-    rewrite_links: bool = True,  # noqa: FBT001, FBT002, ARG001
-    workaround_nocancel: bool = True,  # noqa: FBT001, FBT002
-    ignore_duplicates: bool = True,  # noqa: FBT001, FBT002
-    disable_metadata_checks: bool = False,  # noqa: FBT001, FBT002
+    tags: Sequence[str] | None = None,
+    source: str | None = None,
+    flavour: str | None = None,
+    scraper: str | None = None,
+    long_description: str | None = None,
+    without_fulltext_index: bool = False,  # noqa: ARG001
+    redirects: Sequence[tuple[str, str, str]] | None = None,
+    redirects_file: pathlib.Path | None = None,
+    rewrite_links: bool = True,  # noqa: ARG001
+    workaround_nocancel: bool = True,
+    ignore_duplicates: bool = True,
+    disable_metadata_checks: bool = False,
 ):
     """Creates a zimwriterfs-like ZIM file at {fpath} from {build_dir}
 
