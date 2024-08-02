@@ -3,10 +3,12 @@
 
 import locale
 import pathlib
+from unittest.mock import Mock
 
 import pytest
 
 from zimscraperlib.i18n import (
+    Lang,
     NotFoundError,
     _,
     find_language_names,
@@ -190,7 +192,19 @@ def test_lang_details(query, expected):
         with pytest.raises(NotFoundError):
             get_language_details(query)
     else:
-        assert get_language_details(query) == expected
+        result = get_language_details(query)
+        assert result == expected
+        if result:
+            assert result.iso_639_1 == expected.get("iso-639-1")
+            assert result.iso_639_2b == expected.get("iso-639-2b")
+            assert result.iso_639_2t == expected.get("iso-639-2t")
+            assert result.iso_639_3 == expected.get("iso-639-3")
+            assert result.iso_639_5 == expected.get("iso-639-5")
+            assert result.english == expected.get("english")
+            assert result.native == expected.get("native")
+            assert result.iso_types == expected.get("iso_types")
+            assert result.query == expected.get("query")
+            assert result.querytype == expected.get("querytype")
 
 
 @pytest.mark.parametrize(
@@ -201,6 +215,7 @@ def test_lang_details(query, expected):
         ("bm", ("bamanakan", "Bambara")),
         ("zh", ("中文", "Chinese")),
         ("ar", ("العربية", "Arabic")),
+        ("qq", ("qq", "qq")),
     ],
 )
 def test_lang_name(query, expected):
@@ -214,3 +229,46 @@ def test_lang_name(query, expected):
 def test_translation(lang, expected):
     setlocale(pathlib.Path(__file__).parent, lang)
     assert _("Hello World!") == expected
+
+
+@pytest.mark.parametrize(
+    "dict_data",
+    [{}, {"iso-639-1": "ar"}],
+)
+def test_lang_equals(dict_data):
+    assert Lang(dict_data) == Lang(dict_data)
+    assert Lang(dict_data) == Lang({**dict_data})
+
+
+@pytest.mark.parametrize(
+    "dict_data_left, dict_data_right",
+    [
+        ({}, {"iso-639-1": "ar"}),
+        ({"iso-639-1": "ar"}, {"iso-639-1": "ab"}),
+        ({"iso-639-1": "ar"}, {"iso-639-2": "ar"}),
+    ],
+)
+def test_lang_not_equals(dict_data_left, dict_data_right):
+    assert Lang(dict_data_left) != Lang(dict_data_right)
+    assert Lang(dict_data_left) != "foo"
+
+
+@pytest.mark.parametrize(
+    "babel_native_return, babel_english_return, expected_native, expected_english",
+    [
+        ("Native value", "English value", "Native value", "English value"),
+        (None, "English value", "German", "German"),
+        ("Native value", None, "German", "German"),
+    ],
+)
+def test_find_language_names(
+    mocker, babel_native_return, babel_english_return, expected_native, expected_english
+):
+    mock_locale = Mock()
+    mock_locale.get_display_name.side_effect = lambda lang=None: (
+        babel_native_return if lang is None else babel_english_return
+    )
+
+    mocker.patch("babel.Locale.parse", return_value=mock_locale)
+
+    assert find_language_names("de") == (expected_native, expected_english)
