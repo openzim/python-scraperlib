@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 # vim: ai ts=4 sts=4 et sw=4 nu
 
-import locale
-import pathlib
 from unittest.mock import Mock
 
 import pytest
@@ -10,24 +8,9 @@ import pytest
 from zimscraperlib.i18n import (
     Lang,
     NotFoundError,
-    _,
     find_language_names,
     get_language_details,
-    setlocale,
 )
-
-
-@pytest.mark.parametrize(
-    "code,expected",
-    [("en", "en_US.UTF-8"), ("en_us", "en_US.UTF-8"), ("en.utf8", "en_US.UTF-8")],
-)
-def test_setlocale(tmp_path, code, expected):
-    assert setlocale(tmp_path, code) == expected
-
-
-def test_selocale_unsupported(tmp_path):
-    with pytest.raises(locale.Error):
-        setlocale(tmp_path, "bam")
 
 
 @pytest.mark.parametrize(
@@ -220,15 +203,6 @@ def test_lang_details(query, expected):
 )
 def test_lang_name(query, expected):
     assert find_language_names(query) == expected
-
-
-@pytest.mark.parametrize(
-    "lang,expected",
-    [("en", "Hello World!"), ("fr", "Bonjour monde !"), ("pt_BR.utf8", "Olá Mundo!")],
-)
-def test_translation(lang, expected):
-    setlocale(pathlib.Path(__file__).parent, lang)
-    assert _("Hello World!") == expected
 
 
 @pytest.mark.parametrize(

@@ -35,6 +35,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **BREAKING** `i18n.get_language_details()`, `i18n.get_iso_lang_data()`, `i18n.find_language_names()` and `i18n.update_with_macro` now process / return a new typed `Lang` class #151
 - **BREAKING** Rename `i18.NotFound` to `i18n.NotFoundError`
 
+## Removed
+- **BREAKING** Remove translation features in `i18n`: `Locale` class + `_` and `setlocale` functions #134
+
+
 ### Fixed
 
 - Metadata length validation is buggy for unicode strings #158

@@ -3,9 +3,6 @@
 
 from __future__ import annotations
 
-import gettext
-import locale
-import pathlib
 import re
 
 import babel
@@ -17,52 +14,6 @@ ISO_LEVELS = ["1", "2b", "2t", "3", "5"]
 
 class NotFoundError(ValueError):
     pass
-
-
-class Locale:
-    short = "en"
-    name = "en_US.UTF-8"
-    locale_dir = None
-    domain = "messages"
-    translation = gettext.translation("messages", fallback=True)
-
-    @classmethod
-    def setup(cls, locale_dir: pathlib.Path, locale_name: str):
-        cls.name = locale_name
-        cls.locale_dir = str(locale_dir)
-
-        if "." in locale_name:
-            cls.lang, cls.encoding = locale_name.split(".")
-        else:
-            cls.lang, cls.encoding = locale_name, "UTF-8"
-
-        computed = locale.setlocale(locale.LC_ALL, (cls.lang, cls.encoding))
-
-        gettext.bindtextdomain(cls.domain, cls.locale_dir)
-        gettext.textdomain(cls.domain)
-
-        cls.translation = gettext.translation(
-            cls.domain, cls.locale_dir, languages=[cls.lang], fallback=True
-        )
-        return computed
-
-
-def _(text: str) -> str:
-    """translates text according to setup'd locale"""
-    return Locale.translation.gettext(text)
-
-
-def setlocale(root_dir: pathlib.Path, locale_name: str):
-    """set the desired locale for gettext.
-
-    call this early"""
-    try:
-        return Locale.setup(root_dir / "locale", locale_name)
-    except locale.Error as exc:
-        raise locale.Error(
-            f"Failed to setup '{locale_name}' locale. If this locale is not installed "
-            "on this system, please install it first."
-        ) from exc
 
 
 class Lang(dict):
