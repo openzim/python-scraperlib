@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # vim: ai ts=4 sts=4 et sw=4 nu
 
-import locale
 import pathlib
 from unittest.mock import Mock
 
@@ -10,6 +9,8 @@ import pytest
 from zimscraperlib.i18n import (
     Lang,
     NotFoundError,
+    Translator,
+    UnknownLocaleError,
     _,
     find_language_names,
     get_language_details,
@@ -17,17 +18,37 @@ from zimscraperlib.i18n import (
 )
 
 
+@pytest.fixture()
+def translator() -> Translator:
+    """Fixture to not reuse default translator across tests and test edge cases"""
+    return Translator()
+
+
 @pytest.mark.parametrize(
     "code,expected",
-    [("en", "en_US.UTF-8"), ("en_us", "en_US.UTF-8"), ("en.utf8", "en_US.UTF-8")],
+    [("en", "en"), ("en_us", "en_US"), ("en.utf8", "en")],
 )
-def test_setlocale(tmp_path, code, expected):
-    assert setlocale(tmp_path, code) == expected
+def test_setlocale(tmp_path, translator, code, expected):
+    assert translator.setlocale(tmp_path, code) == expected
 
 
-def test_selocale_unsupported(tmp_path):
-    with pytest.raises(locale.Error):
-        setlocale(tmp_path, "bam")
+def test_setlocale_wrong_path(tmp_path, translator):
+    with pytest.raises(RuntimeError, match="Failed to find language files for"):
+        translator.setlocale(tmp_path, "fra")  # wrong path supplied
+
+
+def test_setlocale_wrong_lang(translator):
+    with pytest.raises(UnknownLocaleError, match="Unknown locale"):
+        translator.setlocale(
+            pathlib.Path(__file__).parent, "qqq"  # wrong lang supplied
+        )
+
+
+def test_setlocale_not_called(translator):
+    with pytest.raises(
+        RuntimeError, match="Translation not initialized, you must call setlocale first"
+    ):
+        translator._("Hello World!")
 
 
 @pytest.mark.parametrize(

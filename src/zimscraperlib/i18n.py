@@ -3,12 +3,12 @@
 
 from __future__ import annotations
 
-import gettext
-import locale
 import pathlib
 import re
 
 import babel
+import babel.core
+import babel.support
 import iso639
 import iso639.exceptions
 
@@ -19,50 +19,77 @@ class NotFoundError(ValueError):
     pass
 
 
-class Locale:
-    short = "en"
-    name = "en_US.UTF-8"
-    locale_dir = None
-    domain = "messages"
-    translation = gettext.translation("messages", fallback=True)
+class UnknownLocaleError(ValueError):
+    """Exception raised when the locale to used in not known"""
 
-    @classmethod
-    def setup(cls, locale_dir: pathlib.Path, locale_name: str):
-        cls.name = locale_name
-        cls.locale_dir = str(locale_dir)
+    pass
 
-        if "." in locale_name:
-            cls.lang, cls.encoding = locale_name.split(".")
+
+class Translator:
+    """Translate messages to a given locale"""
+
+    def setlocale(
+        self, root_dir: pathlib.Path, locale_name: str, locale_subdir: str = "locale"
+    ) -> str:
+        """Load translation files for for a given locale. Call this early.
+
+        root_dir: path where a `locale_subdir` folder exist
+        locale_name: name of the locale to load
+        locale_subdir: subfolder of `root_dir` containing translations ("locale" by
+          default)
+        """
+        locale_dir = root_dir / locale_subdir
+        try:
+            locale = babel.Locale.parse(locale_name)
+        except babel.core.UnknownLocaleError as exc:
+            raise UnknownLocaleError("Unknown locale") from exc
+        self.translations = babel.support.Translations.load(locale_dir, locale)
+        if locale.language != "en" and not (self.translations._catalog):
+            raise RuntimeError(
+                f"Failed to find language files for {locale_name} "
+                f"({locale.language}) in {locale_dir}"
+            )
+        if locale.territory:
+            return f"{locale.language}_{locale.territory}"
         else:
-            cls.lang, cls.encoding = locale_name, "UTF-8"
+            return locale.language
 
-        computed = locale.setlocale(locale.LC_ALL, (cls.lang, cls.encoding))
+    def _(self, message: str) -> str:
+        """Translate a message
 
-        gettext.bindtextdomain(cls.domain, cls.locale_dir)
-        gettext.textdomain(cls.domain)
+        Nota: setlocale must have been called prior to using this function
+        """
+        if not hasattr(self, "translations"):
+            raise RuntimeError(
+                "Translation not initialized, you must call setlocale first"
+            )
+        return self.translations.gettext(message)
 
-        cls.translation = gettext.translation(
-            cls.domain, cls.locale_dir, languages=[cls.lang], fallback=True
-        )
-        return computed
+
+DEFAULT_TRANSLATOR = Translator()
 
 
 def _(text: str) -> str:
-    """translates text according to setup'd locale"""
-    return Locale.translation.gettext(text)
+    """Translate a message
+
+    Nota: setlocale must have been called prior to using this function
+    """
+    return DEFAULT_TRANSLATOR._(text)
 
 
-def setlocale(root_dir: pathlib.Path, locale_name: str):
-    """set the desired locale for gettext.
+def setlocale(
+    root_dir: pathlib.Path, locale_name: str, locale_subdir: str = "locale"
+) -> str:
+    """Load translation files for for a given locale. Call this early.
 
-    call this early"""
-    try:
-        return Locale.setup(root_dir / "locale", locale_name)
-    except locale.Error as exc:
-        raise locale.Error(
-            f"Failed to setup '{locale_name}' locale. If this locale is not installed "
-            "on this system, please install it first."
-        ) from exc
+    root_dir: path where a `locale_subdir` folder exist
+    locale_name: name of the locale to load
+    locale_subdir: subfolder of `root_dir` containing translations ("locale" by default)
+    """
+
+    return DEFAULT_TRANSLATOR.setlocale(
+        root_dir=root_dir, locale_name=locale_name, locale_subdir=locale_subdir
+    )
 
 
 class Lang(dict):

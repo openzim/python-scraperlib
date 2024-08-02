@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add svg2png image conversion function #113
 - Add `conversion.convert_svg2png` image conversion function + support for SVG in `probing.format_for` #113
 - Add `i18n.Lang` class used as typed result of i18n operations #151
+- Add `i18n.UnknownLocaleError` exception, raised when the locale passed to `i18n.setlocale` is unknown #134
 
 ## Changed
 
@@ -34,6 +35,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - When a type issue arises in metadata checks, wrong value type is displayed in exception
 - **BREAKING** `i18n.get_language_details()`, `i18n.get_iso_lang_data()`, `i18n.find_language_names()` and `i18n.update_with_macro` now process / return a new typed `Lang` class #151
 - **BREAKING** Rename `i18.NotFound` to `i18n.NotFoundError`
+- Replace `locale` Python package by `babel` to read translation files #134
+- **BREAKING** Return value of `i18n.setlocale` is now either `language[_territory]` (it was `language_territory.codeset`) #134
+- **BREAKING** Replace `i18n.Locale` by `i18n.Translator` (and use instance methods instead of class methods, to allow support of multiple translators at once) #134
+- Replace `i18n.Locale` by `i18n.Translator` class #134
 
 ### Fixed
 
