@@ -20,9 +20,6 @@ jobs:
       - name: install ffmpeg and gifsicle
         run: sudo apt update && sudo apt install ffmpeg gifsicle
 
-      - name: add required locales for tests
-        run: sudo locale-gen fr_FR.UTF-8 pt_BR.UTF-8 && sudo update-locale
-
       - name: Set up Python ${{ matrix.python }}
         uses: actions/setup-python@v4
         with:
