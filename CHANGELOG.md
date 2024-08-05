@@ -5,7 +5,7 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) (as of version 1.5.0).
 
-## [Unreleased]
+## [4.0.0] - 2024-08-05
 
 ### Added
 
@@ -21,7 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `conversion.convert_svg2png` image conversion function + support for SVG in `probing.format_for` #113
 - Add `i18n.Lang` class used as typed result of i18n operations #151
 
-## Changed
+### Changed
 
 - **BREAKING** Renamed `zimscraperlib.image.convertion` to `zimscraperlib.image.conversion` to fix typo
 - **BREAKING** Many changes in type hints to match the real underlying code
@@ -35,9 +35,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **BREAKING** `i18n.get_language_details()`, `i18n.get_iso_lang_data()`, `i18n.find_language_names()` and `i18n.update_with_macro` now process / return a new typed `Lang` class #151
 - **BREAKING** Rename `i18.NotFound` to `i18n.NotFoundError`
 
-## Removed
+### Removed
 - **BREAKING** Remove translation features in `i18n`: `Locale` class + `_` and `setlocale` functions #134
-
 
 ### Fixed
 
