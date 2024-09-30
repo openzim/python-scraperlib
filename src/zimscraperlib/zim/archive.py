@@ -18,7 +18,6 @@ import libzim.search  # Query, Searcher  # pyright: ignore
 import libzim.suggestion  # SuggestionSearcher  # pyright: ignore
 
 from zimscraperlib.zim._libkiwix import convertTags, parseMimetypeCounter
-from zimscraperlib.zim.items import Item
 
 
 class Archive(libzim.reader.Archive):
@@ -61,7 +60,7 @@ class Archive(libzim.reader.Archive):
         """Entry from its Id in ZIM"""
         return self._get_entry_by_id(id_)
 
-    def get_item(self, path: str) -> Item:
+    def get_item(self, path: str) -> libzim.reader.Item:
         """Item from a path"""
         return self.get_entry_by_path(path).get_item()
 
