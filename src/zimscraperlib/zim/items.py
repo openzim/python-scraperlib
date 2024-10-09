@@ -10,6 +10,7 @@ import pathlib
 import re
 import tempfile
 import urllib.parse
+from collections.abc import Callable
 from typing import Any
 
 import libzim.writer  # pyright: ignore
@@ -65,6 +66,11 @@ class Item(libzim.writer.Item):
         return getattr(self, "hints", {})
 
 
+def no_indexing_indexdata() -> IndexData:
+    """IndexData asking libzim not to index this item"""
+    return IndexData("", "")
+
+
 class StaticItem(Item):
     """scraperlib Item with auto contentProvider from `content` or `filepath`
 
@@ -107,19 +113,17 @@ class StaticItem(Item):
             path=path, title=title, mimetype=mimetype, hints=hints, **kwargs
         )
         if index_data:
-            self.get_indexdata = lambda: index_data
+            self.get_indexdata: Callable[[], IndexData] = lambda: index_data
         elif not auto_index:
-            self.get_indexdata = lambda: IndexData("", "")  # index nothing
+            self.get_indexdata = no_indexing_indexdata  # index nothing
         else:
             self._get_auto_index()  # consider to add auto index
 
         # Populate item title from index data if title is not set by caller
-        if (
-            (not hasattr(self, "title") or not self.title)
-            and hasattr(self, "get_indexdata")
-            and self.get_indexdata().get_title()
-        ):
-            self.title = self.get_indexdata().get_title()
+        if (not getattr(self, "title", None)) and hasattr(self, "get_indexdata"):
+            title = self.get_indexdata().get_title()
+            if title:
+                self.title = title
 
     def get_contentprovider(self) -> libzim.writer.ContentProvider:
         # content was set manually

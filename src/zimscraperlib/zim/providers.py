@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import io
 import pathlib
+from typing import Generator
 
 import libzim.writer  # pyright: ignore
 import requests
@@ -61,7 +62,7 @@ class FileLikeProvider(libzim.writer.ContentProvider):
     def get_size(self) -> int:
         return self.size  # pyright: ignore
 
-    def gen_blob(self) -> libzim.writer.Blob:
+    def gen_blob(self) -> Generator[libzim.writer.Blob, None, None]:
         yield libzim.writer.Blob(self.fileobj.getvalue())  # pragma: no cover
 
 
@@ -92,7 +93,7 @@ class URLProvider(libzim.writer.ContentProvider):
     def get_size(self) -> int:
         return self.size  # pyright: ignore
 
-    def gen_blob(self) -> libzim.writer.Blob:  # pragma: no cover
+    def gen_blob(self) -> Generator[libzim.writer.Blob, None, None]:  # pragma: no cover
         for chunk in self.resp.iter_content(10 * 1024):
             if chunk:
                 yield libzim.writer.Blob(chunk)

@@ -30,7 +30,7 @@ from typing import Any
 
 import libzim.writer  # pyright: ignore
 import PIL.Image
-import regex
+import regex  # pyright: ignore [reportMissingModuleSource]
 
 from zimscraperlib import logger
 from zimscraperlib.constants import (
@@ -491,7 +491,7 @@ class Creator(libzim.writer.Creator):
 
         try:
             try:
-                super().add_redirection(path, title, target_path, hints)
+                super().add_redirection(path, title or path, target_path, hints)
             except RuntimeError as exc:
                 if not DUPLICATE_EXC_STR.match(str(exc)) or not duplicate_ok:
                     raise exc
