@@ -111,12 +111,9 @@ def get_iso_lang_data(lang: str) -> tuple[Lang, Lang | None]:
     )
     lang_data.update({"english": isolang.name, "iso_types": iso_types})
 
-    if isolang.macro():
-        return (
-            lang_data,
-            get_iso_lang_data(isolang.macro().name)[0],
-        )  # first item in the returned tuple
-    return lang_data, None
+    # first item in the returned tuple
+    macro = isolang.macro()
+    return (lang_data, get_iso_lang_data(macro.name)[0] if macro else None)
 
 
 def find_language_names(query: str, lang_data: Lang | None = None) -> tuple[str, str]:
