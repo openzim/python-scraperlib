@@ -38,11 +38,15 @@ class SpecialURLProvider(URLProvider):
 
 
 class SpecialURLProviderItem(StaticItem):
+    url: str
+
     def get_contentprovider(self):
         return SpecialURLProvider(self.url)
 
 
 class FileLikeProviderItem(StaticItem):
+    fileobj: io.BytesIO
+
     def get_contentprovider(self):
         if not self.fileobj:
             raise AttributeError("fileobj cannot be None")
@@ -125,7 +129,7 @@ def test_create_without_workaround(tmp_path):
         fpath, "welcome", workaround_nocancel=False
     ).config_dev_metadata() as creator:
         with pytest.raises(RuntimeError, match="AttributeError"):
-            creator.add_item("hello")
+            creator.add_item("hello")  # pyright: ignore [reportArgumentType]
 
 
 def test_noindexlanguage(tmp_path):

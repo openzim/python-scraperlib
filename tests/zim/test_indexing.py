@@ -296,10 +296,12 @@ def test_get_pdf_index_data(
         filepath=encrypted_pdf_file if pdf_no == 1 else big_pdf_file
     )
     assert index_data.get_title() == expected_title
-    assert (
-        index_data.get_content()
-        == (encrypted_pdf_content if pdf_no == 1 else big_pdf_content).read_text()
+    # actual index content is dependent on the MuPDF version used by PyMuPDF
+    # this checks that index is large-enough
+    content_size = len(
+        (encrypted_pdf_content if pdf_no == 1 else big_pdf_content).read_text()
     )
+    assert len(index_data.get_content()) >= content_size * 0.9
     assert index_data.has_indexdata()
     assert index_data.get_wordcount() == expected_word_count
     assert index_data.get_keywords() == ""

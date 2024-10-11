@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # vim: ai ts=4 sts=4 et sw=4 nu
 
+import pathlib
 import shutil
 import subprocess
 import sys
@@ -147,7 +148,17 @@ finally:
     print("Program exiting")
 """
 
-    py = subprocess.run([sys.executable, "-c", pycode], check=False)
+    py = subprocess.run(
+        [sys.executable, "-c", pycode],
+        check=False,
+        # using python3.9 on macOS15, calling this failed to find zimscraperlib
+        # making the subprocess exit with 1
+        env=(
+            {"PYTHONPATH": str(pathlib.Path.cwd() / "src")}
+            if sys.version_info[:2] == (3, 9)
+            else None
+        ),
+    )
     # returncode will be either 0 or -11, depending on garbage collection
     # in scrapers, we want to be able to fail on errors and absolutely don't want to
     # create a ZIM file, so SEGFAULT on exit it (somewhat) OK
