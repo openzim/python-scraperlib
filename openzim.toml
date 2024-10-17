@@ -1,0 +1,15 @@
+[files.assets.config]
+target_dir="src/zimscraperlib/rewriting/statics"
+execute_after=[
+    "cd ../../../../ && python rules/generate_rules.py", # generate Python (and JS) rules
+]
+
+[files.assets.actions."wombat.js"]
+action="get_file"
+source="https://cdn.jsdelivr.net/npm/@webrecorder/wombat@3.8.2/dist/wombat.js"
+target_file="wombat.js"
+
+[files.assets.actions."wombatSetup.js"] # fallback if this script has not been properly built
+action="get_file"
+source="https://dev.kiwix.org/zimscraperlib/wombatSetup.js"
+target_file="wombatSetup.js"

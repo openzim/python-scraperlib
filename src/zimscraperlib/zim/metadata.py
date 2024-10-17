@@ -60,7 +60,7 @@ def validate_title(name: str, value: str):
 def validate_date(name: str, value: datetime.datetime | datetime.date | str):
     """ensures Date metadata can be casted to an ISO 8601 string"""
     if name == "Date":
-        if not isinstance(value, (datetime.datetime, datetime.date, str)):
+        if not isinstance(value, datetime.datetime | datetime.date | str):
             raise ValueError(f"Invalid type for {name}: {type(value)}")
         elif isinstance(value, str):
             match = re.match(r"(?P<year>\d{4})-(?P<month>\d{2})-(?P<day>\d{2})", value)

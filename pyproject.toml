@@ -1,10 +1,12 @@
 [build-system]
-requires = ["hatchling", "hatch-openzim>=0.2"]
+# jinja2 is required to generate JS and Python rules at build time
+# PyYAML is used to parse fuzzy rules and generate Python/JS code
+requires = ["hatchling", "hatch-openzim>=0.2", "jinja2==3.1.4", "PyYAML==6.0.2"]
 build-backend = "hatchling.build"
 
 [project]
 name = "zimscraperlib"
-requires-python = ">=3.8,<3.13"
+requires-python = ">=3.12,<3.13"
 description = "Collection of python tools to re-use common code across scrapers"
 readme = "README.md"
 dependencies = [
@@ -36,12 +38,20 @@ additional-classifiers = [
   "Intended Audience :: Developers",
 ]
 
+[tool.hatch.build.hooks.openzim-build]
+
 [project.optional-dependencies]
 scripts = [
   "invoke==2.2.0",
+  # jinja2 is required to generate JS and Python rules at build time
+  # PyYAML is used to parse fuzzy rules and generate Python/JS code
+  # also update version in build-system above and in build_js.sh
+  "jinja2==3.1.4",
+  "PyYAML==6.0.2",
+
 ]
 lint = [
-  "black==24.4.2",
+  "black==24.10.0",
   "ruff==0.4.9",
 ]
 check = [
@@ -75,15 +85,17 @@ exclude = [
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/zimscraperlib"]
+artifacts = [
+  "src/zimscraperlib/rewriting/statics/**",
+  "src/zimscraperlib/rewriting/rules.py",
+  "tests/rewriting/test_fuzzy_rules.py",
+]
 
 [tool.hatch.envs.default]
 features = ["dev"]
 
 [tool.hatch.envs.test]
 features = ["scripts", "test"]
-
-[[tool.hatch.envs.test.matrix]]
-python = ["3.8", "3.9", "3.10", "3.11", "3.12"]
 
 [tool.hatch.envs.test.scripts]
 run = "inv test --args '{args}'"
@@ -114,10 +126,10 @@ all = "inv checkall --args '{args}'"
 
 [tool.black]
 line-length = 88
-target-version = ['py38']
+target-version = ['py312']
 
 [tool.ruff]
-target-version = "py38"
+target-version = "py312"
 line-length = 88
 src = ["src", "contrib"]
 
@@ -244,6 +256,15 @@ exclude_lines = [
 include = ["contrib", "src", "tests", "tasks.py"]
 exclude = [".env/**", ".venv/**"]
 extraPaths = ["src"]
-pythonVersion = "3.8"
+pythonVersion = "3.12"
 typeCheckingMode="basic"
 disableBytesTypePromotions = true
+
+[tool.pyright.overrides]
+strict = true  # Enable strict mode for specific files
+
+[[tool.pyright.overrides.files]]
+files = [
+  "src/zimscraperlib/rewriting**/*.py",
+  "tests/rewriting/**/*.py"
+]

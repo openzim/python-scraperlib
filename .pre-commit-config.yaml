@@ -2,27 +2,34 @@
 # See https://pre-commit.com/hooks.html for more hooks
 exclude: ^tests/files # these are raw test files, no need to mess with them
 repos:
-- repo: https://github.com/pre-commit/pre-commit-hooks
-  rev: v4.5.0
-  hooks:
-  -   id: trailing-whitespace
-  -   id: end-of-file-fixer
-- repo: https://github.com/psf/black
-  rev: "24.4.2"
-  hooks:
-  -   id: black
-- repo: https://github.com/astral-sh/ruff-pre-commit
-  rev: v0.4.9
-  hooks:
-  - id: ruff
-- repo: https://github.com/RobertCraigie/pyright-python
-  rev: v1.1.368
-  hooks:
-  - id: pyright
-    name: pyright (system)
-    description: 'pyright static type checker'
-    entry: pyright
-    language: system
-    'types_or': [python, pyi]
-    require_serial: true
-    minimum_pre_commit_version: '2.9.2'
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+  - repo: https://github.com/psf/black
+    rev: '24.10.0'
+    hooks:
+      - id: black
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.4.9
+    hooks:
+      - id: ruff
+  - repo: https://github.com/RobertCraigie/pyright-python
+    rev: v1.1.368
+    hooks:
+      - id: pyright
+        name: pyright (system)
+        description: 'pyright static type checker'
+        entry: pyright
+        language: system
+        'types_or': [python, pyi]
+        require_serial: true
+        minimum_pre_commit_version: '2.9.2'
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v3.1.0
+    hooks:
+      - id: prettier
+        args:
+          - --config
+          - javascript/.prettierrc.json

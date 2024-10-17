@@ -1,20 +1,101 @@
-name: Build and upload to PyPI
+name: Build and publish to PyPI / NPM
 
 on:
   release:
     types: [published]
 
 jobs:
-  publish:
-    runs-on: ubuntu-22.04
-    permissions:
-      id-token: write  # mandatory for PyPI trusted publishing
+  generate-rules:
+    runs-on: ubuntu-24.04
 
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout repo
+        uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: pyproject.toml
+          architecture: x64
+
+      - name: Install dependencies (and project)
+        run: |
+          pip install -U pip
+          pip install -e .[scripts]
+
+      - name: Generate rules
+        run: |
+          python rules/generate_rules.py
+
+      - name: Save rules artifact
+        uses: actions/upload-artifact@v4
+        with:
+          path: |
+            src/zimscraperlib/rewriting/rules.py
+            tests/rewriting/test_fuzzy_rules.py
+            javascript/src/fuzzyRules.js
+            javascript/test/fuzzyRules.js
+          name: rules
+          retention-days: 1
+
+  build-js:
+    runs-on: ubuntu-24.04
+    needs: generate-rules
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Restore rules artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: rules
+
+      - name: Setup Node.JS
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: 'javascript/package.json'
+
+      - name: Install JS dependencies
+        run: yarn install
+        working-directory: javascript
+
+      - name: Build production JS
+        run: yarn build-prod
+        working-directory: javascript
+
+      - name: Save wombat-setup artifact
+        uses: actions/upload-artifact@v4
+        with:
+          path: javascript/dist/wombatSetup.js
+          name: wombat-setup
+          retention-days: 1
+
+  publish-python:
+    runs-on: ubuntu-24.04
+    needs:
+      - generate-rules # to have proper Python rules files (src and tests)
+      - build-js # to have proper wombatSetup.js (needs to be included in sdist)
+    permissions:
+      id-token: write # mandatory for PyPI trusted publishing
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Restore rules artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: rules
+
+      - name: Restore wombat-setup artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: wombat-setup
+          path: src/zimscraperlib/rewriting/statics/wombatSetup.js
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
           python-version-file: pyproject.toml
           architecture: x64
@@ -24,5 +105,44 @@ jobs:
           pip install -U pip build
           python -m build --sdist --wheel
 
-      - name: Upload to PyPI
+      - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1.8
+# OPTIONAL PUBLICATION TO NPM, NOT NEEDED BY SCRAPERS IN THE END
+
+# publish-js:
+#   runs-on: ubuntu-24.04
+#   needs:
+#     - generate-rules
+
+#   steps:
+#     - name: Checkout repo
+#       uses: actions/checkout@v4
+
+#     - name: Restore rules artifact
+#       uses: actions/download-artifact@v4
+#       with:
+#         name: rules
+
+#     - name: Setup Node.JS
+#       uses: actions/setup-node@v4
+#       with:
+#         node-version-file: 'javascript/package.json'
+#         registry-url: 'https://registry.npmjs.org' # Setup .npmrc file to publish to npm
+
+#     - name: Install JS dependencies
+#       run: yarn install
+#       working-directory: javascript
+
+#     - name: Build production JS
+#       run: yarn build-prod
+#       working-directory: javascript
+
+#     - name: Build JS package
+#       run: yarn pack
+#       working-directory: javascript
+
+#     - name: Publish to NPM
+#       run: npm publish $(ls *.tgz) --provenance --access public
+#       working-directory: javascript
+#       env:
+#         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
