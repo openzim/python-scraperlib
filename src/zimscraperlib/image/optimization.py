@@ -29,7 +29,7 @@ import io
 import os
 import pathlib
 import subprocess
-from typing import Callable
+from collections.abc import Callable
 
 import piexif
 from optimize_images.img_aux_processing import do_reduce_colors, rebuild_palette
