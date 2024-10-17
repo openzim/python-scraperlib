@@ -264,7 +264,7 @@ class Creator(libzim.writer.Creator):
 
         Also checks that final type is appropriate for libzim (str or bytes)
         """
-        if name == "Date" and isinstance(value, (datetime.date, datetime.datetime)):
+        if name == "Date" and isinstance(value, datetime.date | datetime.datetime):
             value = value.strftime("%Y-%m-%d")
         if (
             name == "Tags"

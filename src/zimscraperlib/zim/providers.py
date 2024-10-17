@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import io
 import pathlib
-from typing import Generator
+from collections.abc import Generator
 
 import libzim.writer  # pyright: ignore
 import requests

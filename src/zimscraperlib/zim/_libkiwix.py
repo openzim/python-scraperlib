@@ -16,10 +16,9 @@ from __future__ import annotations
 
 import io
 from collections import namedtuple
-from typing import Dict
 
 MimetypeAndCounter = namedtuple("MimetypeAndCounter", ["mimetype", "value"])
-CounterMap = Dict[
+CounterMap = dict[
     type(MimetypeAndCounter.mimetype), type(MimetypeAndCounter.value)  # pyright: ignore
 ]
 

@@ -7,23 +7,19 @@ on:
       - main
 
 jobs:
-  run-tests:
-    strategy:
-      matrix:
-        os: [ubuntu-22.04]
-        python: ["3.8", "3.9", "3.10", "3.11", "3.12"]
-    runs-on: ${{ matrix.os }}
+  run-python-tests:
+    runs-on: ubuntu-24.04
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: install ffmpeg and gifsicle
         run: sudo apt update && sudo apt install ffmpeg gifsicle
 
-      - name: Set up Python ${{ matrix.python }}
-        uses: actions/setup-python@v4
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.python }}
+          python-version-file: pyproject.toml
           architecture: x64
 
       - name: Install dependencies (and project)
@@ -35,19 +31,18 @@ jobs:
         run: inv coverage --args "--runslow --runinstalled -vvv"
 
       - name: Upload coverage report to codecov
-        if: matrix.python == '3.12'
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         with:
           fail_ci_if_error: true
           token: ${{ secrets.CODECOV_TOKEN }}
 
   build_python:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version-file: pyproject.toml
           architecture: x64
@@ -56,3 +51,21 @@ jobs:
         run: |
           pip install -U pip build
           python3 -m build --sdist --wheel
+
+  build_javascript:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      # Setup .npmrc file to publish to npm
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: 'javascript/package.json'
+          registry-url: 'https://registry.npmjs.org'
+      - run: yarn install
+        working-directory: javascript
+      - run: yarn pack
+        working-directory: javascript
+      - run: npm publish --dry-run --provenance --access public
+        working-directory: javascript
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

@@ -7,14 +7,14 @@ on:
       - main
 
 jobs:
-  check-qa:
-    runs-on: ubuntu-22.04
+  check-python-qa:
+    runs-on: ubuntu-24.04
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version-file: pyproject.toml
           architecture: x64
@@ -32,3 +32,26 @@ jobs:
 
       - name: Check pyright
         run: inv check-pyright
+
+  check-javascript-qa:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: 'javascript/package.json'
+
+      - name: Install JS dependencies
+        working-directory: javascript
+        run: yarn install
+
+      - name: Check prettier formatting
+        working-directory: javascript
+        run: yarn prettier-check
+
+      - name: Check eslint rules
+        working-directory: javascript
+        run: yarn eslint
