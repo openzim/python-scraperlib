@@ -7,14 +7,54 @@ on:
       - main
 
 jobs:
-  check-qa:
-    runs-on: ubuntu-22.04
+  generate-rules:
+    runs-on: ubuntu-24.04
 
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout repo
+        uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: pyproject.toml
+          architecture: x64
+
+      - name: Install dependencies (and project)
+        run: |
+          pip install -U pip
+          pip install -e .[scripts]
+
+      - name: Generate rules
+        run: |
+          python rules/generate_rules.py
+
+      - name: Save rules artifact
+        uses: actions/upload-artifact@v4
+        with:
+          path: |
+            src/zimscraperlib/rewriting/rules.py
+            tests/rewriting/test_fuzzy_rules.py
+            javascript/src/fuzzyRules.js
+            javascript/test/fuzzyRules.js
+          name: rules
+          retention-days: 1
+
+  check-python-qa:
+    runs-on: ubuntu-24.04
+    needs: generate-rules
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Restore rules artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: rules
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
           python-version-file: pyproject.toml
           architecture: x64
@@ -32,3 +72,33 @@ jobs:
 
       - name: Check pyright
         run: inv check-pyright
+
+  check-javascript-qa:
+    runs-on: ubuntu-24.04
+    needs: generate-rules
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Restore rules artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: rules
+
+      - name: Setup Node.JS
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: 'javascript/package.json'
+
+      - name: Install JS dependencies
+        working-directory: javascript
+        run: yarn install
+
+      - name: Check prettier formatting
+        working-directory: javascript
+        run: yarn prettier-check
+
+      - name: Check eslint rules
+        working-directory: javascript
+        run: yarn eslint

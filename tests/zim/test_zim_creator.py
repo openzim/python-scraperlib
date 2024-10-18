@@ -425,9 +425,10 @@ with HTTPServer(('', {port}), handler) as server:
 
     fpath = tmp_path / "test.zim"
     try:
-        with tempfile.TemporaryDirectory() as tmp_dir, Creator(
-            fpath, ""
-        ).config_dev_metadata() as creator:
+        with (
+            tempfile.TemporaryDirectory() as tmp_dir,
+            Creator(fpath, "").config_dev_metadata() as creator,
+        ):
             tmp_dir = pathlib.Path(tmp_dir)  # noqa: PLW2901
             creator.add_item(
                 URLItem(

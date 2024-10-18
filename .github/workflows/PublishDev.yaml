@@ -1,0 +1,47 @@
+name: Publish dev wombat-setup
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  publish-dev-wombat-setup:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: pyproject.toml
+          architecture: x64
+
+      - name: Install dependencies (and project)
+        run: |
+          pip install -U pip
+          pip install -e .[scripts]
+
+      - name: Generate rules
+        run: |
+          python rules/generate_rules.py
+
+      - name: Setup Node.JS
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: 'javascript/package.json'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install JS dependencies
+        run: yarn install
+        working-directory: javascript
+
+      - name: Build production JS
+        run: yarn build-prod
+        working-directory: javascript
+
+      - name: Upload wombatSetup.js to dev drive
+        run: |
+          curl -f -u "${{ secrets.DEV_DRIVE_WEBDAV_CREDENTIALS }}" -T javascript/dist/wombatSetup.js -sw '%{http_code}' "https://dev.kiwix.org/zimscraperlib/"

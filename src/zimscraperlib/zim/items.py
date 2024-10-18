@@ -129,7 +129,7 @@ class StaticItem(Item):
         # content was set manually
         content = getattr(self, "content", None)
         if content is not None:
-            if not isinstance(content, (str, bytes)):
+            if not isinstance(content, str | bytes):
                 raise AttributeError(f"Unexpected type for content: {type(content)}")
             return StringProvider(content=content, ref=self)
 
@@ -155,7 +155,7 @@ class StaticItem(Item):
         # content was set manually
         content = getattr(self, "content", None)
         if content is not None:
-            if not isinstance(content, (str, bytes)):
+            if not isinstance(content, str | bytes):
                 raise RuntimeError(
                     f"Unexpected type for content: {type(content)}"
                 )  # pragma: no cover
