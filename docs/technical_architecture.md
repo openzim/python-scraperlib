@@ -5,6 +5,7 @@
 Fuzzy rules are stored in `rules/rules.yaml`. This configuration file is then used by `rules/generateRules.py` to generate Python and JS code.
 
 Should you update these fuzzy rules, you hence have to:
+
 - regenerate Python and JS files by running `python rules/generateRules.py`
 - bundle again Javascript `wombatSetup.js` (see below).
 
@@ -25,6 +26,7 @@ WARC record stores the items URL inside a header named "WARC-Target-URI". The va
 It has been decided (by convention) that we will drop the scheme, the port, the username and password from the URL. Headers are also not considered in this computation.
 
 Computation of the ZIM path is hence mostly straightforward:
+
 - decode the hostname which is puny-encoded
 - decode the path and query parameter which might be url-encoded
 

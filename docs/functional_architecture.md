@@ -54,11 +54,11 @@ For proper reader operation, openZIM prohibits using absolute URLs, so this has 
 
 The table below gives some examples of what the rewritten URL is going to be, depending on the URL of the rewritten document.
 
-| HTML document URL | image URL rewritten for usage inside the ZIM |
-|--|--|
-| `https://en.wikipedia.org/wiki/Kiwix` | `./File:Kiwix_logo_v3.svg` |
-| `https://en.wikipedia.org/wiki` | `./wiki/File:Kiwix_logo_v3.svg` |
-| `https://en.wikipedia.org/waka/Kiwix` | `../wiki/File:Kiwix_logo_v3.svg` |
+| HTML document URL                     | image URL rewritten for usage inside the ZIM         |
+| ------------------------------------- | ---------------------------------------------------- |
+| `https://en.wikipedia.org/wiki/Kiwix` | `./File:Kiwix_logo_v3.svg`                           |
+| `https://en.wikipedia.org/wiki`       | `./wiki/File:Kiwix_logo_v3.svg`                      |
+| `https://en.wikipedia.org/waka/Kiwix` | `../wiki/File:Kiwix_logo_v3.svg`                     |
 | `https://fr.wikipedia.org/wiki/Kiwix` | `../../en.wikipedia.org/wiki/File:Kiwix_logo_v3.svg` |
 
 As can be seen on the last line (but this is true for all URLs), this rewriting has to take into account the convention saying at which ZIM path a given web resource will be stored.

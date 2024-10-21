@@ -1,5 +1,4 @@
-zimscraperlib
-=============
+# zimscraperlib
 
 [![Build Status](https://github.com/openzim/python-scraperlib/workflows/CI/badge.svg?query=branch%3Amain)](https://github.com/openzim/python-scraperlib/actions?query=branch%3Amain)
 [![CodeFactor](https://www.codefactor.io/repository/github/openzim/python-scraperlib/badge)](https://www.codefactor.io/repository/github/openzim/python-scraperlib)
@@ -12,13 +11,13 @@ Collection of python code to re-use across python-based scrapers
 
 # Usage
 
-* This library is meant to be installed via PyPI ([`zimscraperlib`](https://pypi.org/project/zimscraperlib/)).
-* Make sure to reference it using a version code as the API is subject to frequent changes.
-* API should remain the same only within the same *minor* version.
+- This library is meant to be installed via PyPI ([`zimscraperlib`](https://pypi.org/project/zimscraperlib/)).
+- Make sure to reference it using a version code as the API is subject to frequent changes.
+- API should remain the same only within the same _minor_ version.
 
 Example usage:
 
-``` pip
+```pip
 zimscraperlib>=1.1,<1.2
 ```
 
@@ -26,12 +25,12 @@ See [functional architecture](docs/functional_architecture.md), [software archit
 
 # Dependencies
 
-* libmagic
-* wget
-* libzim (auto-installed, not available on Windows)
-* Pillow
-* FFmpeg
-* gifsicle (>=1.92)
+- libmagic
+- wget
+- libzim (auto-installed, not available on Windows)
+- Pillow
+- FFmpeg
+- gifsicle (>=1.92)
 
 ## macOS
 
@@ -49,6 +48,7 @@ sudo apt install libmagic1 wget ffmpeg \
 ```
 
 ## Alpine
+
 ```
 apk add ffmpeg gifsicle libmagic wget libjpeg
 ```
@@ -71,15 +71,15 @@ invoke coverage
 
 Non-exhaustive list of scrapers using it (check status when updating API):
 
-* [openzim/freecodecamp](https://github.com/openzim/freecodecamp)
-* [openzim/gutenberg](https://github.com/openzim/gutenberg)
-* [openzim/ifixit](https://github.com/openzim/ifixit)
-* [openzim/kolibri](https://github.com/openzim/kolibri)
-* [openzim/nautilus](https://github.com/openzim/nautilus)
-* [openzim/nautilus](https://github.com/openzim/nautilus)
-* [openzim/openedx](https://github.com/openzim/openedx)
-* [openzim/sotoki](https://github.com/openzim/sotoki)
-* [openzim/ted](https://github.com/openzim/ted)
-* [openzim/warc2zim](https://github.com/openzim/warc2zim)
-* [openzim/wikihow](https://github.com/openzim/wikihow)
-* [openzim/youtube](https://github.com/openzim/youtube)
+- [openzim/freecodecamp](https://github.com/openzim/freecodecamp)
+- [openzim/gutenberg](https://github.com/openzim/gutenberg)
+- [openzim/ifixit](https://github.com/openzim/ifixit)
+- [openzim/kolibri](https://github.com/openzim/kolibri)
+- [openzim/nautilus](https://github.com/openzim/nautilus)
+- [openzim/nautilus](https://github.com/openzim/nautilus)
+- [openzim/openedx](https://github.com/openzim/openedx)
+- [openzim/sotoki](https://github.com/openzim/sotoki)
+- [openzim/ted](https://github.com/openzim/ted)
+- [openzim/warc2zim](https://github.com/openzim/warc2zim)
+- [openzim/wikihow](https://github.com/openzim/wikihow)
+- [openzim/youtube](https://github.com/openzim/youtube)
