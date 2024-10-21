@@ -22,6 +22,8 @@ Example usage:
 zimscraperlib>=1.1,<1.2
 ```
 
+See [functional architecture](docs/functional_architecture.md), [software architecture](docs/software_architecture.md) and [technical architecture](docs/technical_architecture.md) for more details on scraperlib (not all aspects are covered yet, this is a WIP).
+
 # Dependencies
 
 * libmagic

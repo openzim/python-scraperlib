@@ -91,6 +91,13 @@ artifacts = [
   "tests/rewriting/test_fuzzy_rules.py",
 ]
 
+[tool.hatch.build.targets.sdist]
+include = [
+  "src/zimscraperlib/rewriting/statics/**",
+  "src/zimscraperlib/rewriting/rules.py",
+  "tests/rewriting/test_fuzzy_rules.py",
+]
+
 [tool.hatch.envs.default]
 features = ["dev"]
 
