@@ -1,5 +1,7 @@
 # Technical architecture
 
+Currently only HTML, CSS and JS rewriting is described in this document.
+
 ## Fuzzy rules
 
 Fuzzy rules are stored in `rules/rules.yaml`. This configuration file is then used by `rules/generateRules.py` to generate Python and JS code.

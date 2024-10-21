@@ -1,5 +1,7 @@
 # Software architecture
 
+Currently only HTML, CSS and JS rewriting is described in this document.
+
 ## HTML rewriting
 
 HTML rewriting is purely static (i.e. before resources are written to the ZIM). HTML code is parsed with the [HTML parser from Python standard library](https://docs.python.org/3/library/html.parser.html).

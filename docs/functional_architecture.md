@@ -16,7 +16,7 @@ zimscraperlib has primitives to manipulate pictures with some operations which a
 
 zimscraperlib also contains primitives to rewrite HTML, CSS and JS fetched online, to proper operate within a ZIM without heavy modifications. While originaly developped for warc2zim, some of these primitives are now also used for mindtouch scraper and others might follow, so they are shared in zimscraperlib. See `rewriting` module.
 
-## ZIM storage
+### ZIM storage
 
 While storing web resources in a ZIM is mostly straightforward (we just transfer the raw bytes, after some modification for URL rewriting if needed), the decision of the path where the resource will be stored is very important.
 
@@ -26,7 +26,7 @@ This function is responsible to compute the ZIM path where a given web resource 
 
 While the URL is the only driver of this computation for now, zimscraperlib might have to consider other contextual data in the future. E.g. the resource to serve might by dynamic, depending not only on URL query parameters but also header(s) value(s).
 
-## Fuzzy rules
+### Fuzzy rules
 
 Unfortunately, it is not always possible / desirable to store the resource with a simple transformation.
 
@@ -36,11 +36,11 @@ When running again the same javascript code inside the ZIM, the URL will hence b
 
 zimscraperlib hence relies on fuzzy rules to transform/simplify some URLs when computing the ZIM path.
 
-## URL Rewriting
+### URL Rewriting
 
 zimscraperlib transforms (rewrites) URLs found in documents (HTML, CSS, JS, ...) so that they are usable inside the ZIM.
 
-### General case
+#### General case
 
 One simple example is that we might have following code in an HTML document to load an image with an absolute URL:
 
@@ -63,7 +63,7 @@ The table below gives some examples of what the rewritten URL is going to be, de
 
 As can be seen on the last line (but this is true for all URLs), this rewriting has to take into account the convention saying at which ZIM path a given web resource will be stored.
 
-### Dynamic case
+#### Dynamic case
 
 The explanation above more or less assumed that the transformations can be done statically, i.e zimscraperlib can open every known document, find existing URLs and replace them with their counterpart inside the ZIM.
 
@@ -75,13 +75,13 @@ A specific function is hence needed to rewrite URL **live in client browser**, i
 
 _Spoiler: this is where we will rely on wombat.js from webrecorder team, since this dynamic interception is quite complex and already done quite neatly by them_
 
-### Fuzzy rules
+#### Fuzzy rules
 
 The same fuzzy rules that have been used to compute the ZIM path from a resource URL have to be applied again when rewriting URLs.
 
 While this is expected to serve mostly for the dynamic case, we still applies them on both side (staticaly and dynamicaly) for coherency.
 
-## Documents rewriten statically
+### Documents rewriten statically
 
 For now zimscraperlib rewrites HTML, CSS and JS documents. For CSS and JS, this mainly consists in replacing URLs. For HTML, we also have more specific rewritting necessary (e.g. to handle base href or redirects with meta).
 
