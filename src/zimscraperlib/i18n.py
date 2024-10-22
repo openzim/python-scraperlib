@@ -169,7 +169,7 @@ def get_language_details(
         adjusted_query = query
         native_query = query
         query_type = "purecode"
-    elif all(x.isalpha() or x == "-" or x == "_" for x in query) and (
+    elif all(x.isalpha() or x in ("-", "_") for x in query) and (
         query.count("_") + query.count("-") == 1
     ):
         # possibility of locale
