@@ -206,7 +206,7 @@ class JsRewriter(RxRewriter):
         self,
         url_rewriter: ArticleUrlRewriter,
         base_href: str | None,
-        notify_js_module: Callable[[ZimPath], None],
+        notify_js_module: Callable[[ZimPath], None] | None,
     ):
         super().__init__(None)
         self.first_buff = self._init_local_declaration(GLOBAL_OVERRIDES)
@@ -298,11 +298,12 @@ class JsRewriter(RxRewriter):
                 m_object: re.Match[str], _opts: dict[str, Any] | None = None
             ) -> str:
                 def sub_funct(match: re.Match[str]) -> str:
-                    self.notify_js_module(
-                        self.url_rewriter.get_item_path(
-                            match.group(2), base_href=self.base_href
+                    if self.notify_js_module:
+                        self.notify_js_module(
+                            self.url_rewriter.get_item_path(
+                                match.group(2), base_href=self.base_href
+                            )
                         )
-                    )
                     return (
                         f"{match.group(1)}{get_rewriten_import_url(match.group(2))}"
                         f"{match.group(3)}"
