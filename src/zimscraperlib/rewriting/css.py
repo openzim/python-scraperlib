@@ -51,7 +51,7 @@ class FallbackRegexCssRewriter(RxRewriter):
             [
                 "url(",
                 m_object["quote"],
-                url_rewriter(m_object["url"], base_href),
+                url_rewriter(m_object["url"], base_href).rewriten_url,
                 m_object["quote"],
                 ")",
             ]
@@ -190,7 +190,7 @@ class CssRewriter:
                 new_url = self.url_rewriter(
                     url_node.value,  # pyright: ignore
                     self.base_href,
-                )
+                ).rewriten_url
                 url_node.value = str(new_url)  # pyright: ignore
                 url_node.representation = (  # pyright: ignore
                     f'"{serialize_url(str(new_url))}"'
@@ -206,7 +206,9 @@ class CssRewriter:
         elif isinstance(node, ast.Declaration):
             self._process_list(node.value)  # pyright: ignore
         elif isinstance(node, ast.URLToken):
-            new_url = self.url_rewriter(node.value, self.base_href)  # pyright: ignore
+            new_url = self.url_rewriter(
+                node.value, self.base_href
+            ).rewriten_url  # pyright: ignore
             node.value = new_url
             node.representation = f"url({serialize_url(new_url)})"
 

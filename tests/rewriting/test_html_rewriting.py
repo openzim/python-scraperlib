@@ -74,17 +74,15 @@ def no_rewrite_content(request: pytest.FixtureRequest):
     yield request.param
 
 
-def test_no_rewrite(
-    no_rewrite_content: ContentForTests, no_js_notify: Callable[[ZimPath], None]
-):
+def test_no_rewrite(no_rewrite_content: ContentForTests):
     assert (
         HtmlRewriter(
             ArticleUrlRewriter(
                 article_url=HttpUrl(f"http://{no_rewrite_content.article_url}"),
             ),
-            "",
-            "",
-            no_js_notify,
+            None,
+            None,
+            None,
         )
         .rewrite(no_rewrite_content.input_str)
         .content
@@ -116,17 +114,15 @@ def escaped_content(request: pytest.FixtureRequest):
     yield request.param
 
 
-def test_escaped_content(
-    escaped_content: ContentForTests, no_js_notify: Callable[[ZimPath], None]
-):
+def test_escaped_content(escaped_content: ContentForTests):
     transformed = (
         HtmlRewriter(
             ArticleUrlRewriter(
                 article_url=HttpUrl(f"http://{escaped_content.article_url}")
             ),
-            "",
-            "",
-            no_js_notify,
+            None,
+            None,
+            None,
         )
         .rewrite(escaped_content.input_str)
         .content
@@ -239,17 +235,15 @@ def js_rewrites(request: pytest.FixtureRequest):
     yield request.param
 
 
-def test_js_rewrites(
-    js_rewrites: ContentForTests, no_js_notify: Callable[[ZimPath], None]
-):
+def test_js_rewrites(js_rewrites: ContentForTests):
     transformed = (
         HtmlRewriter(
             ArticleUrlRewriter(
                 article_url=HttpUrl(f"http://{js_rewrites.article_url}")
             ),
-            "",
-            "",
-            no_js_notify,
+            None,
+            None,
+            None,
         )
         .rewrite(js_rewrites.input_str)
         .content
@@ -334,16 +328,16 @@ def rewrite_url(request: pytest.FixtureRequest):
     yield request.param
 
 
-def test_rewrite(rewrite_url: ContentForTests, no_js_notify: Callable[[ZimPath], None]):
+def test_rewrite(rewrite_url: ContentForTests):
     assert (
         HtmlRewriter(
             ArticleUrlRewriter(
                 article_url=HttpUrl(f"http://{rewrite_url.article_url}"),
                 existing_zim_paths={ZimPath("exemple.com/a/long/path")},
             ),
-            "",
-            "",
-            no_js_notify,
+            None,
+            None,
+            None,
         )
         .rewrite(rewrite_url.input_str)
         .content
@@ -351,7 +345,7 @@ def test_rewrite(rewrite_url: ContentForTests, no_js_notify: Callable[[ZimPath],
     )
 
 
-def test_extract_title(no_js_notify: Callable[[ZimPath], None]):
+def test_extract_title():
     content = """<html>
       <head>
         <title>Page title</title>
@@ -367,9 +361,9 @@ def test_extract_title(no_js_notify: Callable[[ZimPath], None]):
                 article_url=HttpUrl("http://example.com"),
                 existing_zim_paths={ZimPath("exemple.com/a/long/path")},
             ),
-            "",
-            "",
-            no_js_notify,
+            None,
+            None,
+            None,
         )
         .rewrite(content)
         .title
@@ -377,15 +371,15 @@ def test_extract_title(no_js_notify: Callable[[ZimPath], None]):
     )
 
 
-def test_rewrite_attributes(no_js_notify: Callable[[ZimPath], None]):
+def test_rewrite_attributes():
     rewriter = HtmlRewriter(
         ArticleUrlRewriter(
             article_url=HttpUrl("http://kiwix.org/"),
             existing_zim_paths={ZimPath("kiwix.org/foo")},
         ),
-        "",
-        "",
-        no_js_notify,
+        None,
+        None,
+        None,
     )
 
     assert (
@@ -407,13 +401,13 @@ def test_rewrite_attributes(no_js_notify: Callable[[ZimPath], None]):
     )
 
 
-def test_rewrite_css(no_js_notify: Callable[[ZimPath], None]):
+def test_rewrite_css():
     output = (
         HtmlRewriter(
             ArticleUrlRewriter(article_url=HttpUrl("http://kiwix.org/")),
-            "",
-            "",
-            no_js_notify,
+            None,
+            None,
+            None,
         )
         .rewrite(
             "<style>p { /* A comment with a http://link.org/ */ "
@@ -427,7 +421,7 @@ def test_rewrite_css(no_js_notify: Callable[[ZimPath], None]):
     )
 
 
-def test_head_insert(no_js_notify: Callable[[ZimPath], None]):
+def test_head_insert():
     content = """<html>
     <head>
         <title>A test content</title>
@@ -439,18 +433,17 @@ def test_head_insert(no_js_notify: Callable[[ZimPath], None]):
 
     url_rewriter = ArticleUrlRewriter(article_url=HttpUrl("http://kiwix.org/"))
     assert (
-        HtmlRewriter(url_rewriter, "", "", no_js_notify).rewrite(content).content
-        == content
+        HtmlRewriter(url_rewriter, None, None, None).rewrite(content).content == content
     )
 
-    assert HtmlRewriter(url_rewriter, "PRE_HEAD_INSERT", "", no_js_notify).rewrite(
+    assert HtmlRewriter(url_rewriter, "PRE_HEAD_INSERT", None, None).rewrite(
         content
     ).content == content.replace("<head>", "<head>PRE_HEAD_INSERT")
-    assert HtmlRewriter(url_rewriter, "", "POST_HEAD_INSERT", no_js_notify).rewrite(
+    assert HtmlRewriter(url_rewriter, None, "POST_HEAD_INSERT", None).rewrite(
         content
     ).content == content.replace("</head>", "POST_HEAD_INSERT</head>")
     assert HtmlRewriter(
-        url_rewriter, "PRE_HEAD_INSERT", "POST_HEAD_INSERT", no_js_notify
+        url_rewriter, "PRE_HEAD_INSERT", "POST_HEAD_INSERT", None
     ).rewrite(content).content == content.replace(
         "<head>", "<head>PRE_HEAD_INSERT"
     ).replace(
@@ -735,9 +728,7 @@ def rewrite_base_href_content(request):
     yield request.param
 
 
-def test_rewrite_base_href(
-    rewrite_base_href_content: ContentForTests, no_js_notify: Callable[[ZimPath], None]
-):
+def test_rewrite_base_href(rewrite_base_href_content: ContentForTests):
     assert (
         HtmlRewriter(
             ArticleUrlRewriter(
@@ -750,9 +741,9 @@ def test_rewrite_base_href(
                     ZimPath("kiwix.org/favicon.png"),
                 },
             ),
-            "",
-            "",
-            no_js_notify,
+            None,
+            None,
+            None,
         )
         .rewrite(rewrite_base_href_content.input_str)
         .content
@@ -795,15 +786,13 @@ def test_rewrite_base_href(
         ),
     ],
 )
-def test_simple_rewrite(
-    input_content: str, expected_output: str, no_js_notify: Callable[[ZimPath], None]
-):
+def test_simple_rewrite(input_content: str, expected_output: str):
     assert (
         HtmlRewriter(
             ArticleUrlRewriter(article_url=HttpUrl("http://example.com")),
-            "",
-            "",
-            no_js_notify,
+            None,
+            None,
+            None,
         )
         .rewrite(input_content)
         .content
@@ -862,9 +851,7 @@ def rewrite_onxxx_content(request: pytest.FixtureRequest):
     yield request.param
 
 
-def test_rewrite_onxxx_event(
-    rewrite_onxxx_content: ContentForTests, no_js_notify: Callable[[ZimPath], None]
-):
+def test_rewrite_onxxx_event(rewrite_onxxx_content: ContentForTests):
     assert (
         HtmlRewriter(
             ArticleUrlRewriter(
@@ -877,9 +864,9 @@ def test_rewrite_onxxx_event(
                     ZimPath("kiwix.org/favicon.png"),
                 },
             ),
-            "",
-            "",
-            no_js_notify,
+            None,
+            None,
+            None,
         )
         .rewrite(rewrite_onxxx_content.input_str)
         .content
@@ -924,10 +911,7 @@ def rewrite_meta_charset_content(request: pytest.FixtureRequest):
     yield request.param
 
 
-def test_rewrite_meta_charset(
-    rewrite_meta_charset_content: ContentForTests,
-    no_js_notify: Callable[[ZimPath], None],
-):
+def test_rewrite_meta_charset(rewrite_meta_charset_content: ContentForTests):
     assert (
         HtmlRewriter(
             ArticleUrlRewriter(
@@ -935,9 +919,9 @@ def test_rewrite_meta_charset(
                     f"http://{rewrite_meta_charset_content.article_url}"
                 )
             ),
-            "",
-            "",
-            no_js_notify,
+            None,
+            None,
+            None,
         )
         .rewrite(rewrite_meta_charset_content.input_str)
         .content
@@ -963,7 +947,6 @@ def rewrite_meta_http_equiv_redirect_full_content(request: pytest.FixtureRequest
 
 def test_rewrite_meta_http_equiv_redirect_full(
     rewrite_meta_http_equiv_redirect_full_content: ContentForTests,
-    no_js_notify: Callable[[ZimPath], None],
 ):
     assert (
         HtmlRewriter(
@@ -973,9 +956,9 @@ def test_rewrite_meta_http_equiv_redirect_full(
                 ),
                 existing_zim_paths={ZimPath("kiwix.org/somepage")},
             ),
-            "",
-            "",
-            no_js_notify,
+            None,
+            None,
+            None,
         )
         .rewrite(rewrite_meta_http_equiv_redirect_full_content.input_str)
         .content
@@ -1112,11 +1095,12 @@ def rewrite_tag_name(attr_name: str, attr_value: str | None) -> AttrNameAndValue
 @rules.rewrite_attribute()
 def rewrite_call_notify(
     attr_name: str,
-    notify_js_module: Callable[[ZimPath], None],
+    notify_js_module: Callable[[ZimPath], None] | None,
 ) -> AttrNameAndValue | None:
     if attr_name != "call_notify":
         return
-    notify_js_module(ZimPath("foo"))
+    if notify_js_module:
+        notify_js_module(ZimPath("foo"))
     return
 
 

@@ -132,9 +132,9 @@ class HtmlRewriter(HTMLParser):
     def __init__(
         self,
         url_rewriter: ArticleUrlRewriter,
-        pre_head_insert: str,
+        pre_head_insert: str | None,
         post_head_insert: str | None,
-        notify_js_module: Callable[[ZimPath], None],
+        notify_js_module: Callable[[ZimPath], None] | None,
     ):
         super().__init__(convert_charrefs=False)
         self.url_rewriter = url_rewriter
@@ -430,7 +430,7 @@ class HTMLRewritingRules:
         css_rewriter: CssRewriter,
         url_rewriter: ArticleUrlRewriter,
         base_href: str | None,
-        notify_js_module: Callable[[ZimPath], None],
+        notify_js_module: Callable[[ZimPath], None] | None,
     ) -> AttrNameAndValue:
         """Utility function to process all attribute rewriting rules
 
@@ -587,7 +587,7 @@ def rewrite_href_src_attributes(
     attrs: AttrsList,
     url_rewriter: ArticleUrlRewriter,
     base_href: str | None,
-    notify_js_module: Callable[[ZimPath], None],
+    notify_js_module: Callable[[ZimPath], None] | None,
 ):
     """Rewrite href and src attributes
 
@@ -596,11 +596,16 @@ def rewrite_href_src_attributes(
     """
     if attr_name not in ("href", "src") or not attr_value:
         return
-    if get_html_rewrite_context(tag=tag, attrs=attrs) == "js-module":
+    if (
+        notify_js_module
+        and get_html_rewrite_context(tag=tag, attrs=attrs) == "js-module"
+    ):
         notify_js_module(url_rewriter.get_item_path(attr_value, base_href=base_href))
     return (
         attr_name,
-        url_rewriter(attr_value, base_href=base_href, rewrite_all_url=tag != "a"),
+        url_rewriter(
+            attr_value, base_href=base_href, rewrite_all_url=tag != "a"
+        ).rewriten_url,
     )
 
 
@@ -615,10 +620,10 @@ def rewrite_srcset_attribute(
     if attr_name != "srcset" or not attr_value:
         return
     value_list = attr_value.split(",")
-    new_value_list = []
+    new_value_list: list[str] = []
     for value in value_list:
         url, *other = value.strip().split(" ", maxsplit=1)
-        new_url = url_rewriter(url, base_href=base_href)
+        new_url = url_rewriter(url, base_href=base_href).rewriten_url
         new_value = " ".join([new_url, *other])
         new_value_list.append(new_value)
     return (attr_name, ", ".join(new_value_list))
@@ -708,5 +713,6 @@ def rewrite_meta_http_equiv_redirect(
         return
     return (
         attr_name,
-        f"{match['interval']};url={url_rewriter(match['url'], base_href=base_href)}",
+        f"{match['interval']};"
+        f"url={url_rewriter(match['url'], base_href=base_href).rewriten_url}",
     )

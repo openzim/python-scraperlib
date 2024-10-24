@@ -3,6 +3,7 @@ import pytest
 from zimscraperlib.rewriting.url_rewriting import (
     ArticleUrlRewriter,
     HttpUrl,
+    RewriteResult,
     ZimPath,
 )
 
@@ -147,237 +148,372 @@ class TestArticleUrlRewriter:
         assert missing_zim_paths == expected_missing_zim_paths
 
     @pytest.mark.parametrize(
-        "article_url, original_content_url, expected_rewriten_content_url, know_paths, "
+        "article_url, original_content_url, expected_rewrite_result, know_paths, "
         "rewrite_all_url",
         [
             (
                 "https://kiwix.org/a/article/document.html",
                 "foo.html",
-                "foo.html",
+                RewriteResult(
+                    "https://kiwix.org/a/article/foo.html",
+                    "foo.html",
+                    ZimPath("kiwix.org/a/article/foo.html"),
+                ),
                 ["kiwix.org/a/article/foo.html"],
                 False,
             ),
             (
                 "https://kiwix.org/a/article/document.html",
                 "foo.html#anchor1",
-                "foo.html#anchor1",
+                RewriteResult(
+                    "https://kiwix.org/a/article/foo.html#anchor1",
+                    "foo.html#anchor1",
+                    ZimPath("kiwix.org/a/article/foo.html"),
+                ),
                 ["kiwix.org/a/article/foo.html"],
                 False,
             ),
             (
                 "https://kiwix.org/a/article/document.html",
                 "foo.html?foo=bar",
-                "foo.html%3Ffoo%3Dbar",
+                RewriteResult(
+                    "https://kiwix.org/a/article/foo.html?foo=bar",
+                    "foo.html%3Ffoo%3Dbar",
+                    ZimPath("kiwix.org/a/article/foo.html?foo=bar"),
+                ),
                 ["kiwix.org/a/article/foo.html?foo=bar"],
                 False,
             ),
             (
                 "https://kiwix.org/a/article/document.html",
                 "foo.html?foo=b%24ar",
-                "foo.html%3Ffoo%3Db%24ar",
+                RewriteResult(
+                    "https://kiwix.org/a/article/foo.html?foo=b%24ar",
+                    "foo.html%3Ffoo%3Db%24ar",
+                    ZimPath("kiwix.org/a/article/foo.html?foo=b$ar"),
+                ),
                 ["kiwix.org/a/article/foo.html?foo=b$ar"],
                 False,
             ),
             (
                 "https://kiwix.org/a/article/document.html",
                 "foo.html?foo=b%3Far",  # a query string with an encoded ? char in value
-                "foo.html%3Ffoo%3Db%3Far",
+                RewriteResult(
+                    "https://kiwix.org/a/article/foo.html?foo=b%3Far",
+                    "foo.html%3Ffoo%3Db%3Far",
+                    ZimPath("kiwix.org/a/article/foo.html?foo=b?ar"),
+                ),
                 ["kiwix.org/a/article/foo.html?foo=b?ar"],
                 False,
             ),
             (
                 "https://kiwix.org/a/article/document.html",
                 "fo%o.html",
-                "fo%25o.html",
+                RewriteResult(
+                    "https://kiwix.org/a/article/fo%o.html",
+                    "fo%25o.html",
+                    ZimPath("kiwix.org/a/article/fo%o.html"),
+                ),
                 ["kiwix.org/a/article/fo%o.html"],
                 False,
             ),
             (
                 "https://kiwix.org/a/article/document.html",
                 "foé.html",  # URL not matching RFC 3986 (found in invalid HTML doc)
-                "fo%C3%A9.html",  # character is encoded so that URL match RFC 3986
-                ["kiwix.org/a/article/foé.html"],  # but ZIM path is non-encoded
+                RewriteResult(
+                    "https://kiwix.org/a/article/foé.html",
+                    "fo%C3%A9.html",  # character is encoded so that URL match RFC 3986
+                    ZimPath(
+                        "kiwix.org/a/article/foé.html"
+                    ),  # but ZIM path is non-encoded
+                ),
+                ["kiwix.org/a/article/foé.html"],
                 False,
             ),
             (
                 "https://kiwix.org/a/article/document.html",
                 "./foo.html",
-                "foo.html",
+                RewriteResult(
+                    "https://kiwix.org/a/article/foo.html",
+                    "foo.html",
+                    ZimPath("kiwix.org/a/article/foo.html"),
+                ),
                 ["kiwix.org/a/article/foo.html"],
                 False,
             ),
             (
                 "https://kiwix.org/a/article/document.html",
                 "../foo.html",
-                "https://kiwix.org/a/foo.html",  # Full URL since not in known URLs
+                RewriteResult(
+                    "https://kiwix.org/a/foo.html",
+                    "https://kiwix.org/a/foo.html",  # Full URL since not in known URLs
+                    ZimPath("kiwix.org/a/foo.html"),
+                ),
                 ["kiwix.org/a/article/foo.html"],
                 False,
             ),
             (
                 "https://kiwix.org/a/article/document.html",
                 "../foo.html",
-                "../foo.html",  # all URLs rewrite activated
+                RewriteResult(
+                    "https://kiwix.org/a/foo.html",
+                    "../foo.html",  # all URLs rewrite activated
+                    ZimPath("kiwix.org/a/foo.html"),
+                ),
                 ["kiwix.org/a/article/foo.html"],
                 True,
             ),
             (
                 "https://kiwix.org/a/article/document.html",
                 "../foo.html",
-                "../foo.html",
+                RewriteResult(
+                    "https://kiwix.org/a/foo.html",
+                    "../foo.html",
+                    ZimPath("kiwix.org/a/foo.html"),
+                ),
                 ["kiwix.org/a/foo.html"],
                 False,
             ),
             (
                 "https://kiwix.org/a/article/document.html",
                 "../bar/foo.html",
-                "https://kiwix.org/a/bar/foo.html",  # Full URL since not in known URLs
+                RewriteResult(
+                    "https://kiwix.org/a/bar/foo.html",
+                    "https://kiwix.org/a/bar/foo.html",  # Full URL since not in known
+                    # URLs
+                    ZimPath("kiwix.org/a/bar/foo.html"),
+                ),
                 ["kiwix.org/a/article/foo.html"],
                 False,
             ),
             (
                 "https://kiwix.org/a/article/document.html",
                 "../bar/foo.html",
-                "../bar/foo.html",  # all URLs rewrite activated
+                RewriteResult(
+                    "https://kiwix.org/a/bar/foo.html",
+                    "../bar/foo.html",  # all URLs rewrite activated
+                    ZimPath("kiwix.org/a/bar/foo.html"),
+                ),
                 ["kiwix.org/a/article/foo.html"],
                 True,
             ),
             (
                 "https://kiwix.org/a/article/document.html",
                 "../bar/foo.html",
-                "../bar/foo.html",
+                RewriteResult(
+                    "https://kiwix.org/a/bar/foo.html",
+                    "../bar/foo.html",
+                    ZimPath("kiwix.org/a/bar/foo.html"),
+                ),
                 ["kiwix.org/a/bar/foo.html"],
                 False,
             ),
             (  # we cannot go upper than host, so '../' in excess are removed
                 "https://kiwix.org/a/article/document.html",
                 "../../../../../foo.html",
-                "../../foo.html",
+                RewriteResult(
+                    "https://kiwix.org/foo.html",
+                    "../../foo.html",
+                    ZimPath("kiwix.org/foo.html"),
+                ),
                 ["kiwix.org/foo.html"],
                 False,
             ),
             (
                 "https://kiwix.org/a/article/document.html",
                 "foo?param=value",
-                "foo%3Fparam%3Dvalue",
+                RewriteResult(
+                    "https://kiwix.org/a/article/foo?param=value",
+                    "foo%3Fparam%3Dvalue",
+                    ZimPath("kiwix.org/a/article/foo?param=value"),
+                ),
                 ["kiwix.org/a/article/foo?param=value"],
                 False,
             ),
             (
                 "https://kiwix.org/a/article/document.html",
                 "foo?param=value%2F",
-                "foo%3Fparam%3Dvalue/",
+                RewriteResult(
+                    "https://kiwix.org/a/article/foo?param=value%2F",
+                    "foo%3Fparam%3Dvalue/",
+                    ZimPath("kiwix.org/a/article/foo?param=value/"),
+                ),
                 ["kiwix.org/a/article/foo?param=value/"],
                 False,
             ),
             (
                 "https://kiwix.org/a/article/document.html",
                 "foo?param=value%2Fend",
-                "foo%3Fparam%3Dvalue/end",
+                RewriteResult(
+                    "https://kiwix.org/a/article/foo?param=value%2Fend",
+                    "foo%3Fparam%3Dvalue/end",
+                    ZimPath("kiwix.org/a/article/foo?param=value/end"),
+                ),
                 ["kiwix.org/a/article/foo?param=value/end"],
                 False,
             ),
             (
                 "https://kiwix.org/a/article/document.html",
                 "foo/",
-                "foo/",
+                RewriteResult(
+                    "https://kiwix.org/a/article/foo/",
+                    "foo/",
+                    ZimPath("kiwix.org/a/article/foo/"),
+                ),
                 ["kiwix.org/a/article/foo/"],
                 False,
             ),
             (
                 "https://kiwix.org/a/article/document.html",
                 "/fo o.html",
-                "../../fo%20o.html",
+                RewriteResult(
+                    "https://kiwix.org/fo o.html",
+                    "../../fo%20o.html",
+                    ZimPath("kiwix.org/fo o.html"),
+                ),
                 ["kiwix.org/fo o.html"],
                 False,
             ),
             (
                 "https://kiwix.org/a/article/document.html",
                 "/fo+o.html",
-                "../../fo%2Bo.html",
+                RewriteResult(
+                    "https://kiwix.org/fo+o.html",
+                    "../../fo%2Bo.html",
+                    ZimPath("kiwix.org/fo+o.html"),
+                ),
                 ["kiwix.org/fo+o.html"],
                 False,
             ),
             (
                 "https://kiwix.org/a/article/document.html",
                 "/fo%2Bo.html",
-                "../../fo%2Bo.html",
+                RewriteResult(
+                    "https://kiwix.org/fo%2Bo.html",
+                    "../../fo%2Bo.html",
+                    ZimPath("kiwix.org/fo+o.html"),
+                ),
                 ["kiwix.org/fo+o.html"],
                 False,
             ),
             (
                 "https://kiwix.org/a/article/document.html",
                 "/foo.html?param=val+ue",
-                "../../foo.html%3Fparam%3Dval%20ue",
+                RewriteResult(
+                    "https://kiwix.org/foo.html?param=val+ue",
+                    "../../foo.html%3Fparam%3Dval%20ue",
+                    ZimPath("kiwix.org/foo.html?param=val ue"),
+                ),
                 ["kiwix.org/foo.html?param=val ue"],
                 False,
             ),
             (
                 "https://kiwix.org/a/article/document.html",
                 "/fo~o.html",
-                "../../fo~o.html",
+                RewriteResult(
+                    "https://kiwix.org/fo~o.html",
+                    "../../fo~o.html",
+                    ZimPath("kiwix.org/fo~o.html"),
+                ),
                 ["kiwix.org/fo~o.html"],
                 False,
             ),
             (
                 "https://kiwix.org/a/article/document.html",
                 "/fo-o.html",
-                "../../fo-o.html",
+                RewriteResult(
+                    "https://kiwix.org/fo-o.html",
+                    "../../fo-o.html",
+                    ZimPath("kiwix.org/fo-o.html"),
+                ),
                 ["kiwix.org/fo-o.html"],
                 False,
             ),
             (
                 "https://kiwix.org/a/article/document.html",
                 "/fo_o.html",
-                "../../fo_o.html",
+                RewriteResult(
+                    "https://kiwix.org/fo_o.html",
+                    "../../fo_o.html",
+                    ZimPath("kiwix.org/fo_o.html"),
+                ),
                 ["kiwix.org/fo_o.html"],
                 False,
             ),
             (
                 "https://kiwix.org/a/article/document.html",
                 "/fo%7Eo.html",  # must not be encoded / must be decoded (RFC 3986 #2.3)
-                "../../fo~o.html",
+                RewriteResult(
+                    "https://kiwix.org/fo%7Eo.html",
+                    "../../fo~o.html",
+                    ZimPath("kiwix.org/fo~o.html"),
+                ),
                 ["kiwix.org/fo~o.html"],
                 False,
             ),
             (
                 "https://kiwix.org/a/article/document.html",
                 "/fo%2Do.html",  # must not be encoded / must be decoded (RFC 3986 #2.3)
-                "../../fo-o.html",
+                RewriteResult(
+                    "https://kiwix.org/fo%2Do.html",
+                    "../../fo-o.html",
+                    ZimPath("kiwix.org/fo-o.html"),
+                ),
                 ["kiwix.org/fo-o.html"],
                 False,
             ),
             (
                 "https://kiwix.org/a/article/document.html",
                 "/fo%5Fo.html",  # must not be encoded / must be decoded (RFC 3986 #2.3)
-                "../../fo_o.html",
+                RewriteResult(
+                    "https://kiwix.org/fo%5Fo.html",
+                    "../../fo_o.html",
+                    ZimPath("kiwix.org/fo_o.html"),
+                ),
                 ["kiwix.org/fo_o.html"],
                 False,
             ),
             (
                 "https://kiwix.org/a/article/document.html",
                 "/foo%2Ehtml",  # must not be encoded / must be decoded (RFC 3986 #2.3)
-                "../../foo.html",
+                RewriteResult(
+                    "https://kiwix.org/foo%2Ehtml",
+                    "../../foo.html",
+                    ZimPath("kiwix.org/foo.html"),
+                ),
                 ["kiwix.org/foo.html"],
                 False,
             ),
             (
                 "https://kiwix.org/a/article/document.html",
                 "#anchor1",
-                "#anchor1",
+                RewriteResult(
+                    "https://kiwix.org/a/article/document.html#anchor1",
+                    "#anchor1",
+                    None,
+                ),
                 ["kiwix.org/a/article/document.html"],
                 False,
             ),
             (
                 "https://kiwix.org/a/article/",
                 "#anchor1",
-                "#anchor1",
+                RewriteResult(
+                    "https://kiwix.org/a/article/#anchor1",
+                    "#anchor1",
+                    None,
+                ),
                 ["kiwix.org/a/article/"],
                 False,
             ),
             (
                 "https://kiwix.org/a/article/",
                 "../article/",
-                "./",
+                RewriteResult(
+                    "https://kiwix.org/a/article/",
+                    "./",
+                    ZimPath("kiwix.org/a/article/"),
+                ),
                 ["kiwix.org/a/article/"],
                 False,
             ),
@@ -388,7 +524,7 @@ class TestArticleUrlRewriter:
         article_url: str,
         know_paths: list[str],
         original_content_url: str,
-        expected_rewriten_content_url: str,
+        expected_rewrite_result: RewriteResult,
         *,
         rewrite_all_url: bool,
     ):
@@ -401,31 +537,43 @@ class TestArticleUrlRewriter:
             rewriter(
                 original_content_url, base_href=None, rewrite_all_url=rewrite_all_url
             )
-            == expected_rewriten_content_url
+            == expected_rewrite_result
         )
 
     @pytest.mark.parametrize(
-        "article_url, original_content_url, expected_rewriten_content_url, know_paths, "
+        "article_url, original_content_url, expected_rewrite_result, know_paths, "
         "rewrite_all_url",
         [
             (
                 "https://kiwix.org/a/article/document.html",
                 "/foo.html",
-                "../../foo.html",
+                RewriteResult(
+                    "https://kiwix.org/foo.html",
+                    "../../foo.html",
+                    ZimPath("kiwix.org/foo.html"),
+                ),
                 ["kiwix.org/foo.html"],
                 False,
             ),
             (
                 "https://kiwix.org/a/article/document.html",
                 "/bar.html",
-                "https://kiwix.org/bar.html",  # Full URL since not in known URLs
+                RewriteResult(
+                    "https://kiwix.org/bar.html",
+                    "https://kiwix.org/bar.html",  # Full URL since not in known URLs
+                    ZimPath("kiwix.org/bar.html"),
+                ),
                 ["kiwix.org/foo.html"],
                 False,
             ),
             (
                 "https://kiwix.org/a/article/document.html",
                 "/bar.html",
-                "../../bar.html",  # all URLs rewrite activated
+                RewriteResult(
+                    "https://kiwix.org/bar.html",
+                    "../../bar.html",  # all URLs rewrite activated
+                    ZimPath("kiwix.org/bar.html"),
+                ),
                 ["kiwix.org/foo.html"],
                 True,
             ),
@@ -436,7 +584,7 @@ class TestArticleUrlRewriter:
         article_url: str,
         know_paths: list[str],
         original_content_url: str,
-        expected_rewriten_content_url: str,
+        expected_rewrite_result: RewriteResult,
         *,
         rewrite_all_url: bool,
     ):
@@ -449,66 +597,98 @@ class TestArticleUrlRewriter:
             rewriter(
                 original_content_url, base_href=None, rewrite_all_url=rewrite_all_url
             )
-            == expected_rewriten_content_url
+            == expected_rewrite_result
         )
 
     @pytest.mark.parametrize(
-        "article_url, original_content_url, expected_rewriten_content_url, know_paths, "
+        "article_url, original_content_url, expected_rewrite_result, know_paths, "
         "rewrite_all_url",
         [
             (
                 "https://kiwix.org/a/article/document.html",
                 "//kiwix.org/foo.html",
-                "../../foo.html",
+                RewriteResult(
+                    "https://kiwix.org/foo.html",
+                    "../../foo.html",
+                    ZimPath("kiwix.org/foo.html"),
+                ),
                 ["kiwix.org/foo.html"],
                 False,
             ),
             (
                 "https://kiwix.org/a/article/document.html",
                 "//kiwix.org/bar.html",
-                "https://kiwix.org/bar.html",  # Full URL since not in known URLs
+                RewriteResult(
+                    "https://kiwix.org/bar.html",
+                    "https://kiwix.org/bar.html",  # Full URL since not in known URLs
+                    ZimPath("kiwix.org/bar.html"),
+                ),
                 ["kiwix.org/foo.html"],
                 False,
             ),
             (
                 "https://kiwix.org/a/article/document.html",
                 "//kiwix.org/bar.html",
-                "../../bar.html",  # all URLs rewrite activated
+                RewriteResult(
+                    "https://kiwix.org/bar.html",
+                    "../../bar.html",  # all URLs rewrite activated
+                    ZimPath("kiwix.org/bar.html"),
+                ),
                 ["kiwix.org/foo.html"],
                 True,
             ),
             (
                 "https://kiwix.org/a/article/document.html",
                 "//acme.com/foo.html",
-                "../../../acme.com/foo.html",
+                RewriteResult(
+                    "https://acme.com/foo.html",
+                    "../../../acme.com/foo.html",
+                    ZimPath("acme.com/foo.html"),
+                ),
                 ["acme.com/foo.html"],
                 False,
             ),
             (
                 "http://kiwix.org/a/article/document.html",
                 "//acme.com/bar.html",
-                "http://acme.com/bar.html",  # Full URL since not in known URLs
+                RewriteResult(
+                    "http://acme.com/bar.html",
+                    "http://acme.com/bar.html",  # Full URL since not in known URLs
+                    ZimPath("acme.com/bar.html"),
+                ),
                 ["kiwix.org/foo.html"],
                 False,
             ),
             (
                 "https://kiwix.org/a/article/document.html",
                 "//acme.com/bar.html",
-                "../../../acme.com/bar.html",  # all URLs rewrite activated
+                RewriteResult(
+                    "https://acme.com/bar.html",
+                    "../../../acme.com/bar.html",  # all URLs rewrite activated
+                    ZimPath("acme.com/bar.html"),
+                ),
                 ["kiwix.org/foo.html"],
                 True,
             ),
             (  # puny-encoded host is transformed into url-encoded value
                 "https://kiwix.org/a/article/document.html",
                 "//xn--exmple-cva.com/a/article/document.html",
-                "../../../ex%C3%A9mple.com/a/article/document.html",
+                RewriteResult(
+                    "https://xn--exmple-cva.com/a/article/document.html",
+                    "../../../ex%C3%A9mple.com/a/article/document.html",
+                    ZimPath("exémple.com/a/article/document.html"),
+                ),
                 ["exémple.com/a/article/document.html"],
                 False,
             ),
             (  # host who should be puny-encoded ir transformed into url-encoded value
                 "https://kiwix.org/a/article/document.html",
                 "//exémple.com/a/article/document.html",
-                "../../../ex%C3%A9mple.com/a/article/document.html",
+                RewriteResult(
+                    "https://exémple.com/a/article/document.html",
+                    "../../../ex%C3%A9mple.com/a/article/document.html",
+                    ZimPath("exémple.com/a/article/document.html"),
+                ),
                 ["exémple.com/a/article/document.html"],
                 False,
             ),
@@ -519,7 +699,7 @@ class TestArticleUrlRewriter:
         article_url: str,
         know_paths: list[str],
         original_content_url: str,
-        expected_rewriten_content_url: str,
+        expected_rewrite_result: RewriteResult,
         *,
         rewrite_all_url: bool,
     ):
@@ -532,68 +712,109 @@ class TestArticleUrlRewriter:
             rewriter(
                 original_content_url, base_href=None, rewrite_all_url=rewrite_all_url
             )
-            == expected_rewriten_content_url
+            == expected_rewrite_result
         )
 
     @pytest.mark.parametrize(
-        "article_url, original_content_url, expected_rewriten_content_url, know_paths, "
+        "article_url, original_content_url, expected_rewriten_result, know_paths, "
         "rewrite_all_url",
         [
-            (
+            pytest.param(
                 "https://kiwix.org/a/article/document.html",
                 "https://foo.org/a/article/document.html",
-                "../../../foo.org/a/article/document.html",
+                RewriteResult(
+                    "https://foo.org/a/article/document.html",
+                    "../../../foo.org/a/article/document.html",
+                    ZimPath("foo.org/a/article/document.html"),
+                ),
                 ["foo.org/a/article/document.html"],
                 False,
+                id="simple",
             ),
-            (
+            pytest.param(
                 "https://kiwix.org/a/article/document.html",
                 "http://foo.org/a/article/document.html",
-                "../../../foo.org/a/article/document.html",
+                RewriteResult(
+                    "http://foo.org/a/article/document.html",
+                    "../../../foo.org/a/article/document.html",
+                    ZimPath("foo.org/a/article/document.html"),
+                ),
                 ["foo.org/a/article/document.html"],
                 False,
+                id="http_https",
             ),
-            (
+            pytest.param(
                 "http://kiwix.org/a/article/document.html",
                 "https://foo.org/a/article/document.html",
-                "../../../foo.org/a/article/document.html",
+                RewriteResult(
+                    "https://foo.org/a/article/document.html",
+                    "../../../foo.org/a/article/document.html",
+                    ZimPath("foo.org/a/article/document.html"),
+                ),
                 ["foo.org/a/article/document.html"],
                 False,
+                id="https_http",
             ),
-            (
+            pytest.param(
                 "http://kiwix.org/a/article/document.html",
                 "https://user:password@foo.org:8080/a/article/document.html",
-                "../../../foo.org/a/article/document.html",
+                RewriteResult(
+                    "https://user:password@foo.org:8080/a/article/document.html",
+                    "../../../foo.org/a/article/document.html",
+                    ZimPath("foo.org/a/article/document.html"),
+                ),
                 ["foo.org/a/article/document.html"],
                 False,
+                id="user_pass",
             ),
-            (  # Full URL since not in known URLs
+            pytest.param(  # Full URL since not in known URLs
                 "https://kiwix.org/a/article/document.html",
                 "https://foo.org/a/article/document.html",
-                "https://foo.org/a/article/document.html",
+                RewriteResult(
+                    "https://foo.org/a/article/document.html",
+                    "https://foo.org/a/article/document.html",
+                    ZimPath("foo.org/a/article/document.html"),
+                ),
                 ["kiwix.org/a/article/foo/"],
                 False,
+                id="not_known",
             ),
-            (  # all URLs rewrite activated
+            pytest.param(  # all URLs rewrite activated
                 "https://kiwix.org/a/article/document.html",
                 "https://foo.org/a/article/document.html",
-                "../../../foo.org/a/article/document.html",
+                RewriteResult(
+                    "https://foo.org/a/article/document.html",
+                    "../../../foo.org/a/article/document.html",
+                    ZimPath("foo.org/a/article/document.html"),
+                ),
                 ["kiwix.org/a/article/foo/"],
                 True,
+                id="not_known_rewrite_all",
             ),
-            (  # puny-encoded host is transformed into url-encoded value
+            pytest.param(  # puny-encoded host is transformed into url-encoded value
                 "https://kiwix.org/a/article/document.html",
                 "https://xn--exmple-cva.com/a/article/document.html",
-                "../../../ex%C3%A9mple.com/a/article/document.html",
+                RewriteResult(
+                    "https://xn--exmple-cva.com/a/article/document.html",
+                    "../../../ex%C3%A9mple.com/a/article/document.html",
+                    ZimPath("exémple.com/a/article/document.html"),
+                ),
                 ["exémple.com/a/article/document.html"],
                 False,
+                id="punny_encoded",
             ),
-            (  # host who should be puny-encoded is transformed into url-encoded value
+            pytest.param(  # host who should be puny-encoded is transformed into
+                # url-encoded value
                 "https://kiwix.org/a/article/document.html",
                 "https://exémple.com/a/article/document.html",
-                "../../../ex%C3%A9mple.com/a/article/document.html",
+                RewriteResult(
+                    "https://exémple.com/a/article/document.html",
+                    "../../../ex%C3%A9mple.com/a/article/document.html",
+                    ZimPath("exémple.com/a/article/document.html"),
+                ),
                 ["exémple.com/a/article/document.html"],
                 False,
+                id="should_be_punny_encoded",
             ),
         ],
     )
@@ -602,7 +823,7 @@ class TestArticleUrlRewriter:
         article_url: str,
         know_paths: list[str],
         original_content_url: str,
-        expected_rewriten_content_url: str,
+        expected_rewriten_result: RewriteResult,
         *,
         rewrite_all_url: bool,
     ):
@@ -615,7 +836,7 @@ class TestArticleUrlRewriter:
             rewriter(
                 original_content_url, base_href=None, rewrite_all_url=rewrite_all_url
             )
-            == expected_rewriten_content_url
+            == expected_rewriten_result
         )
 
     @pytest.mark.parametrize(
@@ -637,42 +858,55 @@ class TestArticleUrlRewriter:
     ):
         article_url = HttpUrl("https://kiwix.org/a/article/document.html")
         rewriter = ArticleUrlRewriter(article_url=article_url)
-        assert (
-            rewriter(
-                original_content_url, base_href=None, rewrite_all_url=rewrite_all_url
-            )
-            == original_content_url
-        )
+        assert rewriter(
+            original_content_url, base_href=None, rewrite_all_url=rewrite_all_url
+        ) == RewriteResult(original_content_url, original_content_url, None)
 
     @pytest.mark.parametrize(
-        "original_content_url, know_path, base_href, expected_rewriten_content_url",
+        "original_content_url, know_path, base_href, expected_rewriten_result",
         [
             pytest.param(
                 "foo.html",
                 "kiwix.org/a/article/foo.html",
                 None,
-                "foo.html",
+                RewriteResult(
+                    "https://kiwix.org/a/article/foo.html",
+                    "foo.html",
+                    ZimPath("kiwix.org/a/article/foo.html"),
+                ),
                 id="no_base",
             ),
             pytest.param(
                 "foo.html",
                 "kiwix.org/a/foo.html",
                 "../",
-                "../foo.html",
+                RewriteResult(
+                    "https://kiwix.org/a/foo.html",
+                    "../foo.html",
+                    ZimPath("kiwix.org/a/foo.html"),
+                ),
                 id="parent_base",
             ),
             pytest.param(
                 "foo.html",
                 "kiwix.org/a/bar/foo.html",
                 "../bar/",
-                "../bar/foo.html",
+                RewriteResult(
+                    "https://kiwix.org/a/bar/foo.html",
+                    "../bar/foo.html",
+                    ZimPath("kiwix.org/a/bar/foo.html"),
+                ),
                 id="base_in_another_folder",
             ),
             pytest.param(
                 "foo.html",
                 "www.example.com/foo.html",
                 "https://www.example.com/",
-                "../../../www.example.com/foo.html",
+                RewriteResult(
+                    "https://www.example.com/foo.html",
+                    "../../../www.example.com/foo.html",
+                    ZimPath("www.example.com/foo.html"),
+                ),
                 id="base_on_absolute_url",
             ),
         ],
@@ -682,7 +916,7 @@ class TestArticleUrlRewriter:
         original_content_url: str,
         know_path: str,
         base_href: str,
-        expected_rewriten_content_url: str,
+        expected_rewriten_result: str,
     ):
         rewriter = ArticleUrlRewriter(
             article_url=HttpUrl("https://kiwix.org/a/article/document.html"),
@@ -690,8 +924,71 @@ class TestArticleUrlRewriter:
         )
         assert (
             rewriter(original_content_url, base_href=base_href, rewrite_all_url=False)
-            == expected_rewriten_content_url
+            == expected_rewriten_result
         )
+
+
+class CustomRewriter(ArticleUrlRewriter):
+    """Sample class using the rewriting result to process items to download
+
+    This mimic this typical usage by mindtouch scraper so that we check this is still
+    working as expected since it is the only usage so far of this information
+    """
+
+    def __init__(
+        self,
+        *,
+        article_url: HttpUrl,
+        article_path: ZimPath | None = None,
+        existing_zim_paths: set[ZimPath] | None = None,
+        missing_zim_paths: set[ZimPath] | None = None,
+    ):
+        super().__init__(
+            article_url=article_url,
+            article_path=article_path,
+            existing_zim_paths=existing_zim_paths,
+            missing_zim_paths=missing_zim_paths,
+        )
+        self.items_to_download: dict[ZimPath, set[HttpUrl]] = {}
+
+    def __call__(
+        self, item_url: str, base_href: str | None, *, rewrite_all_url: bool = True
+    ) -> RewriteResult:
+        result = super().__call__(item_url, base_href, rewrite_all_url=rewrite_all_url)
+        if result.zim_path is None:
+            return result
+        if self.existing_zim_paths and result.zim_path not in self.existing_zim_paths:
+            return result
+        if result.zim_path in self.items_to_download:
+            self.items_to_download[result.zim_path].add(HttpUrl(result.absolute_url))
+        else:
+            self.items_to_download[result.zim_path] = {HttpUrl(result.absolute_url)}
+        return result
+
+
+class TestCustomRewriter:
+
+    def test_items_to_download(self):
+        rewriter = CustomRewriter(
+            article_url=HttpUrl("https://kiwix.org/a/article/document.html"),
+            existing_zim_paths={
+                ZimPath("kiwix.org/a/article/foo.html"),
+                ZimPath("kiwix.org/a/article/bar.html"),
+            },
+        )
+        rewriter("foo.html#anchor1", base_href=None, rewrite_all_url=False)
+        rewriter("foo.html#anchor2", base_href=None, rewrite_all_url=False)
+        rewriter("bar.html", base_href=None, rewrite_all_url=False)
+        rewriter("missing.html", base_href=None, rewrite_all_url=False)
+        assert rewriter.items_to_download == {
+            ZimPath("kiwix.org/a/article/foo.html"): {
+                HttpUrl("https://kiwix.org/a/article/foo.html#anchor1"),
+                HttpUrl("https://kiwix.org/a/article/foo.html#anchor2"),
+            },
+            ZimPath("kiwix.org/a/article/bar.html"): {
+                HttpUrl("https://kiwix.org/a/article/bar.html")
+            },
+        }
 
 
 class TestHttpUrl:

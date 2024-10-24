@@ -14,13 +14,12 @@ from .utils import ContentForTests
 
 @pytest.fixture
 def simple_js_rewriter(
-    simple_url_rewriter_gen: Callable[[str], ArticleUrlRewriter],
-    no_js_notify: Callable[[ZimPath], None],
+    simple_url_rewriter_gen: Callable[[str], ArticleUrlRewriter]
 ) -> JsRewriter:
     return JsRewriter(
         url_rewriter=simple_url_rewriter_gen("http://www.example.com"),
         base_href=None,
-        notify_js_module=no_js_notify,
+        notify_js_module=None,
     )
 
 
@@ -307,15 +306,13 @@ def rewrite_import_content(request: pytest.FixtureRequest):
     yield request.param
 
 
-def test_import_rewrite(
-    no_js_notify: Callable[[ZimPath], None], rewrite_import_content: ImportTestContent
-):
+def test_import_rewrite(rewrite_import_content: ImportTestContent):
     url_rewriter = ArticleUrlRewriter(
         article_url=HttpUrl(rewrite_import_content.article_url)
     )
     assert (
         JsRewriter(
-            url_rewriter=url_rewriter, base_href=None, notify_js_module=no_js_notify
+            url_rewriter=url_rewriter, base_href=None, notify_js_module=None
         ).rewrite(rewrite_import_content.input_str, opts={"isModule": True})
         == rewrite_import_content.expected_str
     )
