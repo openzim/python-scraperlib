@@ -82,7 +82,7 @@ class HttpUrl:
         return f"HttpUrl({self.value})"
 
     def __repr__(self) -> str:
-        return f"{self.__str__} - {super().__repr__()}"  # pragma: no cover
+        return f"HttpUrl({self.value})"  # pragma: no cover
 
     @property
     def value(self) -> str:
@@ -124,7 +124,7 @@ class ZimPath:
         return f"ZimPath({self.value})"
 
     def __repr__(self) -> str:
-        return f"{self.__str__} - {super().__repr__()}"  # pragma: no cover
+        return f"ZimPath({self.value})"  # pragma: no cover
 
     @property
     def value(self) -> str:
