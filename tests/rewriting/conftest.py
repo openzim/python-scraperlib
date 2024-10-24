@@ -7,6 +7,7 @@ from zimscraperlib.rewriting.js import JsRewriter
 from zimscraperlib.rewriting.url_rewriting import (
     ArticleUrlRewriter,
     HttpUrl,
+    RewriteResult,
     ZimPath,
 )
 
@@ -24,8 +25,12 @@ class SimpleUrlRewriter(ArticleUrlRewriter):
         base_href: str | None,  # noqa: ARG002
         *,
         rewrite_all_url: bool = True,  # noqa: ARG002
-    ) -> str:
-        return item_url + self.suffix
+    ) -> RewriteResult:
+        return RewriteResult(
+            absolute_url=item_url + self.suffix,
+            rewriten_url=item_url + self.suffix,
+            zim_path=None,
+        )
 
     def get_item_path(
         self, item_url: str, base_href: str | None  # noqa: ARG002

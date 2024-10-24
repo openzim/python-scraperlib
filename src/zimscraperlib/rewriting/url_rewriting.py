@@ -147,6 +147,12 @@ class ZimPath:
             raise ValueError(f"Unexpected password in value: {value} {parts.password}")
 
 
+class RewriteResult(NamedTuple):
+    absolute_url: str
+    rewriten_url: str
+    zim_path: ZimPath | None
+
+
 class ArticleUrlRewriter:
     """
     Rewrite urls in article.
@@ -176,16 +182,11 @@ class ArticleUrlRewriter:
           missing_zim_paths: list of ZIM paths which are known to already be missing
         from the existing_zim_paths ; usefull only in complement with this variable ;
         new missing entries will be added as URLs are normalized in this function
-
-        Results:
-          items_to_download: populated with the list of rewritten URLs, so that one
-        might use it to download items after rewriting the document
         """
         self.article_path = article_path or ArticleUrlRewriter.normalize(article_url)
         self.article_url = article_url
         self.existing_zim_paths = existing_zim_paths
         self.missing_zim_paths = missing_zim_paths
-        self.items_to_download: dict[ZimPath, HttpUrl] = {}
 
     def get_item_path(self, item_url: str, base_href: str | None) -> ZimPath:
         """Utility to transform an item URL into a ZimPath"""
@@ -201,7 +202,7 @@ class ArticleUrlRewriter:
         base_href: str | None,
         *,
         rewrite_all_url: bool = True,
-    ) -> str:
+    ) -> RewriteResult:
         """Rewrite a url contained in a article.
 
         The url is "fully" rewrited to point to a normalized entry path
@@ -210,17 +211,25 @@ class ArticleUrlRewriter:
         try:
             item_url = item_url.strip()
 
-            # Make case of standalone fragments more straightforward
-            if item_url.startswith("#"):
-                return item_url
-
-            item_scheme = urlsplit(item_url).scheme
-            if item_scheme and item_scheme not in ("http", "https"):
-                return item_url
-
             item_absolute_url = urljoin(
                 urljoin(self.article_url.value, base_href), item_url
             )
+
+            # Make case of standalone fragments more straightforward
+            if item_url.startswith("#"):
+                return RewriteResult(
+                    absolute_url=item_absolute_url,
+                    rewriten_url=item_url,
+                    zim_path=None,
+                )
+
+            item_scheme = urlsplit(item_url).scheme
+            if item_scheme and item_scheme not in ("http", "https"):
+                return RewriteResult(
+                    absolute_url=item_absolute_url,
+                    rewriten_url=item_url,
+                    zim_path=None,
+                )
 
             item_fragment = urlsplit(item_absolute_url).fragment
 
@@ -229,9 +238,11 @@ class ArticleUrlRewriter:
             if rewrite_all_url or (
                 self.existing_zim_paths and item_path in self.existing_zim_paths
             ):
-                if item_path not in self.items_to_download:
-                    self.items_to_download[item_path] = HttpUrl(item_absolute_url)
-                return self.get_document_uri(item_path, item_fragment)
+                return RewriteResult(
+                    absolute_url=item_absolute_url,
+                    rewriten_url=self.get_document_uri(item_path, item_fragment),
+                    zim_path=item_path,
+                )
             else:
                 if (
                     self.missing_zim_paths is not None
@@ -242,7 +253,11 @@ class ArticleUrlRewriter:
                     # with duplicate messages
                     self.missing_zim_paths.add(item_path)
                 # The url doesn't point to a known entry
-                return item_absolute_url
+                return RewriteResult(
+                    absolute_url=item_absolute_url,
+                    rewriten_url=item_absolute_url,
+                    zim_path=item_path,
+                )
 
         except Exception as exc:  # pragma: no cover
             item_scheme = (
@@ -275,7 +290,11 @@ class ArticleUrlRewriter:
                 f"rewrite_all_url: {rewrite_all_url}",
                 exc_info=exc,
             )
-            return item_url
+            return RewriteResult(
+                absolute_url=item_absolute_url,
+                rewriten_url=item_url,
+                zim_path=None,
+            )
 
     def get_document_uri(self, item_path: ZimPath, item_fragment: str) -> str:
         """Given an ZIM item path and its fragment, get the URI to use in document

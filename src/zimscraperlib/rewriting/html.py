@@ -603,7 +603,9 @@ def rewrite_href_src_attributes(
         notify_js_module(url_rewriter.get_item_path(attr_value, base_href=base_href))
     return (
         attr_name,
-        url_rewriter(attr_value, base_href=base_href, rewrite_all_url=tag != "a"),
+        url_rewriter(
+            attr_value, base_href=base_href, rewrite_all_url=tag != "a"
+        ).rewriten_url,
     )
 
 
@@ -618,10 +620,10 @@ def rewrite_srcset_attribute(
     if attr_name != "srcset" or not attr_value:
         return
     value_list = attr_value.split(",")
-    new_value_list = []
+    new_value_list: list[str] = []
     for value in value_list:
         url, *other = value.strip().split(" ", maxsplit=1)
-        new_url = url_rewriter(url, base_href=base_href)
+        new_url = url_rewriter(url, base_href=base_href).rewriten_url
         new_value = " ".join([new_url, *other])
         new_value_list.append(new_value)
     return (attr_name, ", ".join(new_value_list))
@@ -711,5 +713,6 @@ def rewrite_meta_http_equiv_redirect(
         return
     return (
         attr_name,
-        f"{match['interval']};url={url_rewriter(match['url'], base_href=base_href)}",
+        f"{match['interval']};"
+        f"url={url_rewriter(match['url'], base_href=base_href).rewriten_url}",
     )

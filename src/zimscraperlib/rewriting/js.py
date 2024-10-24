@@ -286,7 +286,7 @@ class JsRewriter(RxRewriter):
             This takes into account that the result must be a relative URL, i.e. it
             cannot be 'vendor.module.js' but must be './vendor.module.js'.
             """
-            url = self.url_rewriter(url, base_href=self.base_href)
+            url = self.url_rewriter(url, base_href=self.base_href).rewriten_url
             if not (
                 url.startswith("/") or url.startswith("./") or url.startswith("../")
             ):
