@@ -178,7 +178,11 @@ class HtmlRewriter(HTMLParser):
 
         if (
             rewritten := rules.do_tag_rewrite(
-                tag=tag, attrs=attrs, auto_close=auto_close
+                tag=tag,
+                attrs=attrs,
+                url_rewriter=self.url_rewriter,
+                base_href=self.base_href,
+                auto_close=auto_close,
             )
         ) is not None:
             self.send(rewritten)
@@ -468,6 +472,8 @@ class HTMLRewritingRules:
         self,
         tag: str,
         attrs: AttrsList,
+        url_rewriter: ArticleUrlRewriter,
+        base_href: str | None,
         *,
         auto_close: bool,
     ) -> str | None:
@@ -484,6 +490,8 @@ class HTMLRewritingRules:
                         for arg_name, arg_value in {  # pyright: ignore[reportUnknownVariableType]
                             "tag": tag,
                             "attrs": attrs,
+                            "url_rewriter": url_rewriter,
+                            "base_href": base_href,
                             "auto_close": auto_close,
                         }.items()
                         if arg_name in _cached_signature(rule.func).parameters
