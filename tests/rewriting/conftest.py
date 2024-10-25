@@ -7,18 +7,9 @@ from zimscraperlib.rewriting.js import JsRewriter
 from zimscraperlib.rewriting.url_rewriting import (
     ArticleUrlRewriter,
     HttpUrl,
+    RewriteResult,
     ZimPath,
 )
-
-
-@pytest.fixture(scope="module")
-def no_js_notify():
-    """Fixture to not care about notification of detection of a JS file"""
-
-    def no_js_notify_handler(_: str):
-        pass
-
-    yield no_js_notify_handler
 
 
 class SimpleUrlRewriter(ArticleUrlRewriter):
@@ -34,8 +25,12 @@ class SimpleUrlRewriter(ArticleUrlRewriter):
         base_href: str | None,  # noqa: ARG002
         *,
         rewrite_all_url: bool = True,  # noqa: ARG002
-    ) -> str:
-        return item_url + self.suffix
+    ) -> RewriteResult:
+        return RewriteResult(
+            absolute_url=item_url + self.suffix,
+            rewriten_url=item_url + self.suffix,
+            zim_path=None,
+        )
 
     def get_item_path(
         self, item_url: str, base_href: str | None  # noqa: ARG002
