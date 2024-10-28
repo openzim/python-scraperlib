@@ -1269,13 +1269,32 @@ def rewrite2_tag(
     )
 
 
+@rules.rewrite_tag()
+def rewrite3_tag(
+    tag: str,
+    base_href: str | None,
+    url_rewriter: ArticleUrlRewriter,
+) -> str | None:
+    if tag != "rewrite3":
+        return
+    rewriten_url = url_rewriter(
+        "https://www.acme.com/foo.img", base_href=base_href
+    ).rewriten_url
+    return (
+        f'<rewriten src="{rewriten_url}" base="{base_href}" />'
+        if base_href
+        else f'<rewriten src="{rewriten_url}" />'
+    )
+
+
 @pytest.mark.parametrize(
-    "tag, attrs, auto_close, expected_result",
+    "tag, attrs, auto_close, base_href, expected_result",
     [
         pytest.param(
             "foo",
             [],
             False,
+            None,
             None,
             id="do_not_rewrite_foo_tag",
         ),
@@ -1283,6 +1302,7 @@ def rewrite2_tag(
             "rewrite1",
             [("attr2", "value2")],
             False,
+            None,
             "<rewriten attr1=value1 />",
             id="rewrite1_tag",
         ),
@@ -1290,6 +1310,7 @@ def rewrite2_tag(
             "rewrite2",
             [("attr2", "value2")],
             False,
+            None,
             '<rewriten attr2="value2">',
             id="rewrite2_tag_no_close",
         ),
@@ -1297,22 +1318,46 @@ def rewrite2_tag(
             "rewrite2",
             [("attr2", "value2")],
             True,
+            None,
             '<rewriten attr2="value2"/>',
             id="rewrite2_tag_auto_close",
+        ),
+        pytest.param(
+            "rewrite3",
+            [("attr2", "value2")],
+            True,
+            None,
+            '<rewriten src="https://www.acme.com/foo.img?queryparam" />',
+            id="rewrite3_use_url_rewriter",
+        ),
+        pytest.param(
+            "rewrite3",
+            [("attr2", "value2")],
+            True,
+            "http://acme.com/base_value",
+            '<rewriten src="https://www.acme.com/foo.img?queryparam" '
+            'base="http://acme.com/base_value" />',
+            id="rewrite3_use_url_rewriter",
         ),
     ],
 )
 def test_html_tag_rewrite_rules(
     tag: str,
     attrs: AttrsList,
+    base_href: str | None,
     *,
     auto_close: bool,
     expected_result: str | None,
+    simple_url_rewriter_gen: Callable[[str, str], ArticleUrlRewriter],
 ):
     assert (
         rules.do_tag_rewrite(
             tag=tag,
             attrs=attrs,
+            url_rewriter=simple_url_rewriter_gen(
+                "http://www.example.com", "?queryparam"
+            ),
+            base_href=base_href,
             auto_close=auto_close,
         )
         == expected_result
