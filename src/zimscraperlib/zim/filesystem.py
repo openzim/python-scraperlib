@@ -32,6 +32,7 @@ import datetime
 import pathlib
 import re
 import tempfile
+import warnings
 from collections.abc import Sequence
 
 from zimscraperlib import logger
@@ -254,6 +255,59 @@ class IncorrectZIMFilenameError(IncorrectZIMPathError):
     pass
 
 
+def validate_folder_writable(folder: pathlib.Path):
+    """Validate that a file can be created in a given folder.
+
+    Any problem encountered raises an exception inheriting from IncorrectZIMPathError
+
+    Checks that:
+    - folder passed exists (or raise MissingZIMFolderError exception)
+    - folder passed is a directory (or raise NotADirectoryZIMFolderError exception)
+    - folder is writable, i.e. it is possible to create a file in folder (or raise
+    NotWritableZIMFolderError exception with inner exception details)
+    """
+    # ensure folder exists
+    if not folder.exists():
+        raise MissingZIMFolderError(f"Folder does not exist: {folder}")
+
+    # ensure folder is a directory
+    if not folder.is_dir():
+        raise NotADirectoryZIMFolderError(f"Folder is not a directory: {folder}")
+
+    logger.debug(f"Attempting to confirm output is writable in directory {folder}")
+
+    try:
+        # ensure folder is writable
+        with tempfile.NamedTemporaryFile(dir=folder, delete=True) as fh:
+            logger.debug(f"Output is writable. Temporary file used for test: {fh.name}")
+    except Exception as exc:
+        raise NotWritableZIMFolderError(f"Folder is not writable: {folder}") from exc
+
+
+def validate_file_creatable(folder: str | pathlib.Path, filename: str):
+    """Validate that a file can be created in given folder with given filename
+
+    Any problem encountered raises an exception inheriting from IncorrectZIMPathError
+
+    Checks that:
+    - folder is writable (or raise exception from `validate_folder_writable`)
+    - file can be created (or raise IncorrectZIMFilenameError exception with
+    inner exception details)
+    """
+    folder = pathlib.Path(folder)
+
+    validate_folder_writable(folder)
+
+    # ensure file is creatable with the given name
+    fpath = folder / filename
+    try:
+        logger.debug(f"Confirming file can be created at {fpath}")
+        fpath.touch()
+        fpath.unlink()
+    except Exception as exc:
+        raise IncorrectZIMFilenameError(f"File is not creatable: {fpath}") from exc
+
+
 def validate_zimfile_creatable(folder: str | pathlib.Path, filename: str):
     """Validate that a ZIM can be created in given folder with given filename
 
@@ -267,38 +321,10 @@ def validate_zimfile_creatable(folder: str | pathlib.Path, filename: str):
     - filename is creatable, i.e. there is no bad characters in filename (or raise
     IncorrectZIMFilenameError exception with inner exception details)
     """
-    folder = pathlib.Path(folder)
-
-    # ensure folder exists
-    if not folder.exists():
-        raise MissingZIMFolderError(
-            f"Folder to create the ZIM does not exist: {folder}"
-        )
-
-    # ensure folder is a directory
-    if not folder.is_dir():
-        raise NotADirectoryZIMFolderError(
-            f"Folder to create the ZIM is not a directory: {folder}"
-        )
-
-    logger.debug(f"Attempting to confirm output is writable in directory {folder}")
-
-    try:
-        # ensure folder is writable
-        with tempfile.NamedTemporaryFile(dir=folder, delete=True) as fh:
-            logger.debug(f"Output is writable. Temporary file used for test: {fh.name}")
-    except Exception as exc:
-        raise NotWritableZIMFolderError(
-            f"Folder to create the ZIM is not writable: {folder}"
-        ) from exc
-
-    # ensure ZIM file is creatable with the given name
-    fpath = folder / filename
-    try:
-        logger.debug(f"Confirming ZIM file can be created at {fpath}")
-        fpath.touch()
-        fpath.unlink()
-    except Exception as exc:
-        raise IncorrectZIMFilenameError(
-            f"ZIM filename is not creatable: {fpath}"
-        ) from exc
+    warnings.warn(
+        "'validate_zimfile_creatable' is deprecated and will be removed. "
+        "Use 'validate_file_creatable` to ensure future compatibility.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    validate_file_creatable(folder, filename)
