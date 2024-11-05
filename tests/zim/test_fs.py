@@ -11,10 +11,10 @@ import pytest
 from zimscraperlib.zim.archive import Archive
 from zimscraperlib.zim.filesystem import (
     FileItem,
-    IncorrectZIMFilenameError,
-    MissingZIMFolderError,
-    NotADirectoryZIMFolderError,
-    NotWritableZIMFolderError,
+    IncorrectFilenameError,
+    MissingFolderError,
+    NotADirectoryFolderError,
+    NotWritableFolderError,
     make_zim_file,
     validate_file_creatable,
     validate_folder_writable,
@@ -180,46 +180,46 @@ def test_validate_zimfile_creatable_ok(tmp_path, valid_zim_filename):
 
 def test_validate_zimfile_creatable_folder_not_exists(tmp_path, valid_zim_filename):
 
-    with pytest.raises(MissingZIMFolderError):
+    with pytest.raises(MissingFolderError):
         validate_zimfile_creatable(tmp_path / "foo", valid_zim_filename)
 
 
 def test_validate_zimfile_creatable_bad_folder(tmp_path, valid_zim_filename):
 
-    with pytest.raises(NotADirectoryZIMFolderError):
+    with pytest.raises(NotADirectoryFolderError):
         (tmp_path / "foo.txt").touch()
         validate_zimfile_creatable(tmp_path / "foo.txt", valid_zim_filename)
 
 
 def test_validate_zimfile_creatable_folder_not_writable(tmp_path, valid_zim_filename):
 
-    with pytest.raises(NotWritableZIMFolderError):
+    with pytest.raises(NotWritableFolderError):
         (tmp_path / "foo").mkdir(mode=111)
         validate_zimfile_creatable(tmp_path / "foo", valid_zim_filename)
 
 
 def test_validate_zimfile_creatable_bad_name(tmp_path):
 
-    with pytest.raises(IncorrectZIMFilenameError):
+    with pytest.raises(IncorrectFilenameError):
         validate_zimfile_creatable(tmp_path, "t\0t\0.zim")
 
 
 def test_validate_folder_writable_not_exists(tmp_path):
 
-    with pytest.raises(MissingZIMFolderError):
+    with pytest.raises(MissingFolderError):
         validate_folder_writable(tmp_path / "foo")
 
 
 def test_validate_folder_writable_not_dir(tmp_path):
 
-    with pytest.raises(NotADirectoryZIMFolderError):
+    with pytest.raises(NotADirectoryFolderError):
         (tmp_path / "foo.txt").touch()
         validate_folder_writable(tmp_path / "foo.txt")
 
 
 def test_validate_folder_writable_not_writable(tmp_path):
 
-    with pytest.raises(NotWritableZIMFolderError):
+    with pytest.raises(NotWritableFolderError):
         (tmp_path / "foo").mkdir(mode=111)
         validate_folder_writable(tmp_path / "foo")
 
@@ -235,5 +235,5 @@ def test_validate_file_creatable_ok(tmp_path, valid_zim_filename):
 
 def test_validate_file_creatable_bad_name(tmp_path):
 
-    with pytest.raises(IncorrectZIMFilenameError):
+    with pytest.raises(IncorrectFilenameError):
         validate_file_creatable(tmp_path, "t\0t\0.zim")

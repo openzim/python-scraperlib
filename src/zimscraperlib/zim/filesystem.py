@@ -220,33 +220,33 @@ def make_zim_file(
         zim_file.finish()
 
 
-class IncorrectZIMPathError(Exception):
-    """A generic exception for any problem encountered in validate_zimfile_creatable"""
+class IncorrectPathError(Exception):
+    """A generic exception for any problem encountered while working with filepaths"""
 
     pass
 
 
-class MissingZIMFolderError(IncorrectZIMPathError):
-    """Exception raised in validate_zimfile_creatable when folder does not exists"""
+class MissingFolderError(IncorrectPathError):
+    """Exception raised when folder does not exist"""
 
     pass
 
 
-class NotADirectoryZIMFolderError(IncorrectZIMPathError):
-    """Exception raised in validate_zimfile_creatable when folder is not a directory"""
+class NotADirectoryFolderError(IncorrectPathError):
+    """Exception raised when folder is not a directory"""
 
     pass
 
 
-class NotWritableZIMFolderError(IncorrectZIMPathError):
-    """Exception raised in validate_zimfile_creatable when folder is not writable"""
+class NotWritableFolderError(IncorrectPathError):
+    """Exception raised when folder is not writable"""
 
     pass
 
 
-class IncorrectZIMFilenameError(IncorrectZIMPathError):
+class IncorrectFilenameError(IncorrectPathError):
     """
-    Exception raised in validate_zimfile_creatable when filename is not creatable
+    Exception raised when filename is not creatable
 
     This usually occurs when bad characters are present in filename (typically
     characters not supported on current filesystem).
@@ -258,21 +258,21 @@ class IncorrectZIMFilenameError(IncorrectZIMPathError):
 def validate_folder_writable(folder: pathlib.Path):
     """Validate that a file can be created in a given folder.
 
-    Any problem encountered raises an exception inheriting from IncorrectZIMPathError
+    Any problem encountered raises an exception inheriting from IncorrectPathError
 
     Checks that:
-    - folder passed exists (or raise MissingZIMFolderError exception)
-    - folder passed is a directory (or raise NotADirectoryZIMFolderError exception)
+    - folder passed exists (or raise MissingFolderError exception)
+    - folder passed is a directory (or raise NotADirectoryFolderError exception)
     - folder is writable, i.e. it is possible to create a file in folder (or raise
-    NotWritableZIMFolderError exception with inner exception details)
+    NotWritableFolderError exception with inner exception details)
     """
     # ensure folder exists
     if not folder.exists():
-        raise MissingZIMFolderError(f"Folder does not exist: {folder}")
+        raise MissingFolderError(f"Folder does not exist: {folder}")
 
     # ensure folder is a directory
     if not folder.is_dir():
-        raise NotADirectoryZIMFolderError(f"Folder is not a directory: {folder}")
+        raise NotADirectoryFolderError(f"Folder is not a directory: {folder}")
 
     logger.debug(f"Attempting to confirm output is writable in directory {folder}")
 
@@ -281,17 +281,17 @@ def validate_folder_writable(folder: pathlib.Path):
         with tempfile.NamedTemporaryFile(dir=folder, delete=True) as fh:
             logger.debug(f"Output is writable. Temporary file used for test: {fh.name}")
     except Exception as exc:
-        raise NotWritableZIMFolderError(f"Folder is not writable: {folder}") from exc
+        raise NotWritableFolderError(f"Folder is not writable: {folder}") from exc
 
 
 def validate_file_creatable(folder: str | pathlib.Path, filename: str):
     """Validate that a file can be created in given folder with given filename
 
-    Any problem encountered raises an exception inheriting from IncorrectZIMPathError
+    Any problem encountered raises an exception inheriting from IncorrectPathError
 
     Checks that:
     - folder is writable (or raise exception from `validate_folder_writable`)
-    - file can be created (or raise IncorrectZIMFilenameError exception with
+    - file can be created (or raise IncorrectFilenameError exception with
     inner exception details)
     """
     folder = pathlib.Path(folder)
@@ -305,21 +305,21 @@ def validate_file_creatable(folder: str | pathlib.Path, filename: str):
         fpath.touch()
         fpath.unlink()
     except Exception as exc:
-        raise IncorrectZIMFilenameError(f"File is not creatable: {fpath}") from exc
+        raise IncorrectFilenameError(f"File is not creatable: {fpath}") from exc
 
 
 def validate_zimfile_creatable(folder: str | pathlib.Path, filename: str):
     """Validate that a ZIM can be created in given folder with given filename
 
-    Any problem encountered raises an exception inheriting from IncorrectZIMPathError
+    Any problem encountered raises an exception inheriting from IncorrectPathError
 
     Checks that:
-    - folder passed exists (or raise MissingZIMFolderError exception)
-    - folder passed is a directory (or raise NotADirectoryZIMFolderError exception)
+    - folder passed exists (or raise MissingFolderError exception)
+    - folder passed is a directory (or raise NotADirectoryFolderError exception)
     - folder is writable, i.e. it is possible to create a file in folder (or raise
-    NotWritableZIMFolderError exception with inner exception details)
+    NotWritableFolderError exception with inner exception details)
     - filename is creatable, i.e. there is no bad characters in filename (or raise
-    IncorrectZIMFilenameError exception with inner exception details)
+    IncorrectFilenameError exception with inner exception details)
     """
     warnings.warn(
         "'validate_zimfile_creatable' is deprecated and will be removed. "
