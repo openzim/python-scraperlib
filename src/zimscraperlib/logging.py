@@ -13,6 +13,9 @@ from typing import TextIO
 from zimscraperlib.constants import NAME
 
 DEFAULT_FORMAT = "[%(name)s::%(asctime)s] %(levelname)s:%(message)s"
+DEFAULT_FORMAT_WITH_THREADS = (
+    "[%(name)s::%(threadName)s::%(asctime)s] %(levelname)s:%(message)s"
+)
 VERBOSE_DEPENDENCIES = ["urllib3", "PIL", "boto3", "botocore", "s3transfer"]
 
 
