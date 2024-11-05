@@ -32,7 +32,6 @@ import datetime
 import pathlib
 import re
 import tempfile
-import warnings
 from collections.abc import Sequence
 
 from zimscraperlib import logger
@@ -306,25 +305,3 @@ def validate_file_creatable(folder: str | pathlib.Path, filename: str):
         fpath.unlink()
     except Exception as exc:
         raise IncorrectFilenameError(f"File is not creatable: {fpath}") from exc
-
-
-def validate_zimfile_creatable(folder: str | pathlib.Path, filename: str):
-    """Validate that a ZIM can be created in given folder with given filename
-
-    Any problem encountered raises an exception inheriting from IncorrectPathError
-
-    Checks that:
-    - folder passed exists (or raise MissingFolderError exception)
-    - folder passed is a directory (or raise NotADirectoryFolderError exception)
-    - folder is writable, i.e. it is possible to create a file in folder (or raise
-    NotWritableFolderError exception with inner exception details)
-    - filename is creatable, i.e. there is no bad characters in filename (or raise
-    IncorrectFilenameError exception with inner exception details)
-    """
-    warnings.warn(
-        "'validate_zimfile_creatable' is deprecated and will be removed. "
-        "Use 'validate_file_creatable` to ensure future compatibility.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    validate_file_creatable(folder, filename)
