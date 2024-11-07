@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Breaking Changes
+
+- Renamed `filesystem.validate_zimfile_creatable` to `filesystem.file_creatable` to reflect general applicability to check file creation beyond ZIM files #200
+- Remove any "ZIM" reference in exceptions while working with files #200
+
+### Added
+
+- Add `filesystem.validate_folder_writable` to check if a folder can be written to #200
+
 ## [4.0.0] - 2024-08-05
 
 ### Added
@@ -38,6 +47,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **BREAKING** Rename `i18.NotFound` to `i18n.NotFoundError`
 
 ### Removed
+
 - **BREAKING** Remove translation features in `i18n`: `Locale` class + `_` and `setlocale` functions #134
 
 ### Fixed
