@@ -177,13 +177,13 @@ def stream_file(
     fpath: pathlib.Path | None = None,
     byte_stream: IO[bytes] | None = None,
     block_size: int | None = 1024,
-    proxies: dict | None = None,
+    proxies: dict[str, str] | None = None,
     max_retries: int | None = 5,
     headers: dict[str, str] | None = None,
     session: requests.Session | None = None,
     *,
     only_first_block: bool | None = False,
-) -> tuple[int, requests.structures.CaseInsensitiveDict]:
+) -> tuple[int, requests.structures.CaseInsensitiveDict[str]]:
     """Stream data from a URL to either a BytesIO object or a file
     Arguments -
         fpath - Path of the file where data is sent
