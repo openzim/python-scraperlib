@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Added mkdocs based documentation site. #92
+
 ## [4.0.0] - 2024-08-05
 
 ### Added
