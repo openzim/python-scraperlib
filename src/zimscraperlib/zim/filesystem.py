@@ -40,6 +40,7 @@ from zimscraperlib.html import find_title_in_file
 from zimscraperlib.types import get_mime_for_name
 from zimscraperlib.zim.creator import Creator
 from zimscraperlib.zim.items import StaticItem
+from zimscraperlib.zim.metadata import StandardMetadata
 
 
 class FileItem(StaticItem):
@@ -171,27 +172,23 @@ def make_zim_file(
         ignore_duplicates=ignore_duplicates,
         disable_metadata_checks=disable_metadata_checks,
     ).config_metadata(
-        **{
-            k: v
-            for k, v in {
-                # (somewhat) mandatory
-                "Name": name,
-                "Title": title,
-                "Description": description,
-                "Date": date or datetime.date.today(),  # noqa: DTZ011
-                "Language": language,
-                "Creator": creator,
-                "Publisher": publisher,
-                # optional
-                "Tags": ";".join(tags) if tags else None,
-                "Source": source,
-                "Flavour": flavour,
-                "Scraper": scraper,
-                "LongDescription": long_description,
-                "Illustration_48x48_at_1": illustration_data,
-            }.items()
-            if v is not None
-        }
+        StandardMetadata(
+            # mandatory
+            Name=name,
+            Title=title,
+            Description=description,
+            Date=date or datetime.date.today(),  # noqa: DTZ011
+            Language=language,
+            Creator=creator,
+            Publisher=publisher,
+            # optional
+            Tags=";".join(tags) if tags else None,
+            Source=source,
+            Flavour=flavour,
+            Scraper=scraper,
+            LongDescription=long_description,
+            Illustration_48x48_at_1=illustration_data,
+        )
     )
 
     zim_file.start()

@@ -10,13 +10,13 @@ from collections.abc import Iterable
 
 from zimscraperlib import logger
 from zimscraperlib.constants import DEFAULT_USER_AGENT
-from zimscraperlib.constants import (
+from zimscraperlib.download import stream_file
+from zimscraperlib.zim.metadata import (
     MAXIMUM_DESCRIPTION_METADATA_LENGTH as MAX_DESC_LENGTH,
 )
-from zimscraperlib.constants import (
+from zimscraperlib.zim.metadata import (
     MAXIMUM_LONG_DESCRIPTION_METADATA_LENGTH as MAX_LONG_DESC_LENGTH,
 )
-from zimscraperlib.download import stream_file
 
 
 def handle_user_provided_file(

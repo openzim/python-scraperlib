@@ -1,21 +1,138 @@
 from __future__ import annotations
 
+import base64
 import datetime
 import re
 from collections.abc import Iterable
-from typing import Any
+from dataclasses import dataclass
+from typing import Any, NamedTuple
 
 import regex
 
-from zimscraperlib.constants import (
-    ILLUSTRATIONS_METADATA_RE,
-    MANDATORY_ZIM_METADATA_KEYS,
-    MAXIMUM_DESCRIPTION_METADATA_LENGTH,
-    MAXIMUM_LONG_DESCRIPTION_METADATA_LENGTH,
-    RECOMMENDED_MAX_TITLE_LENGTH,
-)
 from zimscraperlib.i18n import is_valid_iso_639_3
 from zimscraperlib.image.probing import is_valid_image
+
+RECOMMENDED_MAX_TITLE_LENGTH = 30
+MAXIMUM_DESCRIPTION_METADATA_LENGTH = 80
+MAXIMUM_LONG_DESCRIPTION_METADATA_LENGTH = 4000
+
+ILLUSTRATIONS_METADATA_RE = re.compile(
+    r"^Illustration_(?P<height>\d+)x(?P<width>\d+)@(?P<scale>\d+)$"
+)
+
+RawMetadataValue = (
+    None | float | int | bytes | str | datetime.datetime | datetime.date | Iterable[str]
+)
+
+CleanMetadataValue = bytes | str
+
+# All control characters are disallowed in str metadata except \n, \r and \t
+UNWANTED_CONTROL_CHARACTERS_REGEX = regex.compile(r"(?![\n\t\r])\p{C}")
+
+
+@dataclass
+class StandardMetadata:
+    Name: str
+    Language: str
+    Title: str
+    Creator: str
+    Publisher: str
+    Date: datetime.datetime | datetime.date | str
+    Illustration_48x48_at_1: bytes
+    Description: str
+    LongDescription: str | None = None
+    Tags: Iterable[str] | str | None = None
+    Scraper: str | None = None
+    Flavour: str | None = None
+    Source: str | None = None
+    License: str | None = None
+    Relation: str | None = None
+
+    def copy(self) -> StandardMetadata:
+        return StandardMetadata(
+            Name=self.Name,
+            Language=self.Language,
+            Title=self.Title,
+            Creator=self.Creator,
+            Publisher=self.Publisher,
+            Date=self.Date,
+            Illustration_48x48_at_1=self.Illustration_48x48_at_1,
+            Description=self.Description,
+            LongDescription=self.LongDescription,
+            Tags=self.Tags,
+            Scraper=self.Scraper,
+            Flavour=self.Flavour,
+            Source=self.Source,
+            License=self.License,
+            Relation=self.Relation,
+        )
+
+
+# list of mandatory meta tags of the zim file.
+MANDATORY_ZIM_METADATA_KEYS = [
+    "Name",
+    "Title",
+    "Creator",
+    "Publisher",
+    "Date",
+    "Description",
+    "Language",
+    "Illustration_48x48@1",
+]
+
+DEFAULT_DEV_ZIM_METADATA = StandardMetadata(
+    Name="Test Name",
+    Title="Test Title",
+    Creator="Test Creator",
+    Publisher="Test Publisher",
+    Date="2023-01-01",
+    Description="Test Description",
+    Language="fra",
+    # blank 48x48 transparent PNG
+    Illustration_48x48_at_1=base64.b64decode(
+        "iVBORw0KGgoAAAANSUhEUgAAADAAAAAwAQMAAABtzGvEAAAAGXRFWHRTb2Z0d2FyZQBB"
+        "ZG9iZSBJbWFnZVJlYWR5ccllPAAAAANQTFRFR3BMgvrS0gAAAAF0Uk5TAEDm2GYAAAAN"
+        "SURBVBjTY2AYBdQEAAFQAAGn4toWAAAAAElFTkSuQmCC"
+    ),
+)
+
+
+class Metadata(NamedTuple):
+    key: str
+    value: RawMetadataValue
+
+
+def convert_and_check_metadata(
+    name: str,
+    value: RawMetadataValue,
+) -> CleanMetadataValue:
+    """Convert metadata to appropriate type for few known usecase and check type
+
+    Date: converts date and datetime to string YYYY-MM-DD
+    Tags: converts iterable to string with semi-colon separator
+
+    Also checks removes unwanted control characters in string, and checks that final
+    type is appropriate for libzim (str or bytes)
+    """
+    if name == "Date" and isinstance(value, datetime.date | datetime.datetime):
+        value = value.strftime("%Y-%m-%d")
+    if (
+        name == "Tags"
+        and not isinstance(value, str)
+        and not isinstance(value, bytes)
+        and isinstance(value, Iterable)
+    ):
+        if not all(isinstance(tag, str) for tag in value):
+            raise ValueError("All tag values must be str")
+        value = ";".join(value)
+
+    if isinstance(value, str):
+        value = UNWANTED_CONTROL_CHARACTERS_REGEX.sub("", value).strip(" \r\n\t")
+
+    if not isinstance(value, str) and not isinstance(value, bytes):
+        raise ValueError(f"Invalid type for {name}: {type(value)}")
+
+    return value
 
 
 def nb_grapheme_for(value: str) -> int:
@@ -31,7 +148,7 @@ def validate_required_values(name: str, value: Any):
 
 def validate_standard_str_types(
     name: str,
-    value: str | bytes,
+    value: CleanMetadataValue,
 ):
     """ensures standard string metadata are indeed str"""
     if name in (
@@ -42,7 +159,6 @@ def validate_standard_str_types(
         "Description",
         "LongDescription",
         "License",
-        "Relation",
         "Relation",
         "Flavour",
         "Source",
