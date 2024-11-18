@@ -1,6 +1,3 @@
-#!/usr/bin/env python
-# vim: ai ts=4 sts=4 et sw=4 nu
-
 """ ZIM Creator helper
 
     Convenient subclass of libzim.writer.Creator with:
@@ -25,9 +22,10 @@ import pathlib
 import re
 import weakref
 from collections.abc import Callable, Iterable
+from types import TracebackType
 from typing import Any, TypeVar
 
-import libzim.writer  # pyright: ignore
+import libzim.writer  # pyright: ignore[reportMissingModuleSource]
 import PIL.Image
 
 from zimscraperlib import logger
@@ -136,7 +134,9 @@ class Creator(libzim.writer.Creator):
         if compression:
             self.config_compression(
                 getattr(libzim.writer.Compression, compression.lower())
-                if isinstance(compression, str)
+                if isinstance(
+                    compression, str
+                )  # pyright: ignore[reportUnnecessaryIsInstance]
                 else compression
             )
 
@@ -277,19 +277,19 @@ class Creator(libzim.writer.Creator):
         validate_required_values(name, value)
         validate_standard_str_types(name, value)
 
-        validate_title(name, value)  # pyright: ignore
-        validate_date(name, value)  # pyright: ignore
-        validate_language(name, value)  # pyright: ignore
-        validate_counter(name, value)  # pyright: ignore
-        validate_description(name, value)  # pyright: ignore
-        validate_longdescription(name, value)  # pyright: ignore
-        validate_tags(name, value)  # pyright: ignore
-        validate_illustrations(name, value)  # pyright: ignore
+        validate_title(name, value)
+        validate_date(name, value)
+        validate_language(name, value)
+        validate_counter(name, value)
+        validate_description(name, value)
+        validate_longdescription(name, value)
+        validate_tags(name, value)
+        validate_illustrations(name, value)
 
-    def add_metadata(
+    def add_metadata(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         name: str,
-        value: CleanMetadataValue,
+        content: CleanMetadataValue,
         mimetype: str = "text/plain;charset=UTF-8",
     ):
         """Really add the metadata to the ZIM, after ZIM creation has started.
@@ -301,9 +301,9 @@ class Creator(libzim.writer.Creator):
         conventions even when metadata is added while creator is "running".
         """
         real_name = self._get_real_metadata_name(name)
-        if not value:
+        if not content:
             return
-        clean_value = convert_and_check_metadata(name=real_name, value=value)
+        clean_value = convert_and_check_metadata(name=real_name, value=content)
         if not self.disable_metadata_checks:
             self.validate_metadata(real_name, clean_value)
 
@@ -365,12 +365,15 @@ class Creator(libzim.writer.Creator):
             metadata = [metadata]
         if isinstance(metadata, dict):
             if {type(name) for name in metadata.keys()} == {str}:
+                metadata_dict: dict[str, RawMetadataValue] = (
+                    metadata  # pyright: ignore [reportAssignmentType]
+                )
                 metadata = [
                     Metadata(
-                        metadata_key,  # pyright: ignore[reportArgumentType]
+                        metadata_key,
                         metadata_value,
                     )
-                    for metadata_key, metadata_value in metadata.items()
+                    for metadata_key, metadata_value in metadata_dict.items()
                 ]
         for name, value in metadata:
             real_name = self._get_real_metadata_name(name)
@@ -415,7 +418,7 @@ class Creator(libzim.writer.Creator):
         should_compress: bool | None = None,
         delete_fpath: bool | None = False,
         duplicate_ok: bool | None = None,
-        callback: Callable | tuple[Callable, Any] | None = None,
+        callback: Callable[..., Any] | tuple[Callable[..., Any], Any] | None = None,
         index_data: IndexData | None = None,
         auto_index: bool = True,
     ):
@@ -445,13 +448,15 @@ class Creator(libzim.writer.Creator):
 
         if is_front is None:
             is_front = mimetype in FRONT_ARTICLE_MIMETYPES
-        hints = {libzim.writer.Hint.FRONT_ARTICLE: is_front}
+        hints: dict[libzim.writer.Hint, int] = {
+            libzim.writer.Hint.FRONT_ARTICLE: is_front
+        }
 
         if should_compress is not None:
             hints[libzim.writer.Hint.COMPRESS] = should_compress
 
         if delete_fpath and fpath:
-            cb = [delete_callback, fpath]
+            cb: list[Any] = [delete_callback, fpath]
             if callback and callable(callback):
                 cb.append(callback)
             elif callback:
@@ -476,9 +481,9 @@ class Creator(libzim.writer.Creator):
 
     def add_item(
         self,
-        item: libzim.writer.Item,
+        writer_item: libzim.writer.Item,
         duplicate_ok: bool | None = None,
-        callback: Callable | tuple[Callable, Any] | None = None,
+        callback: Callable[..., Any] | tuple[Callable[..., Any], Any] | None = None,
     ):
         """Add a libzim.writer.Item
 
@@ -487,14 +492,14 @@ class Creator(libzim.writer.Creator):
         Note: you must __not__ include the item itself in those arguments."""
         if callback:
             if callable(callback):
-                weakref.finalize(item, callback)
+                weakref.finalize(writer_item, callback)
             else:
-                weakref.finalize(item, *callback)
+                weakref.finalize(writer_item, *callback)
 
         duplicate_ok = duplicate_ok or self.ignore_duplicates
         try:
             try:
-                super().add_item(item)
+                super().add_item(writer_item)
             except RuntimeError as exc:
                 if not DUPLICATE_EXC_STR.match(str(exc)) or not duplicate_ok:
                     raise exc
@@ -515,7 +520,7 @@ class Creator(libzim.writer.Creator):
 
         title is optional. when set, the redirect itself
         can be found on suggestions (indexed) if considered FRONT_ARTICLE"""
-        hints = {}
+        hints: dict[libzim.writer.Hint, int] = {}
         if is_front is not None:
             hints[libzim.writer.Hint.FRONT_ARTICLE] = bool(is_front)
 
@@ -532,7 +537,12 @@ class Creator(libzim.writer.Creator):
                 self.can_finish = False  # pragma: no cover
             raise
 
-    def finish(self, exc_type=None, exc_val=None, exc_tb=None):  # noqa: ARG002
+    def finish(
+        self,
+        exc_type: type[BaseException] | None = None,  # noqa: ARG002
+        exc_val: BaseException | None = None,  # noqa: ARG002
+        exc_tb: TracebackType | None = None,  # noqa: ARG002
+    ):
         """Triggers finalization of ZIM creation and create final ZIM file."""
         if not getattr(self, "can_finish", False):
             return
@@ -545,5 +555,10 @@ class Creator(libzim.writer.Creator):
         self.start()
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ):
         self.finish(exc_type, exc_val, exc_tb)

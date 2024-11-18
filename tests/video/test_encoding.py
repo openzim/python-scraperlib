@@ -6,7 +6,9 @@ from pathlib import Path
 
 import pytest
 
-from zimscraperlib.video.encoding import _build_ffmpeg_args
+from zimscraperlib.video.encoding import (
+    _build_ffmpeg_args,  # pyright: ignore[reportPrivateUsage]
+)
 from zimscraperlib.video.presets import VideoWebmLow
 
 

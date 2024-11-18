@@ -1,3 +1,5 @@
+# pymupdf is not sufficiently typed for pyright strict mode to work
+# pyright: basic
 """ Special item with customized index data and helper classes """
 
 from __future__ import annotations

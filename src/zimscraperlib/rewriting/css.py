@@ -14,14 +14,14 @@ from collections.abc import Iterable
 from functools import partial
 from typing import Any
 
-from tinycss2 import (
+from tinycss2 import (  # pyright: ignore[reportMissingTypeStubs]
     ast,
     parse_declaration_list,  # pyright: ignore[reportUnknownVariableType]
     parse_stylesheet,  # pyright: ignore[reportUnknownVariableType]
     parse_stylesheet_bytes,  # pyright: ignore[reportUnknownVariableType]
     serialize,  # pyright: ignore[reportUnknownVariableType]
 )
-from tinycss2.serializer import (
+from tinycss2.serializer import (  # pyright: ignore[reportMissingTypeStubs]
     serialize_url,  # pyright: ignore[reportUnknownVariableType]
 )
 
@@ -207,7 +207,7 @@ class CssRewriter:
             self._process_list(node.value)  # pyright: ignore
         elif isinstance(node, ast.URLToken):
             new_url = self.url_rewriter(
-                node.value, self.base_href
+                node.value, self.base_href  # pyright: ignore
             ).rewriten_url  # pyright: ignore
             node.value = new_url
             node.representation = f"url({serialize_url(new_url)})"

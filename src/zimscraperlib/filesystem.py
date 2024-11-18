@@ -1,6 +1,3 @@
-#!/usr/bin/env python
-# vim: ai ts=4 sts=4 et sw=4 nu
-
 """ Files manipulation tools
 
     Shortcuts to retrieve mime type using magic"""
@@ -46,7 +43,7 @@ def get_content_mimetype(content: bytes | str) -> str:
 
 def delete_callback(
     fpath: str | pathlib.Path,
-    callback: Callable | None = None,
+    callback: Callable[..., Any] | None = None,
     *callback_args: Any,
 ):
     """helper deleting passed filepath, optionnaly calling an additional callback"""
@@ -55,4 +52,4 @@ def delete_callback(
 
     # call the callback if requested
     if callback and callable(callback):
-        callback.__call__(*callback_args)
+        callback(*callback_args)

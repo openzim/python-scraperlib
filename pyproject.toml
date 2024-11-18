@@ -264,11 +264,8 @@ include = ["contrib", "src", "tests", "tasks.py"]
 exclude = [".env/**", ".venv/**"]
 extraPaths = ["src"]
 pythonVersion = "3.12"
-typeCheckingMode="basic"
+typeCheckingMode="strict"
 disableBytesTypePromotions = true
-
-[tool.pyright.overrides]
-strict = true  # Enable strict mode for specific files
 
 [[tool.pyright.overrides.files]]
 files = [

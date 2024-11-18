@@ -47,35 +47,6 @@ class LangAndDetails:
         self.querytype = querytype
         self.query = query
 
-    def __eq__(self, value: object) -> bool:
-        if not isinstance(value, LangAndDetails):
-            return False
-
-        return (
-            self.iso_639_1 == value.iso_639_1
-            and self.iso_639_2b == value.iso_639_2b
-            and self.iso_639_2t == value.iso_639_2t
-            and self.iso_639_3 == value.iso_639_3
-            and self.iso_639_5 == value.iso_639_5
-            and self.english == value.english
-            and self.native == value.native
-        )
-
-    def __hash__(self) -> int:
-        return hash(
-            (
-                self.iso_639_1,
-                self.iso_639_2b,
-                self.iso_639_2t,
-                self.iso_639_3,
-                self.iso_639_5,
-                self.english,
-                self.native,
-                self.query,
-                self.querytype,
-            )
-        )
-
 
 def get_iso_lang_data(lang: str) -> tuple[Lang, Lang | None]:
     """ISO-639-x languages details for lang. Raises NotFoundError

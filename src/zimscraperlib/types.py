@@ -1,6 +1,3 @@
-#!/usr/bin/env python
-# vim: ai ts=4 sts=4 et sw=4 nu
-
 """ File extensions to MIME-Type  mapping
 
     All libzim *articles* contains the mime-type of their content, for the libzim

@@ -1,18 +1,16 @@
-#!/usr/bin/env python3
-# vim: ai ts=4 sts=4 et sw=4 nu
-
 from __future__ import annotations
 
 import concurrent.futures
 import io
 import pathlib
 import re
-from typing import ClassVar
+from typing import Any, ClassVar
+from unittest.mock import Mock
 
 import pytest
 import requests
 import requests.structures
-from yt_dlp import DownloadError
+from yt_dlp import DownloadError  # pyright: ignore[reportMissingTypeStubs]
 
 from zimscraperlib.download import (
     BestMp4,
@@ -25,7 +23,7 @@ from zimscraperlib.download import (
 DEFAULT_REQUEST_TIMEOUT = 60
 
 
-def assert_downloaded_file(url, file):
+def assert_downloaded_file(url: str, file: pathlib.Path):
     assert file.exists()
     # our google test urls dont support HEAD
     req = requests.get(url, timeout=DEFAULT_REQUEST_TIMEOUT)
@@ -33,12 +31,12 @@ def assert_downloaded_file(url, file):
     assert file.stat().st_size == len(req.content)
 
 
-def assert_headers(returned_headers):
+def assert_headers(returned_headers: Any):
     assert isinstance(returned_headers, requests.structures.CaseInsensitiveDict)
     assert returned_headers["Content-Type"] == "image/x-icon"
 
 
-def get_dest_file(tmp_path):
+def get_dest_file(tmp_path: pathlib.Path):
     return tmp_path.joinpath("favicon.ico")
 
 
@@ -47,22 +45,22 @@ def test_missing_dest():
         stream_file(url="http://some_url", byte_stream=io.BytesIO())
 
 
-def test_invalid_url(tmp_path, invalid_url):
+def test_invalid_url(tmp_path: pathlib.Path, invalid_url: str):
     dest_file = tmp_path / "favicon.ico"
     with pytest.raises(requests.exceptions.ConnectionError):
         stream_file(url=invalid_url, fpath=dest_file)
 
 
-def test_no_output_supplied(valid_http_url):
+def test_no_output_supplied(valid_http_url: str):
     with pytest.raises(
         ValueError, match="Either file path or a bytesIO object is needed"
     ):
         stream_file(url=valid_http_url)
 
 
-def test_first_block_download_default_session(valid_http_url):
+def test_first_block_download_default_session(valid_http_url: str):
     byte_stream = io.BytesIO()
-    size, ret = stream_file(
+    _, ret = stream_file(
         url=valid_http_url, byte_stream=byte_stream, only_first_block=True
     )
     assert_headers(ret)
@@ -72,9 +70,9 @@ def test_first_block_download_default_session(valid_http_url):
     assert len(byte_stream.read()) <= expected
 
 
-def test_first_block_download_custom_session(mocker, valid_http_url):
+def test_first_block_download_custom_session(mocker: Mock, valid_http_url: str):
     byte_stream = io.BytesIO()
-    custom_session = mocker.Mock(spec=requests.Session)
+    custom_session = Mock(spec=requests.Session)
 
     expected_response = requests.Response()
     expected_response.status_code = 200
@@ -108,25 +106,25 @@ def test_user_agent():
 
 
 @pytest.mark.slow
-def test_save_http(tmp_path, valid_http_url):
+def test_save_http(tmp_path: pathlib.Path, valid_http_url: str):
     dest_file = tmp_path / "favicon.ico"
-    size, ret = stream_file(url=valid_http_url, fpath=dest_file)
+    _, ret = stream_file(url=valid_http_url, fpath=dest_file)
     assert_headers(ret)
     assert_downloaded_file(valid_http_url, dest_file)
 
 
 @pytest.mark.slow
-def test_save_https(tmp_path, valid_https_url):
+def test_save_https(tmp_path: pathlib.Path, valid_https_url: str):
     dest_file = tmp_path / "favicon.ico"
-    size, ret = stream_file(url=valid_https_url, fpath=dest_file)
+    _, ret = stream_file(url=valid_https_url, fpath=dest_file)
     assert_headers(ret)
     assert_downloaded_file(valid_https_url, dest_file)
 
 
 @pytest.mark.slow
-def test_stream_to_bytes(valid_https_url):
+def test_stream_to_bytes(valid_https_url: str):
     byte_stream = io.BytesIO()
-    size, ret = stream_file(url=valid_https_url, byte_stream=byte_stream)
+    _, ret = stream_file(url=valid_https_url, byte_stream=byte_stream)
     assert_headers(ret)
     assert (
         byte_stream.read()
@@ -135,28 +133,28 @@ def test_stream_to_bytes(valid_https_url):
 
 
 @pytest.mark.slow
-def test_save_parent_folder_missing(tmp_path, valid_http_url):
+def test_save_parent_folder_missing(tmp_path: pathlib.Path, valid_http_url: str):
     dest_file = tmp_path / "some-folder" / "favicon.ico"
     with pytest.raises(IOError):
         stream_file(url=valid_http_url, fpath=dest_file)
 
 
 @pytest.mark.slow
-def test_save_http_error(tmp_path, http_error_url):
+def test_save_http_error(tmp_path: pathlib.Path, http_error_url: str):
     dest_file = tmp_path / "favicon.ico"
     with pytest.raises(requests.exceptions.HTTPError):
         stream_file(url=http_error_url, fpath=dest_file)
 
 
 @pytest.mark.slow
-def test_large_download_http(tmp_path, valid_http_url):
+def test_large_download_http(tmp_path: pathlib.Path, valid_http_url: str):
     dest_file = tmp_path / "favicon.ico"
     save_large_file(valid_http_url, dest_file)
     assert_downloaded_file(valid_http_url, dest_file)
 
 
 @pytest.mark.slow
-def test_large_download_https(tmp_path, valid_https_url):
+def test_large_download_https(tmp_path: pathlib.Path, valid_https_url: str):
     dest_file = tmp_path / "favicon.ico"
     save_large_file(valid_https_url, dest_file)
     assert_downloaded_file(valid_https_url, dest_file)
@@ -170,7 +168,7 @@ def test_large_download_https(tmp_path, valid_https_url):
         ("https://tube.jeena.net/w/tyekuoPZqb7BtkyNPwVHJL", "tyekuoPZqb7BtkyNPwVHJL"),
     ],
 )
-def test_youtube_download_serial(url, video_id, tmp_path):
+def test_youtube_download_serial(url: str, video_id: str, tmp_path: pathlib.Path):
     yt_downloader = YoutubeDownloader(threads=1)
     options = BestMp4.get_options(
         target_dir=tmp_path,
@@ -182,7 +180,7 @@ def test_youtube_download_serial(url, video_id, tmp_path):
 
 
 @pytest.mark.slow
-def test_youtube_download_nowait(tmp_path):
+def test_youtube_download_nowait(tmp_path: pathlib.Path):
     with YoutubeDownloader(threads=1) as yt_downloader:
         future = yt_downloader.download(
             "https://tube.jeena.net/w/tyekuoPZqb7BtkyNPwVHJL",
@@ -191,12 +189,15 @@ def test_youtube_download_nowait(tmp_path):
         )
         assert future.running()  # pyright: ignore
         assert not yt_downloader.executor._shutdown
-        done, not_done = concurrent.futures.wait(
-            [future], return_when=concurrent.futures.ALL_COMPLETED  # pyright: ignore
+        done, not_done = (  # pyright: ignore[reportUnknownVariableType]
+            concurrent.futures.wait(
+                [future],  # pyright: ignore[reportArgumentType]
+                return_when=concurrent.futures.ALL_COMPLETED,
+            )
         )
         assert future.exception() is None  # pyright: ignore
-        assert len(done) == 1
-        assert len(not_done) == 0
+        assert len(done) == 1  # pyright: ignore[reportUnknownArgumentType]
+        assert len(not_done) == 0  # pyright: ignore[reportUnknownArgumentType]
 
 
 @pytest.mark.slow
@@ -208,7 +209,7 @@ def test_youtube_download_error():
 
 
 @pytest.mark.slow
-def test_youtube_download_contextmanager(tmp_path):
+def test_youtube_download_contextmanager(tmp_path: pathlib.Path):
     with YoutubeDownloader(threads=1) as yt_downloader:
         yt_downloader.download(
             "https://tube.jeena.net/w/tyekuoPZqb7BtkyNPwVHJL",
@@ -242,22 +243,24 @@ def test_get_options_wrong_outtmpl_type():
         WrongOuttmplType.get_options()
 
 
-def test_get_options_target_dir(target_dir):
+def test_get_options_target_dir(target_dir: pathlib.Path):
     options = BestWebm.get_options(target_dir=target_dir)
     assert options["outtmpl"] == "adir1/video.%(ext)s"
 
 
-def test_get_options_filepath(filepath):
+def test_get_options_filepath(filepath: pathlib.Path):
     options = BestWebm.get_options(filepath=filepath)
     assert options["outtmpl"] == "adir2/afile"
 
 
-def test_get_options_target_dir_filepath(target_dir, filepath):
+def test_get_options_target_dir_filepath(
+    target_dir: pathlib.Path, filepath: pathlib.Path
+):
     options = BestWebm.get_options(target_dir=target_dir, filepath=filepath)
     assert options["outtmpl"] == "adir1/adir2/afile"
 
 
-def test_get_options_override_outtmpl_no_other_vars(custom_outtmpl):
+def test_get_options_override_outtmpl_no_other_vars(custom_outtmpl: str):
     original = BestWebm.get_options()
     overriden = BestWebm.get_options(outtmpl=custom_outtmpl)
     assert "outtmpl" in original
@@ -269,7 +272,9 @@ def test_get_options_override_outtmpl_no_other_vars(custom_outtmpl):
             assert overriden[key] == custom_outtmpl
 
 
-def test_get_options_override_outtmpl_other_vars(target_dir, filepath, custom_outtmpl):
+def test_get_options_override_outtmpl_other_vars(
+    target_dir: pathlib.Path, filepath: pathlib.Path, custom_outtmpl: str
+):
     original = BestWebm.get_options(target_dir=target_dir, filepath=filepath)
     overriden = BestWebm.get_options(
         target_dir=target_dir,

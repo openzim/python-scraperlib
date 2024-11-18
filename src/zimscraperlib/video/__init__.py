@@ -1,9 +1,5 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-# vim: ai ts=4 sts=4 et sw=4 nu
-
-from .config import Config
+from .config import Config  # pyright: ignore[reportUnusedImport]
 
 # flake8: noqa
-from .encoding import reencode
-from .probing import get_media_info
+from .encoding import reencode  # pyright: ignore[reportUnusedImport]
+from .probing import get_media_info  # pyright: ignore[reportUnusedImport]

@@ -1,5 +1,4 @@
-#!/usr/bin/env python
-# vim: ai ts=4 sts=4 et sw=4 nu
+from typing import Any
 
 import pytest
 
@@ -43,8 +42,13 @@ def test_constants():
         ("assets/test.css", "text/css", None, None),
     ],
 )
-def test_mime_for_name(filename, fallback, expected_mime, no_ext_to):
-    kwargs = {}
+def test_mime_for_name(
+    filename: str,
+    fallback: str | tuple[str] | None,
+    expected_mime: str | tuple[str],
+    no_ext_to: str | None,
+):
+    kwargs: dict[str, Any] = {}
     if fallback is not None:
         kwargs.update({"fallback": fallback})
     if no_ext_to is not None:

@@ -1,20 +1,15 @@
-#!/usr/bin/env python3
-# vim: ai ts=4 sts=4 et sw=4 nu
-
 from __future__ import annotations
 
-from typing import ClassVar
+from typing import Any, ClassVar
 
 
-class Config(dict):
+class Config(dict[str, str | None]):
     VERSION = 1
     ext = "dat"
     mimetype = "application/data"
-    options: ClassVar[dict[str, str | bool | int | None]] = {}
-    defaults: ClassVar[dict[str, str | bool | int | None]] = {
-        "-max_muxing_queue_size": "9999"
-    }
-    mapping: ClassVar[dict[str, str | bool | int | None]] = {
+    options: ClassVar[dict[str, str | None]] = {}
+    defaults: ClassVar[dict[str, str | None]] = {"-max_muxing_queue_size": "9999"}
+    mapping: ClassVar[dict[str, str]] = {
         "video_codec": "-codec:v",
         "audio_codec": "-codec:a",
         "max_video_bitrate": "-maxrate",
@@ -25,21 +20,21 @@ class Config(dict):
         "target_audio_bitrate": "-b:a",
     }
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any):
         super().__init__(self, **type(self).defaults)
         self.update(self.options)
         self.update(kwargs)
 
-    def update_from(self, **kwargs):
+    def update_from(self, **kwargs: Any):
         """Updates Config object based on shortcut params as given in build_from()"""
 
         for key, value in kwargs.items():
             setattr(self, key, value)
 
-    def to_ffmpeg_args(self):
+    def to_ffmpeg_args(self) -> list[str]:
         """Convert the options dict to list of ffmpeg arguments"""
 
-        args = []
+        args: list[str] = []
         for k, v in self.items():
             if v:
                 args += [k, v]
@@ -54,7 +49,7 @@ class Config(dict):
         return self.get(self.mapping["video_codec"])
 
     @video_codec.setter
-    def video_codec(self, value):
+    def video_codec(self, value: str | None):
         self[self.mapping["video_codec"]] = value
 
     @property
@@ -62,7 +57,7 @@ class Config(dict):
         return self.get(self.mapping["audio_codec"])
 
     @audio_codec.setter
-    def audio_codec(self, value):
+    def audio_codec(self, value: str | None):
         self[self.mapping["audio_codec"]] = value
 
     @property
@@ -70,7 +65,7 @@ class Config(dict):
         return self.get(self.mapping["max_video_bitrate"])
 
     @max_video_bitrate.setter
-    def max_video_bitrate(self, value):
+    def max_video_bitrate(self, value: str | None):
         self[self.mapping["max_video_bitrate"]] = value
 
     @property
@@ -78,7 +73,7 @@ class Config(dict):
         return self.get(self.mapping["min_video_bitrate"])
 
     @min_video_bitrate.setter
-    def min_video_bitrate(self, value):
+    def min_video_bitrate(self, value: str | None):
         self[self.mapping["min_video_bitrate"]] = value
 
     @property
@@ -86,7 +81,7 @@ class Config(dict):
         return self.get(self.mapping["target_video_bitrate"])
 
     @target_video_bitrate.setter
-    def target_video_bitrate(self, value):
+    def target_video_bitrate(self, value: str | None):
         self[self.mapping["target_video_bitrate"]] = value
 
     @property
@@ -94,7 +89,7 @@ class Config(dict):
         return self.get(self.mapping["target_audio_bitrate"])
 
     @target_audio_bitrate.setter
-    def target_audio_bitrate(self, value):
+    def target_audio_bitrate(self, value: str | None):
         self[self.mapping["target_audio_bitrate"]] = value
 
     @property
@@ -102,7 +97,7 @@ class Config(dict):
         return self.get(self.mapping["audio_sampling_rate"])
 
     @audio_sampling_rate.setter
-    def audio_sampling_rate(self, value):
+    def audio_sampling_rate(self, value: str | None):
         self[self.mapping["audio_sampling_rate"]] = value
 
     @property
@@ -110,17 +105,17 @@ class Config(dict):
         return self.get(self.mapping["buffersize"])
 
     @buffersize.setter
-    def buffersize(self, value):
+    def buffersize(self, value: str | None):
         self[self.mapping["buffersize"]] = value
 
     @property
-    def video_scale(self):
+    def video_scale(self) -> str | None:
         # remove "scale='" and "'" and return the value in between
         return self.get("-vf")[7:-1] if self.get("-vf") else None  # pyright: ignore
 
     @video_scale.setter
-    def video_scale(self, value):
-        self["-vf"] = f"scale='{value}'"
+    def video_scale(self, value: str | None):
+        self["-vf"] = f"scale='{value}'" if value else None
 
     @property
     def quantizer_scale_range(self):
@@ -129,11 +124,11 @@ class Config(dict):
         return (int(qmin), int(qmax)) if qmin is not None and qmax is not None else None
 
     @quantizer_scale_range.setter
-    def quantizer_scale_range(self, value):
+    def quantizer_scale_range(self, value: tuple[int, int]):
         qmin, qmax = value
         if (
-            isinstance(qmin, int)
-            and isinstance(qmax, int)
+            isinstance(qmin, int)  # pyright: ignore[reportUnnecessaryIsInstance]
+            and isinstance(qmax, int)  # pyright: ignore[reportUnnecessaryIsInstance]
             and -1 <= qmin <= 69  # noqa: PLR2004
             and -1 <= qmax <= 1024  # noqa: PLR2004
         ):
@@ -145,7 +140,7 @@ class Config(dict):
             )
 
     @classmethod
-    def build_from(cls, **params):
+    def build_from(cls, **params: Any):
         """build a Config easily via shortcut params
 
         video_codec: codec for output audio stream. more info

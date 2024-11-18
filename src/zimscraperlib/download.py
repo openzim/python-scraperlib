@@ -1,18 +1,15 @@
-#!/usr/bin/env python3
-# vim: ai ts=4 sts=4 et sw=4 nu
-
 from __future__ import annotations
 
 import pathlib
 import subprocess
 from concurrent.futures import Future, ThreadPoolExecutor
-from typing import IO, ClassVar
+from typing import IO, Any, ClassVar
 
 import requests
 import requests.adapters
 import requests.structures
 import urllib3.util
-import yt_dlp as youtube_dl
+import yt_dlp as youtube_dl  # pyright: ignore[reportMissingTypeStubs]
 
 from zimscraperlib import logger
 
@@ -29,24 +26,24 @@ class YoutubeDownloader:
     def __enter__(self):
         return self
 
-    def __exit__(self, *args):
+    def __exit__(self, *_: Any):
         self.shutdown()
 
     def shutdown(self) -> None:
         """shuts down the executor, awaiting completion"""
         self.executor.shutdown(wait=True)
 
-    def _run_youtube_dl(self, url: str, options: dict) -> None:
+    def _run_youtube_dl(self, url: str, options: dict[str, Any]) -> None:
         with youtube_dl.YoutubeDL(options) as ydl:
-            ydl.download([url])
+            ydl.download([url])  # pyright: ignore[reportUnknownMemberType]
 
     def download(
         self,
         url: str,
-        options: dict | None,
+        options: dict[str, Any] | None,
         *,
         wait: bool | None = True,
-    ) -> bool | Future:
+    ) -> bool | Future[Any]:
         """Downloads video using initialized executor.
 
         url: URL or Video ID
@@ -65,7 +62,7 @@ class YoutubeDownloader:
         raise future.exception()  # pyright: ignore
 
 
-class YoutubeConfig(dict):
+class YoutubeConfig(dict[str, str | bool | int | None]):
     options: ClassVar[dict[str, str | bool | int | None]] = {}
     defaults: ClassVar[dict[str, str | bool | int | None]] = {
         "writethumbnail": True,
@@ -81,7 +78,7 @@ class YoutubeConfig(dict):
         "outtmpl": "video.%(ext)s",
     }
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: str | bool | int | None):
         super().__init__(self, **type(self).defaults)
         self.update(self.options)
         self.update(kwargs)
@@ -91,7 +88,7 @@ class YoutubeConfig(dict):
         cls,
         target_dir: pathlib.Path | None = None,
         filepath: pathlib.Path | None = None,
-        **options,
+        **options: str | bool | int | None,
     ):
         if "outtmpl" not in options:
             outtmpl = cls.options.get("outtmpl", cls.defaults["outtmpl"])
@@ -142,9 +139,10 @@ def save_large_file(url: str, fpath: pathlib.Path) -> None:
     )
 
 
-def _get_retry_adapter(
+def get_retry_adapter(
     max_retries: int | None = 5,
 ) -> requests.adapters.BaseAdapter:
+    """A requests adapter to automatically retry on known HTTP status that can be"""
     retries = urllib3.util.retry.Retry(
         total=max_retries,  # total number of retries
         connect=max_retries,  # connection errors
@@ -168,7 +166,7 @@ def _get_retry_adapter(
 def get_session(max_retries: int | None = 5) -> requests.Session:
     """Session to hold cookies and connection pool together"""
     session = requests.Session()
-    session.mount("http", _get_retry_adapter(max_retries))  # tied to http and https
+    session.mount("http", get_retry_adapter(max_retries))  # tied to http and https
     return session
 
 
@@ -198,7 +196,11 @@ def stream_file(
     Returns the total number of bytes downloaded and the response headers"""
 
     # if no output option is supplied
-    if fpath is None and byte_stream is None:
+    if fpath is not None:
+        fp = open(fpath, "wb")
+    elif byte_stream is not None:
+        fp = byte_stream
+    else:
         raise ValueError("Either file path or a bytesIO object is needed")
 
     if not session:
@@ -212,12 +214,6 @@ def stream_file(
     resp.raise_for_status()
 
     total_downloaded = 0
-    if fpath is not None:
-        fp = open(fpath, "wb")
-    elif (
-        byte_stream is not None
-    ):  # pragma: no branch (we use a precise condition to help type checker)
-        fp = byte_stream
 
     for data in resp.iter_content(block_size):
         total_downloaded += len(data)
