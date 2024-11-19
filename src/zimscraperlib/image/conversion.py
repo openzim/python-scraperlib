@@ -1,13 +1,10 @@
-#!/usr/bin/env python3
-# vim: ai ts=4 sts=4 et sw=4 nu
-
 from __future__ import annotations
 
 import io
 import pathlib
-from typing import IO
+from typing import IO, Any
 
-import cairosvg.svg
+import cairosvg.svg  # pyright: ignore[reportMissingTypeStubs]
 from PIL.Image import open as pilopen
 
 from zimscraperlib.constants import ALPHA_NOT_SUPPORTED
@@ -31,7 +28,9 @@ def convert_image(
      to RGB. ex: RGB, ARGB, CMYK (and other PIL colorspaces)"""
 
     colorspace = params.get("colorspace")  # requested colorspace
-    fmt = params.pop("fmt").upper() if "fmt" in params else None  # requested format
+    fmt = (  # requested format
+        (params.pop("fmt") or "").upper() if "fmt" in params else None
+    )
     if not fmt:
         fmt = format_for(dst)
     if not fmt:
@@ -53,7 +52,7 @@ def convert_svg2png(
     Output width and height might be specified if resize is needed.
     PNG background is transparent.
     """
-    kwargs = {}
+    kwargs: dict[str, Any] = {}
     if isinstance(src, pathlib.Path):
         src = str(src)
     if isinstance(src, str):
@@ -65,9 +64,13 @@ def convert_svg2png(
     if height:
         kwargs["output_height"] = height
     if isinstance(dst, pathlib.Path):
-        cairosvg.svg2png(write_to=str(dst), **kwargs)
+        cairosvg.svg2png(  # pyright: ignore[reportUnknownMemberType]
+            write_to=str(dst), **kwargs
+        )
     else:
-        result = cairosvg.svg2png(**kwargs)
+        result = cairosvg.svg2png(  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType]
+            **kwargs
+        )
         if not isinstance(result, bytes):
             raise Exception(
                 "Unexpected type returned by cairosvg.svg2png"

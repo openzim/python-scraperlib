@@ -1,10 +1,5 @@
-#!/usr/bin/env python
-# vim: ai ts=4 sts=4 et sw=4 nu
-
 from __future__ import annotations
 
-import base64
-import datetime
 import io
 import logging
 import pathlib
@@ -14,20 +9,26 @@ import subprocess
 import sys
 import tempfile
 import time
+from collections.abc import Iterable
+from typing import Any, NamedTuple
 from unittest.mock import call, patch
 
 import pytest
 from libzim.writer import Compression  # pyright: ignore
 
-from zimscraperlib.constants import (
-    DEFAULT_DEV_ZIM_METADATA,
-    MANDATORY_ZIM_METADATA_KEYS,
-    UTF8,
-)
+from zimscraperlib.constants import UTF8
 from zimscraperlib.download import save_large_file, stream_file
 from zimscraperlib.filesystem import delete_callback
 from zimscraperlib.zim import Archive, Creator, StaticItem, URLItem
+from zimscraperlib.zim.metadata import (
+    DEFAULT_DEV_ZIM_METADATA,
+    Metadata,
+    RawMetadataValue,
+    StandardMetadata,
+)
 from zimscraperlib.zim.providers import FileLikeProvider, URLProvider
+
+from .conftest import MetadataCase
 
 
 class SpecialURLProvider(URLProvider):
@@ -53,14 +54,20 @@ class FileLikeProviderItem(StaticItem):
         return FileLikeProvider(self.fileobj)
 
 
-def test_zim_creator(tmp_path, png_image, html_file, html_str: str, html_str_cn: str):
+def test_zim_creator(
+    tmp_path: pathlib.Path,
+    png_image: pathlib.Path,
+    html_file: pathlib.Path,
+    html_str: str,
+    html_str_cn: str,
+):
     fpath = tmp_path / "test.zim"
     main_path = "welcome"
     tags = ";".join(["toto", "tata"])
     with open(png_image, "rb") as fh:
         png_data = fh.read()
     with Creator(fpath, main_path).config_dev_metadata(
-        Tags=tags, Illustration_48x48_at_1=png_data
+        {"Tags": tags, "Illustration_48x48_at_1": png_data}
     ) as creator:
         # verbatim HTML from string
         creator.add_item_for("welcome", "wel", content=html_str, is_front=True)
@@ -92,8 +99,8 @@ def test_zim_creator(tmp_path, png_image, html_file, html_str: str, html_str_cn:
     assert fpath.exists()
 
     reader = Archive(fpath)
-    assert reader.get_text_metadata("Title") == DEFAULT_DEV_ZIM_METADATA["Title"]
-    assert reader.get_text_metadata("Language") == DEFAULT_DEV_ZIM_METADATA["Language"]
+    assert reader.get_text_metadata("Title") == DEFAULT_DEV_ZIM_METADATA.Title
+    assert reader.get_text_metadata("Language") == DEFAULT_DEV_ZIM_METADATA.Language
     assert reader.get_text_metadata("Tags") == tags
     assert reader.main_entry.get_item().path == f"{main_path}"
     # make sure we have our image
@@ -122,7 +129,7 @@ def test_zim_creator(tmp_path, png_image, html_file, html_str: str, html_str_cn:
     assert bytes(reader.get_illustration_item().content) == png_data
 
 
-def test_create_without_workaround(tmp_path):
+def test_create_without_workaround(tmp_path: pathlib.Path):
     fpath = tmp_path / "test.zim"
 
     with Creator(
@@ -132,9 +139,9 @@ def test_create_without_workaround(tmp_path):
             creator.add_item("hello")  # pyright: ignore [reportArgumentType]
 
 
-def test_noindexlanguage(tmp_path):
+def test_noindexlanguage(tmp_path: pathlib.Path):
     fpath = tmp_path / "test.zim"
-    creator = Creator(fpath, "welcome").config_dev_metadata(Language="bam")
+    creator = Creator(fpath, "welcome").config_dev_metadata({"Language": "bam"})
     creator.config_indexing(False)
     with creator as creator:
         creator.add_item(StaticItem(path="welcome", content="hello"))
@@ -148,7 +155,7 @@ def test_noindexlanguage(tmp_path):
     assert not reader.has_fulltext_index
 
 
-def test_add_item_for(tmp_path):
+def test_add_item_for(tmp_path: pathlib.Path):
     fpath = tmp_path / "test.zim"
     # test without mimetype
     with Creator(fpath, "welcome").config_dev_metadata() as creator:
@@ -160,7 +167,7 @@ def test_add_item_for(tmp_path):
             creator.add_item_for(path="welcome", title="hello")
 
 
-def test_add_item_for_delete(tmp_path, html_file):
+def test_add_item_for_delete(tmp_path: pathlib.Path, html_file: pathlib.Path):
     fpath = tmp_path / "test.zim"
     local_path = pathlib.Path(tmp_path / "somefile.html")
 
@@ -176,7 +183,7 @@ def test_add_item_for_delete(tmp_path, html_file):
     assert reader.get_item("index")
 
 
-def test_add_item_for_delete_fail(tmp_path, png_image):
+def test_add_item_for_delete_fail(tmp_path: pathlib.Path, png_image: pathlib.Path):
     fpath = tmp_path / "test.zim"
     local_path = pathlib.Path(tmp_path / "somefile.png")
 
@@ -197,7 +204,7 @@ def test_add_item_for_delete_fail(tmp_path, png_image):
     assert reader.get_item("index")
 
 
-def test_add_item_empty_content(tmp_path):
+def test_add_item_empty_content(tmp_path: pathlib.Path):
     fpath = tmp_path / "test.zim"
     # test with incorrect content type
     with Creator(fpath, "welcome").config_dev_metadata() as creator:
@@ -209,7 +216,10 @@ def test_add_item_empty_content(tmp_path):
 
 
 @pytest.mark.parametrize("auto_index", [False, True])
-def test_add_item_for_unsupported_content_type(auto_index, tmp_path):
+def test_add_item_for_unsupported_content_type(
+    auto_index: bool,  # noqa: FBT001 # used only in tests
+    tmp_path: pathlib.Path,
+):
     fpath = tmp_path / "test.zim"
     # test with incorrect content type
     with Creator(fpath, "welcome").config_dev_metadata() as creator:
@@ -223,7 +233,7 @@ def test_add_item_for_unsupported_content_type(auto_index, tmp_path):
             )
 
 
-def test_compression(tmp_path):
+def test_compression(tmp_path: pathlib.Path):
     fpath = tmp_path / "test.zim"
     with Creator(
         tmp_path / "test.zim", "welcome", compression="zstd"
@@ -236,7 +246,7 @@ def test_compression(tmp_path):
         creator.add_item(StaticItem(path="welcome", content="hello"))
 
 
-def test_double_finish(tmp_path):
+def test_double_finish(tmp_path: pathlib.Path):
     fpath = tmp_path / "test.zim"
     with Creator(fpath, "welcome").config_dev_metadata() as creator:
         creator.add_item(StaticItem(path="welcome", content="hello"))
@@ -245,13 +255,13 @@ def test_double_finish(tmp_path):
     creator.finish()
 
 
-def test_cannot_finish(tmp_path):
+def test_cannot_finish(tmp_path: pathlib.Path):
     creator = Creator(tmp_path / "test.zim", "")
     creator.can_finish = False
     creator.finish()
 
 
-def test_sourcefile_removal(tmp_path, html_file):
+def test_sourcefile_removal(tmp_path: pathlib.Path, html_file: pathlib.Path):
     fpath = tmp_path / "test.zim"
     with Creator(fpath, "").config_dev_metadata() as creator:
         # using a temp dir so file still have a meaningful name
@@ -265,9 +275,9 @@ def test_sourcefile_removal(tmp_path, html_file):
     assert not src_path.exists()
 
 
-def test_sourcefile_removal_std(tmp_path, html_file):
+def test_sourcefile_removal_std(tmp_path: pathlib.Path, html_file: pathlib.Path):
     fpath = tmp_path / "test.zim"
-    paths = []
+    paths: list[pathlib.Path] = []
     with Creator(fpath, "").config_dev_metadata() as creator:
         for idx in range(0, 4):
             # copy html to folder
@@ -285,7 +295,7 @@ def test_sourcefile_removal_std(tmp_path, html_file):
         assert not path.exists()
 
 
-def test_sourcefile_noremoval(tmp_path, html_file):
+def test_sourcefile_noremoval(tmp_path: pathlib.Path, html_file: pathlib.Path):
     # copy html to folder
     src_path = tmp_path / "source.html"
     shutil.copyfile(html_file, src_path)
@@ -297,13 +307,13 @@ def test_sourcefile_noremoval(tmp_path, html_file):
     assert src_path.exists()
 
 
-def test_urlitem_badurl(tmp_path):
+def test_urlitem_badurl(tmp_path: pathlib.Path):
     with Creator(tmp_path / "test.zim", "").config_dev_metadata() as creator:
         with pytest.raises(IOError, match="Unable to access URL"):
             creator.add_item(URLItem(url="httpo://hello:helloe:hello/"))
 
 
-def test_urlitem_html(tmp_path, gzip_html_url):
+def test_urlitem_html(tmp_path: pathlib.Path, gzip_html_url: str):
     file_path = tmp_path / "file.html"
     save_large_file(gzip_html_url, file_path)
     with open(file_path, "rb") as fh:
@@ -317,7 +327,7 @@ def test_urlitem_html(tmp_path, gzip_html_url):
     assert bytes(zim.get_item("wiki/Main_Page").content) == file_bytes
 
 
-def test_urlitem_nonhtmlgzip(tmp_path, gzip_nonhtml_url):
+def test_urlitem_nonhtmlgzip(tmp_path: pathlib.Path, gzip_nonhtml_url: str):
     file_path = tmp_path / "file.txt"
     save_large_file(gzip_nonhtml_url, file_path)
     with open(file_path, "rb") as fh:
@@ -334,7 +344,7 @@ def test_urlitem_nonhtmlgzip(tmp_path, gzip_nonhtml_url):
     assert bytes(zim.get_item("robots.txt").content) == file_bytes
 
 
-def test_urlitem_binary(tmp_path, png_image_url):
+def test_urlitem_binary(tmp_path: pathlib.Path, png_image_url: str):
     file_path = tmp_path / "file.png"
     save_large_file(png_image_url, file_path)
     with open(file_path, "rb") as fh:
@@ -351,7 +361,7 @@ def test_urlitem_binary(tmp_path, png_image_url):
     )
 
 
-def test_urlitem_staticcontent(tmp_path, gzip_nonhtml_url):
+def test_urlitem_staticcontent(tmp_path: pathlib.Path, gzip_nonhtml_url: str):
     fpath = tmp_path / "test.zim"
     with Creator(fpath, "").config_dev_metadata() as creator:
         creator.add_item(URLItem(url=gzip_nonhtml_url, content="hello"))
@@ -360,7 +370,7 @@ def test_urlitem_staticcontent(tmp_path, gzip_nonhtml_url):
     assert bytes(zim.get_item("robots.txt").content) == b"hello"
 
 
-def test_filelikeprovider_nosize(tmp_path, png_image_url):
+def test_filelikeprovider_nosize(tmp_path: pathlib.Path, png_image_url: str):
     fileobj = io.BytesIO()
     stream_file(png_image_url, byte_stream=fileobj)
 
@@ -372,7 +382,7 @@ def test_filelikeprovider_nosize(tmp_path, png_image_url):
     assert bytes(zim.get_item("one.png").content) == fileobj.getvalue()
 
 
-def test_urlprovider(tmp_path, png_image_url):
+def test_urlprovider(tmp_path: pathlib.Path, png_image_url: str):
     file_path = tmp_path / "file.png"
     save_large_file(png_image_url, file_path)
     with open(file_path, "rb") as fh:
@@ -386,7 +396,9 @@ def test_urlprovider(tmp_path, png_image_url):
     assert bytes(zim.get_item("one.png").content) == file_bytes
 
 
-def test_urlprovider_nolength(tmp_path, png_image_url, png_image):
+def test_urlprovider_nolength(
+    tmp_path: pathlib.Path, png_image_url: str, png_image: pathlib.Path
+):
     # save url's content locally using external tool
     png_image = tmp_path / "original.png"
     save_large_file(png_image_url, png_image)
@@ -456,7 +468,7 @@ with HTTPServer(('', {port}), handler) as server:
     assert bytes(zim.get_item("B").content) == png_image_bytes
 
 
-def test_item_callback(tmp_path, html_file):
+def test_item_callback(tmp_path: pathlib.Path, html_file: pathlib.Path):
     fpath = tmp_path / "test.zim"
 
     class Store:
@@ -473,7 +485,7 @@ def test_item_callback(tmp_path, html_file):
     assert Store.called is True
 
 
-def test_compess_hints(tmp_path, html_file):
+def test_compess_hints(tmp_path: pathlib.Path, html_file: pathlib.Path):
     with Creator(tmp_path / "test.zim", "").config_dev_metadata() as creator:
         creator.add_item_for(
             path=html_file.name,
@@ -483,11 +495,11 @@ def test_compess_hints(tmp_path, html_file):
         )
 
 
-def test_callback_and_remove(tmp_path, html_file):
+def test_callback_and_remove(tmp_path: pathlib.Path, html_file: pathlib.Path):
     class Store:
         called = 0
 
-    def cb(*args):  # noqa: ARG001
+    def cb(*args: Any):  # noqa: ARG001
         Store.called += 1
 
     # duplicate test file as we'll want to remove twice
@@ -510,7 +522,7 @@ def test_callback_and_remove(tmp_path, html_file):
     assert Store.called == 2
 
 
-def test_duplicates(tmp_path):
+def test_duplicates(tmp_path: pathlib.Path):
     with Creator(tmp_path / "test.zim", "").config_dev_metadata() as creator:
         creator.add_item_for(path="A", content="A")
         creator.add_item_for(path="C", content="C")
@@ -521,7 +533,7 @@ def test_duplicates(tmp_path):
             creator.add_redirect(path="B", target_path="C")
 
 
-def test_ignore_duplicates(tmp_path):
+def test_ignore_duplicates(tmp_path: pathlib.Path):
     with Creator(
         tmp_path / "test.zim", "", ignore_duplicates=True
     ).config_dev_metadata() as creator:
@@ -531,23 +543,27 @@ def test_ignore_duplicates(tmp_path):
         creator.add_redirect(path="B", target_path="C")
 
 
-def test_without_metadata(tmp_path):
+def test_without_metadata(tmp_path: pathlib.Path):
     with pytest.raises(ValueError, match="Mandatory metadata are not all set."):
         Creator(tmp_path, "").start()
 
 
-def test_check_metadata(tmp_path):
+def test_check_metadata(tmp_path: pathlib.Path):
     with pytest.raises(ValueError, match="Counter cannot be set"):
-        Creator(tmp_path, "").config_dev_metadata(Counter=1).start()
+        Creator(tmp_path, "").config_dev_metadata(Metadata("Counter", "1")).start()
 
     with pytest.raises(ValueError, match="Invalid type for Foo"):
-        Creator(tmp_path, "").config_dev_metadata(Foo=1).start()
+        Creator(tmp_path, "").config_dev_metadata(Metadata("Foo", 1)).start()
 
     with pytest.raises(ValueError, match="Description is too long."):
-        Creator(tmp_path, "").config_dev_metadata(Description="T" * 90).start()
+        Creator(tmp_path, "").config_dev_metadata(
+            Metadata("Description", "T" * 90)
+        ).start()
 
     with pytest.raises(ValueError, match="LongDescription is too long."):
-        Creator(tmp_path, "").config_dev_metadata(LongDescription="T" * 5000).start()
+        Creator(tmp_path, "").config_dev_metadata(
+            Metadata("LongDescription", "T" * 5000)
+        ).start()
 
 
 @pytest.mark.parametrize(
@@ -570,46 +586,57 @@ def test_check_metadata(tmp_path):
     ],
 )
 @patch("zimscraperlib.zim.creator.logger", autospec=True)
-def test_start_logs_metadata_log_contents(mocked_logger, png_image, tags, tmp_path):
-    mocked_logger.isEnabledFor.side_effect = lambda level: level == logging.DEBUG
+def test_start_logs_metadata_log_contents(
+    mocked_logger: logging.Logger,
+    png_image: pathlib.Path,
+    tags: str | list[str],
+    tmp_path: pathlib.Path,
+):
+    mocked_logger.isEnabledFor.side_effect = (  # pyright: ignore
+        lambda level: level == logging.DEBUG  # pyright: ignore
+    )
     fpath = tmp_path / "test_config.zim"
     with open(png_image, "rb") as fh:
         png_data = fh.read()
     creator = Creator(fpath, "", disable_metadata_checks=True).config_metadata(
-        Name="wikipedia_fr_football",
-        Title="English Wikipedia",
-        Creator="English speaking Wikipedia contributors",
-        Publisher="Wikipedia user Foobar",
-        Date="2009-11-21",
-        Description="All articles (without images) from the english Wikipedia",
-        LongDescription="This ZIM file contains all articles (without images)"
-        " from the english Wikipedia by 2009-11-10. The topics are...",
-        Language="eng",
-        License="CC-BY",
-        Tags=tags,
-        Flavour="nopic",
-        Source="https://en.wikipedia.org/",
-        Scraper="mwoffliner 1.2.3",
-        Illustration_48x48_at_1=png_data,
-        TestMetadata="Test Metadata",
+        StandardMetadata(
+            Name="wikipedia_fr_football",
+            Title="English Wikipedia",
+            Creator="English speaking Wikipedia contributors",
+            Publisher="Wikipedia user Foobar",
+            Date="2009-11-21",
+            Description="All articles (without images) from the english Wikipedia",
+            LongDescription="This ZIM file contains all articles (without images)"
+            " from the english Wikipedia by 2009-11-10. The topics are...",
+            Language="eng",
+            License="CC-BY",
+            Tags=tags,
+            Flavour="nopic",
+            Source="https://en.wikipedia.org/",
+            Scraper="mwoffliner 1.2.3",
+            Illustration_48x48_at_1=png_data,
+        ),
+        {"TestMetadata": "Test Metadata"},
+        fail_on_missing_prefix_in_extras=False,
     )
 
     class NotPrintable:
         def __str__(self):
             raise ValueError("Not printable I said")
 
-    creator._metadata.update(
+    creator._metadata.update(  # pyright: ignore[reportPrivateUsage]
         {
             "Illustration_96x96@1": b"%PDF-1.5\n%\xe2\xe3\xcf\xd3",
             "Chars": b"\xc5\xa1\xc9\x94\xc9\x9b",
             "Chars-32": b"\xff\xfe\x00\x00a\x01\x00\x00T\x02\x00\x00[\x02\x00\x00",
             "Video": b"\x00\x00\x00 ftypisom\x00\x00\x02\x00isomiso2avc1mp41\x00",
             "Toupie": NotPrintable(),
-        }
+            "Relation": None,
+        }  # type: ignore # intentionaly bad, to handle case where user does bad things
     )
-    creator._log_metadata()
+    creator._log_metadata()  # pyright: ignore[reportPrivateUsage]
     # /!\ this must be alpha sorted
-    mocked_logger.debug.assert_has_calls(
+    mocked_logger.debug.assert_has_calls(  # pyright: ignore
         [
             call("Metadata: Chars = šɔɛ"),
             call(
@@ -640,7 +667,9 @@ def test_start_logs_metadata_log_contents(mocked_logger, png_image, tags, tmp_pa
             call("Metadata: Relation = None"),
             call("Metadata: Scraper = mwoffliner 1.2.3"),
             call("Metadata: Source = https://en.wikipedia.org/"),
-            call(f"Metadata: Tags = {tags}"),
+            call(
+                f"Metadata: Tags = {tags if isinstance(tags, str) else ";".join(tags)}"
+            ),
             call("Metadata: TestMetadata = Test Metadata"),
             call("Metadata: Title = English Wikipedia"),
             call("Metadata: Toupie is unexpected data type: NotPrintable"),
@@ -649,9 +678,9 @@ def test_start_logs_metadata_log_contents(mocked_logger, png_image, tags, tmp_pa
     )
 
 
-def test_relax_metadata(tmp_path):
+def test_relax_metadata(tmp_path: pathlib.Path):
     Creator(tmp_path, "", disable_metadata_checks=True).config_dev_metadata(
-        Description="T" * 90
+        Metadata("Description", "T" * 90)
     ).start()
 
 
@@ -674,27 +703,31 @@ def test_relax_metadata(tmp_path):
         ),
     ],
 )
-def test_config_metadata(tmp_path, png_image, tags):
+def test_config_metadata(
+    tmp_path: pathlib.Path, png_image: pathlib.Path, tags: str | list[str]
+):
     fpath = tmp_path / "test_config.zim"
     with open(png_image, "rb") as fh:
         png_data = fh.read()
     creator = Creator(fpath, "").config_metadata(
-        Name="wikipedia_fr_football",
-        Title="English Wikipedia",
-        Creator="English speaking Wikipedia contributors",
-        Publisher="Wikipedia user Foobar",
-        Date="2009-11-21",
-        Description="All articles (without images) from the english Wikipedia",
-        LongDescription="This ZIM file contains all articles (without images)"
-        " from the english Wikipedia by 2009-11-10. The topics are...",
-        Language="eng",
-        License="CC-BY",
-        Tags=tags,
-        Flavour="nopic",
-        Source="https://en.wikipedia.org/",
-        Scraper="mwoffliner 1.2.3",
-        Illustration_48x48_at_1=png_data,
-        TestMetadata="Test Metadata",
+        StandardMetadata(
+            Name="wikipedia_fr_football",
+            Title="English Wikipedia",
+            Creator="English speaking Wikipedia contributors",
+            Publisher="Wikipedia user Foobar",
+            Date="2009-11-21",
+            Description="All articles (without images) from the english Wikipedia",
+            LongDescription="This ZIM file contains all articles (without images)"
+            " from the english Wikipedia by 2009-11-10. The topics are...",
+            Language="eng",
+            License="CC-BY",
+            Tags=tags,
+            Flavour="nopic",
+            Source="https://en.wikipedia.org/",
+            Scraper="mwoffliner 1.2.3",
+            Illustration_48x48_at_1=png_data,
+        ),
+        {"X-TestMetadata": "Test Metadata"},
     )
     with creator:
         pass
@@ -729,22 +762,28 @@ def test_config_metadata(tmp_path, png_image, tags):
     assert reader.get_text_metadata("Source") == "https://en.wikipedia.org/"
     assert reader.get_text_metadata("Scraper") == "mwoffliner 1.2.3"
     assert reader.get_metadata("Illustration_48x48@1") == png_data
-    assert reader.get_text_metadata("TestMetadata") == "Test Metadata"
+    assert reader.get_text_metadata("X-TestMetadata") == "Test Metadata"
 
 
-def test_config_metadata_control_characters(tmp_path):
+def test_config_metadata_control_characters(tmp_path: pathlib.Path):
     fpath = tmp_path / "test_config.zim"
     creator = Creator(fpath, "").config_dev_metadata(
-        Description="\t\n\r\n \tA description \awith  \bcontrol characters\v",
-        LongDescription="A description \rwith \a\ncontrol characters\tsss\t\n\r\n \t",
-        Creator="  A creator ",
+        {
+            "Description": "\t\n\r\n \tA description \awith  \bcontrol characters\v",
+            "LongDescription": "A description \rwith \a\ncontrol characters\tsss\t\n\r"
+            "\n \t",
+            "Creator": "  A creator ",
+        }
     )
-    assert creator._metadata["Description"] == "A description with  control characters"
     assert (
-        creator._metadata["LongDescription"]
+        creator.get_metadata("Description", str)
+        == "A description with  control characters"
+    )
+    assert (
+        creator.get_metadata("LongDescription", str)
         == "A description \rwith \ncontrol characters\tsss"
     )
-    assert creator._metadata["Creator"] == "A creator"
+    assert creator.get_metadata("Creator", str) == "A creator"
     with creator:
         creator.add_metadata(
             "Description_1",
@@ -788,86 +827,307 @@ def test_config_metadata_control_characters(tmp_path):
     assert bytes.hex(reader.get_metadata("Binary1")) == "01fa"
 
 
-@pytest.mark.parametrize(
-    "name,value,valid",
-    [
-        ("Name", 4, False),
-        ("Title", 4, False),
-        ("Creator", 4, False),
-        ("Publisher", 4, False),
-        ("Description", 4, False),
-        ("LongDescription", 4, False),
-        ("License", 4, False),
-        ("Relation", 4, False),
-        ("Relation", 4, False),
-        ("Flavour", 4, False),
-        ("Source", 4, False),
-        ("Scraper", 4, False),
-        ("Title", "में" * 30, True),
-        ("Title", "X" * 31, False),
-        ("Date", 4, False),
-        ("Date", datetime.datetime.now(), True),  # noqa: DTZ005
-        ("Date", datetime.datetime(1969, 12, 31, 23, 59), True),  # noqa: DTZ001
-        ("Date", datetime.date(1969, 12, 31), True),
-        ("Date", datetime.date.today(), True),  # noqa: DTZ011
-        ("Date", "1969-12-31", True),
-        ("Date", "1969-13-31", False),
-        ("Date", "2023/02/29", False),
-        ("Date", "2023-55-99", False),
-        ("Language", "xxx", False),
-        ("Language", "rmr", False),
-        ("Language", "eng", True),
-        ("Language", "fra", True),
-        ("Language", "bam", True),
-        ("Language", "fr", False),
-        ("Language", "en", False),
-        ("Language", "fra,eng", True),
-        ("Language", "fra,eng,bam", True),
-        ("Language", "fra,en,bam", False),
-        ("Language", "eng,", False),
-        ("Language", "eng, fra", False),
-        ("Counter", "1", False),
-        ("Description", "में" * 80, True),
-        ("Description", "X" * 81, False),
-        ("LongDescription", "में" * 4000, True),
-        ("LongDescription", "X" * 4001, False),
-        ("Tags", 4, False),
-        ("Tags", ["wikipedia", 4, "football"], False),
-        ("Tags", ("wikipedia", "football"), True),
-        ("Tags", ["wikipedia", "football"], True),
-        ("Tags", "wikipedia;football", True),
-        # 1x1 PNG image
-        (
-            "Illustration_48x48@1",
-            base64.b64decode(
-                "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAAGXRFWHRTb2Z0d2FyZQBB"
-                "ZG9iZSBJbWFnZVJlYWR5ccllPAAAAA9JREFUeNpi+P//P0CAAQAF/gL+Lc6J7gAAAABJ"
-                "RU5ErkJggg=="
-            ),
-            False,
+class ExtraMetadataCase(NamedTuple):
+    extras: Metadata | Iterable[Metadata] | dict[str, RawMetadataValue]
+    fail_on_missing_prefix: bool
+    id: str
+
+
+def __get_extra_metadata_case_id(case: ExtraMetadataCase) -> str:
+    return case.id
+
+
+@pytest.fixture(
+    params=[
+        ExtraMetadataCase(
+            {"X-TestMetadata": "Test Metadata"}, True, id="dict_good_prefix"
         ),
-        (
-            "Illustration_48x48@1",
-            DEFAULT_DEV_ZIM_METADATA["Illustration_48x48_at_1"],
+        ExtraMetadataCase(
+            {"X-TestMetadata": "Test Metadata"}, True, id="dict_good_prefix"
+        ),
+        ExtraMetadataCase(
+            {"TestMetadata": "Test Metadata"}, False, id="dict_bad_prefix"
+        ),
+        ExtraMetadataCase(
+            Metadata("X-TestMetadata", "Test Metadata"), True, id="item_good_prefix"
+        ),
+        ExtraMetadataCase(
+            Metadata("TestMetadata", "Test Metadata"), False, id="item_bad_prefix"
+        ),
+        ExtraMetadataCase(
+            [Metadata("X-TestMetadata", "Test Metadata")],
             True,
+            id="list_of_one_good_prefix",
         ),
-        (
-            "Illustration_96x96@1",
-            DEFAULT_DEV_ZIM_METADATA["Illustration_48x48_at_1"],
+        ExtraMetadataCase(
+            [Metadata("TestMetadata", "Test Metadata")],
             False,
+            id="list_of_one_bad_prefix",
         ),
-    ]
-    + [(name, "", False) for name in MANDATORY_ZIM_METADATA_KEYS],
+        ExtraMetadataCase(
+            [
+                Metadata("X-TestMetadata", "Test Metadata"),
+                Metadata("X-TestMetadata2", "Test Metadata"),
+            ],
+            True,
+            id="list_of_two_good_prefix",
+        ),
+        ExtraMetadataCase(
+            [
+                Metadata("X-TestMetadata", "Test Metadata"),
+                Metadata("TestMetadata2", "Test Metadata"),
+            ],
+            False,
+            id="list_of_two_bad_prefix",
+        ),
+    ],
+    ids=__get_extra_metadata_case_id,
 )
-def test_validate_metadata(tmp_path, name, value, valid):
-    if valid:
-        Creator(tmp_path / "_.zim", "").validate_metadata(name, value)
+def metadata_extras(request: pytest.FixtureRequest):
+    yield request.param
+
+
+def test_metadata_extras_one(
+    tmp_path: pathlib.Path, metadata_extras: ExtraMetadataCase
+):
+    Creator(tmp_path / "_.zim", "").config_metadata(
+        DEFAULT_DEV_ZIM_METADATA,
+        metadata_extras.extras,
+        fail_on_missing_prefix_in_extras=metadata_extras.fail_on_missing_prefix,
+    )
+
+
+def test_metadata_extras_two(
+    tmp_path: pathlib.Path, metadata_extras: ExtraMetadataCase
+):
+    Creator(tmp_path / "_.zim", "").config_metadata(
+        DEFAULT_DEV_ZIM_METADATA
+    ).config_any_metadata(
+        metadata_extras.extras,
+        fail_on_missing_prefix=metadata_extras.fail_on_missing_prefix,
+    )
+
+
+def test_metadata_extras_dev(
+    tmp_path: pathlib.Path, metadata_extras: ExtraMetadataCase
+):
+    Creator(tmp_path / "_.zim", "").config_dev_metadata(metadata_extras.extras)
+
+
+def test_metadata_extras_missing_prefix(tmp_path: pathlib.Path):
+    with pytest.raises(ValueError, match="does not starts with X- as expected"):
+        Creator(tmp_path / "_.zim", "").config_metadata(
+            DEFAULT_DEV_ZIM_METADATA,
+            {"TestMetadata": "Test Metadata"},
+        )
+
+
+def test_blank_metadata(tmp_path: pathlib.Path):
+    fpath = tmp_path / "test_blank.zim"
+    with Creator(fpath, "").config_dev_metadata(
+        {"Extra": "123", "Blank": "", "None": None}
+    ):
+        pass
+    assert fpath.exists()
+    reader = Archive(fpath)
+    assert reader.get_text_metadata("Title") == DEFAULT_DEV_ZIM_METADATA.Title
+    assert reader.get_text_metadata("Extra") == "123"
+    with pytest.raises(RuntimeError, match="Cannot find metadata"):
+        reader.get_text_metadata("Blank")
+    with pytest.raises(RuntimeError, match="Cannot find metadata"):
+        reader.get_text_metadata("None")
+
+
+@pytest.mark.parametrize(
+    "name,value,expected_value",
+    [
+        pytest.param(
+            "X-Test",
+            DEFAULT_DEV_ZIM_METADATA.Title + "Foo",
+            DEFAULT_DEV_ZIM_METADATA.Title + "Foo",
+            id="simple_str",
+        ),
+        pytest.param("X-Test", None, None, id="empty"),
+        pytest.param("Tags", ["tag1", "tag2"], "tag1;tag2", id="tags"),
+        pytest.param(
+            "LongDescription",
+            "Long \r\adescription",
+            "Long \rdescription",
+            id="long_description",
+        ),
+    ],
+)
+def test_add_metadata(
+    tmp_path: pathlib.Path, name: str, value: Any, expected_value: Any
+):
+    fpath = tmp_path / "test_blank.zim"
+    with Creator(fpath, "").config_dev_metadata() as creator:
+        creator.add_metadata(name, value)
+    assert fpath.exists()
+    reader = Archive(fpath)
+    if value:
+        assert reader.get_text_metadata(name) == expected_value
+    else:
+        with pytest.raises(RuntimeError, match="Cannot find metadata"):
+            reader.get_text_metadata(name)
+
+
+@pytest.mark.parametrize(
+    "name",
+    [
+        pytest.param(
+            "Illustration_96x96@1",
+            id="illustration_@",
+        ),
+        pytest.param(
+            "Illustration_96x96_at_1",  # must be renamed to Illustration_96x96@1
+            id="illustration_at",
+        ),
+    ],
+)
+def test_add_bad_illustration(tmp_path: pathlib.Path, name: str):
+    with pytest.raises(
+        ValueError, match="Illustration_96x96@1 is not a 96x96 PNG Image"
+    ):
+        with Creator(tmp_path / "_.zim", "").config_dev_metadata() as creator:
+            creator.add_metadata(name, DEFAULT_DEV_ZIM_METADATA.Illustration_48x48_at_1)
+
+
+@pytest.mark.parametrize(
+    "name,metadata_type,default_value,expected_value,expected_error",
+    [
+        pytest.param(
+            "Title", str, None, DEFAULT_DEV_ZIM_METADATA.Title, None, id="str_present"
+        ),
+        pytest.param(
+            "Illustration_48x48@1", bytes, None, None, None, id="bytes_present"
+        ),
+        pytest.param(
+            "Title", bytes, None, None, "metadata Title is not a bytes", id="not_bytes"
+        ),
+        pytest.param(
+            "Illustration_48x48@1",
+            str,
+            None,
+            None,
+            "metadata Illustration_48x48@1 is not a str",
+            id="not_str",
+        ),
+        pytest.param("Blank", str, "", "", None, id="str_default1"),
+        pytest.param("Blank", str, "foo", "foo", None, id="str_default2"),
+        pytest.param(
+            "Blank", str, None, None, "metadata Blank is not set", id="str_not_set"
+        ),
+        pytest.param("Blank", bytes, b"", b"", None, id="bytes_default1"),
+        pytest.param("Blank", bytes, b"foo", b"foo", None, id="bytes_default2"),
+        pytest.param(
+            "Blank", bytes, None, None, "metadata Blank is not set", id="bytes_not_set"
+        ),
+    ],
+)
+def test_get_metadata(
+    tmp_path: pathlib.Path,
+    name: str,
+    metadata_type: type,
+    default_value: Any,
+    expected_value: Any,
+    expected_error: str,
+):
+    creator = Creator(tmp_path / "_.zim", "").config_dev_metadata(
+        {"Extra": "123", "Blank": "", "None": None}
+    )
+    if not expected_error:
+        if expected_value:
+            assert (
+                creator.get_metadata(name, metadata_type, default_value)
+                == expected_value
+            )
+        else:
+            creator.get_metadata(name, metadata_type, default_value)
+    else:
+        with pytest.raises(ValueError, match=expected_error):
+            creator.get_metadata(name, metadata_type, default_value)
+
+
+def test_validate_metadata(tmp_path: pathlib.Path, metadata_case: MetadataCase):
+    if metadata_case.valid and metadata_case.value:
+        Creator(tmp_path / "_.zim", "").validate_metadata(
+            metadata_case.name, metadata_case.value
+        )
     else:
         with pytest.raises(ValueError):
-            Creator(tmp_path / "_.zim", "").validate_metadata(name, value)
+            Creator(tmp_path / "_.zim", "").validate_metadata(
+                metadata_case.name, metadata_case.value
+            )
 
 
-def test_config_indexing(tmp_path):
+def test_config_bad_metadata_dict(tmp_path: pathlib.Path):
+    with pytest.raises(ValueError, match="too many values to unpack"):
+        Creator(tmp_path / "_.zim", "").config_any_metadata(
+            {b"Foo": "Bar"}  # pyright: ignore[reportArgumentType]
+        )
+
+
+def test_config_std_metadata(tmp_path: pathlib.Path, metadata_case: MetadataCase):
+    metadata = DEFAULT_DEV_ZIM_METADATA.copy()
+    metadata.__setattr__(metadata_case.name, metadata_case.value)
+    # validate automatically when configuring
+    if metadata_case.valid:
+        Creator(tmp_path / "_.zim", "").config_metadata(std_metadata=metadata)
+    else:
+        with pytest.raises(ValueError):
+            Creator(tmp_path / "_.zim", "").config_metadata(std_metadata=metadata)
+
+
+def test_config_str_with_extra_metadata(
+    tmp_path: pathlib.Path, metadata_case: MetadataCase
+):
+    if metadata_case.valid:
+        Creator(tmp_path / "_.zim", "").config_metadata(
+            std_metadata=DEFAULT_DEV_ZIM_METADATA,
+            extra_metadata=Metadata(metadata_case.name, metadata_case.value),
+            fail_on_missing_prefix_in_extras=False,
+        )
+    else:
+        with pytest.raises(ValueError):
+            Creator(tmp_path / "_.zim", "").config_metadata(
+                std_metadata=DEFAULT_DEV_ZIM_METADATA,
+                extra_metadata=Metadata(metadata_case.name, metadata_case.value),
+                fail_on_missing_prefix_in_extras=False,
+            )
+
+
+def test_config_extra_metadata(tmp_path: pathlib.Path, metadata_case: MetadataCase):
+    if metadata_case.valid:
+        Creator(tmp_path / "_.zim", "").config_metadata(
+            DEFAULT_DEV_ZIM_METADATA
+        ).config_any_metadata(
+            metadata=Metadata(metadata_case.name, metadata_case.value),
+            fail_on_missing_prefix=False,
+        )
+    else:
+        with pytest.raises(ValueError):
+            Creator(tmp_path / "_.zim", "").config_metadata(
+                DEFAULT_DEV_ZIM_METADATA
+            ).config_any_metadata(
+                metadata=Metadata(metadata_case.name, metadata_case.value),
+                fail_on_missing_prefix=False,
+            )
+
+
+def test_config_dev_metadata(tmp_path: pathlib.Path, metadata_case: MetadataCase):
+    if metadata_case.valid:
+        Creator(tmp_path / "_.zim", "").config_dev_metadata(
+            Metadata(metadata_case.name, metadata_case.value),
+        )
+    else:
+        with pytest.raises(ValueError):
+            Creator(tmp_path / "_.zim", "").config_dev_metadata(
+                Metadata(metadata_case.name, metadata_case.value)
+            )
+
+
+def test_config_indexing(tmp_path: pathlib.Path):
     with pytest.raises(ValueError):
         Creator(tmp_path / "_.zim", "").config_indexing(True, "fr")
     with pytest.raises(ValueError):

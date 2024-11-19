@@ -99,7 +99,7 @@ def test_rx_rewriter(text: str, expected: str):
 
 def test_rx_rewriter_no_rules():
     rewriter = RxRewriter()
-    rewriter._compile_rules(
+    rewriter._compile_rules(  # pyright: ignore[reportPrivateUsage]
         [
             (re.compile("<replaced>"), replace("pla", "123")),
         ]

@@ -382,7 +382,7 @@ class ArticleUrlRewriter:
         passed to python-libzim for UTF-8 encoding.
         """
 
-        if not isinstance(url, HttpUrl):
+        if not isinstance(url, HttpUrl):  # pyright: ignore[reportUnnecessaryIsInstance]
             raise ValueError("Bad argument type passed, HttpUrl expected")
 
         url_parts = urlsplit(url.value)

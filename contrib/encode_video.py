@@ -22,6 +22,8 @@ def encode_video(src_path: Path, dst_path: Path, preset: str):
         ffmpeg_args=preset_cls().to_ffmpeg_args(),
         with_process=True,
     )  # pyright: ignore[reportGeneralTypeIssues] (returned type is variable, depending on `with_process` value)
+    if not process:  # pragma: no branch
+        raise ValueError("process should have been returned")
     if not success:
         logger.error(f"conversion failed:\n{process.stdout}")
 

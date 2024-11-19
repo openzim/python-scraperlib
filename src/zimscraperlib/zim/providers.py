@@ -1,6 +1,3 @@
-#!/usr/bin/env python
-# vim: ai ts=4 sts=4 et sw=4 nu
-
 """ libzim Providers accepting a `ref` arg to keep it away from garbage collection
 
     Use case is to pass it the Item instance that created the Provider so that the
@@ -18,7 +15,7 @@ from collections.abc import Generator
 import libzim.writer  # pyright: ignore
 import requests
 
-from zimscraperlib.download import _get_retry_adapter, stream_file
+from zimscraperlib.download import get_retry_adapter, stream_file
 
 
 class FileProvider(libzim.writer.FileProvider):
@@ -78,12 +75,12 @@ class URLProvider(libzim.writer.ContentProvider):
         self.ref = ref
 
         session = requests.Session()
-        session.mount("http", _get_retry_adapter())
+        session.mount("http", get_retry_adapter())
         self.resp = session.get(url, stream=True)
         self.resp.raise_for_status()
 
     @staticmethod
-    def get_size_of(url) -> int | None:
+    def get_size_of(url: str) -> int | None:
         _, headers = stream_file(url, byte_stream=io.BytesIO(), only_first_block=True)
         try:
             return int(headers["Content-Length"])

@@ -1,4 +1,5 @@
 import urllib.parse
+from typing import Any
 
 import pytest
 
@@ -50,7 +51,7 @@ from zimscraperlib.uri import rebuild_uri
         ),
     ],
 )
-def test_rebuild_uri(uri, changes, expected):
+def test_rebuild_uri(uri: str, changes: dict[str, Any], expected: str):
     assert rebuild_uri(urllib.parse.urlparse(uri), **changes).geturl() == expected
 
 
@@ -60,7 +61,7 @@ def test_rebuild_uri(uri, changes, expected):
         ("http://localhost", {"scheme": 123}),
     ],
 )
-def test_rebuild_uri_failure(uri, changes):
+def test_rebuild_uri_failure(uri: str, changes: dict[str, Any]):
     with pytest.raises(TypeError):
         rebuild_uri(urllib.parse.urlparse(uri), **changes)
 
@@ -71,6 +72,6 @@ def test_rebuild_uri_failure(uri, changes):
         ("http://localhost", {"scheme": 123}),
     ],
 )
-def test_rebuild_uri_failsafe(uri, changes):
+def test_rebuild_uri_failsafe(uri: str, changes: dict[str, Any]):
     puri = urllib.parse.urlparse(uri)
     assert rebuild_uri(puri, **changes, failsafe=True) == puri

@@ -11,6 +11,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Renamed `filesystem.validate_zimfile_creatable` to `filesystem.file_creatable` to reflect general applicability to check file creation beyond ZIM files #200
 - Remove any "ZIM" reference in exceptions while working with files #200
+- Significantly enhance the safety of metadata manipulation (#205)
+  - make `config_metadata` much stricter around standard metadata
+    - add new `StandardMetadata` class for standard metadata
+    - add way more typing around metadata manipulation with `RawMetadataValue`, `CleanMetadataValue` and `Metadata`
+  - add `config_any_metadata` for those who need to add custom ones
+  - ensure that `add_metadata` does same cleanup / checks as `config_metadata` and `config_any_metadata`
+  - move constants and validation logic for metadata to zim/metadata.py
+    - from `creator.py`: `MANDATORY_ZIM_METADATA_KEYS`, `DEFAULT_DEV_ZIM_METADATA`, `RECOMMENDED_MAX_TITLE_LENGTH`, `MAXIMUM_DESCRIPTION_METADATA_LENGTH`, `MAXIMUM_LONG_DESCRIPTION_METADATA_LENGTH`, `ILLUSTRATIONS_METADATA_RE`
+    - from `creator.py`: `convert_and_check_metadata`
 
 ### Added
 

@@ -1,6 +1,3 @@
-#!/usr/bin/env python3
-# vim: ai ts=4 sts=4 et sw=4 nu
-
 from __future__ import annotations
 
 import pathlib
@@ -46,7 +43,8 @@ def reencode(
     delete_src: bool = False,
     with_process: bool = False,
     failsafe: bool = True,
-) -> tuple[bool, subprocess.CompletedProcess[str]] | bool:
+    existing_tmp_path: pathlib.Path | None = None,
+) -> tuple[bool, subprocess.CompletedProcess[str] | None]:
     """Runs ffmpeg with given ffmpeg_args
 
     Arguments -
@@ -57,33 +55,67 @@ def reencode(
         delete_src - Delete source file after convertion
         with_process - Optionally return the output from ffmpeg (stderr and stdout)
         failsafe - Run in failsafe mode
+        existing_tmp_path - An already existing folder for temporary files
     """
 
-    with tempfile.TemporaryDirectory() as tmp_dir:
-        tmp_path = pathlib.Path(tmp_dir).joinpath(f"video.tmp{dst_path.suffix}")
-        args = _build_ffmpeg_args(
+    if existing_tmp_path:
+        return __reencode(
             src_path=src_path,
-            tmp_path=tmp_path,
+            dst_path=dst_path,
             ffmpeg_args=ffmpeg_args,
             threads=threads,
+            delete_src=delete_src,
+            with_process=with_process,
+            failsafe=failsafe,
+            tmp_dir=str(existing_tmp_path),
         )
-        logger.debug(
-            f"Encode {src_path} -> {dst_path} video format = {dst_path.suffix}"
-        )
-        logger.debug(nicer_args_join(args))
-        ffmpeg = subprocess.run(
-            args,
-            stderr=subprocess.STDOUT,
-            stdout=subprocess.PIPE,
-            text=True,
-            check=False,
-        )
-        if not failsafe:
-            ffmpeg.check_returncode()
-        if ffmpeg.returncode == 0:
-            if delete_src:
-                src_path.unlink()
-            shutil.copy(tmp_path, dst_path)
-        if with_process:
-            return ffmpeg.returncode == 0, ffmpeg
-        return ffmpeg.returncode == 0
+    else:
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            return __reencode(
+                src_path=src_path,
+                dst_path=dst_path,
+                ffmpeg_args=ffmpeg_args,
+                threads=threads,
+                delete_src=delete_src,
+                with_process=with_process,
+                failsafe=failsafe,
+                tmp_dir=tmp_dir,
+            )
+
+
+def __reencode(
+    src_path: pathlib.Path,
+    dst_path: pathlib.Path,
+    ffmpeg_args: list[str],
+    threads: int | None = 1,
+    *,
+    delete_src: bool = False,
+    with_process: bool = False,
+    failsafe: bool = True,
+    tmp_dir: str,
+):
+    tmp_path = pathlib.Path(tmp_dir).joinpath(f"video.tmp{dst_path.suffix}")
+    args = _build_ffmpeg_args(
+        src_path=src_path,
+        tmp_path=tmp_path,
+        ffmpeg_args=ffmpeg_args,
+        threads=threads,
+    )
+    logger.debug(f"Encode {src_path} -> {dst_path} video format = {dst_path.suffix}")
+    logger.debug(nicer_args_join(args))
+    ffmpeg = subprocess.run(
+        args,
+        stderr=subprocess.STDOUT,
+        stdout=subprocess.PIPE,
+        text=True,
+        check=False,
+    )
+    if not failsafe:
+        ffmpeg.check_returncode()
+    if ffmpeg.returncode == 0:
+        if delete_src:
+            src_path.unlink()
+        shutil.copy(tmp_path, dst_path)
+    if with_process:
+        return ffmpeg.returncode == 0, ffmpeg
+    return ffmpeg.returncode == 0, None
