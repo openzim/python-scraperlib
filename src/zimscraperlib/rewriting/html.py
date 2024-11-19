@@ -602,7 +602,11 @@ def rewrite_href_src_attributes(
     This is also notifying of any JS script found used as a module, so that this script
     is properly rewritten when encountered later on.
     """
-    if attr_name not in ("href", "src") or not attr_value:
+    if (
+        attr_name not in ("href", "src")
+        or not attr_value
+        or attr_value.startswith("data:")
+    ):
         return
     if (
         notify_js_module

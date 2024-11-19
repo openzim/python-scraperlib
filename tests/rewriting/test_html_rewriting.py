@@ -68,6 +68,10 @@ from .utils import ContentForTests
         ContentForTests(input_="<!DOCTYPE html>A simple string with doctype"),
         ContentForTests(input_="A simple string with <!-- cc --> comment"),
         ContentForTests(input_="A simple string with <?xml ?> pi"),
+        ContentForTests(
+            input_='<script type="module" '
+            'src="data:application/javascript;base64,QQQQ"></script>'
+        ),
     ]
 )
 def no_rewrite_content(request: pytest.FixtureRequest):
@@ -75,14 +79,18 @@ def no_rewrite_content(request: pytest.FixtureRequest):
 
 
 def test_no_rewrite(no_rewrite_content: ContentForTests):
+
+    def noop_notify(zim_path: ZimPath):
+        pass
+
     assert (
         HtmlRewriter(
-            ArticleUrlRewriter(
+            url_rewriter=ArticleUrlRewriter(
                 article_url=HttpUrl(f"http://{no_rewrite_content.article_url}"),
             ),
-            None,
-            None,
-            None,
+            pre_head_insert=None,
+            post_head_insert=None,
+            notify_js_module=noop_notify,
         )
         .rewrite(no_rewrite_content.input_str)
         .content
