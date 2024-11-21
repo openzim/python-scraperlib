@@ -3,8 +3,6 @@
 
 from __future__ import annotations
 
-import base64
-import datetime
 import io
 import logging
 import pathlib
@@ -14,8 +12,7 @@ import subprocess
 import sys
 import tempfile
 import time
-from collections.abc import Iterable
-from typing import Any, NamedTuple
+from typing import NamedTuple
 from unittest.mock import call, patch
 
 import pytest
@@ -27,10 +24,24 @@ from zimscraperlib.filesystem import delete_callback
 from zimscraperlib.zim import Archive, Creator, StaticItem, URLItem
 from zimscraperlib.zim.metadata import (
     DEFAULT_DEV_ZIM_METADATA,
-    MANDATORY_ZIM_METADATA_KEYS,
+    CreatorMetadata,
+    CustomMetadata,
+    CustomTextMetadata,
+    DateMetadata,
+    DescriptionMetadata,
+    FlavourMetadata,
+    IllustrationMetadata,
+    LanguageMetadata,
+    LicenseMetadata,
+    LongDescriptionMetadata,
     Metadata,
-    RawMetadataValue,
-    StandardMetadata,
+    NameMetadata,
+    PublisherMetadata,
+    ScraperMetadata,
+    SourceMetadata,
+    StandardMetadataList,
+    TagsMetadata,
+    TitleMetadata,
 )
 from zimscraperlib.zim.providers import FileLikeProvider, URLProvider
 
@@ -65,7 +76,7 @@ def test_zim_creator(tmp_path, png_image, html_file, html_str: str, html_str_cn:
     with open(png_image, "rb") as fh:
         png_data = fh.read()
     with Creator(fpath, main_path).config_dev_metadata(
-        {"Tags": tags, "Illustration_48x48_at_1": png_data}
+        [TagsMetadata(tags), IllustrationMetadata("Illustration_48x48@1", png_data)]
     ) as creator:
         # verbatim HTML from string
         creator.add_item_for("welcome", "wel", content=html_str, is_front=True)
@@ -97,8 +108,10 @@ def test_zim_creator(tmp_path, png_image, html_file, html_str: str, html_str_cn:
     assert fpath.exists()
 
     reader = Archive(fpath)
-    assert reader.get_text_metadata("Title") == DEFAULT_DEV_ZIM_METADATA.Title
-    assert reader.get_text_metadata("Language") == DEFAULT_DEV_ZIM_METADATA.Language
+    assert reader.get_text_metadata("Title") == DEFAULT_DEV_ZIM_METADATA.Title.value
+    assert (
+        reader.get_text_metadata("Language") == DEFAULT_DEV_ZIM_METADATA.Language.value
+    )
     assert reader.get_text_metadata("Tags") == tags
     assert reader.main_entry.get_item().path == f"{main_path}"
     # make sure we have our image
@@ -139,7 +152,7 @@ def test_create_without_workaround(tmp_path):
 
 def test_noindexlanguage(tmp_path):
     fpath = tmp_path / "test.zim"
-    creator = Creator(fpath, "welcome").config_dev_metadata({"Language": "bam"})
+    creator = Creator(fpath, "welcome").config_dev_metadata(LanguageMetadata("bam"))
     creator.config_indexing(False)
     with creator as creator:
         creator.add_item(StaticItem(path="welcome", content="hello"))
@@ -541,24 +554,6 @@ def test_without_metadata(tmp_path):
         Creator(tmp_path, "").start()
 
 
-def test_check_metadata(tmp_path):
-    with pytest.raises(ValueError, match="Counter cannot be set"):
-        Creator(tmp_path, "").config_dev_metadata(Metadata("Counter", "1")).start()
-
-    with pytest.raises(ValueError, match="Invalid type for Foo"):
-        Creator(tmp_path, "").config_dev_metadata(Metadata("Foo", 1)).start()
-
-    with pytest.raises(ValueError, match="Description is too long."):
-        Creator(tmp_path, "").config_dev_metadata(
-            Metadata("Description", "T" * 90)
-        ).start()
-
-    with pytest.raises(ValueError, match="LongDescription is too long."):
-        Creator(tmp_path, "").config_dev_metadata(
-            Metadata("LongDescription", "T" * 5000)
-        ).start()
-
-
 @pytest.mark.parametrize(
     "tags",
     [
@@ -584,42 +579,56 @@ def test_start_logs_metadata_log_contents(mocked_logger, png_image, tags, tmp_pa
     fpath = tmp_path / "test_config.zim"
     with open(png_image, "rb") as fh:
         png_data = fh.read()
-    creator = Creator(fpath, "", disable_metadata_checks=True).config_metadata(
-        StandardMetadata(
-            Name="wikipedia_fr_football",
-            Title="English Wikipedia",
-            Creator="English speaking Wikipedia contributors",
-            Publisher="Wikipedia user Foobar",
-            Date="2009-11-21",
-            Description="All articles (without images) from the english Wikipedia",
-            LongDescription="This ZIM file contains all articles (without images)"
-            " from the english Wikipedia by 2009-11-10. The topics are...",
-            Language="eng",
-            License="CC-BY",
-            Tags=tags,
-            Flavour="nopic",
-            Source="https://en.wikipedia.org/",
-            Scraper="mwoffliner 1.2.3",
-            Illustration_48x48_at_1=png_data,
+    creator = Creator(fpath, "", check_metadata_conventions=False).config_metadata(
+        StandardMetadataList(
+            Name=NameMetadata("wikipedia_fr_football"),
+            Title=TitleMetadata("English Wikipedia"),
+            Creator=CreatorMetadata("English speaking Wikipedia contributors"),
+            Publisher=PublisherMetadata("Wikipedia user Foobar"),
+            Date=DateMetadata("2009-11-21"),
+            Description=DescriptionMetadata(
+                "All articles (without images) from the english Wikipedia"
+            ),
+            LongDescription=LongDescriptionMetadata(
+                "This ZIM file contains all articles (without images)"
+                " from the english Wikipedia by 2009-11-10. The topics are..."
+            ),
+            Language=LanguageMetadata("eng"),
+            License=LicenseMetadata("CC-BY"),
+            Tags=TagsMetadata(tags),
+            Flavour=FlavourMetadata("nopic"),
+            Source=SourceMetadata("https://en.wikipedia.org/"),
+            Scraper=ScraperMetadata("mwoffliner 1.2.3"),
+            Illustration_48x48_at_1=IllustrationMetadata(
+                "Illustration_48x48@1", png_data
+            ),
         ),
-        {"TestMetadata": "Test Metadata"},
+        [CustomTextMetadata("TestMetadata", "Test Metadata")],
         fail_on_missing_prefix_in_extras=False,
     )
 
-    class NotPrintable:
+    class NotPrintable(str):
         def __str__(self):
             raise ValueError("Not printable I said")
 
     creator._metadata.update(
         {
-            "Illustration_96x96@1": b"%PDF-1.5\n%\xe2\xe3\xcf\xd3",
-            "Chars": b"\xc5\xa1\xc9\x94\xc9\x9b",
-            "Chars-32": b"\xff\xfe\x00\x00a\x01\x00\x00T\x02\x00\x00[\x02\x00\x00",
-            "Video": b"\x00\x00\x00 ftypisom\x00\x00\x02\x00isomiso2avc1mp41\x00",
-            "Toupie": NotPrintable(),
-            "Relation": None,
-        }  # type: ignore # intentionaly bad, to handle case where user does bad things
+            "Illustration_96x96@1": Metadata(
+                "Illustration_96x96@1", b"%PDF-1.5\n%\xe2\xe3\xcf\xd3"
+            ),
+            "Chars": Metadata("Chars", b"\xc5\xa1\xc9\x94\xc9\x9b"),
+            "Chars-32": Metadata(
+                "Chars-32", b"\xff\xfe\x00\x00a\x01\x00\x00T\x02\x00\x00[\x02\x00\x00"
+            ),
+            "Video": Metadata(
+                "Video", b"\x00\x00\x00 ftypisom\x00\x00\x02\x00isomiso2avc1mp41\x00"
+            ),
+            "Toupie": CustomTextMetadata("Toupie", NotPrintable("value")),
+        }  # intentionaly bad, to handle case where user does bad things
     )
+    # intentionaly bad, to handle case where user does bad things
+    creator._metadata["Relation"] = None  # pyright: ignore[reportArgumentType]
+
     creator._log_metadata()
     # /!\ this must be alpha sorted
     mocked_logger.debug.assert_has_calls(
@@ -637,10 +646,7 @@ def test_start_logs_metadata_log_contents(mocked_logger, png_image, tags, tmp_pa
             ),
             call("Metadata: Flavour = nopic"),
             call("Metadata: Illustration_48x48@1 is a 3274 bytes 48x48px PNG Image"),
-            call(
-                "Metadata: Illustration_96x96@1 is a 14 bytes "
-                "application/pdf blob not recognized as an Image"
-            ),
+            call("Metadata: Illustration_96x96@1 is a 14 bytes application/pdf blob"),
             call("Metadata: Language = eng"),
             call("Metadata: License = CC-BY"),
             call(
@@ -650,12 +656,10 @@ def test_start_logs_metadata_log_contents(mocked_logger, png_image, tags, tmp_pa
             ),
             call("Metadata: Name = wikipedia_fr_football"),
             call("Metadata: Publisher = Wikipedia user Foobar"),
-            call("Metadata: Relation = None"),
+            call("Metadata: Relation is None"),
             call("Metadata: Scraper = mwoffliner 1.2.3"),
             call("Metadata: Source = https://en.wikipedia.org/"),
-            call(
-                f"Metadata: Tags = {tags if isinstance(tags, str) else ";".join(tags)}"
-            ),
+            call(f"Metadata: Tags = {tags}"),
             call("Metadata: TestMetadata = Test Metadata"),
             call("Metadata: Title = English Wikipedia"),
             call("Metadata: Toupie is unexpected data type: NotPrintable"),
@@ -664,9 +668,12 @@ def test_start_logs_metadata_log_contents(mocked_logger, png_image, tags, tmp_pa
     )
 
 
-def test_relax_metadata(tmp_path):
-    Creator(tmp_path, "", disable_metadata_checks=True).config_dev_metadata(
-        Metadata("Description", "T" * 90)
+def test_relax_metadata(
+    tmp_path,
+    ignore_metadata_conventions,  # noqa: ARG001
+):
+    Creator(tmp_path, "", check_metadata_conventions=False).config_dev_metadata(
+        DescriptionMetadata("T" * 90)
     ).start()
 
 
@@ -694,24 +701,30 @@ def test_config_metadata(tmp_path, png_image, tags):
     with open(png_image, "rb") as fh:
         png_data = fh.read()
     creator = Creator(fpath, "").config_metadata(
-        StandardMetadata(
-            Name="wikipedia_fr_football",
-            Title="English Wikipedia",
-            Creator="English speaking Wikipedia contributors",
-            Publisher="Wikipedia user Foobar",
-            Date="2009-11-21",
-            Description="All articles (without images) from the english Wikipedia",
-            LongDescription="This ZIM file contains all articles (without images)"
-            " from the english Wikipedia by 2009-11-10. The topics are...",
-            Language="eng",
-            License="CC-BY",
-            Tags=tags,
-            Flavour="nopic",
-            Source="https://en.wikipedia.org/",
-            Scraper="mwoffliner 1.2.3",
-            Illustration_48x48_at_1=png_data,
+        StandardMetadataList(
+            Name=NameMetadata("wikipedia_fr_football"),
+            Title=TitleMetadata("English Wikipedia"),
+            Creator=CreatorMetadata("English speaking Wikipedia contributors"),
+            Publisher=PublisherMetadata("Wikipedia user Foobar"),
+            Date=DateMetadata("2009-11-21"),
+            Description=DescriptionMetadata(
+                "All articles (without images) from the english Wikipedia"
+            ),
+            LongDescription=LongDescriptionMetadata(
+                "This ZIM file contains all articles (without images)"
+                " from the english Wikipedia by 2009-11-10. The topics are..."
+            ),
+            Language=LanguageMetadata("eng"),
+            License=LicenseMetadata("CC-BY"),
+            Tags=TagsMetadata(tags),
+            Flavour=FlavourMetadata("nopic"),
+            Source=SourceMetadata("https://en.wikipedia.org/"),
+            Scraper=ScraperMetadata("mwoffliner 1.2.3"),
+            Illustration_48x48_at_1=IllustrationMetadata(
+                "Illustration_48x48@1", png_data
+            ),
         ),
-        {"X-TestMetadata": "Test Metadata"},
+        [CustomTextMetadata("X-TestMetadata", "Test Metadata")],
     )
     with creator:
         pass
@@ -737,11 +750,11 @@ def test_config_metadata(tmp_path, png_image, tags):
     )
     assert reader.get_text_metadata("Language") == "eng"
     assert reader.get_text_metadata("License") == "CC-BY"
-    assert (
-        reader.get_text_metadata("Tags")
-        == "wikipedia;_category:wikipedia;_pictures:no;_videos:no;"
-        "_details:yes;_ftindex:yes"
-    )
+    assert set(reader.get_text_metadata("Tags").split(";")) == set(
+        "wikipedia;_category:wikipedia;_pictures:no;_videos:no;"
+        "_details:yes;_ftindex:yes".split(";")
+    )  # order of tags is not guaranteed and does not matter
+    assert len(reader.get_text_metadata("Tags").split(";")) == 6
     assert reader.get_text_metadata("Flavour") == "nopic"
     assert reader.get_text_metadata("Source") == "https://en.wikipedia.org/"
     assert reader.get_text_metadata("Scraper") == "mwoffliner 1.2.3"
@@ -752,36 +765,31 @@ def test_config_metadata(tmp_path, png_image, tags):
 def test_config_metadata_control_characters(tmp_path):
     fpath = tmp_path / "test_config.zim"
     creator = Creator(fpath, "").config_dev_metadata(
-        {
-            "Description": "\t\n\r\n \tA description \awith  \bcontrol characters\v",
-            "LongDescription": "A description \rwith \a\ncontrol characters\tsss\t\n\r"
-            "\n \t",
-            "Creator": "  A creator ",
-        }
+        [
+            DescriptionMetadata(
+                "\t\n\r\n \tA description \awith  \bcontrol characters\v"
+            ),
+            LongDescriptionMetadata(
+                "A description \rwith \a\ncontrol characters\tsss\t\n\r\n \t"
+            ),
+            CreatorMetadata("  A creator "),
+        ]
     )
-    assert creator._metadata["Description"] == "A description with  control characters"
-    assert (
-        creator._metadata["LongDescription"]
-        == "A description \rwith \ncontrol characters\tsss"
-    )
-    assert creator._metadata["Creator"] == "A creator"
     with creator:
         creator.add_metadata(
-            "Description_1",
-            "\t\n\r\n \tA description \awith  \bcontrol characters\v",
+            CustomTextMetadata(
+                "Description_1",
+                "\t\n\r\n \tA description \awith  \bcontrol characters\v",
+            )
         )
         creator.add_metadata(
-            "LongDescription_1",
-            "A description \rwith \a\ncontrol characters\tsss\t\n\r\n \t",
+            CustomTextMetadata(
+                "LongDescription_1",
+                "A description \rwith \a\ncontrol characters\tsss\t\n\r\n \t",
+            )
         )
-        creator.add_metadata(
-            "Creator_1",
-            "  A creator ",
-        )
-        creator.add_metadata(
-            "Binary1",
-            bytes.fromhex("01FA"),
-        )
+        creator.add_metadata(CustomTextMetadata("Creator_1", "  A creator "))
+        creator.add_metadata(CustomMetadata("Binary1", bytes.fromhex("01FA")))
         pass
 
     assert fpath.exists()
@@ -809,7 +817,7 @@ def test_config_metadata_control_characters(tmp_path):
 
 
 class ExtraMetadataCase(NamedTuple):
-    extras: Metadata | Iterable[Metadata] | dict[str, RawMetadataValue]
+    extras: list[Metadata]
     fail_on_missing_prefix: bool
     id: str
 
@@ -821,45 +829,30 @@ def __get_extra_metadata_case_id(case: ExtraMetadataCase) -> str:
 @pytest.fixture(
     params=[
         ExtraMetadataCase(
-            {"X-TestMetadata": "Test Metadata"}, True, id="dict_good_prefix"
-        ),
-        ExtraMetadataCase(
-            {"X-TestMetadata": "Test Metadata"}, True, id="dict_good_prefix"
-        ),
-        ExtraMetadataCase(
-            {"TestMetadata": "Test Metadata"}, False, id="dict_bad_prefix"
-        ),
-        ExtraMetadataCase(
-            Metadata("X-TestMetadata", "Test Metadata"), True, id="item_good_prefix"
-        ),
-        ExtraMetadataCase(
-            Metadata("TestMetadata", "Test Metadata"), False, id="item_bad_prefix"
-        ),
-        ExtraMetadataCase(
-            [Metadata("X-TestMetadata", "Test Metadata")],
+            [CustomTextMetadata("X-TestMetadata", "Test Metadata")],
             True,
-            id="list_of_one_good_prefix",
+            id="good_prefix",
         ),
         ExtraMetadataCase(
-            [Metadata("TestMetadata", "Test Metadata")],
+            [CustomTextMetadata("TestMetadata", "Test Metadata")],
             False,
-            id="list_of_one_bad_prefix",
+            id="bad_prefix",
         ),
         ExtraMetadataCase(
             [
-                Metadata("X-TestMetadata", "Test Metadata"),
-                Metadata("X-TestMetadata2", "Test Metadata"),
+                CustomTextMetadata("X-TestMetadata", "Test Metadata"),
+                CustomTextMetadata("X-TestMetadata2", "Test Metadata"),
             ],
             True,
             id="list_of_two_good_prefix",
         ),
         ExtraMetadataCase(
             [
-                Metadata("X-TestMetadata", "Test Metadata"),
-                Metadata("TestMetadata2", "Test Metadata"),
+                CustomTextMetadata("X-TestMetadata", "Test Metadata"),
+                CustomTextMetadata("TestMetadata2", "Test Metadata"),
             ],
             False,
-            id="list_of_two_bad_prefix",
+            id="list_with_one_bad_prefix",
         ),
     ],
     ids=__get_extra_metadata_case_id,
@@ -868,20 +861,11 @@ def metadata_extras(request: pytest.FixtureRequest):
     yield request.param
 
 
-def test_metadata_extras_one(tmp_path, metadata_extras: ExtraMetadataCase):
+def test_metadata_extras(tmp_path, metadata_extras: ExtraMetadataCase):
     Creator(tmp_path / "_.zim", "").config_metadata(
         DEFAULT_DEV_ZIM_METADATA,
         metadata_extras.extras,
         fail_on_missing_prefix_in_extras=metadata_extras.fail_on_missing_prefix,
-    )
-
-
-def test_metadata_extras_two(tmp_path, metadata_extras: ExtraMetadataCase):
-    Creator(tmp_path / "_.zim", "").config_metadata(
-        DEFAULT_DEV_ZIM_METADATA
-    ).config_any_metadata(
-        metadata_extras.extras,
-        fail_on_missing_prefix=metadata_extras.fail_on_missing_prefix,
     )
 
 
@@ -893,299 +877,33 @@ def test_metadata_extras_missing_prefix(tmp_path):
     with pytest.raises(ValueError, match="does not starts with X- as expected"):
         Creator(tmp_path / "_.zim", "").config_metadata(
             DEFAULT_DEV_ZIM_METADATA,
-            {"TestMetadata": "Test Metadata"},
+            [CustomTextMetadata("TestMetadata", "Test Metadata")],
         )
 
 
-class MetadataCase(NamedTuple):
-    name: str
-    value: Any
-    valid: bool
-
-
-@pytest.fixture(
-    params=[
-        MetadataCase("Name", 4, False),
-        MetadataCase("Title", 4, False),
-        MetadataCase("Creator", 4, False),
-        MetadataCase("Publisher", 4, False),
-        MetadataCase("Description", 4, False),
-        MetadataCase("LongDescription", 4, False),
-        MetadataCase("License", 4, False),
-        MetadataCase("Relation", 4, False),
-        MetadataCase("Relation", 4, False),
-        MetadataCase("Flavour", 4, False),
-        MetadataCase("Source", 4, False),
-        MetadataCase("Scraper", 4, False),
-        MetadataCase("Title", "में" * 30, True),
-        MetadataCase("Title", "X" * 31, False),
-        MetadataCase("Date", 4, False),
-        MetadataCase("Date", datetime.datetime.now(), True),  # noqa: DTZ005
-        MetadataCase(
-            "Date", datetime.datetime(1969, 12, 31, 23, 59), True  # noqa: DTZ001
-        ),
-        MetadataCase("Date", datetime.date(1969, 12, 31), True),
-        MetadataCase("Date", datetime.date.today(), True),  # noqa: DTZ011
-        MetadataCase("Date", "1969-12-31", True),
-        MetadataCase("Date", "1969-13-31", False),
-        MetadataCase("Date", "2023/02/29", False),
-        MetadataCase("Date", "2023-55-99", False),
-        MetadataCase("Language", "xxx", False),
-        MetadataCase("Language", "rmr", False),
-        MetadataCase("Language", "eng", True),
-        MetadataCase("Language", "fra", True),
-        MetadataCase("Language", "bam", True),
-        MetadataCase("Language", "fr", False),
-        MetadataCase("Language", "en", False),
-        MetadataCase("Language", "fra,eng", True),
-        MetadataCase("Language", "fra,eng,bam", True),
-        MetadataCase("Language", "fra,en,bam", False),
-        MetadataCase("Language", "eng,", False),
-        MetadataCase("Language", "eng, fra", False),
-        MetadataCase("Counter", "1", False),
-        MetadataCase("Description", "में" * 80, True),
-        MetadataCase("Description", "X" * 81, False),
-        MetadataCase("LongDescription", "में" * 4000, True),
-        MetadataCase("LongDescription", "X" * 4001, False),
-        MetadataCase(
-            "LongDescription", None, True
-        ),  # to be ignored in config_xxx methods
-        MetadataCase("Tags", 4, False),
-        MetadataCase("Tags", ["wikipedia", 4, "football"], False),
-        MetadataCase("Tags", ("wikipedia", "football"), True),
-        MetadataCase("Tags", ["wikipedia", "football"], True),
-        MetadataCase("Tags", "wikipedia;football", True),
-        # 1x1 PNG image
-        MetadataCase(
-            "Illustration_48x48@1",
-            base64.b64decode(
-                "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAAGXRFWHRTb2Z0d2FyZQBB"
-                "ZG9iZSBJbWFnZVJlYWR5ccllPAAAAA9JREFUeNpi+P//P0CAAQAF/gL+Lc6J7gAAAABJ"
-                "RU5ErkJggg=="
-            ),
-            False,
-        ),
-        MetadataCase(
-            "Illustration_48x48@1",
-            DEFAULT_DEV_ZIM_METADATA.Illustration_48x48_at_1,
-            True,
-        ),
-        MetadataCase(
-            "Illustration_48x48_at_1",
-            DEFAULT_DEV_ZIM_METADATA.Illustration_48x48_at_1,
-            True,
-        ),
-        MetadataCase(
-            "Illustration_48x48_at_1",
-            None,
-            False,
-        ),
-        MetadataCase(
-            "Illustration_96x96@1",
-            DEFAULT_DEV_ZIM_METADATA.Illustration_48x48_at_1,
-            False,
-        ),
-    ]
-    + [MetadataCase(name, "", False) for name in MANDATORY_ZIM_METADATA_KEYS],
-)
-def metadata_case(request: pytest.FixtureRequest) -> MetadataCase:
-    return request.param
-
-
-def test_blank_metadata(tmp_path):
-    fpath = tmp_path / "test_blank.zim"
-    with Creator(fpath, "").config_dev_metadata(
-        {"Extra": "123", "Blank": "", "None": None}
-    ):
-        pass
-    assert fpath.exists()
-    reader = Archive(fpath)
-    assert reader.get_text_metadata("Title") == DEFAULT_DEV_ZIM_METADATA.Title
-    assert reader.get_text_metadata("Extra") == "123"
-    with pytest.raises(RuntimeError, match="Cannot find metadata"):
-        reader.get_text_metadata("Blank")
-    with pytest.raises(RuntimeError, match="Cannot find metadata"):
-        reader.get_text_metadata("None")
-
-
 @pytest.mark.parametrize(
-    "name,value,expected_value",
+    "name,metadata,expected_value",
     [
         pytest.param(
             "X-Test",
-            DEFAULT_DEV_ZIM_METADATA.Title + "Foo",
-            DEFAULT_DEV_ZIM_METADATA.Title + "Foo",
+            CustomTextMetadata(
+                "X-Test", DEFAULT_DEV_ZIM_METADATA.Title.libzim_value.decode() + "Foo"
+            ),
+            DEFAULT_DEV_ZIM_METADATA.Title.libzim_value.decode() + "Foo",
             id="simple_str",
         ),
-        pytest.param("X-Test", None, None, id="empty"),
-        pytest.param("Tags", ["tag1", "tag2"], "tag1;tag2", id="tags"),
-        pytest.param(
-            "LongDescription",
-            "Long \r\adescription",
-            "Long \rdescription",
-            id="long_description",
-        ),
+        pytest.param("Tags", TagsMetadata(["tag1", "tag2"]), "tag1;tag2", id="tags"),
     ],
 )
-def test_add_metadata(tmp_path, name, value, expected_value):
+def test_add_metadata(
+    tmp_path: pathlib.Path, name: str, metadata: Metadata, expected_value: str
+):
     fpath = tmp_path / "test_blank.zim"
     with Creator(fpath, "").config_dev_metadata() as creator:
-        creator.add_metadata(name, value)
+        creator.add_metadata(metadata)
     assert fpath.exists()
     reader = Archive(fpath)
-    if value:
-        assert reader.get_text_metadata(name) == expected_value
-    else:
-        with pytest.raises(RuntimeError, match="Cannot find metadata"):
-            reader.get_text_metadata(name)
-
-
-@pytest.mark.parametrize(
-    "name",
-    [
-        pytest.param(
-            "Illustration_96x96@1",
-            id="illustration_@",
-        ),
-        pytest.param(
-            "Illustration_96x96_at_1",  # must be renamed to Illustration_96x96@1
-            id="illustration_at",
-        ),
-    ],
-)
-def test_add_bad_illustration(tmp_path, name):
-    with pytest.raises(
-        ValueError, match="Illustration_96x96@1 is not a 96x96 PNG Image"
-    ):
-        with Creator(tmp_path / "_.zim", "").config_dev_metadata() as creator:
-            creator.add_metadata(name, DEFAULT_DEV_ZIM_METADATA.Illustration_48x48_at_1)
-
-
-@pytest.mark.parametrize(
-    "name,metadata_type,default_value,expected_value,expected_error",
-    [
-        pytest.param(
-            "Title", str, None, DEFAULT_DEV_ZIM_METADATA.Title, None, id="str_present"
-        ),
-        pytest.param(
-            "Illustration_48x48@1", bytes, None, None, None, id="bytes_present"
-        ),
-        pytest.param(
-            "Title", bytes, None, None, "metadata Title is not a bytes", id="not_bytes"
-        ),
-        pytest.param(
-            "Illustration_48x48@1",
-            str,
-            None,
-            None,
-            "metadata Illustration_48x48@1 is not a str",
-            id="not_str",
-        ),
-        pytest.param("Blank", str, "", "", None, id="str_default1"),
-        pytest.param("Blank", str, "foo", "foo", None, id="str_default2"),
-        pytest.param(
-            "Blank", str, None, None, "metadata Blank is not set", id="str_not_set"
-        ),
-        pytest.param("Blank", bytes, b"", b"", None, id="bytes_default1"),
-        pytest.param("Blank", bytes, b"foo", b"foo", None, id="bytes_default2"),
-        pytest.param(
-            "Blank", bytes, None, None, "metadata Blank is not set", id="bytes_not_set"
-        ),
-    ],
-)
-def test_get_metadata(
-    tmp_path, name, metadata_type, default_value, expected_value, expected_error
-):
-    creator = Creator(tmp_path / "_.zim", "").config_dev_metadata(
-        {"Extra": "123", "Blank": "", "None": None}
-    )
-    if not expected_error:
-        if expected_value:
-            assert (
-                creator.get_metadata(name, metadata_type, default_value)
-                == expected_value
-            )
-        else:
-            creator.get_metadata(name, metadata_type, default_value)
-    else:
-        with pytest.raises(ValueError, match=expected_error):
-            creator.get_metadata(name, metadata_type, default_value)
-
-
-def test_validate_metadata(tmp_path, metadata_case: MetadataCase):
-    if metadata_case.valid and metadata_case.value:
-        Creator(tmp_path / "_.zim", "").validate_metadata(
-            metadata_case.name, metadata_case.value
-        )
-    else:
-        with pytest.raises(ValueError):
-            Creator(tmp_path / "_.zim", "").validate_metadata(
-                metadata_case.name, metadata_case.value
-            )
-
-
-def test_config_bad_metadata_dict(tmp_path):
-    with pytest.raises(ValueError, match="too many values to unpack"):
-        Creator(tmp_path / "_.zim", "").config_any_metadata(
-            {b"Foo": "Bar"}  # pyright: ignore[reportArgumentType]
-        )
-
-
-def test_config_std_metadata(tmp_path, metadata_case: MetadataCase):
-    metadata = DEFAULT_DEV_ZIM_METADATA.copy()
-    metadata.__setattr__(metadata_case.name, metadata_case.value)
-    # validate automatically when configuring
-    if metadata_case.valid:
-        Creator(tmp_path / "_.zim", "").config_metadata(std_metadata=metadata)
-    else:
-        with pytest.raises(ValueError):
-            Creator(tmp_path / "_.zim", "").config_metadata(std_metadata=metadata)
-
-
-def test_config_str_with_extra_metadata(tmp_path, metadata_case: MetadataCase):
-    if metadata_case.valid:
-        Creator(tmp_path / "_.zim", "").config_metadata(
-            std_metadata=DEFAULT_DEV_ZIM_METADATA,
-            extra_metadata=Metadata(metadata_case.name, metadata_case.value),
-            fail_on_missing_prefix_in_extras=False,
-        )
-    else:
-        with pytest.raises(ValueError):
-            Creator(tmp_path / "_.zim", "").config_metadata(
-                std_metadata=DEFAULT_DEV_ZIM_METADATA,
-                extra_metadata=Metadata(metadata_case.name, metadata_case.value),
-                fail_on_missing_prefix_in_extras=False,
-            )
-
-
-def test_config_extra_metadata(tmp_path, metadata_case: MetadataCase):
-    if metadata_case.valid:
-        Creator(tmp_path / "_.zim", "").config_metadata(
-            DEFAULT_DEV_ZIM_METADATA
-        ).config_any_metadata(
-            metadata=Metadata(metadata_case.name, metadata_case.value),
-            fail_on_missing_prefix=False,
-        )
-    else:
-        with pytest.raises(ValueError):
-            Creator(tmp_path / "_.zim", "").config_metadata(
-                DEFAULT_DEV_ZIM_METADATA
-            ).config_any_metadata(
-                metadata=Metadata(metadata_case.name, metadata_case.value),
-                fail_on_missing_prefix=False,
-            )
-
-
-def test_config_dev_metadata(tmp_path, metadata_case: MetadataCase):
-    if metadata_case.valid:
-        Creator(tmp_path / "_.zim", "").config_dev_metadata(
-            Metadata(metadata_case.name, metadata_case.value),
-        )
-    else:
-        with pytest.raises(ValueError):
-            Creator(tmp_path / "_.zim", "").config_dev_metadata(
-                Metadata(metadata_case.name, metadata_case.value)
-            )
+    assert reader.get_text_metadata(name) == expected_value
 
 
 def test_config_indexing(tmp_path):

@@ -38,9 +38,9 @@ from zimscraperlib import logger
 from zimscraperlib.filesystem import get_file_mimetype
 from zimscraperlib.html import find_title_in_file
 from zimscraperlib.types import get_mime_for_name
+from zimscraperlib.zim import metadata
 from zimscraperlib.zim.creator import Creator
 from zimscraperlib.zim.items import StaticItem
-from zimscraperlib.zim.metadata import StandardMetadata
 
 
 class FileItem(StaticItem):
@@ -170,24 +170,30 @@ def make_zim_file(
         filename=fpath,
         main_path=main_page,
         ignore_duplicates=ignore_duplicates,
-        disable_metadata_checks=disable_metadata_checks,
+        check_metadata_conventions=disable_metadata_checks,
     ).config_metadata(
-        StandardMetadata(
+        metadata.StandardMetadataList(
             # mandatory
-            Name=name,
-            Title=title,
-            Description=description,
-            Date=date or datetime.date.today(),  # noqa: DTZ011
-            Language=language,
-            Creator=creator,
-            Publisher=publisher,
+            Name=metadata.NameMetadata(name),
+            Title=metadata.TitleMetadata(title),
+            Description=metadata.DescriptionMetadata(description),
+            Date=metadata.DateMetadata(date or datetime.date.today()),  # noqa: DTZ011
+            Language=metadata.LanguageMetadata(language),
+            Creator=metadata.CreatorMetadata(creator),
+            Publisher=metadata.PublisherMetadata(publisher),
+            Illustration_48x48_at_1=metadata.IllustrationMetadata(
+                "Illustration_48x48@1", illustration_data
+            ),
             # optional
-            Tags=";".join(tags) if tags else None,
-            Source=source,
-            Flavour=flavour,
-            Scraper=scraper,
-            LongDescription=long_description,
-            Illustration_48x48_at_1=illustration_data,
+            Tags=metadata.TagsMetadata(list(tags)) if tags else None,
+            Source=metadata.SourceMetadata(source) if source else None,
+            Flavour=metadata.FlavourMetadata(flavour) if flavour else None,
+            Scraper=metadata.ScraperMetadata(scraper) if scraper else None,
+            LongDescription=(
+                metadata.LongDescriptionMetadata(long_description)
+                if long_description
+                else None
+            ),
         )
     )
 

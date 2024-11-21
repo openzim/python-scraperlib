@@ -10,13 +10,13 @@ from collections.abc import Iterable
 
 from zimscraperlib import logger
 from zimscraperlib.constants import DEFAULT_USER_AGENT
-from zimscraperlib.download import stream_file
-from zimscraperlib.zim.metadata import (
+from zimscraperlib.constants import (
     MAXIMUM_DESCRIPTION_METADATA_LENGTH as MAX_DESC_LENGTH,
 )
-from zimscraperlib.zim.metadata import (
+from zimscraperlib.constants import (
     MAXIMUM_LONG_DESCRIPTION_METADATA_LENGTH as MAX_LONG_DESC_LENGTH,
 )
+from zimscraperlib.download import stream_file
 
 
 def handle_user_provided_file(
@@ -136,3 +136,8 @@ def compute_tags(
     return {
         tag.strip() for tag in list(default_tags) + (user_tags or "").split(";") if tag
     }
+
+
+def unique_values(items: list) -> list:
+    """Return unique values in input list while preserving list order"""
+    return list(dict.fromkeys(items))
