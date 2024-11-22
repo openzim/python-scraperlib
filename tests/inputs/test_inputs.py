@@ -9,17 +9,17 @@ import pytest
 
 import zimscraperlib
 from zimscraperlib.constants import CONTACT
-from zimscraperlib.constants import (
-    MAXIMUM_DESCRIPTION_METADATA_LENGTH as MAX_DESC_LENGTH,
-)
-from zimscraperlib.constants import (
-    MAXIMUM_LONG_DESCRIPTION_METADATA_LENGTH as MAX_LONG_DESC_LENGTH,
-)
 from zimscraperlib.constants import NAME as PROJECT_NAME
 from zimscraperlib.inputs import (
     compute_descriptions,
     compute_tags,
     handle_user_provided_file,
+)
+from zimscraperlib.zim.metadata import (
+    MAXIMUM_DESCRIPTION_METADATA_LENGTH as MAX_DESC_LENGTH,
+)
+from zimscraperlib.zim.metadata import (
+    MAXIMUM_LONG_DESCRIPTION_METADATA_LENGTH as MAX_LONG_DESC_LENGTH,
 )
 
 
