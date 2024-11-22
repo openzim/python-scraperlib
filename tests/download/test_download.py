@@ -14,6 +14,7 @@ import requests
 import requests.structures
 from yt_dlp import DownloadError
 
+from zimscraperlib.constants import DEFAULT_WEB_REQUESTS_TIMEOUT
 from zimscraperlib.download import (
     BestMp4,
     BestWebm,
@@ -22,13 +23,11 @@ from zimscraperlib.download import (
     stream_file,
 )
 
-DEFAULT_REQUEST_TIMEOUT = 60
-
 
 def assert_downloaded_file(url, file):
     assert file.exists()
     # our google test urls dont support HEAD
-    req = requests.get(url, timeout=DEFAULT_REQUEST_TIMEOUT)
+    req = requests.get(url, timeout=DEFAULT_WEB_REQUESTS_TIMEOUT)
     # we test against binary response: Content-Length not accurate as gzip-encoded
     assert file.stat().st_size == len(req.content)
 
@@ -90,7 +89,11 @@ def test_first_block_download_custom_session(mocker, valid_http_url):
     )
     # check that custom session has been used
     custom_session.get.assert_called_once_with(
-        valid_http_url, stream=True, proxies=None, headers=None
+        valid_http_url,
+        stream=True,
+        proxies=None,
+        headers=None,
+        timeout=DEFAULT_WEB_REQUESTS_TIMEOUT,
     )
     requests.Session.assert_not_called()  # pyright: ignore
 
@@ -130,7 +133,7 @@ def test_stream_to_bytes(valid_https_url):
     assert_headers(ret)
     assert (
         byte_stream.read()
-        == requests.get(valid_https_url, timeout=DEFAULT_REQUEST_TIMEOUT).content
+        == requests.get(valid_https_url, timeout=DEFAULT_WEB_REQUESTS_TIMEOUT).content
     )
 
 
