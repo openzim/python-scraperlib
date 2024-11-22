@@ -3,6 +3,8 @@
 
 import pytest
 
+import zimscraperlib.zim.metadata
+
 
 @pytest.fixture(scope="function")
 def html_str():
@@ -101,3 +103,10 @@ def counters():
         "application/xml": 1,
         "image/svg+xml": 5,
     }
+
+
+@pytest.fixture
+def ignore_metadata_conventions():
+    zimscraperlib.zim.metadata.check_metadata_conventions = False
+    yield
+    zimscraperlib.zim.metadata.check_metadata_conventions = True

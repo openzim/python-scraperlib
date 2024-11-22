@@ -11,6 +11,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Renamed `filesystem.validate_zimfile_creatable` to `filesystem.file_creatable` to reflect general applicability to check file creation beyond ZIM files #200
 - Remove any "ZIM" reference in exceptions while working with files #200
+- Significantly enhance the safety of metadata manipulation (#205)
+  - add types for all metadata, one type per metadata name plus some generic ones for non-standard metadata
+    - all types are responsible to validate metadata value at initialization time
+    - validation checks for adherence to the ZIM specification and conventions are automated
+    - cleanup of unwanted control characters and stripping white characters are **automated in all text metadata**
+    - whenever possible, try to **automatically clean a "reasonably" bad metadata** (e.g. automaticall accept and remove duplicate tags - harmless - but not duplicate language codes - codes are supposed to be ordered, so it is a weird situation) ; this is an alignment of paradigm, because for some metadata the lib was permissive, while for other it was quite restrictive ; this PR tries to align this and **make the lib as permissive as possible**, avoiding to fail a scraper for something which could be automatically fixed
+    - it is now possible to disable ZIM conventions checks with `zim.metadata.check_metadata_conventions`
+  - simplify `zim.creator.Creator.config_metadata` by using these types and been more strict:
+    - add new `StandardMetadata` class for standard metadata, including list of mandatory one
+    - by default, all non-standard metadata must start with `X-` prefix
+      - this not yet an openZIM convention / specification, so it is possible to disable this check with `fail_on_missing_prefix` argument
+  - simplify `add_metadata`, use same metadata types
+  - simplify `zim.creator.Creator.start` with new types, and drop all metadata from memory after being passed to the libzim
+  - drop `zim.creator.convert_and_check_metadata` (not usefull anymore, simply use proper metadata type)
+  - move `MANDATORY_ZIM_METADATA_KEYS` and `DEFAULT_DEV_ZIM_METADATA` from `constants` to `zim.metadata` to avoid circular dependencies
+  - new `inputs.unique_values` utility function to compute the list of uniques values from a given list, but preserving initial list order
+  - in `__init__` of `zim.creator.Creator`, rename `disable_metadata_checks` to `check_metadata_conventions` for clarity and brevity
+    - beware that this manipulate the global `zim.metadata.check_metadata_conventions`, so if you have many creator running in parallel, they can't have different settings, last one initialized will "win"
 
 ### Added
 

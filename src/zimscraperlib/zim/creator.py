@@ -19,25 +19,20 @@
 
 from __future__ import annotations
 
-import datetime
 import io
 import logging
 import pathlib
 import re
 import weakref
-from collections.abc import Callable, Iterable
+from collections.abc import Callable
 from typing import Any
 
 import libzim.writer  # pyright: ignore
 import PIL.Image
-import regex  # pyright: ignore [reportMissingModuleSource]
 
+import zimscraperlib.zim.metadata
 from zimscraperlib import logger
-from zimscraperlib.constants import (
-    DEFAULT_DEV_ZIM_METADATA,
-    FRONT_ARTICLE_MIMETYPES,
-    MANDATORY_ZIM_METADATA_KEYS,
-)
+from zimscraperlib.constants import FRONT_ARTICLE_MIMETYPES
 from zimscraperlib.filesystem import (
     delete_callback,
     get_content_mimetype,
@@ -48,16 +43,12 @@ from zimscraperlib.types import get_mime_for_name
 from zimscraperlib.zim.indexing import IndexData
 from zimscraperlib.zim.items import StaticItem
 from zimscraperlib.zim.metadata import (
-    validate_counter,
-    validate_date,
-    validate_description,
-    validate_illustrations,
-    validate_language,
-    validate_longdescription,
-    validate_required_values,
-    validate_standard_str_types,
-    validate_tags,
-    validate_title,
+    DEFAULT_DEV_ZIM_METADATA,
+    MANDATORY_ZIM_METADATA_KEYS,
+    IllustrationMetadata,
+    LanguageMetadata,
+    Metadata,
+    StandardMetadataList,
 )
 
 DUPLICATE_EXC_STR = re.compile(
@@ -66,9 +57,6 @@ DUPLICATE_EXC_STR = re.compile(
     r"existing dirent's title is(.+)",
     re.MULTILINE | re.DOTALL,
 )
-
-# All control characters are disallowed in str metadata except \n, \r and \t
-UNWANTED_CONTROL_CHARACTERS_REGEX = regex.compile(r"(?![\n\t\r])\p{C}")
 
 
 def mimetype_for(
@@ -112,8 +100,8 @@ class Creator(libzim.writer.Creator):
     Meaning you should exit right after an exception in your code (during zim creation)
     Use workaround_nocancel=False to disable the workaround.
 
-    By default, all metadata are validated for compliance with openZIM guidelines and
-    conventions. Set disable_metadata_checks=True to disable this validation (you can
+    By default, all metadata are validated for compliance with openZIM specification and
+    conventions. Set check_metadata_conventions=True to disable this validation (you can
     still do checks manually with the validation methods or your own logic).
     """
 
@@ -125,10 +113,10 @@ class Creator(libzim.writer.Creator):
         *,
         workaround_nocancel: bool | None = True,
         ignore_duplicates: bool | None = False,
-        disable_metadata_checks: bool = False,
+        check_metadata_conventions: bool = True,
     ):
         super().__init__(filename=filename)
-        self._metadata = {}
+        self._metadata: dict[str, Metadata] = {}
         self.__indexing_configured = False
         self.can_finish = True
 
@@ -143,7 +131,9 @@ class Creator(libzim.writer.Creator):
 
         self.workaround_nocancel = workaround_nocancel
         self.ignore_duplicates = ignore_duplicates
-        self.disable_metadata_checks = disable_metadata_checks
+        zimscraperlib.zim.metadata.check_metadata_conventions = (
+            check_metadata_conventions
+        )
 
     def config_indexing(
         self, indexing: bool, language: str | None = None  # noqa: FBT001
@@ -151,7 +141,7 @@ class Creator(libzim.writer.Creator):
         """Toggle full-text and title indexing of entries
 
         Uses Language metadata's value (or "") if not set"""
-        language = language or self._metadata.get("Language", "")
+        language = language or self._get_first_language_metadata_value() or ""
         if indexing and not is_valid_iso_639_3(language):
             raise ValueError("Not a valid ISO-639-3 language code")
         super().config_indexing(indexing, language)
@@ -159,217 +149,185 @@ class Creator(libzim.writer.Creator):
         return self
 
     def _log_metadata(self):
-        """Log (DEBUG) all metadata set on (_metadata ~ config_metadata())
+        """Log in DEBUG level all metadata key and value"""
+        for name, metadata in sorted(self._metadata.items()):
 
-        Does not log metadata set post-start (via add_metadata())"""
-        for name, value in sorted(self._metadata.items()):
+            if metadata is None:
+                logger.debug(f"Metadata: {name} is None")
+                continue
+
+            if not hasattr(metadata, "value"):
+                logger.debug(
+                    f"Metadata: {name} is improper metadata type: "
+                    f"{metadata.__class__.__qualname__}: {metadata!s}"
+                )
+                continue
+
             # illustration mandates an Image
             if re.match(r"^Illustration_(\d+)x(\d+)@(\d+)$", name):
                 try:
-                    with PIL.Image.open(io.BytesIO(value)) as img:
+                    with PIL.Image.open(io.BytesIO(metadata.libzim_value)) as img:
                         logger.debug(
-                            f"Metadata: {name} is a {len(value)} bytes "
+                            f"Metadata: {name} is a {len(metadata.libzim_value)} bytes "
                             f"{img.size[0]}x{img.size[1]}px {img.format} Image"
                         )
-                except Exception:
-                    logger.debug(
-                        f"Metadata: {name} is a {len(value)} bytes "
-                        f"{get_content_mimetype(value[:64])} blob "
-                        "not recognized as an Image"
-                    )
-                continue
+                        continue
+                except Exception:  # noqa: S110 # nosec B110
+                    pass
 
             # bytes are either encoded string or arbitrary data
-            if isinstance(value, bytes):
-                mimetype = get_content_mimetype(value[:64])
+            if isinstance(metadata.value, bytes | io.BytesIO):
+                raw_value = (
+                    metadata.value
+                    if isinstance(metadata.value, bytes)
+                    else metadata.value.getvalue()
+                )
+                mimetype = get_content_mimetype(raw_value[:64])
                 if not mimetype.startswith("text/"):
                     logger.debug(
-                        f"Metadata: {name} is a {len(value)} bytes {mimetype} blob"
+                        f"Metadata: {name} is a {len(raw_value)} bytes {mimetype} blob"
                     )
                     continue
                 try:
-                    logger.debug(f"Metadata: {name} = {value.decode('UTF-8')}")
+                    logger.debug(f"Metadata: {name} = {raw_value.decode('UTF-8')}")
                 except Exception:
                     logger.debug(
-                        f"Metadata: {name} is a {len(value)} bytes {mimetype} blob "
+                        f"Metadata: {name} is a {len(raw_value)} bytes {mimetype} blob "
                         "not decodable as an UTF-8 string"
                     )
                 continue
 
             # rest is either printable or unexpected
             try:
-                logger.debug(f"Metadata: {name} = {value!s}")
+                logger.debug(f"Metadata: {name} = {metadata.value!s}")
             except Exception:
                 logger.debug(
-                    f"Metadata: {name} is unexpected data type: {type(value).__name__}"
+                    f"Metadata: {name} is unexpected data type: "
+                    f"{type(metadata.value).__qualname__}"
                 )
 
+    def _get_first_language_metadata_value(self) -> str | None:
+        """Private methods to get most popular lang code from Language metadata"""
+        for metadata in self._metadata.values():
+            if isinstance(metadata, LanguageMetadata):
+                return metadata.libzim_value.decode().split(",")[0]
+        return None
+
     def start(self):
+        """Start creator operation at libzim level
+
+        Includes creating metadata, including validating mandatory ones are set,
+        and configuring indexing.
+        """
         if logger.isEnabledFor(logging.DEBUG):  # pragma: no cover
             self._log_metadata()
 
         if not all(self._metadata.get(key) for key in MANDATORY_ZIM_METADATA_KEYS):
-            raise ValueError("Mandatory metadata are not all set.")
+            missing_keys = [
+                key
+                for key in MANDATORY_ZIM_METADATA_KEYS
+                if not self._metadata.get(key)
+            ]
+            raise ValueError(
+                "Mandatory metadata are not all set. Missing metadata: "
+                f'{",".join(missing_keys)}. You should prefer to use '
+                "StandardMetadataList if possible."
+            )
 
-        if not self.disable_metadata_checks:
-            for name, value in self._metadata.items():
-                if value:
-                    self.validate_metadata(name, value)
-
-        language = self._metadata.get("Language", "").split(",")
-        if language[0] and not self.__indexing_configured:
-            self.config_indexing(True, language[0])
+        if (
+            language := self._get_first_language_metadata_value()
+        ) and not self.__indexing_configured:
+            self.config_indexing(True, language)
 
         super().__enter__()
 
-        self.add_illustration(48, self._metadata["Illustration_48x48@1"])
-        del self._metadata["Illustration_48x48@1"]
-        for name, value in self._metadata.items():
-            if value:
-                self.add_metadata(name, self.convert_and_check_metadata(name, value))
+        for metadata in self._metadata.values():
+            if isinstance(metadata, IllustrationMetadata):
+                self.add_illustration(metadata.size, metadata.libzim_value)
+            else:
+                self.add_metadata(metadata)
+        self._metadata.clear()
 
         return self
 
-    def validate_metadata(
-        self,
-        name: str,
-        value: bytes | str,
-    ):
-        """Ensures metadata value for name is conform with the openZIM spec on Metadata
-
-        Also enforces recommendations
-        See https://wiki.openzim.org/wiki/Metadata"""
-
-        validate_required_values(name, value)
-        validate_standard_str_types(name, value)
-
-        validate_title(name, value)  # pyright: ignore
-        validate_date(name, value)  # pyright: ignore
-        validate_language(name, value)  # pyright: ignore
-        validate_counter(name, value)  # pyright: ignore
-        validate_description(name, value)  # pyright: ignore
-        validate_longdescription(name, value)  # pyright: ignore
-        validate_tags(name, value)  # pyright: ignore
-        validate_illustrations(name, value)  # pyright: ignore
-
-    def convert_and_check_metadata(
-        self,
-        name: str,
-        value: str | bytes | datetime.date | datetime.datetime | Iterable[str],
-    ) -> str | bytes:
-        """Convert metadata to appropriate type for few known usecase and check type
-
-        Date: converts date and datetime to string YYYY-MM-DD
-        Tags: converts iterable to string with semi-colon separator
-
-        Also checks that final type is appropriate for libzim (str or bytes)
-        """
-        if name == "Date" and isinstance(value, datetime.date | datetime.datetime):
-            value = value.strftime("%Y-%m-%d")
-        if (
-            name == "Tags"
-            and not isinstance(value, str)
-            and not isinstance(value, bytes)
-            and isinstance(value, Iterable)
-        ):
-            value = ";".join(value)
-
-        if not isinstance(value, str) and not isinstance(value, bytes):
-            raise ValueError(f"Invalid type for {name}: {type(value)}")
-
-        return value
-
     def add_metadata(
         self,
-        name: str,
-        value: str | bytes,
+        value: Metadata,
         mimetype: str = "text/plain;charset=UTF-8",
     ):
-        # drop control characters before passing them to libzim
-        if isinstance(value, str):
-            value = UNWANTED_CONTROL_CHARACTERS_REGEX.sub("", value).strip(" \r\n\t")
-        if not self.disable_metadata_checks:
-            self.validate_metadata(name, value)
+        """Really add the metadata to the ZIM, after ZIM creation has started.
 
-        super().add_metadata(name, value, mimetype)
+        You would probably prefer to use config_metadata methods to check metadata
+        before starting the ZIM, ensure all mandatory metadata are set, and avoid
+        duplicate metadata name.
+        """
 
-    # there are many N803 problems, but they are intentional to match real tag name
+        super().add_metadata(value.name, value.libzim_value, mimetype)
+
     def config_metadata(
         self,
+        std_metadata: StandardMetadataList | list[Metadata],
+        extra_metadata: list[Metadata] | None = None,
         *,
-        Name: str,  # noqa: N803
-        Language: str,  # noqa: N803
-        Title: str,  # noqa: N803
-        Description: str,  # noqa: N803
-        LongDescription: str | None = None,  # noqa: N803
-        Creator: str,  # noqa: N803
-        Publisher: str,  # noqa: N803
-        Date: datetime.datetime | datetime.date | str,  # noqa: N803
-        Illustration_48x48_at_1: bytes,  # noqa: N803
-        Tags: Iterable[str] | str | None = None,  # noqa: N803
-        Scraper: str | None = None,  # noqa: N803
-        Flavour: str | None = None,  # noqa: N803
-        Source: str | None = None,  # noqa: N803
-        License: str | None = None,  # noqa: N803
-        Relation: str | None = None,  # noqa: N803
-        **extras: (
-            None
-            | float
-            | int
-            | bytes
-            | str
-            | datetime.datetime
-            | datetime.date
-            | Iterable[str]
-        ),
+        fail_on_missing_prefix_in_extras: bool = True,
     ):
-        """Sets all mandatory Metadata as well as standard and any other text ones"""
-        self._metadata.update(
-            {
-                "Name": Name,
-                "Title": Title,
-                "Creator": Creator,
-                "Publisher": Publisher,
-                "Date": Date,
-                "Description": Description,
-                "Language": Language,
-                "License": License,
-                "LongDescription": LongDescription,
-                "Tags": Tags,
-                "Relation": Relation,
-                "Flavour": Flavour,
-                "Source": Source,
-                "Scraper": Scraper,
-                "Illustration_48x48@1": Illustration_48x48_at_1,
-            }
-        )
-        self._metadata.update(extras)
-        for metadata_key, metadata_value in self._metadata.items():
-            # drop control characters so that proper value is stored in memory and
-            # logged in DEBUG mode ; also strip blank characters
-            if isinstance(metadata_value, str):
-                self._metadata[metadata_key] = UNWANTED_CONTROL_CHARACTERS_REGEX.sub(
-                    "", metadata_value
-                ).strip(" \r\n\t")
+        """Checks and prepare list of ZIM metadata
+
+        Checks ensure that metadata value can be converted to bytes, including all
+        requirements of the ZIM specifications and optionally openZIM conventions.
+
+        Metadata are only kept in memory at this stage, not yet passed to libzim.
+
+        They will be passed to libzim / writen to the ZIM on creator.start().
+
+        Arguments:
+            std_metadata: standard metadata defined in the ZIM specifications.
+                Prefer to use StandardMetadataList which ensure mandatory metadata are
+                all set.
+            extra_metadata: a list of extra metadata (not standard).
+            fail_on_missing_prefix_in_extras: disable the default check which force the
+                X- prefix on extra metadata name which is a convention to distinguish
+                these extra metadata
+
+        """
+        for fail_on_missing_prefix, metadata in [
+            (False, metadata)
+            for metadata in (
+                std_metadata.values()
+                if isinstance(std_metadata, StandardMetadataList)
+                else std_metadata
+            )
+        ] + [
+            (fail_on_missing_prefix_in_extras, metadata)
+            for metadata in extra_metadata or []
+        ]:
+            if fail_on_missing_prefix and not metadata.name.startswith("X-"):
+                raise ValueError(
+                    f"Metadata key {metadata.name} does not starts with X- as expected"
+                )
+            # if metadata.name in self._metadata:
+            #     raise ValueError(f"{metadata.name} cannot be defined twice")
+            self._metadata[metadata.name] = metadata
+
         return self
 
     def config_dev_metadata(
         self,
-        **extras: (
-            None
-            | int
-            | float
-            | bytes
-            | str
-            | datetime.datetime
-            | datetime.date
-            | Iterable[str]
-        ),
+        extra_metadata: Metadata | list[Metadata] | None = None,
     ):
-        """Calls config_metadata with default (yet overridable) values for dev"""
-        devel_default_metadata = DEFAULT_DEV_ZIM_METADATA.copy()
-        devel_default_metadata.update(extras)
-        return self.config_metadata(**devel_default_metadata)
+        """Calls minimal set of mandatory metadata with default values for dev
+
+        Extra metadata can be passed, and they are not checked for proper key prefix
+        """
+        return self.config_metadata(
+            std_metadata=DEFAULT_DEV_ZIM_METADATA,
+            extra_metadata=(
+                [extra_metadata]
+                if isinstance(extra_metadata, Metadata)
+                else extra_metadata
+            ),
+            fail_on_missing_prefix_in_extras=False,
+        )
 
     def add_item_for(
         self,
