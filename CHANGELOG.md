@@ -16,6 +16,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Add `filesystem.validate_folder_writable` to check if a folder can be written to #200
 
+### Fixed
+
+- Set default timeout in `download.stream_file` to 10 seconds, and allow to override value #222
+
 ## [4.0.0] - 2024-08-05
 
 ### Added

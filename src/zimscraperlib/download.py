@@ -15,6 +15,7 @@ import urllib3.util
 import yt_dlp as youtube_dl
 
 from zimscraperlib import logger
+from zimscraperlib.constants import DEFAULT_WEB_REQUESTS_TIMEOUT
 
 
 class YoutubeDownloader:
@@ -181,6 +182,7 @@ def stream_file(
     max_retries: int | None = 5,
     headers: dict[str, str] | None = None,
     session: requests.Session | None = None,
+    timeout: int | None = DEFAULT_WEB_REQUESTS_TIMEOUT,
     *,
     only_first_block: bool | None = False,
 ) -> tuple[int, requests.structures.CaseInsensitiveDict[str]]:
@@ -208,6 +210,7 @@ def stream_file(
         stream=True,
         proxies=proxies,
         headers=headers,
+        timeout=timeout,
     )
     resp.raise_for_status()
 

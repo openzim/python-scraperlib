@@ -56,3 +56,7 @@ MAXIMUM_LONG_DESCRIPTION_METADATA_LENGTH = 4000
 ILLUSTRATIONS_METADATA_RE = re.compile(
     r"^Illustration_(?P<height>\d+)x(?P<width>\d+)@(?P<scale>\d+)$"
 )
+
+# default timeout to get responses from upstream when doing web requests ; this is not
+# the total time it gets to download the whole resource
+DEFAULT_WEB_REQUESTS_TIMEOUT = 10
