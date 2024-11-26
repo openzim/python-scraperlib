@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Add `filesystem.validate_folder_writable` to check if a folder can be written to #200
+- Expose `constants.VERSION` to have access to zimscraperlib version from scrapers #224
 
 ### Fixed
 
