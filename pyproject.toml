@@ -26,6 +26,7 @@ dependencies = [
   "regex>=2020.7.14",
   "pymupdf>=1.24.0,<2.0",
   "CairoSVG>=2.2.0,<3.0",
+  "beartype==0.19.0",
   # youtube-dl should be updated as frequently as possible
   "yt-dlp"
 ]
@@ -252,6 +253,8 @@ ban-relative-imports = "all"
 "tests/**/*" = ["PLR2004", "S101", "TID252"]
 # _libkiwix mimics libkiwix C++ code, names obey C++ conventions
 "src/zimscraperlib/zim/_libkiwix.py" = ["N802", "N803", "N806"]
+# beartype must be first
+"src/zimscraperlib/zim/__init__.py" = ["E402"]
 
 [tool.pytest.ini_options]
 minversion = "7.3"
