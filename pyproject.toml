@@ -131,6 +131,24 @@ features = ["scripts", "check"]
 pyright = "inv check-pyright --args '{args}'"
 all = "inv checkall --args '{args}'"
 
+[tool.hatch.envs.docs]
+template = "docs"
+detached = true
+dependencies = [
+  "mkdocs==1.6.1",
+  "mkdocstrings[python]==0.27.0",
+  "mkdocs-material==9.5.44",
+  "pymdown-extensions==10.12",
+  "mkdocs-gen-files==0.5.0",
+  "mkdocs-literate-nav==0.6.1",
+  "mkdocs-include-markdown-plugin==7.1.2",
+  "black==24.10.0",
+]
+
+[tool.hatch.envs.docs.scripts]
+serve = "mkdocs serve"
+build = "mkdocs build"
+
 [tool.black]
 line-length = 88
 target-version = ['py312']

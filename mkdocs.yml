@@ -1,0 +1,92 @@
+site_name: Python Scraperlib
+site_description: 'Collection of Python code to re-use across Python-based OpenZIM scrapers.'
+repo_url: https://github.com/openzim/python-scraperlib
+repo_name: GitHub
+edit_uri: edit/main/docs/
+
+validation:
+  omitted_files: warn
+  absolute_links: warn
+  unrecognized_links: warn
+
+nav:
+  - Home: index.md
+  - Design:
+      - Functional Architecture: functional_architecture.md
+      - Software Architecture: software_architecture.md
+      - Technical Architecture: technical_architecture.md
+  - API Reference: api_reference/
+  - License: license.md
+
+theme:
+  name: material
+  logo: assets/openzim.png
+  palette:
+    # Light mode
+    - scheme: default
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    # Dark mode
+    - scheme: slate
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    # Use XHR for page changes to avoid page flash during navigation.
+    - navigation.instant
+    - navigation.instant.progress
+    # Use tabs and section headers rather than a single side navbar.
+    - navigation.tabs
+    - navigation.sections
+    # Add buttons to edit content
+    - content.action.edit
+
+markdown_extensions:
+  - pymdownx.snippets:
+      base_path: .
+      check_paths: true
+
+plugins:
+  - search
+
+  # Replace externally hosted assets for compliance with various privacy regulations.
+  - privacy
+
+  # Nicely include markdown, e.g. to rewrite relative links
+  - include-markdown
+
+  # Generate API docs and navigation for them
+  - gen-files:
+      scripts:
+        - docs/scripts/generate_api_nav.py
+
+  # Import additional nav from NAVIGATION.md files, like the one produced
+  # by gen-files.
+  - literate-nav:
+      nav_file: NAVIGATION.md
+
+  # Generate items
+  - mkdocstrings:
+      handlers:
+        python:
+          # Set up cross-references to Python types
+          import:
+            - https://docs.python.org/3/objects.inv
+          paths: [src]
+          options:
+            docstring_section_style: list
+            filters: ['!^_']
+            heading_level: 2
+            inherited_members: true
+            merge_init_into_class: true
+            separate_signature: true
+            show_signature_annotations: true
+            show_symbol_type_heading: true
+            show_symbol_type_toc: true
+            signature_crossrefs: true
+            summary: true
+            # Typically this should be off, but zimscraperlib has many
+            # items that won't be picked up because they lack docs
+            # or are using single line comments (like constants).
+            show_if_no_docstring: true

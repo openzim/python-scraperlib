@@ -68,15 +68,15 @@ def optimize_png(
     Arguments:
         reduce_colors: Whether to reduce colors using adaptive color pallette (boolean)
             values: True | False
-        max_colors: Maximum number of colors
-        if reduce_colors is True (integer between 1 and 256)
+        max_colors: Maximum number of colors if reduce_colors is True (integer between
+            1 and 256)
             values: 35 | 64 | 256 | 128 | XX
         fast_mode: Whether to use faster but weaker compression (boolean)
             values: True | False
         remove_transparency: Whether to remove transparency (boolean)
             values: True | False
-        background_color: Background color
-        if remove_transparency is True (tuple containing RGB values)
+        background_color: Background color if remove_transparency is True (tuple
+            containing RGB values)
             values: (255, 255, 255) | (221, 121, 108) | (XX, YY, ZZ)"""
 
     ensure_matches(src, "PNG")
@@ -110,13 +110,15 @@ def optimize_jpeg(
     **_,
 ) -> pathlib.Path | io.BytesIO:
     """method to optimize JPEG files using a pure python external optimizer
-    quality: JPEG quality (integer between 1 and 100)
-        values: 50 | 55 | 35 | 100 | XX
-    keep_exif: Whether to keep EXIF data in JPEG (boolean)
-        values: True | False
-    fast_mode: Use the supplied quality value. If turned off, optimizer will
-               get dynamic quality value to ensure better compression
-        values: True | False"""
+
+    Arguments:
+        quality: JPEG quality (integer between 1 and 100)
+            values: 50 | 55 | 35 | 100 | XX
+        keep_exif: Whether to keep EXIF data in JPEG (boolean)
+            values: True | False
+        fast_mode: Use the supplied quality value. If turned off, optimizer will
+                get dynamic quality value to ensure better compression
+            values: True | False"""
 
     ensure_matches(src, "JPEG")
 
@@ -179,14 +181,16 @@ def optimize_webp(
     **_,
 ) -> pathlib.Path | io.BytesIO:
     """method to optimize WebP using Pillow options
-    lossless: Whether to use lossless compression (boolean)
-        values: True | False
-    quality: WebP quality for lossy, effort put into compression
-    for lossless (integer between 0 to 100)
-        values: 30 | 45 | 100 | XX
-    method: Quality/speed trade-off;
-    higher values give better compression (integer between 1 and 6)
-        values: 1 | 2 | 3 | 4 | 5 | 6
+
+    Arguments:
+        lossless: Whether to use lossless compression (boolean);
+            values: True | False
+        quality: WebP quality for lossy, effort put into compression for lossless
+            (integer between 0 to 100);
+            values: 30 | 45 | 100 | XX
+        method: Quality/speed trade-off; higher values give better compression (integer
+            between 1 and 6);
+            values: 1 | 2 | 3 | 4 | 5 | 6
 
     refer to the link for more details
     https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html#webp"""
@@ -230,18 +234,21 @@ def optimize_gif(
     **_,
 ) -> pathlib.Path:
     """method to optimize GIFs using gifsicle >= 1.92
-    optimize_level: Optimization level;
-    higher values give better compression (integer between 1 and 3)
-        values: 1 | 2 | 3
-    lossiness: Level of lossy optimization to use;
-    higher values give better compression (integer)
-        values: 20 | 45 | 80 | XX
-    interlace: Whether to interlace the frames (boolean)
-        values: True | False
-    no_extensions: Whether to remove all extension options from GIF (boolean)
-        values: True | False
-    max_colors: Maximum number of colors in resultant GIF (integer between 2 and 256)
-        values: 2 | 86 | 128 | 256 | XX
+
+    Arguments:
+        optimize_level: Optimization level; higher values give better compression
+            (integer between 1 and 3);
+            values: 1 | 2 | 3
+        lossiness: Level of lossy optimization to use; higher values give better
+            compression (integer)
+            values: 20 | 45 | 80 | XX
+        interlace: Whether to interlace the frames (boolean)
+            values: True | False
+        no_extensions: Whether to remove all extension options from GIF (boolean)
+            values: True | False
+        max_colors: Maximum number of colors in resultant GIF;
+            (integer between 2 and 256)
+            values: 2 | 86 | 128 | 256 | XX
 
     refer to the link for more details - https://www.lcdf.org/gifsicle/man.html"""
 
@@ -282,12 +289,13 @@ def optimize_image(
 ):
     """Optimize image, automatically selecting correct optimizer
 
-    delete_src: whether to remove src file upon success (boolean)
-        values: True | False
-    convert: whether/how to convert from source before optimizing (str or boolean)
-        values: False: don't convert
-                True: convert to format implied by dst suffix
-                "FMT": convert to format FMT (use Pillow names)"""
+    Arguments:
+        delete_src: whether to remove src file upon success (boolean)
+            values: True | False
+        convert: whether/how to convert from source before optimizing (str or boolean)
+            values: False: don't convert
+                    True: convert to format implied by dst suffix
+                    "FMT": convert to format FMT (use Pillow names)"""
 
     src_format, dst_format = format_for(src, from_suffix=False), format_for(dst)
 
