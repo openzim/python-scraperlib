@@ -40,6 +40,7 @@ from zimscraperlib.filesystem import (
 )
 from zimscraperlib.i18n import is_valid_iso_639_3
 from zimscraperlib.types import get_mime_for_name
+from zimscraperlib.typing import Callback
 from zimscraperlib.zim.indexing import IndexData
 from zimscraperlib.zim.items import StaticItem
 from zimscraperlib.zim.metadata import (
@@ -341,7 +342,7 @@ class Creator(libzim.writer.Creator):
         should_compress: bool | None = None,
         delete_fpath: bool | None = False,
         duplicate_ok: bool | None = None,
-        callback: Callable | tuple[Callable, Any] | None = None,
+        callbacks: list[Callback] | Callback | None = None,
         index_data: IndexData | None = None,
         auto_index: bool = True,
     ):
@@ -365,6 +366,11 @@ class Creator(libzim.writer.Creator):
         if fpath is None and content is None:
             raise ValueError("One of fpath or content is required")
 
+        if isinstance(callbacks, Callback):
+            callbacks = [callbacks]
+        elif callbacks is None:
+            callbacks = []
+
         mimetype = mimetype_for(
             path=path, content=content, fpath=fpath, mimetype=mimetype
         )
@@ -377,12 +383,7 @@ class Creator(libzim.writer.Creator):
             hints[libzim.writer.Hint.COMPRESS] = should_compress
 
         if delete_fpath and fpath:
-            cb = [delete_callback, fpath]
-            if callback and callable(callback):
-                cb.append(callback)
-            elif callback:
-                cb += list(callback)
-            callback = tuple(cb)
+            callbacks.append(Callback(func=delete_callback, args=(fpath,)))
 
         self.add_item(
             StaticItem(
@@ -395,7 +396,7 @@ class Creator(libzim.writer.Creator):
                 index_data=index_data,
                 auto_index=auto_index,
             ),
-            callback=callback,
+            callbacks=callbacks,
             duplicate_ok=duplicate_ok,
         )
         return path
@@ -404,18 +405,23 @@ class Creator(libzim.writer.Creator):
         self,
         item: libzim.writer.Item,
         duplicate_ok: bool | None = None,
-        callback: Callable | tuple[Callable, Any] | None = None,
+        callbacks: list[Callback] | Callback | None = None,
     ):
         """Add a libzim.writer.Item
 
         callback: either a single callable or a tuple containing the callable
         as first element then the arguments to pass to the callable.
         Note: you must __not__ include the item itself in those arguments."""
-        if callback:
-            if callable(callback):
-                weakref.finalize(item, callback)
-            else:
-                weakref.finalize(item, *callback)
+        if isinstance(callbacks, Callback):
+            callbacks = [callbacks]
+        elif callbacks is None:
+            callbacks = []
+
+        for callback in callbacks:
+            if callback.callable:
+                weakref.finalize(
+                    item, callback.func, *callback.get_args(), **callback.get_kwargs()
+                )
 
         duplicate_ok = duplicate_ok or self.ignore_duplicates
         try:
