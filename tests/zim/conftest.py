@@ -107,6 +107,6 @@ def counters():
 
 @pytest.fixture
 def ignore_metadata_conventions():
-    zimscraperlib.zim.metadata.check_metadata_conventions = False
+    zimscraperlib.zim.metadata.APPLY_RECOMMENDATIONS = False
     yield
-    zimscraperlib.zim.metadata.check_metadata_conventions = True
+    zimscraperlib.zim.metadata.APPLY_RECOMMENDATIONS = True

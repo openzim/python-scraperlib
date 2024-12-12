@@ -9,6 +9,7 @@ import re
 from typing import NamedTuple
 
 import pytest
+from beartype.roar import BeartypeCallHintParamViolation as InvalidType
 
 from zimscraperlib.zim import metadata
 
@@ -19,13 +20,13 @@ from zimscraperlib.zim import metadata
         ("fra"),
         ("eng"),
         ("bam"),
-        ("fra,eng"),
-        ("eng, fra"),
-        ("fra,eng,bam"),
         (["fra", "eng"]),
-        ("fra, eng"),  # codes are automatically cleaned-up
-        ("eng,  \r"),  # codes are automatically cleaned-up
-        (["fra", "  "]),  # codes are automatically cleaned-up
+        ("eng", "fra"),
+        ("fra", "eng", "bam"),
+        (["fra", "eng"]),
+        ("fra", "eng"),  # codes are automatically cleaned-up
+        ("eng\r"),  # codes are automatically cleaned-up
+        (["fra "]),  # codes are automatically cleaned-up
     ],
 )
 def test_validate_language_valid(value: list[str] | str):
@@ -33,27 +34,28 @@ def test_validate_language_valid(value: list[str] | str):
 
 
 @pytest.mark.parametrize(
-    "value,error",
+    "value,exception,error",
     [
-        ("", "Missing value for mandatory metadata"),
-        ("fr", "is not ISO-639-3"),
-        ("en", "is not ISO-639-3"),
-        ("xxx", "is not ISO-639-3"),
-        ("rmr", "is not ISO-639-3"),
-        ("fra,en,bam", "is not ISO-639-3"),
-        ("fra;eng", "is not ISO-639-3"),
-        ("fra,fra", "Duplicate codes not allowed in Language metadata"),
-        (["fra", "fra"], "Duplicate codes not allowed in Language metadata"),
-        ([], "Missing value for mandatory metadata"),
-        (["  ", "\t"], "Missing value for mandatory Language metadata"),
-        ("  , ", "Missing value for mandatory Language metadata"),
-        (["fra", 1], "Invalid type(s) found in Iterable:"),
-        (["fra", b"1"], "Invalid type(s) found in Iterable:"),
-        (["fra", 1, b"1"], "Invalid type(s) found in Iterable:"),
+        ("", ValueError, "Missing value (empty not allowed)"),
+        ("fr", ValueError, "are not ISO-639-3"),
+        ("en", ValueError, "are not ISO-639-3"),
+        ("xxx", ValueError, "are not ISO-639-3"),
+        ("rmr", ValueError, "are not ISO-639-3"),
+        ("fra,en,bam", ValueError, "are not ISO-639-3"),
+        (("fra", "en", "bam"), ValueError, "are not ISO-639-3"),
+        ("fra;eng", ValueError, "are not ISO-639-3"),
+        (("fra", "fra"), ValueError, "Duplicate entries not allowed"),
+        (["fra", "fra"], ValueError, "Duplicate entries not allowed"),
+        ([], ValueError, "Missing value (empty not allowed)"),
+        (["  ", "\t"], ValueError, "Missing value (empty not allowed)"),
+        (("  ", " "), ValueError, "Missing value (empty not allowed)"),
+        (["fra", 1], InvalidType, " violates type"),
+        (["fra", b"1"], InvalidType, " violates type"),
+        (["fra", 1, b"1"], InvalidType, " violates type"),
     ],
 )
-def test_validate_language_invalid(value: list[str] | str, error: str):
-    with pytest.raises(ValueError, match=re.escape(error)):
+def test_validate_language_invalid(value: list[str] | str, exception: type, error: str):
+    with pytest.raises(exception, match=re.escape(error)):
         assert metadata.LanguageMetadata(value)
 
 
@@ -84,26 +86,31 @@ def test_validate_tags_valid(tags, is_valid):
 
 
 @pytest.mark.parametrize(
-    "value, error",
+    "value, exception, error",
     [
-        pytest.param("", "Cannot set empty metadata", id="empty_string"),
-        pytest.param(1, "Unexpected type passed to TagsMetadata: int", id="one_int"),
         pytest.param(
-            None, "Unexpected type passed to TagsMetadata: NoneType", id="none_value"
+            "", ValueError, "Missing value (empty not allowed)", id="empty_string"
         ),
+        pytest.param(1, InvalidType, " violates type", id="one_int"),
         pytest.param(
-            ["wikipedia", 1], "Invalid type(s) found in Iterable: int", id="int_in_list"
+            None,
+            InvalidType,
+            " violates type",
+            id="none_value",
         ),
+        pytest.param(["wikipedia", 1], InvalidType, " violates type", id="int_in_list"),
     ],
 )
-def test_validate_tags_invalid(value: list[str] | str, error: str):
-    with pytest.raises(ValueError, match=re.escape(error)):
+def test_validate_tags_invalid(
+    value: list[str] | str | int, exception: type, error: str
+):
+    with pytest.raises(exception, match=re.escape(error)):
         metadata.TagsMetadata(value)
 
 
 def test_validate_dedup_tags():
     assert (
-        metadata.TagsMetadata("  wikipedia  \t   ;   wikipedia").libzim_value
+        metadata.TagsMetadata(["  wikipedia  \t   ", "   wikipedia"]).libzim_value
         == b"wikipedia"
     )
 
@@ -117,7 +124,7 @@ def test_validate_short_grapheme_title_check_enabled():
 
 
 def test_validate_too_long_title_check_enabled():
-    with pytest.raises(ValueError, match="Title is too long"):
+    with pytest.raises(ValueError, match="Title value is too long"):
         assert metadata.TitleMetadata("T" * 31)
 
 
@@ -136,7 +143,7 @@ def test_validate_short_grapheme_description_check_enabled():
 
 
 def test_validate_too_long_description_check_enabled():
-    with pytest.raises(ValueError, match="Description is too long"):
+    with pytest.raises(ValueError, match="Description value is too long"):
         assert metadata.DescriptionMetadata("T" * 81)
 
 
@@ -155,7 +162,7 @@ def test_validate_short_grapheme_longdescription_check_enabled():
 
 
 def test_validate_too_long_longdescription_check_enabled():
-    with pytest.raises(ValueError, match="Description is too long"):
+    with pytest.raises(ValueError, match="LongDescription value is too long"):
         assert metadata.LongDescriptionMetadata("T" * 4001)
 
 
@@ -175,20 +182,23 @@ def test_validate_date_datetime_datetime():
     )
 
 
+def test_validate_date_invalid_datee():
+    assert metadata.DateMetadata(
+        datetime.datetime(9, 12, 11, 0, 0, 0, tzinfo=datetime.UTC)
+    )
+
+
 @pytest.mark.parametrize("value", [("9999-99-99"), ("2023/02/29"), ("1969-13-31")])
-def test_validate_date_invalid_date(value):
-    with pytest.raises(ValueError, match="Invalid date format"):
+def test_validate_date_invalid_datetype(value):
+    with pytest.raises(InvalidType, match="violates type hint"):
         metadata.DateMetadata(value)
 
 
-def test_validate_illustration_invalid_name():
-    with pytest.raises(ValueError, match="Illustration metadata has improper name"):
-        metadata.IllustrationMetadata("Illustration_48x48_at_1", b"")
-
-
-def test_validate_illustration_not_squared():
-    with pytest.raises(ValueError, match="Illustration is not squared"):
-        metadata.IllustrationMetadata("Illustration_48x96@1", b"")
+def test_validate_illustration_invalid_image():
+    with pytest.raises(
+        ValueError, match="Illustration_48x48@1 is not a valid 48x48 PNG Image"
+    ):
+        metadata.IllustrationMetadata(b"PN", size=48)
 
 
 def test_validate_illustration_wrong_sizes(png_image2):
@@ -197,12 +207,12 @@ def test_validate_illustration_wrong_sizes(png_image2):
     with pytest.raises(
         ValueError, match="Illustration_48x48@1 is not a valid 48x48 PNG Image"
     ):
-        metadata.IllustrationMetadata("Illustration_48x48@1", png_data)
+        metadata.IllustrationMetadata(png_data, size=48)
 
 
 def test_blank_metadata():
-    with pytest.raises(ValueError, match="Cannot set empty metadata"):
-        metadata.Metadata("Blank", b"")
+    with pytest.raises(ValueError, match=r"Missing value \(empty not allowed\)"):
+        metadata.Metadata(name="Blank", value=b"")
 
 
 class MetadataInitConfig(NamedTuple):
@@ -213,15 +223,15 @@ class MetadataInitConfig(NamedTuple):
 @pytest.fixture(
     params=[
         MetadataInitConfig(metadata.Metadata, 2),
-        MetadataInitConfig(metadata._TextMetadata, 2),
         MetadataInitConfig(metadata.CustomTextMetadata, 2),
         MetadataInitConfig(metadata.CustomMetadata, 2),
-        MetadataInitConfig(metadata._MandatoryTextMetadata, 2),
-        MetadataInitConfig(metadata._MandatoryMetadata, 2),
+        MetadataInitConfig(metadata.XCustomMetadata, 2),
+        MetadataInitConfig(metadata.XCustomTextMetadata, 2),
         MetadataInitConfig(metadata.TitleMetadata, 1),
         MetadataInitConfig(metadata.DescriptionMetadata, 1),
         MetadataInitConfig(metadata.LongDescriptionMetadata, 1),
         MetadataInitConfig(metadata.DateMetadata, 1),
+        MetadataInitConfig(metadata.DefaultIllustrationMetadata, 1),
         MetadataInitConfig(metadata.IllustrationMetadata, 2),
         MetadataInitConfig(metadata.LanguageMetadata, 1),
         MetadataInitConfig(metadata.TagsMetadata, 1),
@@ -237,35 +247,6 @@ class MetadataInitConfig(NamedTuple):
 )
 def metadata_init(request: pytest.FixtureRequest) -> MetadataInitConfig:
     return request.param
-
-
-def test_none_metadata_two_args(metadata_init: MetadataInitConfig):
-    with pytest.raises(
-        ValueError,
-        match=f"Unexpected type passed to {metadata_init.a_type.__qualname__}: "
-        "NoneType",
-    ):
-        if metadata_init.nb_args == 2:
-            metadata_init.a_type(
-                "Foo",
-                None,  # pyright: ignore[reportArgumentType]
-            )
-        elif metadata_init.nb_args == 1:
-            metadata_init.a_type(None)
-
-
-@pytest.mark.parametrize(
-    "a_type",
-    [
-        (metadata.Metadata),
-        (metadata.CustomTextMetadata),
-        (metadata._TextMetadata),
-        (metadata._MandatoryMetadata),
-    ],
-)
-def test_reserved_counter_metadata(a_type: type):
-    with pytest.raises(ValueError, match="Counter cannot be set. libzim sets it."):
-        a_type("Counter", b"Foo")
 
 
 @pytest.mark.parametrize(
@@ -287,6 +268,7 @@ def test_reserved_counter_metadata(a_type: type):
         ("Source"),
         ("License"),
         ("Relation"),
+        ("Counter"),
     ],
 )
 @pytest.mark.parametrize(
@@ -297,119 +279,168 @@ def test_reserved_counter_metadata(a_type: type):
     ],
 )
 def test_reserved_names(metadata_name: str, metadata_type: type):
-    with pytest.raises(ValueError, match="It is not allowed to use"):
-        metadata_type(metadata_name, b"a value")
+    with pytest.raises(ValueError, match="Custom metdata name must be X- prefixed"):
+        value = "x" if metadata_type == metadata.CustomTextMetadata else b"x"
+        metadata_type(name=metadata_name, value=value)
+
+
+@pytest.mark.parametrize(
+    "metadata_name",
+    [
+        ("Nameo"),
+        ("Languageo"),
+        ("Titleo"),
+        ("Creatoro"),
+        ("Publishero"),
+        ("Dateo"),
+        ("Illustration_48x48@1o"),
+        ("Illustration_96x96@1o"),
+        ("Descriptiono"),
+        ("LongDescriptiono"),
+        ("Tagso"),
+        ("Scrapero"),
+        ("Flavouro"),
+        ("Sourceo"),
+        ("Licenseo"),
+        ("Relationo"),
+        ("Countero"),
+    ],
+)
+@pytest.mark.parametrize(
+    "metadata_type",
+    [
+        (metadata.CustomMetadata),
+        (metadata.CustomTextMetadata),
+    ],
+)
+def test_nonreserved_custom(metadata_name: str, metadata_type: type):
+    value = "x" if metadata_type == metadata.CustomTextMetadata else b"x"
+    assert metadata_type(name=metadata_name, value=value)
 
 
 def test_mandatory_value(metadata_init: MetadataInitConfig):
-
-    with pytest.raises(
-        ValueError,
-        match=(
-            "is not a valid 48x48 PNG Image"
-            if metadata_init.a_type == metadata.IllustrationMetadata
-            else (
-                "Invalid date format, not matching regex"
-                if metadata_init.a_type == metadata.DateMetadata
-                else "Cannot set empty metadata|Missing value for mandatory metadata"
-            )
-        ),
-    ):
-        if metadata_init.nb_args == 2:
-            metadata_init.a_type(
-                (
-                    "Foo"
-                    if metadata_init.a_type != metadata.IllustrationMetadata
-                    else "Illustration_48x48@1"
-                ),
-                b"",
-            )
-        elif metadata_init.nb_args == 1:
-            metadata_init.a_type(b"")
+    if not metadata_init.a_type.is_required:
+        pytest.skip("Only testing mandatory ones")
+    with pytest.raises(ValueError, match="Missing"):
+        if metadata_init.a_type.expecting == "textlist":
+            metadata_init.a_type([])
+            metadata_init.a_type(["", " "])
+        elif metadata_init.a_type.expecting == "text":
+            metadata_init.a_type("")
+            metadata_init.a_type(" ")
+        elif metadata_init.a_type.expecting == "date":
+            pytest.skip("Cannot set an empty Date")
+        elif metadata_init.a_type.expecting in ("illustration", "bytes"):
+            if metadata_init.nb_args == 1:
+                metadata_init.a_type(b"")
+                metadata_init.a_type(b" ")
+            else:
+                metadata_init.a_type(b"", name="Foo")
+                metadata_init.a_type(b" ", name="Foo")
 
 
 def test_clean_value(metadata_init: MetadataInitConfig):
-    raw_value = b"\t\n\r\n \tA val \t\awith  \bcontrol chars\v\n"
+    raw_value = "\t\n\r\n \tA val \t\awith  \bcontrol chars\v\n"
     clean_value = b"A val \twith  control chars"
-    if metadata_init.a_type in (
-        # some types do not support the raw value
-        metadata.IllustrationMetadata,
-        metadata.LanguageMetadata,
-        metadata.DateMetadata,
-        # and binary types are not cleaned-up
-        metadata.Metadata,
-        metadata.CustomMetadata,
-        metadata._MandatoryMetadata,
-    ):
-        pytest.skip("unsupported configuration")  # ignore these test cases
-    if metadata_init.nb_args == 2:
-        assert metadata_init.a_type(("Foo"), raw_value).libzim_value == clean_value
-    elif metadata_init.nb_args == 1:
+    raw_lang_value = "\t\n\r\n \tfra \t\a\b\v\n"
+    clean_lang_value = b"fra"
+    if metadata_init.a_type == metadata.LanguageMetadata:
+        assert metadata_init.a_type([raw_lang_value]).libzim_value == clean_lang_value
+    elif metadata_init.a_type.expecting == "textlist":
         assert metadata_init.a_type(raw_value).libzim_value == clean_value
+        assert metadata_init.a_type(
+            value=[raw_value, raw_value]
+        ).libzim_value == metadata_init.a_type.join_list_with.join(
+            [clean_value.decode("UTF-8")]
+        ).encode(
+            "UTF-8"
+        )
+    elif metadata_init.a_type.expecting == "text":
+        if metadata_init.nb_args == 1:
+            assert metadata_init.a_type(value=raw_value).libzim_value == clean_value
+        else:
+            assert (
+                metadata_init.a_type(value=raw_value, name="Foo").libzim_value
+                == clean_value
+            )
 
 
-# @pytest.mark.parametrize(
-#     "metadata, expected_value",
-#     [
-#         (metadata.Metadata("Foo", b"a value"), b"a value"),
-#         (metadata.Metadata("Foo", io.BytesIO(b"a value")), b"a value"),
-#         (metadata.DescriptionMetadata(io.BytesIO(b"a value")), b"a value"),
-#         (metadata.DescriptionMetadata(b"a value"), b"a value"),
-#         (metadata.DescriptionMetadata("a value"), b"a value"),
-#         (metadata.IllustrationMetadata(png), b"a value"),
-#     ],
-# )
 def test_libzim_bytes_value(metadata_init: MetadataInitConfig, png_image: pathlib.Path):
     if metadata_init.nb_args == 2:
         if metadata_init.a_type == metadata.IllustrationMetadata:
             with open(png_image, "rb") as fh:
                 png_data = fh.read()
+            assert metadata_init.a_type(png_data, 48).libzim_value == png_data
+        elif metadata_init.a_type in (
+            metadata.CustomTextMetadata,
+            metadata.XCustomTextMetadata,
+        ):
             assert (
-                metadata.IllustrationMetadata(
-                    "Illustration_48x48@1", png_data
-                ).libzim_value
-                == png_data
+                metadata_init.a_type(value="a value", name="Foo").libzim_value
+                == b"a value"
+            )
+        elif metadata_init.a_type in (
+            metadata.CustomMetadata,
+            metadata.XCustomMetadata,
+        ):
+            assert (
+                metadata_init.a_type(value=b"a value", name="Foo").libzim_value
+                == b"a value"
             )
         else:
-            assert metadata_init.a_type("Foo", b"a value").libzim_value == b"a value"
+            assert (
+                metadata_init.a_type(value=b"a value", name="Foo").libzim_value
+                == b"a value"
+            )
     elif metadata_init.nb_args == 1:
-        if metadata_init.a_type == metadata.DateMetadata:
-            assert metadata_init.a_type(b"2023-12-11").libzim_value == b"2023-12-11"
+        if metadata_init.a_type == metadata.DefaultIllustrationMetadata:
+            with open(png_image, "rb") as fh:
+                png_data = fh.read()
+            assert metadata_init.a_type(png_data).libzim_value == png_data
+        elif metadata_init.a_type == metadata.DateMetadata:
+            assert (
+                metadata_init.a_type(datetime.date(2023, 12, 11)).libzim_value
+                == b"2023-12-11"
+            )
         elif metadata_init.a_type == metadata.LanguageMetadata:
-            assert metadata_init.a_type(b"fra,eng").libzim_value == b"fra,eng"
+            assert metadata_init.a_type(["fra", "eng"]).libzim_value == b"fra,eng"
         else:
-            assert metadata_init.a_type(b"a value").libzim_value == b"a value"
+            assert metadata_init.a_type("a value").libzim_value == b"a value"
 
 
 def test_libzim_io_bytesio_value(
     metadata_init: MetadataInitConfig, png_image: pathlib.Path
 ):
-    if metadata_init.nb_args == 2:
-        if metadata_init.a_type == metadata.IllustrationMetadata:
-            with open(png_image, "rb") as fh:
-                png_data = fh.read()
+    if metadata_init.a_type.expecting == "illustration":
+        with open(png_image, "rb") as fh:
+            png_data = fh.read()
+            if metadata_init.nb_args == 1:
+                assert (
+                    metadata_init.a_type(value=io.BytesIO(png_data)).libzim_value
+                    == png_data
+                )
+            else:
+                assert (
+                    metadata_init.a_type(
+                        value=io.BytesIO(png_data), size=48
+                    ).libzim_value
+                    == png_data
+                )
+    if metadata_init.a_type.expecting == "bytes":
+        if metadata_init.nb_args == 1:
             assert (
-                metadata.IllustrationMetadata(
-                    "Illustration_48x48@1", io.BytesIO(png_data)
-                ).libzim_value
-                == png_data
-            )
-        else:
-            assert (
-                metadata_init.a_type("Foo", io.BytesIO(b"a value")).libzim_value
+                metadata_init.a_type(value=io.BytesIO(b"a value")).libzim_value
                 == b"a value"
             )
-    elif metadata_init.nb_args == 1:
-        if metadata_init.a_type == metadata.DateMetadata:
-            pass  # Not supported
-        elif metadata_init.a_type == metadata.LanguageMetadata:
-            assert (
-                metadata_init.a_type(io.BytesIO(b"fra,eng")).libzim_value == b"fra,eng"
-            )
         else:
             assert (
-                metadata_init.a_type(io.BytesIO(b"a value")).libzim_value == b"a value"
+                metadata_init.a_type(
+                    value=io.BytesIO(b"a value"), name="Foo"
+                ).libzim_value
+                == b"a value"
             )
+    else:
+        pytest.skip("Type doesnt support bytes-like input")
 
 
 def test_std_metadata_values():
@@ -424,12 +455,11 @@ def test_std_metadata_values():
         metadata.TitleMetadata("Test Title"),
         metadata.CreatorMetadata("Test Creator"),
         metadata.PublisherMetadata("Test Publisher"),
-        metadata.DateMetadata("2023-01-01"),
+        metadata.DateMetadata(datetime.date(2023, 1, 1)),
         metadata.DescriptionMetadata("Test Description"),
         metadata.LanguageMetadata("fra"),
         # blank 48x48 transparent PNG
-        metadata.IllustrationMetadata(
-            "Illustration_48x48@1",
+        metadata.DefaultIllustrationMetadata(
             base64.b64decode(
                 "iVBORw0KGgoAAAANSUhEUgAAADAAAAAwAQMAAABtzGvEAAAAGXRFWHRTb2Z0d2FyZQBB"
                 "ZG9iZSBJbWFnZVJlYWR5ccllPAAAAANQTFRFR3BMgvrS0gAAAAF0Uk5TAEDm2GYAAAAN"
@@ -448,3 +478,7 @@ def test_std_metadata_values():
             pytest.fail(
                 f"Did not found matching expected values for {value.name} metadata"
             )
+
+
+def test_raw_metadata():
+    assert metadata.Metadata(name="Name", value=b"hello")

@@ -166,11 +166,13 @@ def make_zim_file(
     with open(illustration_path, "rb") as fh:
         illustration_data = fh.read()
 
+    # disable recommendations if requested
+    metadata.APPLY_RECOMMENDATIONS = not disable_metadata_checks
+
     zim_file = Creator(
         filename=fpath,
         main_path=main_page,
         ignore_duplicates=ignore_duplicates,
-        check_metadata_conventions=disable_metadata_checks,
     ).config_metadata(
         metadata.StandardMetadataList(
             # mandatory
@@ -181,8 +183,8 @@ def make_zim_file(
             Language=metadata.LanguageMetadata(language),
             Creator=metadata.CreatorMetadata(creator),
             Publisher=metadata.PublisherMetadata(publisher),
-            Illustration_48x48_at_1=metadata.IllustrationMetadata(
-                "Illustration_48x48@1", illustration_data
+            Illustration_48x48_at_1=metadata.DefaultIllustrationMetadata(
+                illustration_data
             ),
             # optional
             Tags=metadata.TagsMetadata(list(tags)) if tags else None,

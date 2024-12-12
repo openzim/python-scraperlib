@@ -3,8 +3,10 @@ from __future__ import annotations
 import base64
 import datetime
 import io
-import re
-from dataclasses import dataclass
+from collections.abc import Iterable
+from dataclasses import asdict, dataclass, fields
+from itertools import filterfalse
+from typing import Any, BinaryIO
 
 import regex
 
@@ -21,9 +23,8 @@ from zimscraperlib.inputs import unique_values
 # All control characters are disallowed in str metadata except \n, \r and \t
 UNWANTED_CONTROL_CHARACTERS_REGEX = regex.compile(r"(?![\n\t\r])\p{C}")
 
-# flag to enable / disable check conventions (e.g. title shorter than 30 chars,
-# description shorter than 80 chars, ...)
-check_metadata_conventions: bool = True
+# whether to apply openZIM recommendations (see https://wiki.openzim.org/wiki/Metadata)
+APPLY_RECOMMENDATIONS: bool = True
 
 
 def clean_str(value: str) -> str:
@@ -36,391 +37,419 @@ def nb_grapheme_for(value: str) -> int:
     return len(regex.findall(r"\X", value))
 
 
-class Metadata:
-    """A very basic metadata, with a name and a bytes or io.BytesIO value
+def mandatory(cls):
+    """Marks a Metadata mandatory: must be set to please Creator and cannot be empty"""
+    cls.is_required = True
+    cls.empty_allowed = False
+    return cls
 
-    Compliance with ZIM specification is done at initialisation, value passed at
-    initialization is kept in memory in `value` attribute, target name is stored in
-    `name` value and conversion to libzim value is available with `libzim_value`
-    property.
-    """
 
-    def __init__(self, name: str, value: bytes | io.BytesIO) -> None:
-        if not isinstance(value, bytes | io.BytesIO):
+def expecting_text(cls):
+    """Expects a Text (str) input. Will be cleaned-up and UTF-8 encoded"""
+    cls.expecting = "text"
+    cls.require_text_cleanup = True
+    cls.require_utf8_encoding = True
+
+    # native type is str
+    def get_cleaned_value(self, value: str) -> str:
+        if self.require_text_cleanup:
+            value = clean_str(value)
+
+        if not self.empty_allowed and not value.strip():
+            raise ValueError("Missing value (empty not allowed)")
+
+        # max-length is openZIM recommendation
+        if getattr(self, "oz_max_length", 0) and APPLY_RECOMMENDATIONS:
+            if nb_grapheme_for(value) > self.oz_max_length:
+                raise ValueError(
+                    f"{self.name} value is too long ({self.oz_max_length})"
+                )
+        return value
+
+    def get_libzim_value(self) -> bytes:
+        return self.get_encoded(self.value)
+
+    cls.get_cleaned_value = get_cleaned_value
+    cls.get_libzim_value = get_libzim_value
+    return cls
+
+
+def expecting_textlist(cls):
+    """Expects a Text List (list[str]) input. Each item will be cleaned-up.
+
+    List will be joined (see `join_list_with`) and UTF-8 encoded"""
+    cls.expecting = "textlist"
+    cls.require_textlist_cleanup = True
+    cls.require_utf8_encoding = True
+
+    # native type is list[str]
+    def get_cleaned_value(self, value: Iterable[str] | str) -> list[str]:
+        if isinstance(value, str):
+            value = [value]
+        else:
+            value = list(value)
+        if self.require_textlist_cleanup:
+            value = [clean_str(item) for item in value]
+        if not self.empty_allowed and (not value or not all(value)):
+            raise ValueError("Missing value (empty not allowed)")
+        if not self.duplicates_allowed and len(set(value)) != len(value):
+            raise ValueError("Duplicate entries not allowed")
+        elif self.require_deduplication:
+            value = unique_values(value)
+        if self.oz_only_iso636_3_allowed and APPLY_RECOMMENDATIONS:
+            invalid_codes = list(filterfalse(is_valid_iso_639_3, value))
+            if invalid_codes:
+                raise ValueError(
+                    f"Following code(s) are not ISO-639-3: {','.join(invalid_codes)}"
+                )
+        return value
+
+    def get_libzim_value(self) -> bytes:
+        return self.get_encoded(self.join_list_with.join(self.value))
+
+    cls.get_cleaned_value = get_cleaned_value
+    cls.get_libzim_value = get_libzim_value
+    return cls
+
+
+def expecting_date(cls):
+    """Expects a Date (date | datetime) input. Will be UTF-8 encoded as YYYY-MM-DD"""
+    cls.expecting = "date"
+    cls.require_utf8_encoding = True
+
+    # native type is date
+    def get_cleaned_value(
+        self, value: datetime.date | datetime.datetime  # noqa: ARG001
+    ) -> datetime.date:
+        if isinstance(value, datetime.datetime):
+            value = value.date()
+        return value
+
+    def get_libzim_value(self) -> bytes:
+        return self.get_encoded(self.value.strftime("%Y-%m-%d"))
+
+    cls.get_cleaned_value = get_cleaned_value
+    cls.get_libzim_value = get_libzim_value
+    return cls
+
+
+def expecting_illustration(cls):
+    """Expects a Square PNG Illustration (bytes-like) input.
+
+    PNG format and squareness will be checked"""
+    cls.expecting = "illustration"
+    cls.meta_mimetype = "image/png"
+
+    # native type is PNG image buffer
+    def get_cleaned_value(self, value: bytes | BinaryIO | io.BytesIO) -> bytes:
+        if isinstance(value, BinaryIO):
+            payload = value.read()
+            value.seek(0)
+            value = payload
+        elif isinstance(value, io.BytesIO):
+            value = value.getvalue()
+        if not self.empty_allowed and not value:
+            raise ValueError("Missing value (empty not allowed)")
+
+        if not is_valid_image(
+            image=value,
+            imformat="PNG",
+            size=(self.illustration_size, self.illustration_size),
+        ):
             raise ValueError(
-                f"Unexpected type passed to {self.__class__.__qualname__}: "
-                f"{value.__class__.__qualname__}"
+                f"{self.name} is not a valid "
+                f"{self.illustration_size}x{self.illustration_size} PNG Image"
             )
-        if name == "Counter":
-            raise ValueError("Counter cannot be set. libzim sets it.")
-        self.name = name
-        self.value = value
-        libzim_value = self.libzim_value  # to check for errors
-        if libzim_value is None or len(libzim_value) == 0:
-            raise ValueError("Cannot set empty metadata")
+        return value
 
-    @property
-    def libzim_value(self) -> bytes:
-        """The value to pass to the libzim for creating the metadata"""
-        if isinstance(self.value, io.BytesIO):
-            return self.value.getvalue()
+    def get_libzim_value(self) -> bytes:
         return self.value
 
+    cls.get_cleaned_value = get_cleaned_value
+    cls.get_libzim_value = get_libzim_value
+    return cls
 
-class _TextMetadata(Metadata):
-    """A basic metadata whose value is expected to be some text"""
 
-    def __init__(self, name: str, value: bytes | io.BytesIO | str) -> None:
-        if not isinstance(value, bytes | io.BytesIO | str):
-            raise ValueError(
-                f"Unexpected type passed to {self.__class__.__qualname__}: "
-                f"{value.__class__.__qualname__}"
+def allow_empty(cls):
+    """Whether input can be blank"""
+    cls.empty_allowed = True
+    return cls
+
+
+def allow_duplicates(cls):
+    """Whether list input can accept duplicate values"""
+    cls.duplicates_allowed = True
+    return cls
+
+
+def deduplicate(cls):
+    """Whether duplicates in list inputs should be reduced"""
+    cls.duplicates_allowed = True
+    cls.require_deduplication = True
+    return cls
+
+
+def only_lang_codes(cls):
+    """Whether list input should be checked to only accept ISO-639-1 codes"""
+    cls.oz_only_iso636_3_allowed = True
+    return cls
+
+
+def x_protected(cls):
+    """Whether metadata name should be checked for collision with reserved names
+
+    when applying recommendations"""
+    cls.oz_x_protected = True
+    return cls
+
+
+def x_prefixed(cls):
+    """Whether metadata names should be automatically X-Prefixed"""
+    cls.oz_x_protected = False
+    cls.oz_x_prefixed = True
+    return cls
+
+
+class Metadata:
+    # name of the metadata (not its value)
+    meta_name: str
+    value: Any
+
+    # MIME type of the value
+    meta_mimetype: str
+
+    # whether metadata is required or not
+    is_required: bool = False
+
+    # what kind of input data is expected
+    expecting: str = "bytes"  # text | textlist | date | illustration
+
+    # str: text value must be cleaned-up
+    require_text_cleanup: bool = False
+
+    # whether an empty value is allowed or not
+    empty_allowed: bool = False
+
+    # str: whether text value must be under a certain length
+    oz_max_length: int
+
+    # list[str]: text values in list must be cleaned-up
+    require_textlist_cleanup: bool = False
+
+    # list[str]: whether duplicate values are allowed in a list of str
+    duplicates_allowed: bool = False
+    # list[str]: whether duplicate values are automatically removed
+    require_deduplication: bool = False
+
+    # list[str]: whether values in list must all be ISO-636-3 codes
+    oz_only_iso636_3_allowed: bool = False
+
+    join_list_with: str = " "  # , | ;
+
+    illustration_size: int
+    illustration_scale: int = 1
+
+    # str, list[str]: whether text value must be encoded to UTF-8
+    require_utf8_encoding: bool = False
+
+    # wether Name is automatically X-prefixed
+    oz_x_prefixed: bool = False
+    # wether Name is prevented to clash with reserved names
+    oz_x_protected: bool = False
+
+    def __init__(
+        self, value: Any, name: str | None = None, mimetype: str | None = None
+    ) -> None:
+        if name:
+            self.meta_name = name
+        if not getattr(self, "meta_name", ""):
+            raise OSError("Metadata name missing")
+        if mimetype:
+            self.meta_mimetype = mimetype
+        self.value = self.get_cleaned_value(value)
+        self.validate()
+
+    def get_mimetype(self) -> str:
+        # explicitly set first
+        return getattr(self, "meta_mimetype", "text/plain;charset=UTF-8")
+
+    @property
+    def mimetype(self) -> str:
+        return self.get_mimetype()
+
+    @staticmethod
+    def matches_reserved_name(name: str) -> bool:
+        if name in [field.name for field in fields(StandardMetadataList)]:
+            return True
+        # set by libzim
+        if name == "Counter":
+            return True
+        return bool(ILLUSTRATIONS_METADATA_RE.match(name))
+
+    def get_name(self) -> str:
+        if self.expecting == "illustration":
+            return (
+                f"Illustration_{self.illustration_size}x{self.illustration_size}"
+                f"@{self.illustration_scale}"
             )
-        super().__init__(
-            name=name,
-            value=(
-                value.encode()
-                if isinstance(value, str)
-                else value.getvalue() if isinstance(value, io.BytesIO) else value
-            ),
-        )
-        self.value = value
-        _ = self.libzim_value  # to check for errors
 
-    @property
-    def libzim_value(self) -> bytes:
-        """The value to pass to the libzim for creating the metadata"""
-        # decode and reencode byte types to validate it's proper UTF-8 text
-        if isinstance(self.value, io.BytesIO):
-            str_value = self.value.getvalue().decode()
-        elif isinstance(self.value, bytes):
-            str_value = self.value.decode()
-        else:
-            str_value = self.value
-        return clean_str(str_value).encode()
-
-
-def _check_for_allowed_custom_metadata_name(name: str, class_name: str):
-    """Check that metadata name is not among the standard ones for which a type exist"""
-    if name in DEFAULT_DEV_ZIM_METADATA.__dict__.keys():
-        # this list contains the 'bad' illustration keys, but we don't care, they should
-        # still not be used
-        raise ValueError(
-            f"It is not allowed to use {class_name} for standard {name} "
-            f"metadata. Please use {name}Metadata type for proper checks"
-        )
-    if name.startswith("Illustration_"):
-        raise ValueError(
-            f"It is not allowed to use {class_name} for standard Illustration"
-            "metadata. Please use IllustrationMetadata type for proper checks"
-        )
-
-
-class CustomTextMetadata(_TextMetadata):
-    """A text metadata for which we do little checks"""
-
-    def __init__(self, name: str, value: bytes | io.BytesIO | str) -> None:
-        _check_for_allowed_custom_metadata_name(name, self.__class__.__qualname__)
-        super().__init__(name=name, value=value)
-
-
-class CustomMetadata(Metadata):
-    """A bytes metadata for which we do little checks"""
-
-    def __init__(self, name: str, value: bytes | io.BytesIO) -> None:
-        _check_for_allowed_custom_metadata_name(name, self.__class__.__qualname__)
-        super().__init__(name=name, value=value)
-
-
-class _MandatoryTextMetadata(_TextMetadata):
-    """A mandatory (value must be set) text metadata"""
-
-    @property
-    def libzim_value(self) -> bytes:
-        """The value to pass to the libzim for creating the metadata"""
-        value = super().libzim_value
-        if len(value) == 0:
-            raise ValueError("Missing value for mandatory metadata")
-        return value
-
-
-class _MandatoryMetadata(Metadata):
-    """A mandatory (value must be set) bytes metadata"""
-
-    @property
-    def libzim_value(self) -> bytes:
-        """The value to pass to the libzim for creating the metadata"""
-        value = super().libzim_value
-        if len(value) == 0:
-            raise ValueError("Missing value for mandatory metadata")
-        return value
-
-
-class TitleMetadata(_MandatoryTextMetadata):
-    """The Title metadata"""
-
-    def __init__(self, value: bytes | io.BytesIO | str) -> None:
-        super().__init__(name="Title", value=value)
-
-    @property
-    def libzim_value(self) -> bytes:
-        """The value to pass to the libzim for creating the metadata"""
-        value = super().libzim_value
-        if check_metadata_conventions:
-            if nb_grapheme_for(value.decode()) > RECOMMENDED_MAX_TITLE_LENGTH:
-                raise ValueError("Title is too long.")
-        return value
-
-
-class DescriptionMetadata(_MandatoryTextMetadata):
-    """The Description metadata"""
-
-    def __init__(self, value: bytes | io.BytesIO | str) -> None:
-        super().__init__(name="Description", value=value)
-
-    @property
-    def libzim_value(self) -> bytes:
-        """The value to pass to the libzim for creating the metadata"""
-        value = super().libzim_value
-        if check_metadata_conventions:
-            if nb_grapheme_for(value.decode()) > MAXIMUM_DESCRIPTION_METADATA_LENGTH:
-                raise ValueError("Description is too long.")
-        return value
-
-
-class LongDescriptionMetadata(_MandatoryTextMetadata):
-    """The LongDescription metadata"""
-
-    def __init__(self, value: bytes | io.BytesIO | str) -> None:
-        super().__init__(name="LongDescription", value=value)
-
-    @property
-    def libzim_value(self) -> bytes:
-        """The value to pass to the libzim for creating the metadata"""
-        value = super().libzim_value
-        if check_metadata_conventions:
-            if (
-                nb_grapheme_for(value.decode())
-                > MAXIMUM_LONG_DESCRIPTION_METADATA_LENGTH
-            ):
-                raise ValueError("LongDescription is too long.")
-        return value
-
-
-class DateMetadata(_TextMetadata):
-    """The Date metadata"""
-
-    def __init__(self, value: bytes | str | datetime.date | datetime.datetime) -> None:
-        if not isinstance(value, bytes | str | datetime.date | datetime.datetime):
-            raise ValueError(
-                f"Unexpected type passed to {self.__class__.__qualname__}: "
-                f"{value.__class__.__qualname__}"
-            )
-        super().__init__(
-            name="Date",
-            value=(
-                value
-                if isinstance(value, bytes)
-                else (
-                    value.encode()
-                    if isinstance(value, str)
-                    else value.strftime("%Y-%m-%d").encode()
-                )
-            ),
-        )
-        self.value = value
-        _ = self.libzim_value  # to check for errors
-
-    @property
-    def libzim_value(self) -> bytes:
-        """The value to pass to the libzim for creating the metadata"""
-        if isinstance(self.value, datetime.date | datetime.datetime):
-            return self.value.strftime("%Y-%m-%d").encode()
-        match = re.match(
-            r"(?P<year>\d{4})-(?P<month>\d{2})-(?P<day>\d{2})",
-            self.value.decode() if isinstance(self.value, bytes) else self.value,
-        )
-        if not match:
-            raise ValueError("Invalid date format, not matching regex yyyy-mm-dd")
-        try:
-            datetime.date(**{k: int(v) for k, v in match.groupdict().items()})
-        except Exception as exc:
-            raise ValueError(f"Invalid date format: {exc}") from None
-        return self.value if isinstance(self.value, bytes) else self.value.encode()
-
-
-class IllustrationMetadata(_MandatoryMetadata):
-    """Any Illustration_**x**@* metadata"""
-
-    def __init__(self, name: str, value: bytes | io.BytesIO) -> None:
-        super().__init__(name=name, value=value)
-        _ = self.libzim_value  # to check for errors
-
-    @property
-    def libzim_value(self) -> bytes:
-        """The value to pass to the libzim for creating the metadata"""
-        match = ILLUSTRATIONS_METADATA_RE.match(self.name)
-        if not match:
-            raise ValueError("Illustration metadata has improper name")
-        self.size = int(match.groupdict()["height"])
-        if int(match.groupdict()["width"]) != self.size:
-            raise ValueError("Illustration is not squared")
-        if not is_valid_image(
-            image=self.value,
-            imformat="PNG",
-            size=(self.size, self.size),
+        # X- prefix is recommendation for custom
+        if (
+            self.oz_x_protected
+            and APPLY_RECOMMENDATIONS
+            and not self.meta_name.startswith("X-")
+            and self.matches_reserved_name(self.meta_name)
         ):
-            raise ValueError(
-                f"{self.name} is not a valid {self.size}x{self.size} PNG Image"
-            )
-        if isinstance(self.value, io.BytesIO):
-            return self.value.getvalue()
-        else:
-            return self.value
-
-
-class LanguageMetadata(_MandatoryTextMetadata):
-    """The Language metadata"""
-
-    def __init__(self, value: bytes | io.BytesIO | str | list[str] | set[str]) -> None:
-        if not isinstance(value, bytes | io.BytesIO | str | list | set):
-            raise ValueError(
-                f"Unexpected type passed to {self.__class__.__qualname__}: "
-                f"{value.__class__.__qualname__}"
-            )
-        if isinstance(value, list | set) and not all(
-            isinstance(item, str) for item in value
+            raise ValueError("Custom metdata name must be X- prefixed")
+        if (
+            self.oz_x_prefixed
+            and APPLY_RECOMMENDATIONS
+            and not self.meta_name.startswith("X-")
         ):
-            bad_types = {item.__class__.__qualname__ for item in value} - {"str"}
-            raise ValueError(
-                f"Invalid type(s) found in Iterable: {",".join(bad_types)}"
-            )
-        super().__init__(
-            name="Language",
-            value=",".join(value) if isinstance(value, list | set) else value,
-        )
-        self.value = value
-        _ = self.libzim_value  # to check for errors
+            return f"X-{self.meta_name}"
+        return self.meta_name
+
+    @property
+    def name(self) -> str:
+        return self.get_name()
+
+    @staticmethod
+    def get_encoded(value: str) -> bytes:
+        return value.encode()
 
     @property
     def libzim_value(self) -> bytes:
-        """The value to pass to the libzim for creating the metadata"""
-        if isinstance(self.value, bytes | io.BytesIO | str):
-            codes = [
-                clean_str(code) for code in super().libzim_value.decode().split(",")
-            ]
-        else:
-            codes = [clean_str(code) for code in self.value]
-        codes = [code for code in codes if code]  # remove empty values
-        if len(codes) == 0:
-            raise ValueError("Missing value for mandatory Language metadata")
-        if len(set(codes)) != len(codes):
-            raise ValueError("Duplicate codes not allowed in Language metadata")
-        for code in codes:
-            if not is_valid_iso_639_3(code):
-                raise ValueError(f"{code} is not ISO-639-3.")
-        return ",".join(codes).encode()
+        return self.get_libzim_value()
+
+    # native type is bytes
+    def get_cleaned_value(self, value: bytes | BinaryIO | io.BytesIO) -> bytes:
+        if isinstance(value, BinaryIO):
+            payload = value.read()
+            value.seek(0)
+            value = payload
+        elif isinstance(value, io.BytesIO):
+            value = value.getvalue()
+        if not self.empty_allowed and not value:
+            raise ValueError("Missing value (empty not allowed)")
+        return value
+
+    def get_libzim_value(self) -> bytes:
+        return self.value
+
+    def validate(self) -> None:
+        _ = self.name
+        _ = self.libzim_value
 
 
-class TagsMetadata(_TextMetadata):
-    """The Tags metadata"""
-
-    def __init__(self, value: bytes | io.BytesIO | str | list[str] | set[str]) -> None:
-        if not isinstance(value, bytes | io.BytesIO | str | list | set):
-            raise ValueError(
-                f"Unexpected type passed to {self.__class__.__qualname__}: "
-                f"{value.__class__.__qualname__}"
-            )
-        if isinstance(value, list | set) and not all(
-            isinstance(item, str) for item in value
-        ):
-            bad_types = {item.__class__.__qualname__ for item in value} - {"str"}
-            raise ValueError(
-                f"Invalid type(s) found in Iterable: {",".join(bad_types)}"
-            )
-        super().__init__(
-            name="Tags",
-            value=";".join(value) if isinstance(value, list | set) else value,
-        )
-        self.value = value
-        _ = self.libzim_value  # to check for errors
-
-    @property
-    def libzim_value(self) -> bytes:
-        """The value to pass to the libzim for creating the metadata"""
-        if isinstance(self.value, bytes | io.BytesIO | str):
-            tags = unique_values(
-                [clean_str(tag) for tag in super().libzim_value.decode().split(";")]
-            )
-        else:
-            tags = unique_values([clean_str(tag) for tag in self.value])
-        tags = [tag for tag in tags if tag]  # remove empty values
-        return ";".join(tags).encode()
+@mandatory
+@expecting_text
+class NameMetadata(Metadata):
+    meta_name: str = "Name"
 
 
-class NameMetadata(_MandatoryTextMetadata):
-    """The Name metadata"""
-
-    def __init__(self, value: bytes | io.BytesIO | str) -> None:
-        super().__init__("Name", value)
-
-
-class CreatorMetadata(_MandatoryTextMetadata):
-    """The Creator metadata"""
-
-    def __init__(self, value: bytes | io.BytesIO | str) -> None:
-        super().__init__("Creator", value)
+@mandatory
+@expecting_textlist
+@only_lang_codes
+class LanguageMetadata(Metadata):
+    meta_name: str = "Language"
+    join_list_with: str = ","
 
 
-class PublisherMetadata(_MandatoryTextMetadata):
-    """The Publisher metadata"""
-
-    def __init__(self, value: bytes | io.BytesIO | str) -> None:
-        super().__init__("Publisher", value)
-
-
-class ScraperMetadata(_TextMetadata):
-    """The Scraper metadata"""
-
-    def __init__(self, value: bytes | io.BytesIO | str) -> None:
-        super().__init__("Scraper", value)
+@mandatory
+@expecting_text
+class TitleMetadata(Metadata):
+    meta_name: str = "Title"
+    oz_max_length: int = RECOMMENDED_MAX_TITLE_LENGTH
 
 
-class FlavourMetadata(_TextMetadata):
-    """The Flavour metadata"""
-
-    def __init__(self, value: bytes | io.BytesIO | str) -> None:
-        super().__init__("Flavour", value)
-
-
-class SourceMetadata(_TextMetadata):
-    """The Source metadata"""
-
-    def __init__(self, value: bytes | io.BytesIO | str) -> None:
-        super().__init__("Source", value)
+@mandatory
+@expecting_text
+class CreatorMetadata(Metadata):
+    meta_name: str = "Creator"
 
 
-class LicenseMetadata(_TextMetadata):
-    """The License metadata"""
+@mandatory
+@expecting_text
+class PublisherMetadata(Metadata):
+    meta_name: str = "Publisher"
 
-    def __init__(self, value: bytes | io.BytesIO | str) -> None:
-        super().__init__("License", value)
+
+# TODO
+@mandatory
+@expecting_date
+class DateMetadata(Metadata):
+    meta_name: str = "Date"
 
 
-class RelationMetadata(_TextMetadata):
-    """The Relation metadata"""
+@expecting_illustration
+class IllustrationMetadata(Metadata):
+    meta_name = "Illustration_{size}x{size}@{scale}"
+    illustration_size: int
+    illustration_scale: int = 1
 
-    def __init__(self, value: bytes | io.BytesIO | str) -> None:
-        super().__init__("Relation", value)
+    def __init__(
+        self, value: bytes | BinaryIO | io.BytesIO, size: int, scale: int = 1
+    ) -> None:
+        self.illustration_scale = scale
+        self.illustration_size = size
+        super().__init__(value=value)
+
+
+@mandatory
+@expecting_illustration
+class DefaultIllustrationMetadata(Metadata):
+    meta_name = "Illustration_48x48@1"
+    illustration_size: int = 48
+    illustration_scale: int = 1
+
+
+@mandatory
+@expecting_text
+class DescriptionMetadata(Metadata):
+    meta_name: str = "Description"
+    oz_max_length: int = MAXIMUM_DESCRIPTION_METADATA_LENGTH
+
+
+@expecting_text
+class LongDescriptionMetadata(Metadata):
+    meta_name: str = "LongDescription"
+    oz_max_length: int = MAXIMUM_LONG_DESCRIPTION_METADATA_LENGTH
+
+
+@deduplicate
+@expecting_textlist
+class TagsMetadata(Metadata):
+    meta_name: str = "Tags"
+    join_list_with: str = ";"
+
+
+@expecting_text
+class ScraperMetadata(Metadata):
+    meta_name: str = "Scraper"
+
+
+@expecting_text
+class FlavourMetadata(Metadata):
+    meta_name: str = "Flavour"
+
+
+@expecting_text
+class SourceMetadata(Metadata):
+    meta_name: str = "Source"
+
+
+@expecting_text
+class LicenseMetadata(Metadata):
+    meta_name: str = "License"
+
+
+@expecting_text
+class RelationMetadata(Metadata):
+    meta_name: str = "Relation"
 
 
 @dataclass
 class StandardMetadataList:
-    """A class holding all openZIM standard metadata
-
-    Useful to ensure that all mandatory metadata are set, no typo occurs in metadata
-    name and the specification is respected (forbidden duplicate values, ...).
-    """
 
     Name: NameMetadata
     Language: LanguageMetadata
@@ -428,7 +457,7 @@ class StandardMetadataList:
     Creator: CreatorMetadata
     Publisher: PublisherMetadata
     Date: DateMetadata
-    Illustration_48x48_at_1: IllustrationMetadata
+    Illustration_48x48_at_1: DefaultIllustrationMetadata
     Description: DescriptionMetadata
     LongDescription: LongDescriptionMetadata | None = None
     Tags: TagsMetadata | None = None
@@ -439,22 +468,57 @@ class StandardMetadataList:
     Relation: RelationMetadata | None = None
 
     def values(self) -> list[Metadata]:
-        return [v for v in self.__dict__.values() if v]
+        return list(filter(bool, asdict(self).values()))
+
+    @classmethod
+    def get_reserved_names(cls) -> list[str]:
+        """list of mandatory metadata as per the spec.
+
+        computed from metadata using @mandatory decorator"""
+        names = []
+        for field in fields(cls):
+            meta_type = globals().get(str(field.type))
+            if getattr(meta_type, "is_required", False):
+                names.append(getattr(meta_type, "meta_name", ""))
+        return names
 
 
-# A sample standard metadata list, to be used for dev purposes when one does not care
-# at all about metadata values ; this ensures all metadata are compliant with the spec
+@x_protected
+class CustomMetadata(Metadata):
+    def __init__(self, name: str, value: bytes | BinaryIO | io.BytesIO) -> None:
+        self.meta_name = name
+        super().__init__(value=value)
+
+
+@x_protected
+@expecting_text
+class CustomTextMetadata(Metadata):
+    def __init__(self, name: str, value: str) -> None:
+        self.meta_name = name
+        super().__init__(name=name, value=value)
+
+
+@x_prefixed
+class XCustomMetadata(CustomMetadata): ...
+
+
+@x_prefixed
+class XCustomTextMetadata(CustomTextMetadata): ...
+
+
+MANDATORY_ZIM_METADATA_KEYS = StandardMetadataList.get_reserved_names()
+
+
 DEFAULT_DEV_ZIM_METADATA = StandardMetadataList(
     Name=NameMetadata("Test Name"),
     Title=TitleMetadata("Test Title"),
     Creator=CreatorMetadata("Test Creator"),
     Publisher=PublisherMetadata("Test Publisher"),
-    Date=DateMetadata("2023-01-01"),
+    Date=DateMetadata(datetime.date(2023, 1, 1)),
     Description=DescriptionMetadata("Test Description"),
     Language=LanguageMetadata("fra"),
     # blank 48x48 transparent PNG
-    Illustration_48x48_at_1=IllustrationMetadata(
-        "Illustration_48x48@1",
+    Illustration_48x48_at_1=DefaultIllustrationMetadata(
         base64.b64decode(
             "iVBORw0KGgoAAAANSUhEUgAAADAAAAAwAQMAAABtzGvEAAAAGXRFWHRTb2Z0d2FyZQBB"
             "ZG9iZSBJbWFnZVJlYWR5ccllPAAAAANQTFRFR3BMgvrS0gAAAAF0Uk5TAEDm2GYAAAAN"
@@ -462,10 +526,3 @@ DEFAULT_DEV_ZIM_METADATA = StandardMetadataList(
         ),
     ),
 )
-
-# list of mandatory metadata of the zim file, automatically computed
-MANDATORY_ZIM_METADATA_KEYS = [
-    metadata.name
-    for metadata in DEFAULT_DEV_ZIM_METADATA.__dict__.values()
-    if isinstance(metadata, _MandatoryTextMetadata | _MandatoryMetadata)
-]

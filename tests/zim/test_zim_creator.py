@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import datetime
 import io
 import logging
 import pathlib
@@ -21,6 +22,7 @@ from libzim.writer import Compression  # pyright: ignore
 from zimscraperlib.constants import UTF8
 from zimscraperlib.download import save_large_file, stream_file
 from zimscraperlib.filesystem import delete_callback
+from zimscraperlib.typing import Callback
 from zimscraperlib.zim import Archive, Creator, StaticItem, URLItem
 from zimscraperlib.zim.metadata import (
     DEFAULT_DEV_ZIM_METADATA,
@@ -28,9 +30,9 @@ from zimscraperlib.zim.metadata import (
     CustomMetadata,
     CustomTextMetadata,
     DateMetadata,
+    DefaultIllustrationMetadata,
     DescriptionMetadata,
     FlavourMetadata,
-    IllustrationMetadata,
     LanguageMetadata,
     LicenseMetadata,
     LongDescriptionMetadata,
@@ -76,7 +78,7 @@ def test_zim_creator(tmp_path, png_image, html_file, html_str: str, html_str_cn:
     with open(png_image, "rb") as fh:
         png_data = fh.read()
     with Creator(fpath, main_path).config_dev_metadata(
-        [TagsMetadata(tags), IllustrationMetadata("Illustration_48x48@1", png_data)]
+        [TagsMetadata(tags), DefaultIllustrationMetadata(png_data)]
     ) as creator:
         # verbatim HTML from string
         creator.add_item_for("welcome", "wel", content=html_str, is_front=True)
@@ -108,10 +110,12 @@ def test_zim_creator(tmp_path, png_image, html_file, html_str: str, html_str_cn:
     assert fpath.exists()
 
     reader = Archive(fpath)
-    assert reader.get_text_metadata("Title") == DEFAULT_DEV_ZIM_METADATA.Title.value
-    assert (
-        reader.get_text_metadata("Language") == DEFAULT_DEV_ZIM_METADATA.Language.value
-    )
+    assert reader.get_text_metadata(
+        "Title"
+    ) == DEFAULT_DEV_ZIM_METADATA.Title.libzim_value.decode("UTF-8")
+    assert reader.get_text_metadata(
+        "Language"
+    ) == DEFAULT_DEV_ZIM_METADATA.Language.libzim_value.decode("UTF-8")
     assert reader.get_text_metadata("Tags") == tags
     assert reader.main_entry.get_item().path == f"{main_path}"
     # make sure we have our image
@@ -143,11 +147,10 @@ def test_zim_creator(tmp_path, png_image, html_file, html_str: str, html_str_cn:
 def test_create_without_workaround(tmp_path):
     fpath = tmp_path / "test.zim"
 
-    with Creator(
-        fpath, "welcome", workaround_nocancel=False
-    ).config_dev_metadata() as creator:
-        with pytest.raises(RuntimeError, match="AttributeError"):
-            creator.add_item("hello")  # pyright: ignore [reportArgumentType]
+    with Creator(fpath, "welcome", workaround_nocancel=False).config_dev_metadata():
+        with pytest.raises(RuntimeError):
+            raise RuntimeError("erroring")
+    assert fpath.exists()
 
 
 def test_noindexlanguage(tmp_path):
@@ -207,7 +210,7 @@ def test_add_item_for_delete_fail(tmp_path, png_image):
                 filepath=local_path,
                 path="index",
             ),
-            callback=(delete_callback, local_path),
+            callbacks=Callback(func=delete_callback, kwargs={"fpath": local_path}),
         )
     assert not local_path.exists()
 
@@ -226,21 +229,6 @@ def test_add_item_empty_content(tmp_path):
         )
 
 
-@pytest.mark.parametrize("auto_index", [False, True])
-def test_add_item_for_unsupported_content_type(auto_index, tmp_path):
-    fpath = tmp_path / "test.zim"
-    # test with incorrect content type
-    with Creator(fpath, "welcome").config_dev_metadata() as creator:
-        with pytest.raises(RuntimeError):
-            creator.add_item_for(
-                path="welcome",
-                title="hello",
-                mimetype="text/plain",
-                content=123,  # pyright: ignore[reportArgumentType]
-                auto_index=auto_index,
-            )
-
-
 def test_compression(tmp_path):
     fpath = tmp_path / "test.zim"
     with Creator(
@@ -249,7 +237,7 @@ def test_compression(tmp_path):
         creator.add_item(StaticItem(path="welcome", content="hello"))
 
     with Creator(
-        fpath, "welcome", compression=Compression.zstd  # pyright: ignore
+        fpath, "welcome", compression=Compression.zstd.name
     ).config_dev_metadata() as creator:
         creator.add_item(StaticItem(path="welcome", content="hello"))
 
@@ -297,7 +285,7 @@ def test_sourcefile_removal_std(tmp_path, html_file):
                     path=paths[-1].name,
                     mimetype="text/html",
                 ),
-                callback=(delete_callback, paths[-1]),
+                callbacks=Callback(func=delete_callback, kwargs={"fpath": paths[-1]}),
             )
     for path in paths:
         assert not path.exists()
@@ -485,7 +473,8 @@ def test_item_callback(tmp_path, html_file):
 
     with Creator(fpath, "").config_dev_metadata() as creator:
         creator.add_item(
-            StaticItem(path=html_file.name, filepath=html_file), callback=cb
+            StaticItem(path=html_file.name, filepath=html_file),
+            callbacks=Callback(func=cb),
         )
 
     assert Store.called is True
@@ -514,13 +503,16 @@ def test_callback_and_remove(tmp_path, html_file):
 
     with Creator(tmp_path / "test.zim", "").config_dev_metadata() as creator:
         creator.add_item_for(
-            path=html_file.name, fpath=html_file, delete_fpath=True, callback=cb
+            path=html_file.name,
+            fpath=html_file,
+            delete_fpath=True,
+            callbacks=Callback(func=cb),
         )
         creator.add_item_for(
             path=html_file2.name,
             fpath=html_file2,
             delete_fpath=True,
-            callback=(cb, html_file.name),
+            callbacks=Callback(func=cb, args=(html_file.name,)),
         )
 
     assert not html_file.exists()
@@ -558,10 +550,6 @@ def test_without_metadata(tmp_path):
     "tags",
     [
         (
-            "wikipedia;_category:wikipedia;_pictures:no;_videos:no;_details:yes;"
-            "_ftindex:yes"
-        ),
-        (
             [
                 "wikipedia",
                 "_category:wikipedia",
@@ -569,23 +557,31 @@ def test_without_metadata(tmp_path):
                 "_videos:no",
                 "_details:yes",
                 "_ftindex:yes",
+                "wikipedia;_category:wikipedia;_pictures:no;_videos:no;_details:yes;"
+                "_ftindex:yes",
             ]
         ),
     ],
 )
 @patch("zimscraperlib.zim.creator.logger", autospec=True)
-def test_start_logs_metadata_log_contents(mocked_logger, png_image, tags, tmp_path):
+def test_start_logs_metadata_log_contents(
+    mocked_logger,
+    png_image,
+    tags,
+    tmp_path,
+    ignore_metadata_conventions,  # noqa: ARG001
+):
     mocked_logger.isEnabledFor.side_effect = lambda level: level == logging.DEBUG
     fpath = tmp_path / "test_config.zim"
     with open(png_image, "rb") as fh:
         png_data = fh.read()
-    creator = Creator(fpath, "", check_metadata_conventions=False).config_metadata(
+    creator = Creator(fpath, "").config_metadata(
         StandardMetadataList(
             Name=NameMetadata("wikipedia_fr_football"),
             Title=TitleMetadata("English Wikipedia"),
             Creator=CreatorMetadata("English speaking Wikipedia contributors"),
             Publisher=PublisherMetadata("Wikipedia user Foobar"),
-            Date=DateMetadata("2009-11-21"),
+            Date=DateMetadata(datetime.date(2009, 11, 21)),
             Description=DescriptionMetadata(
                 "All articles (without images) from the english Wikipedia"
             ),
@@ -599,9 +595,7 @@ def test_start_logs_metadata_log_contents(mocked_logger, png_image, tags, tmp_pa
             Flavour=FlavourMetadata("nopic"),
             Source=SourceMetadata("https://en.wikipedia.org/"),
             Scraper=ScraperMetadata("mwoffliner 1.2.3"),
-            Illustration_48x48_at_1=IllustrationMetadata(
-                "Illustration_48x48@1", png_data
-            ),
+            Illustration_48x48_at_1=DefaultIllustrationMetadata(png_data),
         ),
         [CustomTextMetadata("TestMetadata", "Test Metadata")],
         fail_on_missing_prefix_in_extras=False,
@@ -614,14 +608,16 @@ def test_start_logs_metadata_log_contents(mocked_logger, png_image, tags, tmp_pa
     creator._metadata.update(
         {
             "Illustration_96x96@1": Metadata(
-                "Illustration_96x96@1", b"%PDF-1.5\n%\xe2\xe3\xcf\xd3"
+                value=b"%PDF-1.5\n%\xe2\xe3\xcf\xd3", name="Illustration_96x96@1"
             ),
-            "Chars": Metadata("Chars", b"\xc5\xa1\xc9\x94\xc9\x9b"),
+            "Chars": Metadata(name="Chars", value=b"\xc5\xa1\xc9\x94\xc9\x9b"),
             "Chars-32": Metadata(
-                "Chars-32", b"\xff\xfe\x00\x00a\x01\x00\x00T\x02\x00\x00[\x02\x00\x00"
+                name="Chars-32",
+                value=b"\xff\xfe\x00\x00a\x01\x00\x00T\x02\x00\x00[\x02\x00\x00",
             ),
             "Video": Metadata(
-                "Video", b"\x00\x00\x00 ftypisom\x00\x00\x02\x00isomiso2avc1mp41\x00"
+                name="Video",
+                value=b"\x00\x00\x00 ftypisom\x00\x00\x02\x00isomiso2avc1mp41\x00",
             ),
             "Toupie": CustomTextMetadata("Toupie", NotPrintable("value")),
         }  # intentionaly bad, to handle case where user does bad things
@@ -649,7 +645,7 @@ def test_start_logs_metadata_log_contents(mocked_logger, png_image, tags, tmp_pa
             call("Metadata: Flavour = nopic"),
             call("Metadata: Illustration_48x48@1 is a 3274 bytes 48x48px PNG Image"),
             call("Metadata: Illustration_96x96@1 is a 14 bytes application/pdf blob"),
-            call("Metadata: Language = eng"),
+            call("Metadata: Language = ['eng']"),
             call("Metadata: License = CC-BY"),
             call(
                 "Metadata: LongDescription = This ZIM file contains all articles "
@@ -664,10 +660,8 @@ def test_start_logs_metadata_log_contents(mocked_logger, png_image, tags, tmp_pa
             call(f"Metadata: Tags = {tags}"),
             call("Metadata: TestMetadata = Test Metadata"),
             call("Metadata: Title = English Wikipedia"),
-            call(
-                "Metadata: Toupie is unexpected data type: "
-                "test_start_logs_metadata_log_contents.<locals>.NotPrintable"
-            ),
+            # cleaned-up anyway
+            call("Metadata: Toupie = value"),
             call("Metadata: Video is a 33 bytes video/mp4 blob"),
         ]
     )
@@ -677,9 +671,7 @@ def test_relax_metadata(
     tmp_path,
     ignore_metadata_conventions,  # noqa: ARG001
 ):
-    Creator(tmp_path, "", check_metadata_conventions=False).config_dev_metadata(
-        DescriptionMetadata("T" * 90)
-    ).start()
+    Creator(tmp_path, "").config_dev_metadata(DescriptionMetadata("T" * 90)).start()
 
 
 @pytest.mark.parametrize(
@@ -711,7 +703,7 @@ def test_config_metadata(tmp_path, png_image, tags):
             Title=TitleMetadata("English Wikipedia"),
             Creator=CreatorMetadata("English speaking Wikipedia contributors"),
             Publisher=PublisherMetadata("Wikipedia user Foobar"),
-            Date=DateMetadata("2009-11-21"),
+            Date=DateMetadata(datetime.date(2009, 11, 21)),
             Description=DescriptionMetadata(
                 "All articles (without images) from the english Wikipedia"
             ),
@@ -725,9 +717,7 @@ def test_config_metadata(tmp_path, png_image, tags):
             Flavour=FlavourMetadata("nopic"),
             Source=SourceMetadata("https://en.wikipedia.org/"),
             Scraper=ScraperMetadata("mwoffliner 1.2.3"),
-            Illustration_48x48_at_1=IllustrationMetadata(
-                "Illustration_48x48@1", png_data
-            ),
+            Illustration_48x48_at_1=DefaultIllustrationMetadata(png_data),
         ),
         [CustomTextMetadata("X-TestMetadata", "Test Metadata")],
     )

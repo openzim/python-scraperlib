@@ -24,13 +24,10 @@ import logging
 import pathlib
 import re
 import weakref
-from collections.abc import Callable
-from typing import Any
 
 import libzim.writer  # pyright: ignore
 import PIL.Image
 
-import zimscraperlib.zim.metadata
 from zimscraperlib import logger
 from zimscraperlib.constants import FRONT_ARTICLE_MIMETYPES
 from zimscraperlib.filesystem import (
@@ -102,8 +99,8 @@ class Creator(libzim.writer.Creator):
     Use workaround_nocancel=False to disable the workaround.
 
     By default, all metadata are validated for compliance with openZIM specification and
-    conventions. Set check_metadata_conventions=True to disable this validation (you can
-    still do checks manually with the validation methods or your own logic).
+    conventions. Set metdata.APPLY_RECOMMENDATIONS to False to disable this validation
+    # (you canstill do checks manually with the validation methods or your own logic).
     """
 
     def __init__(
@@ -114,7 +111,6 @@ class Creator(libzim.writer.Creator):
         *,
         workaround_nocancel: bool | None = True,
         ignore_duplicates: bool | None = False,
-        check_metadata_conventions: bool = True,
     ):
         super().__init__(filename=filename)
         self._metadata: dict[str, Metadata] = {}
@@ -132,9 +128,6 @@ class Creator(libzim.writer.Creator):
 
         self.workaround_nocancel = workaround_nocancel
         self.ignore_duplicates = ignore_duplicates
-        zimscraperlib.zim.metadata.check_metadata_conventions = (
-            check_metadata_conventions
-        )
 
     def config_indexing(
         self, indexing: bool, language: str | None = None  # noqa: FBT001
@@ -211,7 +204,7 @@ class Creator(libzim.writer.Creator):
         """Private methods to get most popular lang code from Language metadata"""
         for metadata in self._metadata.values():
             if isinstance(metadata, LanguageMetadata):
-                return metadata.libzim_value.decode().split(",")[0]
+                return metadata.value[0]
         return None
 
     def start(self):
@@ -244,18 +237,14 @@ class Creator(libzim.writer.Creator):
 
         for metadata in self._metadata.values():
             if isinstance(metadata, IllustrationMetadata):
-                self.add_illustration(metadata.size, metadata.libzim_value)
+                self.add_illustration(metadata.illustration_size, metadata.libzim_value)
             else:
                 self.add_metadata(metadata)
         self._metadata.clear()
 
         return self
 
-    def add_metadata(
-        self,
-        value: Metadata,
-        mimetype: str = "text/plain;charset=UTF-8",
-    ):
+    def add_metadata(self, value: Metadata):
         """Really add the metadata to the ZIM, after ZIM creation has started.
 
         You would probably prefer to use config_metadata methods to check metadata
@@ -263,7 +252,7 @@ class Creator(libzim.writer.Creator):
         duplicate metadata name.
         """
 
-        super().add_metadata(value.name, value.libzim_value, mimetype)
+        super().add_metadata(value.name, value.libzim_value, value.mimetype)
 
     def config_metadata(
         self,
