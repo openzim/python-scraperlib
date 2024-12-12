@@ -6,12 +6,25 @@ import datetime
 import io
 import pathlib
 import re
-from typing import NamedTuple
+from types import NoneType
+from typing import BinaryIO, NamedTuple
 
 import pytest
 from beartype.roar import BeartypeCallHintParamViolation as InvalidType
 
 from zimscraperlib.zim import metadata
+
+
+def get_classvar_value_type(cls: type) -> type:
+    """expected type of value classvar for a Metadata type
+
+    Found in class annotations of type or any of its parent class"""
+    target = cls
+    while target:
+        if value_type := getattr(target, "__annotations__", {}).get("value", False):
+            return value_type
+        target = getattr(target, "__base__", None)
+    return NoneType
 
 
 @pytest.mark.parametrize(
@@ -105,7 +118,7 @@ def test_validate_tags_invalid(
     value: list[str] | str | int, exception: type, error: str
 ):
     with pytest.raises(exception, match=re.escape(error)):
-        metadata.TagsMetadata(value)
+        metadata.TagsMetadata(value)  # pyright: ignore [reportArgumentType]
 
 
 def test_validate_dedup_tags():
@@ -322,21 +335,30 @@ def test_mandatory_value(metadata_init: MetadataInitConfig):
     if not metadata_init.a_type.is_required:
         pytest.skip("Only testing mandatory ones")
     with pytest.raises(ValueError, match="Missing"):
-        if metadata_init.a_type.expecting == "textlist":
+        if issubclass(metadata_init.a_type, metadata.TextListBasedMetadata):
             metadata_init.a_type([])
             metadata_init.a_type(["", " "])
-        elif metadata_init.a_type.expecting == "text":
+        elif issubclass(metadata_init.a_type, metadata.TextBasedMetadata):
             metadata_init.a_type("")
             metadata_init.a_type(" ")
-        elif metadata_init.a_type.expecting == "date":
+        elif issubclass(metadata_init.a_type, metadata.DateBasedMetadata):
             pytest.skip("Cannot set an empty Date")
-        elif metadata_init.a_type.expecting in ("illustration", "bytes"):
+        elif issubclass(metadata_init.a_type, metadata.DefaultIllustrationMetadata):
+            metadata_init.a_type(b"")
+            metadata_init.a_type(b" ")
+        elif get_classvar_value_type(metadata_init.a_type) is bytes:
             if metadata_init.nb_args == 1:
-                metadata_init.a_type(b"")
-                metadata_init.a_type(b" ")
+                metadata_init.a_type(b"")  # pyright: ignore[reportCallIssue]
+                metadata_init.a_type(b" ")  # pyright: ignore[reportCallIssue]
             else:
-                metadata_init.a_type(b"", name="Foo")
-                metadata_init.a_type(b" ", name="Foo")
+                metadata_init.a_type(
+                    b"", name="Foo"  # pyright: ignore[reportCallIssue]
+                )
+                metadata_init.a_type(
+                    b" ", name="Foo"  # pyright: ignore[reportCallIssue]
+                )
+        else:
+            raise OSError("WTF")
 
 
 def test_clean_value(metadata_init: MetadataInitConfig):
@@ -346,7 +368,7 @@ def test_clean_value(metadata_init: MetadataInitConfig):
     clean_lang_value = b"fra"
     if metadata_init.a_type == metadata.LanguageMetadata:
         assert metadata_init.a_type([raw_lang_value]).libzim_value == clean_lang_value
-    elif metadata_init.a_type.expecting == "textlist":
+    elif isinstance(metadata_init.a_type, metadata.TextListBasedMetadata):
         assert metadata_init.a_type(raw_value).libzim_value == clean_value
         assert metadata_init.a_type(
             value=[raw_value, raw_value]
@@ -355,7 +377,7 @@ def test_clean_value(metadata_init: MetadataInitConfig):
         ).encode(
             "UTF-8"
         )
-    elif metadata_init.a_type.expecting == "text":
+    elif isinstance(metadata_init.a_type, metadata.TextBasedMetadata):
         if metadata_init.nb_args == 1:
             assert metadata_init.a_type(value=raw_value).libzim_value == clean_value
         else:
@@ -411,7 +433,7 @@ def test_libzim_bytes_value(metadata_init: MetadataInitConfig, png_image: pathli
 def test_libzim_io_bytesio_value(
     metadata_init: MetadataInitConfig, png_image: pathlib.Path
 ):
-    if metadata_init.a_type.expecting == "illustration":
+    if isinstance(metadata_init.a_type, metadata.IllustrationBasedMetadata):
         with open(png_image, "rb") as fh:
             png_data = fh.read()
             if metadata_init.nb_args == 1:
@@ -426,7 +448,11 @@ def test_libzim_io_bytesio_value(
                     ).libzim_value
                     == png_data
                 )
-    if metadata_init.a_type.expecting == "bytes":
+    if get_classvar_value_type(metadata_init.a_type) in (
+        bytes,
+        BinaryIO,
+        io.BytesIO,
+    ):
         if metadata_init.nb_args == 1:
             assert (
                 metadata_init.a_type(value=io.BytesIO(b"a value")).libzim_value

@@ -44,132 +44,6 @@ def mandatory(cls):
     return cls
 
 
-def expecting_text(cls):
-    """Expects a Text (str) input. Will be cleaned-up and UTF-8 encoded"""
-    cls.expecting = "text"
-    cls.require_text_cleanup = True
-    cls.require_utf8_encoding = True
-
-    # native type is str
-    def get_cleaned_value(self, value: str) -> str:
-        if self.require_text_cleanup:
-            value = clean_str(value)
-
-        if not self.empty_allowed and not value.strip():
-            raise ValueError("Missing value (empty not allowed)")
-
-        # max-length is openZIM recommendation
-        if getattr(self, "oz_max_length", 0) and APPLY_RECOMMENDATIONS:
-            if nb_grapheme_for(value) > self.oz_max_length:
-                raise ValueError(
-                    f"{self.name} value is too long ({self.oz_max_length})"
-                )
-        return value
-
-    def get_libzim_value(self) -> bytes:
-        return self.get_encoded(self.value)
-
-    cls.get_cleaned_value = get_cleaned_value
-    cls.get_libzim_value = get_libzim_value
-    return cls
-
-
-def expecting_textlist(cls):
-    """Expects a Text List (list[str]) input. Each item will be cleaned-up.
-
-    List will be joined (see `join_list_with`) and UTF-8 encoded"""
-    cls.expecting = "textlist"
-    cls.require_textlist_cleanup = True
-    cls.require_utf8_encoding = True
-
-    # native type is list[str]
-    def get_cleaned_value(self, value: Iterable[str] | str) -> list[str]:
-        if isinstance(value, str):
-            value = [value]
-        else:
-            value = list(value)
-        if self.require_textlist_cleanup:
-            value = [clean_str(item) for item in value]
-        if not self.empty_allowed and (not value or not all(value)):
-            raise ValueError("Missing value (empty not allowed)")
-        if not self.duplicates_allowed and len(set(value)) != len(value):
-            raise ValueError("Duplicate entries not allowed")
-        elif self.require_deduplication:
-            value = unique_values(value)
-        if self.oz_only_iso636_3_allowed and APPLY_RECOMMENDATIONS:
-            invalid_codes = list(filterfalse(is_valid_iso_639_3, value))
-            if invalid_codes:
-                raise ValueError(
-                    f"Following code(s) are not ISO-639-3: {','.join(invalid_codes)}"
-                )
-        return value
-
-    def get_libzim_value(self) -> bytes:
-        return self.get_encoded(self.join_list_with.join(self.value))
-
-    cls.get_cleaned_value = get_cleaned_value
-    cls.get_libzim_value = get_libzim_value
-    return cls
-
-
-def expecting_date(cls):
-    """Expects a Date (date | datetime) input. Will be UTF-8 encoded as YYYY-MM-DD"""
-    cls.expecting = "date"
-    cls.require_utf8_encoding = True
-
-    # native type is date
-    def get_cleaned_value(
-        self, value: datetime.date | datetime.datetime  # noqa: ARG001
-    ) -> datetime.date:
-        if isinstance(value, datetime.datetime):
-            value = value.date()
-        return value
-
-    def get_libzim_value(self) -> bytes:
-        return self.get_encoded(self.value.strftime("%Y-%m-%d"))
-
-    cls.get_cleaned_value = get_cleaned_value
-    cls.get_libzim_value = get_libzim_value
-    return cls
-
-
-def expecting_illustration(cls):
-    """Expects a Square PNG Illustration (bytes-like) input.
-
-    PNG format and squareness will be checked"""
-    cls.expecting = "illustration"
-    cls.meta_mimetype = "image/png"
-
-    # native type is PNG image buffer
-    def get_cleaned_value(self, value: bytes | BinaryIO | io.BytesIO) -> bytes:
-        if isinstance(value, BinaryIO):
-            payload = value.read()
-            value.seek(0)
-            value = payload
-        elif isinstance(value, io.BytesIO):
-            value = value.getvalue()
-        if not self.empty_allowed and not value:
-            raise ValueError("Missing value (empty not allowed)")
-
-        if not is_valid_image(
-            image=value,
-            imformat="PNG",
-            size=(self.illustration_size, self.illustration_size),
-        ):
-            raise ValueError(
-                f"{self.name} is not a valid "
-                f"{self.illustration_size}x{self.illustration_size} PNG Image"
-            )
-        return value
-
-    def get_libzim_value(self) -> bytes:
-        return self.value
-
-    cls.get_cleaned_value = get_cleaned_value
-    cls.get_libzim_value = get_libzim_value
-    return cls
-
-
 def allow_empty(cls):
     """Whether input can be blank"""
     cls.empty_allowed = True
@@ -213,16 +87,13 @@ def x_prefixed(cls):
 class Metadata:
     # name of the metadata (not its value)
     meta_name: str
-    value: Any
+    value: bytes
 
     # MIME type of the value
     meta_mimetype: str
 
     # whether metadata is required or not
     is_required: bool = False
-
-    # what kind of input data is expected
-    expecting: str = "bytes"  # text | textlist | date | illustration
 
     # str: text value must be cleaned-up
     require_text_cleanup: bool = False
@@ -287,7 +158,9 @@ class Metadata:
         return bool(ILLUSTRATIONS_METADATA_RE.match(name))
 
     def get_name(self) -> str:
-        if self.expecting == "illustration":
+        if getattr(self, "illustration_size", 0) and getattr(
+            self, "illustration_scale", 0
+        ):
             return (
                 f"Illustration_{self.illustration_size}x{self.illustration_size}"
                 f"@{self.illustration_scale}"
@@ -321,17 +194,21 @@ class Metadata:
     def libzim_value(self) -> bytes:
         return self.get_libzim_value()
 
-    # native type is bytes
-    def get_cleaned_value(self, value: bytes | BinaryIO | io.BytesIO) -> bytes:
+    def get_binary_from(self, value: bytes | BinaryIO | io.BytesIO) -> bytes:
         if isinstance(value, BinaryIO):
+            last_pos = value.tell()
             payload = value.read()
-            value.seek(0)
+            value.seek(last_pos)
             value = payload
         elif isinstance(value, io.BytesIO):
             value = value.getvalue()
         if not self.empty_allowed and not value:
             raise ValueError("Missing value (empty not allowed)")
         return value
+
+    # native type is bytes
+    def get_cleaned_value(self, value: bytes | BinaryIO | io.BytesIO) -> bytes:
+        return self.get_binary_from(value)
 
     def get_libzim_value(self) -> bytes:
         return self.value
@@ -341,48 +218,160 @@ class Metadata:
         _ = self.libzim_value
 
 
+class TextBasedMetadata(Metadata):
+    """Expects a Text (str) input. Will be cleaned-up and UTF-8 encoded"""
+
+    value: str
+    require_text_cleanup = True
+    require_utf8_encoding = True
+
+    def __init__(self, value: str, name: str | None = None) -> None:
+        super().__init__(value=value, name=name)
+
+    # native type is str
+    def get_cleaned_value(self, value: str) -> str:
+        if self.require_text_cleanup:
+            value = clean_str(value)
+
+        if not self.empty_allowed and not value.strip():
+            raise ValueError("Missing value (empty not allowed)")
+
+        # max-length is openZIM recommendation
+        if getattr(self, "oz_max_length", 0) and APPLY_RECOMMENDATIONS:
+            if nb_grapheme_for(value) > self.oz_max_length:
+                raise ValueError(
+                    f"{self.name} value is too long ({self.oz_max_length})"
+                )
+        return value
+
+    def get_libzim_value(self) -> bytes:
+        return self.get_encoded(self.value)
+
+
+class TextListBasedMetadata(Metadata):
+    """Expects a Text List (list[str]) input. Each item will be cleaned-up.
+
+    List will be joined (see `join_list_with`) and UTF-8 encoded"""
+
+    value: list[str]  # we accept single str input but store as list[str]
+    require_textlist_cleanup = True
+    require_utf8_encoding = True
+
+    def __init__(self, value: Iterable[str] | str, name: str | None = None) -> None:
+        super().__init__(value=value, name=name)
+
+    # native type is list[str]
+    def get_cleaned_value(self, value: Iterable[str] | str) -> list[str]:
+        if isinstance(value, str):
+            value = [value]
+        else:
+            value = list(value)
+        if self.require_textlist_cleanup:
+            value = [clean_str(item) for item in value]
+        if not self.empty_allowed and (not value or not all(value)):
+            raise ValueError("Missing value (empty not allowed)")
+        if not self.duplicates_allowed and len(set(value)) != len(value):
+            raise ValueError("Duplicate entries not allowed")
+        elif self.require_deduplication:
+            value = unique_values(value)
+        if self.oz_only_iso636_3_allowed and APPLY_RECOMMENDATIONS:
+            invalid_codes = list(filterfalse(is_valid_iso_639_3, value))
+            if invalid_codes:
+                raise ValueError(
+                    f"Following code(s) are not ISO-639-3: {','.join(invalid_codes)}"
+                )
+        return value
+
+    def get_libzim_value(self) -> bytes:
+        return self.get_encoded(self.join_list_with.join(self.value))
+
+
+class DateBasedMetadata(Metadata):
+    """Expects a Date (date | datetime) input. Will be UTF-8 encoded as YYYY-MM-DD"""
+
+    value: datetime.date
+    require_utf8_encoding = True
+
+    def __init__(
+        self, value: datetime.date | datetime.datetime, name: str | None = None
+    ) -> None:
+        super().__init__(value=value, name=name)
+
+    # native type is date
+    def get_cleaned_value(self, value: datetime.date) -> datetime.date:
+        if isinstance(value, datetime.datetime):
+            value = value.date()
+        return value
+
+    def get_libzim_value(self) -> bytes:
+        return self.get_encoded(self.value.strftime("%Y-%m-%d"))
+
+
+class IllustrationBasedMetadata(Metadata):
+    """Expects a Square PNG Illustration (bytes-like) input.
+
+    PNG format and squareness will be checked"""
+
+    value: bytes
+    meta_mimetype = "image/png"
+
+    def __init__(
+        self, value: bytes | BinaryIO | io.BytesIO, name: str | None = None
+    ) -> None:
+        super().__init__(value=value, name=name)
+
+    # native type is PNG image buffer
+    def get_cleaned_value(self, value: bytes | BinaryIO | io.BytesIO) -> bytes:
+        value = self.get_binary_from(value)
+        if not is_valid_image(
+            image=value,
+            imformat="PNG",
+            size=(self.illustration_size, self.illustration_size),
+        ):
+            raise ValueError(
+                f"{self.name} is not a valid "
+                f"{self.illustration_size}x{self.illustration_size} PNG Image"
+            )
+        return value
+
+    def get_libzim_value(self) -> bytes:
+        return self.value
+
+
 @mandatory
-@expecting_text
-class NameMetadata(Metadata):
+class NameMetadata(TextBasedMetadata):
     meta_name: str = "Name"
 
 
 @mandatory
-@expecting_textlist
 @only_lang_codes
-class LanguageMetadata(Metadata):
+class LanguageMetadata(TextListBasedMetadata):
     meta_name: str = "Language"
     join_list_with: str = ","
 
 
 @mandatory
-@expecting_text
-class TitleMetadata(Metadata):
+class TitleMetadata(TextBasedMetadata):
     meta_name: str = "Title"
     oz_max_length: int = RECOMMENDED_MAX_TITLE_LENGTH
 
 
 @mandatory
-@expecting_text
-class CreatorMetadata(Metadata):
+class CreatorMetadata(TextBasedMetadata):
     meta_name: str = "Creator"
 
 
 @mandatory
-@expecting_text
-class PublisherMetadata(Metadata):
+class PublisherMetadata(TextBasedMetadata):
     meta_name: str = "Publisher"
 
 
-# TODO
 @mandatory
-@expecting_date
-class DateMetadata(Metadata):
+class DateMetadata(DateBasedMetadata):
     meta_name: str = "Date"
 
 
-@expecting_illustration
-class IllustrationMetadata(Metadata):
+class IllustrationMetadata(IllustrationBasedMetadata):
     meta_name = "Illustration_{size}x{size}@{scale}"
     illustration_size: int
     illustration_scale: int = 1
@@ -396,55 +385,46 @@ class IllustrationMetadata(Metadata):
 
 
 @mandatory
-@expecting_illustration
-class DefaultIllustrationMetadata(Metadata):
+class DefaultIllustrationMetadata(IllustrationBasedMetadata):
     meta_name = "Illustration_48x48@1"
     illustration_size: int = 48
     illustration_scale: int = 1
 
 
 @mandatory
-@expecting_text
-class DescriptionMetadata(Metadata):
+class DescriptionMetadata(TextBasedMetadata):
     meta_name: str = "Description"
     oz_max_length: int = MAXIMUM_DESCRIPTION_METADATA_LENGTH
 
 
-@expecting_text
-class LongDescriptionMetadata(Metadata):
+class LongDescriptionMetadata(TextBasedMetadata):
     meta_name: str = "LongDescription"
     oz_max_length: int = MAXIMUM_LONG_DESCRIPTION_METADATA_LENGTH
 
 
 @deduplicate
-@expecting_textlist
-class TagsMetadata(Metadata):
+class TagsMetadata(TextListBasedMetadata):
     meta_name: str = "Tags"
     join_list_with: str = ";"
 
 
-@expecting_text
-class ScraperMetadata(Metadata):
+class ScraperMetadata(TextBasedMetadata):
     meta_name: str = "Scraper"
 
 
-@expecting_text
-class FlavourMetadata(Metadata):
+class FlavourMetadata(TextBasedMetadata):
     meta_name: str = "Flavour"
 
 
-@expecting_text
-class SourceMetadata(Metadata):
+class SourceMetadata(TextBasedMetadata):
     meta_name: str = "Source"
 
 
-@expecting_text
-class LicenseMetadata(Metadata):
+class LicenseMetadata(TextBasedMetadata):
     meta_name: str = "License"
 
 
-@expecting_text
-class RelationMetadata(Metadata):
+class RelationMetadata(TextBasedMetadata):
     meta_name: str = "Relation"
 
 
@@ -491,8 +471,7 @@ class CustomMetadata(Metadata):
 
 
 @x_protected
-@expecting_text
-class CustomTextMetadata(Metadata):
+class CustomTextMetadata(TextBasedMetadata):
     def __init__(self, name: str, value: str) -> None:
         self.meta_name = name
         super().__init__(name=name, value=value)
