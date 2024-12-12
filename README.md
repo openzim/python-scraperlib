@@ -6,6 +6,7 @@
 [![PyPI version shields.io](https://img.shields.io/pypi/v/zimscraperlib.svg)](https://pypi.org/project/zimscraperlib/)
 [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/zimscraperlib.svg)](https://pypi.org/project/zimscraperlib)
 [![codecov](https://codecov.io/gh/openzim/python-scraperlib/branch/master/graph/badge.svg)](https://codecov.io/gh/openzim/python-scraperlib)
+[![Read the Docs](https://img.shields.io/readthedocs/python-scraperlib)](https://python-scraperlib.readthedocs.io/)
 
 Collection of python code to re-use across python-based scrapers
 
@@ -21,7 +22,7 @@ Example usage:
 zimscraperlib>=1.1,<1.2
 ```
 
-See [functional architecture](docs/functional_architecture.md), [software architecture](docs/software_architecture.md) and [technical architecture](docs/technical_architecture.md) for more details on scraperlib (not all aspects are covered yet, this is a WIP).
+See documentation at [Read the Docs](https://python-scraperlib.readthedocs.io/) for details.
 
 # Dependencies
 
