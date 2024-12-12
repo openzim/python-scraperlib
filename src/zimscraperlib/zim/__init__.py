@@ -27,14 +27,14 @@ from zimscraperlib.zim.providers import (
 
 __all__ = [
     "Archive",
+    "Blob",
     "Creator",
-    "make_zim_file",
+    "FileLikeProvider",
+    "FileProvider",
     "Item",
     "StaticItem",
-    "URLItem",
-    "FileProvider",
     "StringProvider",
-    "FileLikeProvider",
+    "URLItem",
     "URLProvider",
-    "Blob",
+    "make_zim_file",
 ]
