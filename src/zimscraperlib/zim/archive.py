@@ -17,7 +17,7 @@ import libzim.reader  # pyright: ignore
 import libzim.search  # Query, Searcher  # pyright: ignore
 import libzim.suggestion  # SuggestionSearcher  # pyright: ignore
 
-from zimscraperlib.zim._libkiwix import convertTags, parseMimetypeCounter
+from zimscraperlib.zim._libkiwix import CounterMap, convertTags, parseMimetypeCounter
 
 
 class Archive(libzim.reader.Archive):
@@ -101,7 +101,7 @@ class Archive(libzim.reader.Archive):
         return search.getEstimatedMatches()
 
     @property
-    def counters(self) -> dict[str, int]:
+    def counters(self) -> CounterMap:
         try:
             return parseMimetypeCounter(self.get_text_metadata("Counter"))
         except RuntimeError:  # pragma: no cover (no ZIM avail to test itl)
