@@ -1,4 +1,7 @@
 ---
 title: zimscraperlib Documentation
 ---
---8<-- "README.md"
+
+{%
+    include-markdown "../README.md"
+%}

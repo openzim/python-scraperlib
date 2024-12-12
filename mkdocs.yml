@@ -49,8 +49,12 @@ markdown_extensions:
 
 plugins:
   - search
+
   # Replace externally hosted assets for compliance with various privacy regulations.
   - privacy
+
+  # Nicely include markdown, e.g. to rewrite relative links
+  - include-markdown
 
   # Generate API docs and navigation for them
   - gen-files:
