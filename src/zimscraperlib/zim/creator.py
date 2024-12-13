@@ -43,7 +43,7 @@ from zimscraperlib.zim.items import StaticItem
 from zimscraperlib.zim.metadata import (
     DEFAULT_DEV_ZIM_METADATA,
     MANDATORY_ZIM_METADATA_KEYS,
-    IllustrationMetadata,
+    IllustrationBasedMetadata,
     LanguageMetadata,
     Metadata,
     StandardMetadataList,
@@ -229,7 +229,7 @@ class Creator(libzim.writer.Creator):
         super().__enter__()
 
         for metadata in self._metadata.values():
-            if isinstance(metadata, IllustrationMetadata):
+            if isinstance(metadata, IllustrationBasedMetadata):
                 self.add_illustration(metadata.illustration_size, metadata.libzim_value)
             else:
                 self.add_metadata(metadata)
