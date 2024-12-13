@@ -508,3 +508,102 @@ def test_std_metadata_values():
 
 def test_raw_metadata():
     assert metadata.Metadata(name="Name", value=b"hello")
+
+
+def test_decorators():
+    @metadata.allow_empty
+    class MyMetadata(metadata.XCustomTextMetadata): ...
+
+    assert MyMetadata("Test", "value").libzim_value == b"value"
+
+    @metadata.allow_duplicates
+    class MyMetadata2(metadata.TextListBasedMetadata):
+        join_list_with = "|"
+
+    assert (
+        MyMetadata2(name="Test", value=["value", "hello", "value"]).libzim_value
+        == b"value|hello|value"
+    )
+
+    raw_value = "\t\n\r\n \tA val \t\awith  \bcontrol chars\v\n"
+
+    class MyMetadata3(metadata.TextBasedMetadata):
+        require_text_cleanup = False
+
+    assert MyMetadata3(name="Test", value=raw_value).libzim_value == raw_value.encode(
+        "UTF-8"
+    )
+
+    @metadata.allow_duplicates
+    class MyMetadata4(metadata.TextListBasedMetadata):
+        require_textlist_cleanup = False
+        join_list_with = "|"
+
+    assert MyMetadata4(
+        name="Test", value=(raw_value, raw_value)
+    ).libzim_value == "|".join([raw_value, raw_value]).encode("UTF-8")
+
+
+def test_custom_ones():
+    textval = "value"
+    value = textval.encode("UTF-8")
+    assert metadata.CustomMetadata("Test", value).libzim_value == value
+    assert metadata.XCustomMetadata("Name", value).libzim_value == value
+    assert metadata.XCustomMetadata("Name", value).name == "X-Name"
+    assert metadata.CustomTextMetadata("Test", textval).libzim_value == value
+    assert metadata.XCustomTextMetadata("Name", textval).libzim_value == value
+    assert metadata.XCustomTextMetadata("Name", textval).name == "X-Name"
+    with pytest.raises(ValueError, match="must be X- prefixed"):
+        metadata.CustomMetadata("Name", value)
+    with pytest.raises(ValueError, match="must be X- prefixed"):
+        metadata.CustomTextMetadata("Name", textval)
+
+
+def test_mandatory_zim_metadata_keys():
+    # as per the spec on 2024-12-13
+    assert len(metadata.MANDATORY_ZIM_METADATA_KEYS) >= 8
+    assert "Illustration_48x48@1" in metadata.MANDATORY_ZIM_METADATA_KEYS
+
+
+def test_default_dev_zim_metadata():
+    assert isinstance(metadata.DEFAULT_DEV_ZIM_METADATA, metadata.StandardMetadataList)
+    # as per the spec on 2024-12-13
+    assert len(metadata.DEFAULT_DEV_ZIM_METADATA.values()) == 8
+
+
+def test_get_binary_from(png_image):
+    with open(png_image, "rb") as fh:
+        png_data = fh.read()
+    # bytes input
+    assert metadata.Metadata(value=png_data, name="Test").libzim_value == png_data
+    # io.BytesIO input
+    assert (
+        metadata.Metadata(value=io.BytesIO(png_data), name="Test").libzim_value
+        == png_data
+    )
+    # BaseIO input
+    with open(png_image, "rb") as fh:
+        assert metadata.Metadata(value=fh, name="Test").libzim_value == png_data
+
+    # unseekbale BaseIO
+    def notseekable():
+        return False
+
+    with open(png_image, "rb") as fh:
+        fh.seekable = notseekable
+        assert metadata.Metadata(value=fh, name="Test").libzim_value == png_data
+
+
+def test_ensure_missingname_raises():
+    with pytest.raises(OSError, match="name missing"):
+        metadata.Metadata(b"yello")
+
+
+def test_mimetype_usage():
+    mimetype = "video/webm"
+    assert metadata.Metadata(b"hello", "Test", mimetype=mimetype).mimetype == mimetype
+    assert metadata.Metadata(b"hello", "Test").mimetype == "text/plain;charset=UTF-8"
+    assert (
+        metadata.DEFAULT_DEV_ZIM_METADATA.Illustration_48x48_at_1.mimetype
+        == "image/png"
+    )

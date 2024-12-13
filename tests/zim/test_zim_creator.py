@@ -181,6 +181,14 @@ def test_add_item_for(tmp_path):
             creator.add_item_for(path="welcome", title="hello")
 
 
+def test_additem_bad_content(tmp_path):
+    with Creator(tmp_path / "test.zim", "welcome").config_dev_metadata() as creator:
+        with pytest.raises(RuntimeError, match="Unexpected type for content"):
+            si = StaticItem(path="welcome", content="hello")
+            si.content = 1  # pyright: ignore[reportAttributeAccessIssue]
+            creator.add_item(si)
+
+
 def test_add_item_for_delete(tmp_path, html_file):
     fpath = tmp_path / "test.zim"
     local_path = pathlib.Path(tmp_path / "somefile.html")
@@ -478,6 +486,51 @@ def test_item_callback(tmp_path, html_file):
         )
 
     assert Store.called is True
+
+
+def test_item_callbacks(tmp_path):
+    fpath = tmp_path / "test.zim"
+
+    class Store:
+        called = 0
+
+    def cb():
+        Store.called += 1
+
+    with Creator(fpath, "").config_dev_metadata() as creator:
+        creator.add_item_for(
+            path="hello",
+            content="hello",
+            callbacks=[Callback(func=cb), Callback(func=cb)],
+        )
+
+    assert Store.called == 2
+
+    class UnCallableCallback(Callback):
+        @property
+        def callable(self) -> bool:
+            return False
+
+    with Creator(fpath, "").config_dev_metadata() as creator:
+        # +2
+        creator.add_item(
+            StaticItem(path="hello", content="hello"),
+            callbacks=[Callback(func=cb), Callback(func=cb)],
+        )
+        # + 0
+        creator.add_item(StaticItem(path="hello2", content="hello"))
+        # +1
+        creator.add_item(
+            StaticItem(path="hello3", content="hello"),
+            callbacks=Callback(func=cb),
+        )
+        # + 0
+        creator.add_item(
+            StaticItem(path="hello4", content="hello"),
+            callbacks=UnCallableCallback(func=cb),
+        )
+
+    assert Store.called == 5
 
 
 def test_compess_hints(tmp_path, html_file):
