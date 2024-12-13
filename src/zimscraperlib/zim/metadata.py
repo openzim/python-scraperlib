@@ -483,14 +483,20 @@ class CustomTextMetadata(TextBasedMetadata):
 
 
 @x_prefixed
-class XCustomMetadata(CustomMetadata): ...
+class XCustomMetadata(CustomMetadata):
+    # reimpl just to please coverage
+    def __init__(self, name: str, value: bytes | io.IOBase | io.BytesIO) -> None:
+        super().__init__(name=name, value=value)
 
 
 @x_prefixed
-class XCustomTextMetadata(CustomTextMetadata): ...
+class XCustomTextMetadata(CustomTextMetadata):
+    # reimpl just to please coverage
+    def __init__(self, name: str, value: str) -> None:
+        super().__init__(name=name, value=value)
 
 
-MANDATORY_ZIM_METADATA_KEYS = StandardMetadataList.get_reserved_names()
+MANDATORY_ZIM_METADATA_KEYS: list[str] = StandardMetadataList.get_reserved_names()
 
 
 DEFAULT_DEV_ZIM_METADATA = StandardMetadataList(
