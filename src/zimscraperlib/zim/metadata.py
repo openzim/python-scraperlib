@@ -6,7 +6,7 @@ import io
 from collections.abc import Iterable
 from dataclasses import asdict, dataclass, fields
 from itertools import filterfalse
-from typing import Any, BinaryIO
+from typing import Any
 
 import regex
 
@@ -194,20 +194,25 @@ class Metadata:
     def libzim_value(self) -> bytes:
         return self.get_libzim_value()
 
-    def get_binary_from(self, value: bytes | BinaryIO | io.BytesIO) -> bytes:
-        if isinstance(value, BinaryIO):
-            last_pos = value.tell()
-            payload = value.read()
-            value.seek(last_pos)
-            value = payload
-        elif isinstance(value, io.BytesIO):
-            value = value.getvalue()
+    def get_binary_from(self, value: bytes | io.IOBase | io.BytesIO) -> bytes:
+        bvalue: bytes = b""
+        if isinstance(value, io.BytesIO):
+            bvalue = value.getvalue()
+        elif isinstance(value, bytes):
+            bvalue = value
+        else:
+            last_pos: int
+            if value.seekable():
+                last_pos = value.tell()
+            bvalue = value.read()
+            if value.seekable():
+                value.seek(last_pos)
         if not self.empty_allowed and not value:
             raise ValueError("Missing value (empty not allowed)")
-        return value
+        return bvalue
 
     # native type is bytes
-    def get_cleaned_value(self, value: bytes | BinaryIO | io.BytesIO) -> bytes:
+    def get_cleaned_value(self, value: bytes | io.IOBase | io.BytesIO) -> bytes:
         return self.get_binary_from(value)
 
     def get_libzim_value(self) -> bytes:
@@ -316,12 +321,12 @@ class IllustrationBasedMetadata(Metadata):
     meta_mimetype = "image/png"
 
     def __init__(
-        self, value: bytes | BinaryIO | io.BytesIO, name: str | None = None
+        self, value: bytes | io.IOBase | io.BytesIO, name: str | None = None
     ) -> None:
         super().__init__(value=value, name=name)
 
     # native type is PNG image buffer
-    def get_cleaned_value(self, value: bytes | BinaryIO | io.BytesIO) -> bytes:
+    def get_cleaned_value(self, value: bytes | io.IOBase | io.BytesIO) -> bytes:
         value = self.get_binary_from(value)
         if not is_valid_image(
             image=value,
@@ -377,7 +382,7 @@ class IllustrationMetadata(IllustrationBasedMetadata):
     illustration_scale: int = 1
 
     def __init__(
-        self, value: bytes | BinaryIO | io.BytesIO, size: int, scale: int = 1
+        self, value: bytes | io.IOBase | io.BytesIO, size: int, scale: int = 1
     ) -> None:
         self.illustration_scale = scale
         self.illustration_size = size
@@ -465,7 +470,7 @@ class StandardMetadataList:
 
 @x_protected
 class CustomMetadata(Metadata):
-    def __init__(self, name: str, value: bytes | BinaryIO | io.BytesIO) -> None:
+    def __init__(self, name: str, value: bytes | io.IOBase | io.BytesIO) -> None:
         self.meta_name = name
         super().__init__(value=value)
 
