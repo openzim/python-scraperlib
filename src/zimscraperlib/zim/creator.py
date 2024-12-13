@@ -191,14 +191,7 @@ class Creator(libzim.writer.Creator):
                     )
                 continue
 
-            # rest is either printable or unexpected
-            try:
-                logger.debug(f"Metadata: {name} = {metadata.value!s}")
-            except Exception:
-                logger.debug(
-                    f"Metadata: {name} is unexpected data type: "
-                    f"{type(metadata.value).__qualname__}"
-                )
+            logger.debug(f"Metadata: {name} = {metadata.value!s}")
 
     def _get_first_language_metadata_value(self) -> str | None:
         """Private methods to get most popular lang code from Language metadata"""
