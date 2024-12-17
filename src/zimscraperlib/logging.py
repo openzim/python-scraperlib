@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import io
 import logging
 import pathlib
 import sys
@@ -22,7 +23,7 @@ VERBOSE_DEPENDENCIES = ["urllib3", "PIL", "boto3", "botocore", "s3transfer"]
 def getLogger(  # noqa: N802 (intentionally matches the stdlib getLogger name)
     name: str,
     level: int = logging.INFO,
-    console: TextIO | None = sys.stdout,
+    console: TextIO | io.StringIO | None = sys.stdout,
     log_format: str | None = DEFAULT_FORMAT,
     file: pathlib.Path | None = None,
     file_level: int | None = None,

@@ -210,14 +210,14 @@ def optimize_webp(
     else:
         try:
             save_image(webp_image, dst, fmt="WEBP", **params)
-        except Exception as exc:
+        except Exception as exc:  # pragma: no cover
             if (
                 isinstance(src, pathlib.Path)
                 and isinstance(dst, pathlib.Path)
                 and src.resolve() != dst.resolve()
                 and dst.exists()
             ):
-                dst.unlink()  # pragma: no cover
+                dst.unlink()
             raise exc
     return dst
 

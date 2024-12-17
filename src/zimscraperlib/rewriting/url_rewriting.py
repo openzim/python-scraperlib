@@ -41,8 +41,9 @@ and not url-encoded.
 from __future__ import annotations
 
 import re
+from dataclasses import dataclass
 from pathlib import PurePosixPath
-from typing import ClassVar, NamedTuple
+from typing import ClassVar
 from urllib.parse import quote, unquote, urljoin, urlsplit
 
 import idna
@@ -51,7 +52,8 @@ from zimscraperlib import logger
 from zimscraperlib.rewriting.rules import FUZZY_RULES
 
 
-class AdditionalRule(NamedTuple):
+@dataclass
+class AdditionalRule:
     match: re.Pattern[str]
     replace: str
 
@@ -147,7 +149,8 @@ class ZimPath:
             raise ValueError(f"Unexpected password in value: {value} {parts.password}")
 
 
-class RewriteResult(NamedTuple):
+@dataclass
+class RewriteResult:
     absolute_url: str
     rewriten_url: str
     zim_path: ZimPath | None
@@ -381,9 +384,6 @@ class ArticleUrlRewriter:
         Returned value is a ZIM path, without any puny/url encoding applied, ready to be
         passed to python-libzim for UTF-8 encoding.
         """
-
-        if not isinstance(url, HttpUrl):
-            raise ValueError("Bad argument type passed, HttpUrl expected")
 
         url_parts = urlsplit(url.value)
 

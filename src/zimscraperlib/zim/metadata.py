@@ -19,6 +19,7 @@ from zimscraperlib.constants import (
 from zimscraperlib.i18n import is_valid_iso_639_3
 from zimscraperlib.image.probing import is_valid_image
 from zimscraperlib.inputs import unique_values
+from zimscraperlib.typing import SupportsRead, SupportsSeekableRead
 
 # All control characters are disallowed in str metadata except \n, \r and \t
 UNWANTED_CONTROL_CHARACTERS_REGEX = regex.compile(r"(?![\n\t\r])\p{C}")
@@ -194,7 +195,10 @@ class Metadata:
     def libzim_value(self) -> bytes:
         return self.get_libzim_value()
 
-    def get_binary_from(self, value: bytes | io.IOBase | io.BytesIO) -> bytes:
+    def get_binary_from(
+        self,
+        value: bytes | SupportsRead[bytes] | SupportsSeekableRead[bytes] | io.BytesIO,
+    ) -> bytes:
         bvalue: bytes = b""
         if isinstance(value, io.BytesIO):
             bvalue = value.getvalue()
@@ -202,10 +206,10 @@ class Metadata:
             bvalue = value
         else:
             last_pos: int
-            if value.seekable():
+            if isinstance(value, SupportsSeekableRead) and value.seekable():
                 last_pos = value.tell()
             bvalue = value.read()
-            if value.seekable():
+            if isinstance(value, SupportsSeekableRead) and value.seekable():
                 value.seek(last_pos)
         if not self.empty_allowed and not value:
             raise ValueError("Missing value (empty not allowed)")

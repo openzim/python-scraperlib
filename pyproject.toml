@@ -254,7 +254,7 @@ ban-relative-imports = "all"
 # _libkiwix mimics libkiwix C++ code, names obey C++ conventions
 "src/zimscraperlib/zim/_libkiwix.py" = ["N802", "N803", "N806"]
 # beartype must be first
-"src/zimscraperlib/zim/__init__.py" = ["E402"]
+"src/zimscraperlib/__init__.py" = ["E402"]
 
 [tool.pytest.ini_options]
 minversion = "7.3"
@@ -278,6 +278,7 @@ exclude_lines = [
   "no cov",
   "if __name__ == .__main__.:",
   "if TYPE_CHECKING:",
+  "class .*Protocol.*",
 ]
 
 [tool.pyright]

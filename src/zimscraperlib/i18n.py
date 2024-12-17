@@ -59,12 +59,12 @@ class Lang(dict):
         return self["iso_types"]
 
     @property
-    def query(self) -> list[str]:
+    def query(self) -> str:
         """Query issued for these language details"""
         return self["query"]
 
     @property
-    def querytype(self) -> list[str]:
+    def querytype(self) -> str:
         """Type of query issued to retrieve language details"""
         return self["querytype"]
 

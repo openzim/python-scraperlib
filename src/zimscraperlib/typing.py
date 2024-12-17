@@ -1,10 +1,15 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import Any, NamedTuple
+from dataclasses import dataclass
+from typing import Any, Protocol, TypeVar, runtime_checkable
+
+_T_co = TypeVar("_T_co", covariant=True)
+_T_contra = TypeVar("_T_contra", contravariant=True)
 
 
-class Callback(NamedTuple):
+@dataclass
+class Callback:
     func: Callable
     args: tuple[Any, ...] | None = None
     kwargs: dict[str, Any] | None = None
@@ -24,3 +29,34 @@ class Callback(NamedTuple):
 
     def call(self):
         self.call_with(*self.get_args(), **self.get_kwargs())
+
+
+@runtime_checkable
+class SupportsWrite(Protocol[_T_contra]):
+    """Protocol exposing an expected write method"""
+
+    def write(self, s: _T_contra, /) -> object: ...
+
+
+@runtime_checkable
+class SupportsRead(Protocol[_T_co]):
+    def read(self, length: int = ..., /) -> _T_co: ...
+
+
+@runtime_checkable
+class SupportsSeeking(Protocol):
+    def seekable(self) -> bool: ...
+
+    def seek(self, target: int, whence: int = 0) -> int: ...
+
+    def tell(self) -> int: ...
+
+    def truncate(self, pos: int) -> int: ...
+
+
+@runtime_checkable
+class SupportsSeekableRead(SupportsRead[_T_co], SupportsSeeking, Protocol): ...
+
+
+@runtime_checkable
+class SupportsSeekableWrite(SupportsWrite[_T_contra], SupportsSeeking, Protocol): ...
