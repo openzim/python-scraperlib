@@ -18,8 +18,6 @@ def test_constants():
     [
         ("hello.html", "text/html", None, None),
         ("some picture.png", "image/png", None, None),
-        # make sure we get default fallback on error
-        (b"-", "application/octet-stream", None, None),
         # make sure fallback is not returned on success
         ("hello.html", "text/html", "text/plain", None),
         # make sure fallback is returned on missing

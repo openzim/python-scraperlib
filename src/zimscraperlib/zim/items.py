@@ -13,7 +13,7 @@ import urllib.parse
 from collections.abc import Callable
 from typing import Any
 
-import libzim.writer  # pyright: ignore
+import libzim.writer  # pyright: ignore[reportMissingModuleSource]
 
 from zimscraperlib.download import stream_file
 from zimscraperlib.filesystem import get_content_mimetype, get_file_mimetype

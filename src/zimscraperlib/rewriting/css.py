@@ -186,29 +186,27 @@ class CssRewriter:
             )
         elif isinstance(node, ast.FunctionBlock):
             if node.lower_name == "url":  # pyright: ignore[reportUnknownMemberType]
-                url_node: ast.Node = node.arguments[0]  # pyright: ignore
+                url_node: ast.Node = node.arguments[0]
                 new_url = self.url_rewriter(
-                    url_node.value,  # pyright: ignore
+                    getattr(url_node, "value", ""),
                     self.base_href,
                 ).rewriten_url
-                url_node.value = str(new_url)  # pyright: ignore
-                url_node.representation = (  # pyright: ignore
-                    f'"{serialize_url(str(new_url))}"'
+                setattr(url_node, "value", str(new_url))  # noqa: B010
+                setattr(  # noqa: B010
+                    url_node, "representation", f'"{serialize_url(str(new_url))}"'
                 )
 
             else:
                 self._process_list(
-                    node.arguments,  # pyright: ignore
+                    getattr(node, "arguments", []),
                 )
         elif isinstance(node, ast.AtRule):
-            self._process_list(node.prelude)  # pyright: ignore
-            self._process_list(node.content)  # pyright: ignore
+            self._process_list(node.prelude)
+            self._process_list(node.content)
         elif isinstance(node, ast.Declaration):
-            self._process_list(node.value)  # pyright: ignore
+            self._process_list(node.value)
         elif isinstance(node, ast.URLToken):
-            new_url = self.url_rewriter(
-                node.value, self.base_href
-            ).rewriten_url  # pyright: ignore
+            new_url = self.url_rewriter(node.value, self.base_href).rewriten_url
             node.value = new_url
             node.representation = f"url({serialize_url(new_url)})"
 

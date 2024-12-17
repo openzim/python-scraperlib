@@ -17,7 +17,7 @@ from typing import NamedTuple
 from unittest.mock import call, patch
 
 import pytest
-from libzim.writer import Compression  # pyright: ignore
+from libzim.writer import Compression  # pyright: ignore[reportMissingModuleSource]
 
 from zimscraperlib.constants import UTF8
 from zimscraperlib.download import save_large_file, stream_file

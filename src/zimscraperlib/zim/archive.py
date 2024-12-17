@@ -13,9 +13,9 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 
-import libzim.reader  # pyright: ignore
-import libzim.search  # Query, Searcher  # pyright: ignore
-import libzim.suggestion  # SuggestionSearcher  # pyright: ignore
+import libzim.reader  # pyright: ignore[reportMissingModuleSource]
+import libzim.search  # pyright: ignore[reportMissingModuleSource]
+import libzim.suggestion  # pyright: ignore[reportMissingModuleSource]
 
 from zimscraperlib.zim._libkiwix import CounterMap, convertTags, parseMimetypeCounter
 

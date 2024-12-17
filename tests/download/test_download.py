@@ -118,7 +118,7 @@ def test_first_block_download_custom_session(mocker, valid_http_url):
         headers=None,
         timeout=DEFAULT_WEB_REQUESTS_TIMEOUT,
     )
-    requests.Session.assert_not_called()  # pyright: ignore
+    requests.Session.assert_not_called()  # pyright: ignore[reportAttributeAccessIssue]
 
 
 @pytest.mark.slow
@@ -226,12 +226,13 @@ def test_youtube_download_nowait(tmp_path):
             BestMp4.get_options(target_dir=tmp_path),
             wait=False,
         )
-        assert future.running()  # pyright: ignore
+        assert future.running()  # pyright: ignore[reportAttributeAccessIssue]
         assert not yt_downloader.executor._shutdown
         done, not_done = concurrent.futures.wait(
-            [future], return_when=concurrent.futures.ALL_COMPLETED  # pyright: ignore
+            [future],  # pyright: ignore[reportArgumentType]
+            return_when=concurrent.futures.ALL_COMPLETED,
         )
-        assert future.exception() is None  # pyright: ignore
+        assert future.exception() is None  # pyright: ignore[reportAttributeAccessIssue]
         assert len(done) == 1
         assert len(not_done) == 0
 
