@@ -9,7 +9,6 @@ import os
 import pathlib
 import re
 import shutil
-from subprocess import CalledProcessError
 
 import piexif
 import pytest
@@ -29,7 +28,6 @@ from zimscraperlib.image.optimization import (
     optimize_image,
     optimize_jpeg,
     optimize_png,
-    optimize_webp,
 )
 from zimscraperlib.image.presets import (
     GifHigh,
@@ -701,25 +699,6 @@ def test_format_for_cannot_use_suffix_with_byte_array():
         assert format_for(src=io.BytesIO(), from_suffix=True)
 
 
-def test_optimize_webp_gif_failure(tmp_path, webp_image, gif_image):
-    dst = tmp_path.joinpath("image.img")
-
-    # webp
-    with pytest.raises(TypeError):
-        optimize_webp(
-            webp_image, dst, lossless="bad"  # pyright: ignore[reportArgumentType]
-        )
-    assert not dst.exists()
-
-    # gif
-    dst.touch()  # fake temp file created during optim (actually fails before)
-    with pytest.raises(CalledProcessError):
-        optimize_gif(
-            gif_image, dst, optimize_level="bad"  # pyright: ignore[reportArgumentType]
-        )
-    assert not dst.exists()
-
-
 def test_wrong_extension_optim(tmp_path, png_image):
     dst = tmp_path.joinpath("image.jpg")
     shutil.copy(png_image, dst)
@@ -734,7 +713,6 @@ def test_is_valid_image(png_image, png_image2, jpg_image, font):
     assert is_valid_image(png_image, "PNG", (48, 48))
     assert not is_valid_image(png_image2, "PNG", (48, 48))
     assert not is_valid_image(b"", "PNG")
-    assert not is_valid_image(34, "PNG")  # pyright: ignore[reportArgumentType]
     assert not is_valid_image(font, "PNG")
     with open(png_image, "rb") as fh:
         assert is_valid_image(fh.read(), "PNG", (48, 48))

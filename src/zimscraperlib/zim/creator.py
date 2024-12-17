@@ -25,7 +25,7 @@ import pathlib
 import re
 import weakref
 
-import libzim.writer  # pyright: ignore
+import libzim.writer  # pyright: ignore[reportMissingModuleSource]
 import PIL.Image
 
 from zimscraperlib import logger

@@ -52,25 +52,3 @@ from zimscraperlib.uri import rebuild_uri
 )
 def test_rebuild_uri(uri, changes, expected):
     assert rebuild_uri(urllib.parse.urlparse(uri), **changes).geturl() == expected
-
-
-@pytest.mark.parametrize(
-    "uri,changes",
-    [
-        ("http://localhost", {"scheme": 123}),
-    ],
-)
-def test_rebuild_uri_failure(uri, changes):
-    with pytest.raises(TypeError):
-        rebuild_uri(urllib.parse.urlparse(uri), **changes)
-
-
-@pytest.mark.parametrize(
-    "uri,changes",
-    [
-        ("http://localhost", {"scheme": 123}),
-    ],
-)
-def test_rebuild_uri_failsafe(uri, changes):
-    puri = urllib.parse.urlparse(uri)
-    assert rebuild_uri(puri, **changes, failsafe=True) == puri

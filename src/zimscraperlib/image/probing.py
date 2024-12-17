@@ -7,7 +7,6 @@ import colorsys
 import io
 import pathlib
 import re
-from typing import IO
 
 import colorthief
 import PIL.Image
@@ -55,7 +54,7 @@ def is_hex_color(text: str) -> bool:
 
 
 def format_for(
-    src: pathlib.Path | IO[bytes],
+    src: pathlib.Path | io.BytesIO,
     *,
     from_suffix: bool = True,
 ) -> str | None:
@@ -95,7 +94,7 @@ def format_for(
 
 
 def is_valid_image(
-    image: pathlib.Path | IO[bytes] | bytes,
+    image: pathlib.Path | bytes | io.BytesIO,
     imformat: str,
     size: tuple[int, int] | None = None,
 ) -> bool:

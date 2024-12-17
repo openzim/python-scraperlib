@@ -6,7 +6,7 @@ from __future__ import annotations
 import pathlib
 import subprocess
 from concurrent.futures import Future, ThreadPoolExecutor
-from typing import IO, ClassVar
+from typing import ClassVar
 
 import requests
 import requests.adapters
@@ -16,6 +16,7 @@ import yt_dlp as youtube_dl
 
 from zimscraperlib import logger
 from zimscraperlib.constants import DEFAULT_WEB_REQUESTS_TIMEOUT
+from zimscraperlib.typing import SupportsSeekableWrite, SupportsWrite
 
 
 class YoutubeDownloader:
@@ -59,11 +60,10 @@ class YoutubeDownloader:
         future = self.executor.submit(self._run_youtube_dl, url, options or {})
         if not wait:
             return future
-        if not future.exception():
-            # return the result
-            return future.result()  # pyright: ignore
-        # raise the exception
-        raise future.exception()  # pyright: ignore
+        exc = future.exception()
+        if isinstance(exc, BaseException):
+            raise exc
+        return True
 
 
 class YoutubeConfig(dict):
@@ -176,7 +176,7 @@ def get_session(max_retries: int | None = 5) -> requests.Session:
 def stream_file(
     url: str,
     fpath: pathlib.Path | None = None,
-    byte_stream: IO[bytes] | None = None,
+    byte_stream: SupportsWrite[bytes] | SupportsSeekableWrite[bytes] | None = None,
     block_size: int | None = 1024,
     proxies: dict[str, str] | None = None,
     max_retries: int | None = 5,
@@ -216,15 +216,16 @@ def stream_file(
 
     total_downloaded = 0
     if fpath is not None:
-        fp = open(fpath, "wb")
-    elif (
-        byte_stream is not None
-    ):  # pragma: no branch (we use a precise condition to help type checker)
-        fp = byte_stream
+        fpath_handler = open(fpath, "wb")
+    else:
+        fpath_handler = None
 
     for data in resp.iter_content(block_size):
         total_downloaded += len(data)
-        fp.write(data)
+        if fpath_handler:
+            fpath_handler.write(data)
+        if byte_stream:
+            byte_stream.write(data)
 
         # stop downloading/reading if we're just testing first block
         if only_first_block:
@@ -232,8 +233,8 @@ def stream_file(
 
     logger.debug(f"Downloaded {total_downloaded} bytes from {url}")
 
-    if fpath:
-        fp.close()
-    else:
-        fp.seek(0)
+    if fpath_handler:
+        fpath_handler.close()
+    elif isinstance(byte_stream, SupportsSeekableWrite) and byte_stream.seekable():
+        byte_stream.seek(0)
     return total_downloaded, resp.headers

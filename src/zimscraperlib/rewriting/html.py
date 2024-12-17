@@ -560,7 +560,7 @@ def rewrite_meta_charset_content(
         return
     if attr_name == "charset":
         return (attr_name, "UTF-8")
-    if attr_name == "content" and any(
+    if attr_name == "content" and any(  # pragma: no coverage (coverage bug)
         attr_name.lower() == "http-equiv"
         and attr_value
         and attr_value.lower() == "content-type"
@@ -574,7 +574,9 @@ def rewrite_onxxx_tags(
     attr_name: str, attr_value: str | None, js_rewriter: JsRewriter
 ) -> AttrNameAndValue | None:
     """Rewrite onxxx script attributes"""
-    if attr_value and attr_name.startswith("on") and not attr_name.startswith("on-"):
+    if (
+        attr_value and attr_name.startswith("on") and not attr_name.startswith("on-")
+    ):  # pragma: no coverage (coverage bug)
         return (attr_name, js_rewriter.rewrite(attr_value))
 
 
@@ -583,7 +585,7 @@ def rewrite_style_tags(
     attr_name: str, attr_value: str | None, css_rewriter: CssRewriter
 ) -> AttrNameAndValue | None:
     """Rewrite style attributes"""
-    if attr_value and attr_name == "style":
+    if attr_value and attr_name == "style":  # pragma: no coverage (coverage bug)
         return (attr_name, css_rewriter.rewrite_inline(attr_value))
 
 

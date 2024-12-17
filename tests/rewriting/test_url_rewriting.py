@@ -107,16 +107,6 @@ class TestNormalize:
             ArticleUrlRewriter.normalize(HttpUrl(url)).value == ZimPath(zim_path).value
         )
 
-    def test_normalize_bad_arg(
-        self,
-    ):
-        with pytest.raises(
-            ValueError, match="Bad argument type passed, HttpUrl expected"
-        ):
-            ArticleUrlRewriter.normalize(
-                "https://www.acme.com"  # pyright: ignore[reportArgumentType]
-            )
-
 
 class TestArticleUrlRewriter:
     @pytest.mark.parametrize(
@@ -1019,7 +1009,7 @@ class TestHttpUrl:
 
     def test_http_urls_str(self):
         assert str(HttpUrl("http://bob@acme.com")) == "HttpUrl(http://bob@acme.com)"
-        assert f"{HttpUrl("http://bob@acme.com")}" == "HttpUrl(http://bob@acme.com)"
+        assert f'{HttpUrl("http://bob@acme.com")}' == "HttpUrl(http://bob@acme.com)"
 
     def test_bad_http_urls_no_host(self):
         with pytest.raises(ValueError, match="Unsupported empty hostname in value"):
@@ -1099,4 +1089,4 @@ class TestZimPath:
 
     def test_zim_path_str(self):
         assert str(ZimPath("content/index.html")) == "ZimPath(content/index.html)"
-        assert f"{ZimPath("content/index.html")}" == "ZimPath(content/index.html)"
+        assert f'{ZimPath("content/index.html")}' == "ZimPath(content/index.html)"

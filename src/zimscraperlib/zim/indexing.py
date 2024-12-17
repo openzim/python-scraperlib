@@ -5,7 +5,7 @@ from __future__ import annotations
 import io
 import pathlib
 
-import libzim.writer  # pyright: ignore
+import libzim.writer  # pyright: ignore[reportMissingModuleSource]
 
 try:
     import pymupdf

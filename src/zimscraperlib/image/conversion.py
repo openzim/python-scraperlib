@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import io
 import pathlib
-from typing import IO
 
 import cairosvg.svg
 from PIL.Image import open as pilopen
@@ -17,9 +16,9 @@ from zimscraperlib.image.utils import save_image
 
 
 def convert_image(
-    src: pathlib.Path | IO[bytes],
-    dst: pathlib.Path | IO[bytes],
-    **params: str,
+    src: pathlib.Path | io.BytesIO,
+    dst: pathlib.Path | io.BytesIO,
+    **params: str | None,
 ) -> None:
     """convert an image file from one format to another
     params: Image.save() parameters. Depends on dest format.
@@ -31,7 +30,9 @@ def convert_image(
      to RGB. ex: RGB, ARGB, CMYK (and other PIL colorspaces)"""
 
     colorspace = params.get("colorspace")  # requested colorspace
-    fmt = params.pop("fmt").upper() if "fmt" in params else None  # requested format
+    fmt = (
+        str(params.pop("fmt")).upper() if params.get("fmt") else None
+    )  # requested format
     if not fmt:
         fmt = format_for(dst)
     if not fmt:
@@ -44,7 +45,7 @@ def convert_image(
 
 def convert_svg2png(
     src: str | pathlib.Path | io.BytesIO,
-    dst: pathlib.Path | IO[bytes],
+    dst: pathlib.Path | io.BytesIO,
     width: int | None = None,
     height: int | None = None,
 ):

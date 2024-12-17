@@ -2,7 +2,7 @@
 import os
 
 from invoke.context import Context
-from invoke.tasks import task  # pyright: ignore [reportUnknownVariableType]
+from invoke.tasks import task  # pyright: ignore[reportUnknownVariableType]
 
 use_pty = not os.getenv("CI", "")
 

@@ -118,7 +118,7 @@ def test_validate_tags_invalid(
     value: list[str] | str | int, exception: type, error: str
 ):
     with pytest.raises(exception, match=re.escape(error)):
-        metadata.TagsMetadata(value)  # pyright: ignore [reportArgumentType]
+        metadata.TagsMetadata(value)  # pyright: ignore[reportArgumentType]
 
 
 def test_validate_dedup_tags():

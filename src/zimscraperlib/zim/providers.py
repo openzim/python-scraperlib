@@ -15,7 +15,7 @@ import io
 import pathlib
 from collections.abc import Generator
 
-import libzim.writer  # pyright: ignore
+import libzim.writer  # pyright: ignore[reportMissingModuleSource]
 import requests
 
 from zimscraperlib.download import _get_retry_adapter, stream_file
@@ -60,7 +60,7 @@ class FileLikeProvider(libzim.writer.ContentProvider):
             self.fileobj.seek(0, io.SEEK_SET)
 
     def get_size(self) -> int:
-        return self.size  # pyright: ignore
+        return getattr(self, "size", -1)
 
     def gen_blob(self) -> Generator[libzim.writer.Blob, None, None]:
         yield libzim.writer.Blob(self.fileobj.getvalue())  # pragma: no cover
@@ -91,7 +91,7 @@ class URLProvider(libzim.writer.ContentProvider):
             return None
 
     def get_size(self) -> int:
-        return self.size  # pyright: ignore
+        return getattr(self, "size", -1)
 
     def gen_blob(self) -> Generator[libzim.writer.Blob, None, None]:  # pragma: no cover
         for chunk in self.resp.iter_content(10 * 1024):

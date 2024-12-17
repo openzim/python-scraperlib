@@ -1,7 +1,7 @@
 import io
 import pathlib
 
-import libzim.writer  # pyright: ignore
+import libzim.writer  # pyright: ignore[reportMissingModuleSource]
 import pytest
 
 from zimscraperlib.zim import Archive, Creator

@@ -47,13 +47,10 @@ def get_mime_for_name(
     MIME only guessed from file extension and not actual content.
 
     Filename with no extension are mapped to `no_ext_to`"""
-    try:
-        filename = pathlib.Path(filename)
-        if not filename.suffix:
-            return no_ext_to
-        return mimetypes.guess_type(f"{filename.stem}{filename.suffix}")[0] or fallback
-    except Exception:
-        return fallback
+    filename = pathlib.Path(filename)
+    if not filename.suffix:
+        return no_ext_to
+    return mimetypes.guess_type(f"{filename.stem}{filename.suffix}")[0] or fallback
 
 
 def init_types():

@@ -167,7 +167,7 @@ def valid_user_agent():
 def small_zim_file(tmpdir_factory):
     from zimscraperlib.download import stream_file
 
-    dst = tmpdir_factory.mktemp("data").join("small.zim")
+    dst = pathlib.Path(tmpdir_factory.mktemp("data").join("small.zim"))
     stream_file(
         "https://github.com/openzim/zim-testing-suite/raw/v0.3/data/nons/small.zim",
         dst,
@@ -179,7 +179,7 @@ def small_zim_file(tmpdir_factory):
 def ns_zim_file(tmpdir_factory):
     from zimscraperlib.download import stream_file
 
-    dst = tmpdir_factory.mktemp("data").join("ns.zim")
+    dst = pathlib.Path(tmpdir_factory.mktemp("data").join("ns.zim"))
     stream_file(
         "https://github.com/openzim/zim-testing-suite/raw/v0.4/data/withns/"
         "wikibooks_be_all_nopic_2017-02.zim",
@@ -192,7 +192,7 @@ def ns_zim_file(tmpdir_factory):
 def real_zim_file(tmpdir_factory):
     from zimscraperlib.download import stream_file
 
-    dst = tmpdir_factory.mktemp("data").join("small.zim")
+    dst = pathlib.Path(tmpdir_factory.mktemp("data").join("small.zim"))
     stream_file(
         "https://github.com/openzim/zim-testing-suite/raw/v0.3/data/withns/"
         "wikipedia_en_climate_change_nopic_2020-01.zim",

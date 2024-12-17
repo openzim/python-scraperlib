@@ -71,6 +71,29 @@ def test_first_block_download_default_session(valid_http_url):
     assert len(byte_stream.read()) <= expected
 
 
+def test_filehandler(tmp_path, valid_http_url):
+    dest_file = pathlib.Path(tmp_path / "favicon.ico")
+
+    def notseekable():
+        return False
+
+    with open(dest_file, "wb") as byte_stream:
+        assert byte_stream.seekable()
+        size, ret = stream_file(
+            url=valid_http_url, byte_stream=byte_stream, only_first_block=True
+        )
+        assert_headers(ret)
+        assert byte_stream.tell() == 0
+
+        byte_stream.seekable = notseekable
+        assert not byte_stream.seekable()
+        size, ret = stream_file(
+            url=valid_http_url, byte_stream=byte_stream, only_first_block=True
+        )
+        assert_headers(ret)
+        assert byte_stream.tell() > 0
+
+
 def test_first_block_download_custom_session(mocker, valid_http_url):
     byte_stream = io.BytesIO()
     custom_session = mocker.Mock(spec=requests.Session)
@@ -95,7 +118,7 @@ def test_first_block_download_custom_session(mocker, valid_http_url):
         headers=None,
         timeout=DEFAULT_WEB_REQUESTS_TIMEOUT,
     )
-    requests.Session.assert_not_called()  # pyright: ignore
+    requests.Session.assert_not_called()  # pyright: ignore[reportAttributeAccessIssue]
 
 
 @pytest.mark.slow
@@ -135,6 +158,17 @@ def test_stream_to_bytes(valid_https_url):
         byte_stream.read()
         == requests.get(valid_https_url, timeout=DEFAULT_WEB_REQUESTS_TIMEOUT).content
     )
+
+
+@pytest.mark.slow
+def test_unseekable_stream(valid_https_url):
+    def notseekable():
+        return False
+
+    byte_stream = io.BytesIO()
+    byte_stream.seekable = notseekable
+    size, ret = stream_file(url=valid_https_url, byte_stream=byte_stream)
+    assert_headers(ret)
 
 
 @pytest.mark.slow
@@ -192,12 +226,13 @@ def test_youtube_download_nowait(tmp_path):
             BestMp4.get_options(target_dir=tmp_path),
             wait=False,
         )
-        assert future.running()  # pyright: ignore
+        assert future.running()  # pyright: ignore[reportAttributeAccessIssue]
         assert not yt_downloader.executor._shutdown
         done, not_done = concurrent.futures.wait(
-            [future], return_when=concurrent.futures.ALL_COMPLETED  # pyright: ignore
+            [future],  # pyright: ignore[reportArgumentType]
+            return_when=concurrent.futures.ALL_COMPLETED,
         )
-        assert future.exception() is None  # pyright: ignore
+        assert future.exception() is None  # pyright: ignore[reportAttributeAccessIssue]
         assert len(done) == 1
         assert len(not_done) == 0
 
