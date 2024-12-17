@@ -9,7 +9,10 @@
     zim.items: item to add to creator
     zim.archive: read ZIM files, accessing or searching its content"""
 
+from beartype.claw import beartype_this_package
 from libzim.writer import Blob  # pyright: ignore
+
+beartype_this_package()
 
 from zimscraperlib.zim.archive import Archive
 from zimscraperlib.zim.creator import Creator
@@ -24,14 +27,14 @@ from zimscraperlib.zim.providers import (
 
 __all__ = [
     "Archive",
+    "Blob",
     "Creator",
-    "make_zim_file",
+    "FileLikeProvider",
+    "FileProvider",
     "Item",
     "StaticItem",
-    "URLItem",
-    "FileProvider",
     "StringProvider",
-    "FileLikeProvider",
+    "URLItem",
     "URLProvider",
-    "Blob",
+    "make_zim_file",
 ]

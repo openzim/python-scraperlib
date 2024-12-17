@@ -142,7 +142,7 @@ try:
         illustration="{png_image.name}",
         title="Test ZIM",
         description="A test ZIM",
-        redirects_file="{build_data["redirects_file"]}")
+        redirects_file=pathlib.Path("{build_data["redirects_file"]}"))
 except Exception as exc:
     print(exc)
 finally:

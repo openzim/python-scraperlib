@@ -15,12 +15,15 @@ https://github.com/kiwix/libkiwix/blob/master/src/tools/otherTools.cpp
 from __future__ import annotations
 
 import io
-from collections import namedtuple
+from typing import NamedTuple
 
-MimetypeAndCounter = namedtuple("MimetypeAndCounter", ["mimetype", "value"])
-CounterMap = dict[
-    type(MimetypeAndCounter.mimetype), type(MimetypeAndCounter.value)  # pyright: ignore
-]
+
+class MimetypeAndCounter(NamedTuple):
+    mimetype: str
+    value: int
+
+
+type CounterMap = dict[str, int]
 
 
 def getline(src: io.StringIO, delim: str | None = None) -> tuple[bool, str]:

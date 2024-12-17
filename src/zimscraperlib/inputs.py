@@ -136,3 +136,8 @@ def compute_tags(
     return {
         tag.strip() for tag in list(default_tags) + (user_tags or "").split(";") if tag
     }
+
+
+def unique_values(items: list) -> list:
+    """Return unique values in input list while preserving list order"""
+    return list(dict.fromkeys(items))

@@ -43,25 +43,7 @@ def test_mime_overrides(svg_image):
             assert get_content_mimetype(fh.read(64)) == expected_mime
 
 
-def test_delete_callback_with_cb(tmp_path):
-    class Store:
-        called = 0
-
-    def cb(*args):  # noqa: ARG001
-        Store.called += 1
-
-    fpath = tmp_path.joinpath("my-file")
-    with open(fpath, "w") as fh:
-        fh.write("content")
-
-    delete_callback(fpath, cb, fpath.name)
-
-    assert not fpath.exists()
-    assert Store.called
-    assert Store.called == 1
-
-
-def test_delete_callback_without_cb(tmp_path):
+def test_delete_callback(tmp_path):
     fpath = tmp_path.joinpath("my-file")
     with open(fpath, "w") as fh:
         fh.write("content")

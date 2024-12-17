@@ -9,8 +9,6 @@ from __future__ import annotations
 
 import os
 import pathlib
-from collections.abc import Callable
-from typing import Any
 
 import magic
 
@@ -44,15 +42,7 @@ def get_content_mimetype(content: bytes | str) -> str:
     return MIME_OVERRIDES.get(detected_mime, detected_mime)
 
 
-def delete_callback(
-    fpath: str | pathlib.Path,
-    callback: Callable | None = None,
-    *callback_args: Any,
-):
-    """helper deleting passed filepath, optionnaly calling an additional callback"""
+def delete_callback(fpath: str | pathlib.Path):
+    """helper deleting passed filepath"""
 
     os.unlink(fpath)
-
-    # call the callback if requested
-    if callback and callable(callback):
-        callback.__call__(*callback_args)
