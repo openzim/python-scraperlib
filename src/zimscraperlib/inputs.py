@@ -1,12 +1,8 @@
-#!/usr/bin/env python3
-# vim: ai ts=4 sts=4 et sw=4 nu
-
-from __future__ import annotations
-
 import pathlib
 import shutil
 import tempfile
 from collections.abc import Iterable
+from typing import TypeVar
 
 from zimscraperlib import logger
 from zimscraperlib.constants import DEFAULT_USER_AGENT
@@ -17,6 +13,8 @@ from zimscraperlib.constants import (
     MAXIMUM_LONG_DESCRIPTION_METADATA_LENGTH as MAX_LONG_DESC_LENGTH,
 )
 from zimscraperlib.download import stream_file
+
+T = TypeVar("T")
 
 
 def handle_user_provided_file(
@@ -138,6 +136,6 @@ def compute_tags(
     }
 
 
-def unique_values(items: list) -> list:
+def unique_values(items: list[T]) -> list[T]:
     """Return unique values in input list while preserving list order"""
     return list(dict.fromkeys(items))

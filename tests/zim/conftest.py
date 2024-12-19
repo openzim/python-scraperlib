@@ -1,5 +1,6 @@
-#!/usr/bin/env python3
-# vim: ai ts=4 sts=4 et sw=4 nu
+import pathlib
+from collections.abc import Generator
+from typing import Any
 
 import pytest
 
@@ -7,7 +8,7 @@ import zimscraperlib.zim.metadata
 
 
 @pytest.fixture(scope="function")
-def html_str():
+def html_str() -> str:
     """sample HTML content with various links"""
     return """<html>
 <body>
@@ -27,7 +28,7 @@ def html_str():
 
 
 @pytest.fixture(scope="function")
-def html_str_cn():
+def html_str_cn() -> str:
     """sample HTML content with chinese characters"""
     return """<html>
 <body>
@@ -47,7 +48,7 @@ def html_str_cn():
 
 
 @pytest.fixture(scope="function")
-def html_file(tmp_path, html_str):
+def html_file(tmp_path: pathlib.Path, html_str: str) -> pathlib.Path:
     fpath = tmp_path / "test.html"
     with open(fpath, "w") as fh:
         fh.write(html_str)
@@ -55,7 +56,7 @@ def html_file(tmp_path, html_str):
 
 
 @pytest.fixture(scope="function")
-def build_data(tmp_path, png_image):
+def build_data(tmp_path: pathlib.Path, png_image: pathlib.Path) -> dict[str, Any]:
     fpath = tmp_path / "test.zim"
     redirects_file = tmp_path / "redirects.tsv"
     with open(redirects_file, "w") as fh:
@@ -106,7 +107,7 @@ def counters():
 
 
 @pytest.fixture
-def ignore_metadata_conventions():
+def ignore_metadata_conventions() -> Generator[None]:
     zimscraperlib.zim.metadata.APPLY_RECOMMENDATIONS = False
-    yield
+    yield None
     zimscraperlib.zim.metadata.APPLY_RECOMMENDATIONS = True

@@ -1,6 +1,4 @@
-#!/usr/bin/env python3
-# vim: ai ts=4 sts=4 et sw=4 nu
-
+import pathlib
 import shutil
 import subprocess
 import zipfile
@@ -11,7 +9,9 @@ from zimscraperlib.download import save_large_file
 from zimscraperlib.fix_ogvjs_dist import run
 
 
-def prepare_ogvjs_folder(tmp_path, videojs_url, ogvjs_url, videojs_ogvjs_url):
+def prepare_ogvjs_folder(
+    tmp_path: pathlib.Path, videojs_url: str, ogvjs_url: str, videojs_ogvjs_url: str
+):
     videojs_zip = tmp_path / "video-js-7.6.4.zip"
     if not videojs_zip.exists():
         save_large_file(videojs_url, videojs_zip)
@@ -65,7 +65,9 @@ def test_ogvjs_from_code_missing_params():
 
 @pytest.mark.slow
 @pytest.mark.installed
-def test_ogvjs_installed_script_ok(tmp_path, videojs_url, ogvjs_url, videojs_ogvjs_url):
+def test_ogvjs_installed_script_ok(
+    tmp_path: pathlib.Path, videojs_url: str, ogvjs_url: str, videojs_ogvjs_url: str
+):
     # run from installed script to check real conditions
 
     prepare_ogvjs_folder(tmp_path, videojs_url, ogvjs_url, videojs_ogvjs_url)
@@ -83,7 +85,9 @@ def test_ogvjs_installed_script_ok(tmp_path, videojs_url, ogvjs_url, videojs_ogv
 
 
 @pytest.mark.slow
-def test_ogvjs_from_code_ok(tmp_path, videojs_url, ogvjs_url, videojs_ogvjs_url):
+def test_ogvjs_from_code_ok(
+    tmp_path: pathlib.Path, videojs_url: str, ogvjs_url: str, videojs_ogvjs_url: str
+):
     # run from code to mesure coverage easily
 
     prepare_ogvjs_folder(tmp_path, videojs_url, ogvjs_url, videojs_ogvjs_url)

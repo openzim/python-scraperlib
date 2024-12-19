@@ -156,11 +156,11 @@ from .utils import ContentForTests
 {% endfor %}
     ]
 )
-def {{ rule['name'] }}_case(request):
+def {{ rule['name'] }}_case(request: pytest.FixtureRequest):
     yield request.param
 
 
-def test_fuzzyrules_{{ rule['name'] }}({{ rule['name'] }}_case):
+def test_fuzzyrules_{{ rule['name'] }}({{ rule['name'] }}_case: ContentForTests):
     assert (
         ArticleUrlRewriter.apply_additional_rules({{ rule['name'] }}_case.input_str)
         == {{ rule['name'] }}_case.expected_str

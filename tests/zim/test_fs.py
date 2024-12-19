@@ -1,10 +1,8 @@
-#!/usr/bin/env python
-# vim: ai ts=4 sts=4 et sw=4 nu
-
 import pathlib
 import shutil
 import subprocess
 import sys
+from typing import Any
 
 import pytest
 
@@ -21,7 +19,7 @@ from zimscraperlib.zim.filesystem import (
 )
 
 
-def test_fileitem(tmp_path, png_image):
+def test_fileitem(tmp_path: pathlib.Path, png_image: pathlib.Path):
     fpath = tmp_path / png_image.name
     shutil.copyfile(png_image, fpath)
 
@@ -32,7 +30,9 @@ def test_fileitem(tmp_path, png_image):
     assert article.get_mimetype() == "image/png"
 
 
-def test_redirects_file(tmp_path, png_image, build_data):
+def test_redirects_file(
+    tmp_path: pathlib.Path, png_image: pathlib.Path, build_data: dict[str, Any]
+):
     build_data["build_dir"].mkdir()
     shutil.copyfile(png_image, build_data["build_dir"] / png_image.name)
     build_data["redirects_file"] = tmp_path / "toto.tsv"
@@ -55,14 +55,14 @@ def test_redirects_file(tmp_path, png_image, build_data):
     )
 
 
-def test_make_zim_file_fail_nobuildir(build_data):
+def test_make_zim_file_fail_nobuildir(build_data: dict[str, Any]):
     # ensure we fail on missing build dir
     with pytest.raises(IOError):
         make_zim_file(**build_data)
     assert not build_data["fpath"].exists()
 
 
-def test_make_zim_file_fail_noillustration(build_data):
+def test_make_zim_file_fail_noillustration(build_data: dict[str, Any]):
     # ensure we fail on missing illustration
     build_data["build_dir"].mkdir()
     with pytest.raises(IOError):
@@ -75,7 +75,11 @@ def test_make_zim_file_fail_noillustration(build_data):
     [(True, True), (True, False), (False, True), (False, False)],
 )
 def test_make_zim_file_working(
-    build_data, png_image, with_redirects, with_redirects_file
+    build_data: dict[str, Any],
+    png_image: pathlib.Path,
+    *,
+    with_redirects: bool,
+    with_redirects_file: bool,
 ):
     build_data["build_dir"].mkdir()
 
@@ -116,7 +120,9 @@ def test_make_zim_file_working(
     assert "welcome" in list(reader.get_suggestions("coucou"))
 
 
-def test_make_zim_file_exceptions_while_building(tmp_path, png_image, build_data):
+def test_make_zim_file_exceptions_while_building(
+    tmp_path: pathlib.Path, png_image: pathlib.Path, build_data: dict[str, Any]
+):
     build_data["build_dir"].mkdir()
     shutil.copyfile(png_image, build_data["build_dir"] / png_image.name)
     build_data["redirects_file"] = tmp_path / "toto.tsv"
@@ -126,7 +132,9 @@ def test_make_zim_file_exceptions_while_building(tmp_path, png_image, build_data
     assert build_data["fpath"].exists()
 
 
-def test_make_zim_file_no_file_on_error(tmp_path, png_image, build_data):
+def test_make_zim_file_no_file_on_error(
+    tmp_path: pathlib.Path, png_image: pathlib.Path, build_data: dict[str, Any]
+):
     build_data["build_dir"].mkdir()
     shutil.copyfile(png_image, build_data["build_dir"] / png_image.name)
     build_data["redirects_file"] = tmp_path / "toto.tsv"
@@ -172,36 +180,36 @@ def valid_zim_filename():
     return "myfile.zim"
 
 
-def test_validate_folder_writable_not_exists(tmp_path):
+def test_validate_folder_writable_not_exists(tmp_path: pathlib.Path):
 
     with pytest.raises(MissingFolderError):
         validate_folder_writable(tmp_path / "foo")
 
 
-def test_validate_folder_writable_not_dir(tmp_path):
+def test_validate_folder_writable_not_dir(tmp_path: pathlib.Path):
 
     with pytest.raises(NotADirectoryFolderError):
         (tmp_path / "foo.txt").touch()
         validate_folder_writable(tmp_path / "foo.txt")
 
 
-def test_validate_folder_writable_not_writable(tmp_path):
+def test_validate_folder_writable_not_writable(tmp_path: pathlib.Path):
 
     with pytest.raises(NotWritableFolderError):
         (tmp_path / "foo").mkdir(mode=111)
         validate_folder_writable(tmp_path / "foo")
 
 
-def test_validate_folder_writable_ok(tmp_path):
+def test_validate_folder_writable_ok(tmp_path: pathlib.Path):
     validate_folder_writable(tmp_path)
 
 
-def test_validate_file_creatable_ok(tmp_path, valid_zim_filename):
+def test_validate_file_creatable_ok(tmp_path: pathlib.Path, valid_zim_filename: str):
 
     validate_file_creatable(tmp_path, valid_zim_filename)
 
 
-def test_validate_file_creatable_bad_name(tmp_path):
+def test_validate_file_creatable_bad_name(tmp_path: pathlib.Path):
 
     with pytest.raises(IncorrectFilenameError):
         validate_file_creatable(tmp_path, "t\0t\0.zim")

@@ -1,6 +1,3 @@
-#!/usr/bin/env python
-# vim: ai ts=4 sts=4 et sw=4 nu
-
 """ zimwriterfs-like tools to convert a build folder into a ZIM
 
     make_zim_file behaves in a similar way to zimwriterfs and expects the same options:
@@ -25,8 +22,6 @@
 
     Meaning you should exit right after an exception in your code (during zim creation)
     Use workaround_nocancel=False to disable the workaround. """
-
-from __future__ import annotations
 
 import datetime
 import pathlib
@@ -131,7 +126,7 @@ def make_zim_file(
     date: datetime.date | None = None,
     language: str = "eng",
     creator: str = "-",
-    publisher="-",
+    publisher: str = "-",
     tags: Sequence[str] | None = None,
     source: str | None = None,
     flavour: str | None = None,

@@ -1,9 +1,4 @@
-#!/usr/bin/env python
-# vim: ai ts=4 sts=4 et sw=4 nu
-
-
 """ libzim Item helpers """
-from __future__ import annotations
 
 import io
 import pathlib
@@ -34,7 +29,7 @@ class Item(libzim.writer.Item):
         path: str | None = None,
         title: str | None = None,
         mimetype: str | None = None,
-        hints: dict | None = None,
+        hints: dict[libzim.writer.Hint, int] | None = None,
         **kwargs: Any,
     ):
         super().__init__()
@@ -62,7 +57,7 @@ class Item(libzim.writer.Item):
     def get_mimetype(self) -> str:
         return getattr(self, "mimetype", "")
 
-    def get_hints(self) -> dict:
+    def get_hints(self) -> dict[libzim.writer.Hint, int]:
         return getattr(self, "hints", {})
 
 
@@ -97,7 +92,7 @@ class StaticItem(Item):
         path: str | None = None,
         title: str | None = None,
         mimetype: str | None = None,
-        hints: dict | None = None,
+        hints: dict[libzim.writer.Hint, int] | None = None,
         index_data: IndexData | None = None,
         *,
         auto_index: bool = True,
@@ -192,7 +187,9 @@ class StaticItem(Item):
             mimetype = get_file_mimetype(filepath)
             if mimetype == "application/pdf":
                 index_data = get_pdf_index_data(filepath=filepath)
-                self.get_indexdata = lambda: index_data
+                self.get_indexdata = (  # pyright:ignore [reportIncompatibleVariableOverride]
+                    lambda: index_data
+                )
             else:
                 return
 
@@ -211,7 +208,12 @@ class URLItem(StaticItem):
     Use `tmp_dir` to point location of that temp file."""
 
     @staticmethod
-    def download_for_size(url, on_disk, tmp_dir=None):
+    def download_for_size(
+        url: urllib.parse.ParseResult,
+        tmp_dir: pathlib.Path | None = None,
+        *,
+        on_disk: bool,
+    ):
         """Download URL to a temp file and return its tempfile and size"""
         fpath = stream = None
         if on_disk:
@@ -232,7 +234,7 @@ class URLItem(StaticItem):
         path: str | None = None,
         title: str | None = None,
         mimetype: str | None = None,
-        hints: dict | None = None,
+        hints: dict[libzim.writer.Hint, int] | None = None,
         use_disk: bool | None = None,
         **kwargs: Any,
     ):
@@ -242,7 +244,7 @@ class URLItem(StaticItem):
             path=path, title=title, mimetype=mimetype, hints=hints, **kwargs
         )
         self.url = urllib.parse.urlparse(url)
-        use_disk = getattr(self, "use_disk", False)
+        use_disk_set: bool = getattr(self, "use_disk", False)
 
         # fetch headers to retrieve size and type
         try:
@@ -271,7 +273,7 @@ class URLItem(StaticItem):
         except Exception:
             # we couldn't retrieve size so we have to download resource to
             target, self.size = self.download_for_size(
-                self.url, on_disk=use_disk, tmp_dir=getattr(self, "tmp_dir", None)
+                self.url, on_disk=use_disk_set, tmp_dir=getattr(self, "tmp_dir", None)
             )
             # downloaded to disk and using a file path from now on
             if use_disk:
@@ -286,7 +288,7 @@ class URLItem(StaticItem):
     def get_title(self) -> str:
         return getattr(self, "title", "")
 
-    def get_mimetype(self) -> str | None:
+    def get_mimetype(self) -> str:
         return getattr(
             self,
             "mimetype",

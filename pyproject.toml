@@ -56,7 +56,7 @@ lint = [
   "ruff==0.8.2",
 ]
 check = [
-  "pyright==1.1.390",
+  "pyright==1.1.391",
   "pytest==8.3.4",
 ]
 test = [
@@ -286,11 +286,8 @@ include = ["contrib", "src", "tests", "tasks.py"]
 exclude = [".env/**", ".venv/**"]
 extraPaths = ["src"]
 pythonVersion = "3.12"
-typeCheckingMode="basic"
+typeCheckingMode="strict"
 disableBytesTypePromotions = true
-
-[tool.pyright.overrides]
-strict = true  # Enable strict mode for specific files
 
 [[tool.pyright.overrides.files]]
 files = [
