@@ -29,12 +29,19 @@ def copy_media_and_reencode(
     dest: str,
     ffmpeg_args: list[str],
     test_files: dict[str, pathlib.Path],
+    *,
+    use_temp_dir_for_temp_file: bool = False,
     **kwargs: Any,
 ):
     src_path = temp_dir.joinpath(src)
     dest_path = temp_dir.joinpath(dest)
     shutil.copy2(test_files[src_path.suffix[1:]], src_path)
-    return reencode(src_path, dest_path, ffmpeg_args, **kwargs)
+    if use_temp_dir_for_temp_file:
+        return reencode(
+            src_path, dest_path, ffmpeg_args, existing_tmp_path=temp_dir, **kwargs
+        )
+    else:
+        return reencode(src_path, dest_path, ffmpeg_args, **kwargs)
 
 
 def test_config_defaults():
@@ -390,6 +397,23 @@ def test_reencode_media(
         converted_details = get_media_info(temp_dir.joinpath(dest))
         assert expected["duration"] == converted_details["duration"]
         assert expected["codecs"] == converted_details["codecs"]
+
+
+@pytest.mark.slow
+def test_reencode_media_with_tmp_dir(test_files: dict[str, pathlib.Path]):
+    with tempfile.TemporaryDirectory() as t:
+        temp_dir = pathlib.Path(t)
+        copy_media_and_reencode(
+            temp_dir,
+            "video.mp4",
+            "video.webm",
+            VideoWebmLow().to_ffmpeg_args(),
+            test_files,
+            use_temp_dir_for_temp_file=True,
+        )
+        converted_details = get_media_info(temp_dir.joinpath("video.webm"))
+        assert converted_details["duration"] == 2
+        assert converted_details["codecs"] == ["vp9", "vorbis"]
 
 
 @pytest.mark.slow
