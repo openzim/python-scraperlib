@@ -4,9 +4,11 @@ from unittest.mock import Mock
 import pytest
 
 from zimscraperlib.i18n import (
+    Language,
     NotFoundError,
     find_language_names,
-    get_language_details,
+    get_language,
+    get_language_or_none,
 )
 
 
@@ -168,11 +170,11 @@ from zimscraperlib.i18n import (
 )
 def test_lang_details(query: str, expected: dict[str, Any] | None):
     if expected is None:
-        assert get_language_details(query, failsafe=True) == expected
+        assert get_language_or_none(query) == expected
         with pytest.raises(NotFoundError):
-            get_language_details(query)
+            get_language(query)
     else:
-        result = get_language_details(query)
+        result = get_language_or_none(query)
         assert result
         assert result.iso_639_1 == expected.get("iso-639-1")
         assert result.iso_639_2b == expected.get("iso-639-2b")
@@ -236,7 +238,7 @@ def test_find_language_names(
     ],
 )
 def test_lang_details_equality(query_left: str, query_right: str):
-    assert get_language_details(query_left) == get_language_details(query_right)
+    assert Language(query_left) == Language(query_right)
 
 
 @pytest.mark.parametrize(
@@ -252,9 +254,9 @@ def test_lang_details_equality(query_left: str, query_right: str):
     ],
 )
 def test_lang_details_inequality_with_patch(patch_attribute: str):
-    lang_and_details_patched = get_language_details("arq")
+    lang_and_details_patched = get_language("arq")
     setattr(lang_and_details_patched, patch_attribute, "foo")
-    assert get_language_details("arq") != lang_and_details_patched
+    assert get_language("arq") != lang_and_details_patched
 
 
 @pytest.mark.parametrize(
@@ -265,8 +267,8 @@ def test_lang_details_inequality_with_patch(patch_attribute: str):
     ],
 )
 def test_lang_details_inequality(query_left: str, query_right: str):
-    assert get_language_details(query_left) != get_language_details(query_right)
+    assert get_language(query_left) != get_language(query_right)
 
 
 def test_lang_details_inequality_objects():
-    assert get_language_details("ara") != "ara"
+    assert get_language("ara") != "ara"
