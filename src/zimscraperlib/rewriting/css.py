@@ -14,14 +14,14 @@ from collections.abc import Iterable
 from functools import partial
 from typing import Any
 
-from tinycss2 import (
+from tinycss2 import (  # pyright: ignore[reportMissingTypeStubs]
     ast,
     parse_declaration_list,  # pyright: ignore[reportUnknownVariableType]
     parse_stylesheet,  # pyright: ignore[reportUnknownVariableType]
     parse_stylesheet_bytes,  # pyright: ignore[reportUnknownVariableType]
     serialize,  # pyright: ignore[reportUnknownVariableType]
 )
-from tinycss2.serializer import (
+from tinycss2.serializer import (  # pyright: ignore[reportMissingTypeStubs]
     serialize_url,  # pyright: ignore[reportUnknownVariableType]
 )
 
@@ -186,14 +186,26 @@ class CssRewriter:
             )
         elif isinstance(node, ast.FunctionBlock):
             if node.lower_name == "url":  # pyright: ignore[reportUnknownMemberType]
-                url_node: ast.Node = node.arguments[0]
+                url_node: ast.Node = (  # pyright: ignore[reportUnknownVariableType]
+                    node.arguments[0]  # pyright: ignore[reportUnknownMemberType]
+                )
                 new_url = self.url_rewriter(
-                    getattr(url_node, "value", ""),
+                    getattr(
+                        url_node,  # pyright: ignore[reportUnknownArgumentType]
+                        "value",
+                        "",
+                    ),
                     self.base_href,
                 ).rewriten_url
-                setattr(url_node, "value", str(new_url))  # noqa: B010
                 setattr(  # noqa: B010
-                    url_node, "representation", f'"{serialize_url(str(new_url))}"'
+                    url_node,  # pyright: ignore[reportUnknownArgumentType]
+                    "value",
+                    str(new_url),
+                )
+                setattr(  # noqa: B010
+                    url_node,  # pyright: ignore[reportUnknownArgumentType]
+                    "representation",
+                    f'"{serialize_url(str(new_url))}"',
                 )
 
             else:
@@ -201,12 +213,21 @@ class CssRewriter:
                     getattr(node, "arguments", []),
                 )
         elif isinstance(node, ast.AtRule):
-            self._process_list(node.prelude)
-            self._process_list(node.content)
+            self._process_list(
+                node.prelude  # pyright: ignore[reportUnknownMemberType, reportUnknownArgumentType]
+            )
+            self._process_list(
+                node.content  # pyright: ignore[reportUnknownMemberType, reportUnknownArgumentType]
+            )
         elif isinstance(node, ast.Declaration):
-            self._process_list(node.value)
+            self._process_list(
+                node.value  # pyright: ignore[reportUnknownMemberType, reportUnknownArgumentType]
+            )
         elif isinstance(node, ast.URLToken):
-            new_url = self.url_rewriter(node.value, self.base_href).rewriten_url
+            new_url = self.url_rewriter(
+                node.value,  # pyright: ignore[reportUnknownMemberType, reportUnknownArgumentType]
+                self.base_href,
+            ).rewriten_url
             node.value = new_url
             node.representation = f"url({serialize_url(new_url)})"
 

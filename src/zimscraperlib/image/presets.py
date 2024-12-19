@@ -1,8 +1,3 @@
-#!/usr/bin/env python3
-# vim: ai ts=4 sts=4 et sw=4 nu
-
-from __future__ import annotations
-
 from typing import ClassVar
 
 """ presets for ImageOptimizer in zimscraperlib.image.optimization module """

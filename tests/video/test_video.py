@@ -1,11 +1,9 @@
-#!/usr/bin/env python3
-# vim: ai ts=4 sts=4 et sw=4 nu
-
 import inspect
 import pathlib
 import shutil
 import subprocess
 import tempfile
+from typing import Any
 
 import pytest
 
@@ -25,7 +23,14 @@ ALL_PRESETS = [
 ]
 
 
-def copy_media_and_reencode(temp_dir, src, dest, ffmpeg_args, test_files, **kwargs):
+def copy_media_and_reencode(
+    temp_dir: pathlib.Path,
+    src: str,
+    dest: str,
+    ffmpeg_args: list[str],
+    test_files: dict[str, pathlib.Path],
+    **kwargs: Any,
+):
     src_path = temp_dir.joinpath(src)
     dest_path = temp_dir.joinpath(dest)
     shutil.copy2(test_files[src_path.suffix[1:]], src_path)
@@ -51,6 +56,14 @@ def test_config_update():
     config.update_from(**updates)
     for k, v in updates.items():
         assert getattr(config, k) == v
+
+
+@pytest.mark.parametrize(
+    "config, expected_scale",
+    [(VoiceMp3Low(), None), (VideoWebmLow(), "480:trunc(ow/a/2)*2")],
+)
+def test_config_video_scale(config: Config, expected_scale: str | None):
+    assert config.video_scale == expected_scale
 
 
 def test_config_build_from():
@@ -84,9 +97,9 @@ def test_config_build_from():
         assert idx != -1
         assert args[idx + 1] == str(getattr(config, attr))
     video_scale = config.video_scale
-    qmin, qmax = (
-        config.quantizer_scale_range  # pyright: ignore[reportGeneralTypeIssues]
-    )
+    scale_range = config.quantizer_scale_range
+    assert scale_range
+    qmin, qmax = scale_range
     assert args.index("-qmin") != -1 and args[args.index("-qmin") + 1] == str(qmin)
     assert args.index("-qmax") != -1 and args[args.index("-qmax") + 1] == str(qmax)
     assert (
@@ -128,7 +141,12 @@ def test_config_build_from():
         ),
     ],
 )
-def test_get_media_info(media_format, media, expected, test_files):
+def test_get_media_info(
+    media_format: str,
+    media: str,
+    expected: dict[str, Any],
+    test_files: dict[str, pathlib.Path],
+):
     with tempfile.TemporaryDirectory() as t:
         src = pathlib.Path(t).joinpath(media)
         shutil.copy2(test_files[media_format], src)
@@ -359,7 +377,13 @@ def test_preset_voice_mp3_low():
         ),
     ],
 )
-def test_reencode_media(src, dest, ffmpeg_args, expected, test_files):
+def test_reencode_media(
+    src: str,
+    dest: str,
+    ffmpeg_args: list[str],
+    expected: dict[str, Any],
+    test_files: dict[str, pathlib.Path],
+):
     with tempfile.TemporaryDirectory() as t:
         temp_dir = pathlib.Path(t)
         copy_media_and_reencode(temp_dir, src, dest, ffmpeg_args, test_files)
@@ -386,7 +410,14 @@ def test_reencode_media(src, dest, ffmpeg_args, expected, test_files):
         ),
     ],
 )
-def test_reencode_delete_src(src, dest, ffmpeg_args, delete_src, test_files):
+def test_reencode_delete_src(
+    src: str,
+    dest: str,
+    ffmpeg_args: list[str],
+    test_files: dict[str, pathlib.Path],
+    *,
+    delete_src: bool,
+):
     with tempfile.TemporaryDirectory() as t:
         temp_dir = pathlib.Path(t)
         src_path = temp_dir.joinpath(src)
@@ -402,42 +433,32 @@ def test_reencode_delete_src(src, dest, ffmpeg_args, delete_src, test_files):
 
 @pytest.mark.slow
 @pytest.mark.parametrize(
-    "src,dest,ffmpeg_args,return_output",
+    "src,dest,ffmpeg_args",
     [
         (
             "video.mp4",
             "video.webm",
             VideoWebmLow().to_ffmpeg_args(),
-            True,
-        ),
-        (
-            "video.mp4",
-            "audio.mp3",
-            VoiceMp3Low().to_ffmpeg_args(),
-            False,
         ),
     ],
 )
 def test_reencode_return_ffmpeg_output(
-    src, dest, ffmpeg_args, return_output, test_files
+    src: str,
+    dest: str,
+    ffmpeg_args: list[str],
+    test_files: dict[str, pathlib.Path],
 ):
     with tempfile.TemporaryDirectory() as t:
         temp_dir = pathlib.Path(t)
-        ret = copy_media_and_reencode(
+        success, process = copy_media_and_reencode(
             temp_dir,
             src,
             dest,
             ffmpeg_args,
             test_files,
-            with_process=return_output,
         )
-        if return_output:
-            assert not isinstance(ret, bool)
-            success, process = ret
-            assert success
-            assert len(process.stdout) > 0
-        else:
-            assert ret
+        assert success
+        assert len(process.stdout) > 0
 
 
 @pytest.mark.slow
@@ -458,7 +479,14 @@ def test_reencode_return_ffmpeg_output(
         ),
     ],
 )
-def test_reencode_failsafe(src, dest, ffmpeg_args, failsafe, test_files):
+def test_reencode_failsafe(
+    src: str,
+    dest: str,
+    ffmpeg_args: list[str],
+    test_files: dict[str, pathlib.Path],
+    *,
+    failsafe: bool,
+):
     with tempfile.TemporaryDirectory() as t:
         temp_dir = pathlib.Path(t)
         if not failsafe:
@@ -476,5 +504,5 @@ def test_reencode_failsafe(src, dest, ffmpeg_args, failsafe, test_files):
         else:
             success = copy_media_and_reencode(
                 temp_dir, src, dest, ffmpeg_args, test_files, failsafe=failsafe
-            )
+            )[0]
             assert not success

@@ -1,6 +1,3 @@
-#!/usr/bin/env python
-# vim: ai ts=4 sts=4 et sw=4 nu
-
 """ ZIM Creator helper
 
     Convenient subclass of libzim.writer.Creator with:
@@ -17,13 +14,12 @@
     - content stored on object
     - can be used to store a filepath and content read from it (not stored) """
 
-from __future__ import annotations
-
 import io
 import logging
 import pathlib
 import re
 import weakref
+from types import TracebackType
 
 import libzim.writer  # pyright: ignore[reportMissingModuleSource]
 import PIL.Image
@@ -43,9 +39,10 @@ from zimscraperlib.zim.items import StaticItem
 from zimscraperlib.zim.metadata import (
     DEFAULT_DEV_ZIM_METADATA,
     MANDATORY_ZIM_METADATA_KEYS,
+    AnyMetadata,
     IllustrationBasedMetadata,
     LanguageMetadata,
-    Metadata,
+    MetadataBase,
     StandardMetadataList,
 )
 
@@ -113,7 +110,7 @@ class Creator(libzim.writer.Creator):
         ignore_duplicates: bool | None = False,
     ):
         super().__init__(filename=filename)
-        self._metadata: dict[str, Metadata] = {}
+        self._metadata: dict[str, AnyMetadata] = {}
         self.__indexing_configured = False
         self.can_finish = True
 
@@ -122,8 +119,6 @@ class Creator(libzim.writer.Creator):
         if compression:
             self.config_compression(
                 getattr(libzim.writer.Compression, compression.lower())
-                if isinstance(compression, str)
-                else compression
             )
 
         self.workaround_nocancel = workaround_nocancel
@@ -145,10 +140,6 @@ class Creator(libzim.writer.Creator):
     def _log_metadata(self):
         """Log in DEBUG level all metadata key and value"""
         for name, metadata in sorted(self._metadata.items()):
-
-            if metadata is None:
-                logger.debug(f"Metadata: {name} is None")
-                continue
 
             if not hasattr(metadata, "value"):
                 logger.debug(
@@ -237,7 +228,9 @@ class Creator(libzim.writer.Creator):
 
         return self
 
-    def add_metadata(self, value: Metadata):
+    def add_metadata(  # pyright: ignore[reportIncompatibleMethodOverride]
+        self, value: AnyMetadata
+    ):
         """Really add the metadata to the ZIM, after ZIM creation has started.
 
         You would probably prefer to use config_metadata methods to check metadata
@@ -249,8 +242,8 @@ class Creator(libzim.writer.Creator):
 
     def config_metadata(
         self,
-        std_metadata: StandardMetadataList | list[Metadata],
-        extra_metadata: list[Metadata] | None = None,
+        std_metadata: StandardMetadataList | list[AnyMetadata],
+        extra_metadata: list[AnyMetadata] | None = None,
         *,
         fail_on_missing_prefix_in_extras: bool = True,
     ):
@@ -296,7 +289,7 @@ class Creator(libzim.writer.Creator):
 
     def config_dev_metadata(
         self,
-        extra_metadata: Metadata | list[Metadata] | None = None,
+        extra_metadata: AnyMetadata | list[AnyMetadata] | None = None,
     ):
         """Calls minimal set of mandatory metadata with default values for dev
 
@@ -306,7 +299,7 @@ class Creator(libzim.writer.Creator):
             std_metadata=DEFAULT_DEV_ZIM_METADATA,
             extra_metadata=(
                 [extra_metadata]
-                if isinstance(extra_metadata, Metadata)
+                if isinstance(extra_metadata, MetadataBase)
                 else extra_metadata
             ),
             fail_on_missing_prefix_in_extras=False,
@@ -359,7 +352,9 @@ class Creator(libzim.writer.Creator):
 
         if is_front is None:
             is_front = mimetype in FRONT_ARTICLE_MIMETYPES
-        hints = {libzim.writer.Hint.FRONT_ARTICLE: is_front}
+        hints: dict[libzim.writer.Hint, int] = {
+            libzim.writer.Hint.FRONT_ARTICLE: is_front
+        }
 
         if should_compress is not None:
             hints[libzim.writer.Hint.COMPRESS] = should_compress
@@ -383,7 +378,7 @@ class Creator(libzim.writer.Creator):
         )
         return path
 
-    def add_item(
+    def add_item(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         item: libzim.writer.Item,
         duplicate_ok: bool | None = None,
@@ -429,7 +424,7 @@ class Creator(libzim.writer.Creator):
 
         title is optional. when set, the redirect itself
         can be found on suggestions (indexed) if considered FRONT_ARTICLE"""
-        hints = {}
+        hints: dict[libzim.writer.Hint, int] = {}
         if is_front is not None:
             hints[libzim.writer.Hint.FRONT_ARTICLE] = bool(is_front)
 
@@ -446,7 +441,12 @@ class Creator(libzim.writer.Creator):
                 self.can_finish = False  # pragma: no cover
             raise
 
-    def finish(self, exc_type=None, exc_val=None, exc_tb=None):  # noqa: ARG002
+    def finish(
+        self,
+        _: type[BaseException] | None = None,
+        __: BaseException | None = None,
+        ___: TracebackType | None = None,
+    ):
         """Triggers finalization of ZIM creation and create final ZIM file."""
         if not getattr(self, "can_finish", False):
             return
@@ -459,5 +459,10 @@ class Creator(libzim.writer.Creator):
         self.start()
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None = None,
+        exc_val: BaseException | None = None,
+        exc_tb: TracebackType | None = None,
+    ):
         self.finish(exc_type, exc_val, exc_tb)

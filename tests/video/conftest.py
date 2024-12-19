@@ -1,13 +1,10 @@
-#!/usr/bin/env python3
-# vim: ai ts=4 sts=4 et sw=4 nu
-
 import pathlib
 
 import pytest
 
 
 @pytest.fixture(scope="function")
-def test_files():
+def test_files() -> dict[str, pathlib.Path]:
     files_dir = pathlib.Path(__file__).parent.parent.joinpath("files")
     return {
         "mp4": files_dir.joinpath("video.mp4"),

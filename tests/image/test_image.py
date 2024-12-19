@@ -1,19 +1,17 @@
-#!/usr/bin/env python3
-# vim: ai ts=4 sts=4 et sw=4 nu
-
-from __future__ import annotations
-
 import inspect
 import io
 import os
 import pathlib
 import re
 import shutil
+from typing import Any
 
-import piexif
+import piexif  # pyright: ignore[reportMissingTypeStubs]
 import pytest
 from PIL import Image
-from resizeimage.imageexceptions import ImageSizeError
+from resizeimage.imageexceptions import (  # pyright: ignore[reportMissingTypeStubs]
+    ImageSizeError,
+)
 
 from zimscraperlib.image import presets
 from zimscraperlib.image.conversion import (
@@ -55,13 +53,13 @@ from zimscraperlib.image.utils import save_image
 ALL_PRESETS = [(n, p) for n, p in inspect.getmembers(presets) if inspect.isclass(p)]
 
 
-def get_image_size(fpath):
+def get_image_size(fpath: pathlib.Path | io.BytesIO) -> tuple[int, int]:
     return Image.open(fpath).size
 
 
 def get_src_dst(
     tmp_path: pathlib.Path,
-    fmt,
+    fmt: str,
     png_image: pathlib.Path | None = None,
     jpg_image: pathlib.Path | None = None,
     gif_image: pathlib.Path | None = None,
@@ -96,7 +94,7 @@ def get_src_dst(
         ("000000", False),
     ],
 )
-def test_is_hex_color(value, valid):
+def test_is_hex_color(value: str, *, valid: bool):
     if valid:
         assert is_hex_color(value)
     else:
@@ -108,19 +106,19 @@ def test_colors_noimage():
         get_colors(pathlib.Path("nofile.here"))
 
 
-def test_colors_png_nopalette(png_image):
+def test_colors_png_nopalette(png_image: pathlib.Path):
     assert get_colors(png_image, use_palette=False) == ("#04659B", "#E7F6FF")
 
 
-def test_colors_jpg_nopalette(jpg_image):
+def test_colors_jpg_nopalette(jpg_image: pathlib.Path):
     assert get_colors(jpg_image, use_palette=False) == ("#C1BBB3", "#F4F3F1")
 
 
-def test_colors_png_palette(png_image):
+def test_colors_png_palette(png_image: pathlib.Path):
     assert get_colors(png_image, use_palette=True) == ("#9E0404", "#E7F6FF")
 
 
-def test_colors_jpg_palette(jpg_image):
+def test_colors_jpg_palette(jpg_image: pathlib.Path):
     assert get_colors(jpg_image, use_palette=True) == ("#221C1B", "#F4F3F1")
 
 
@@ -131,7 +129,14 @@ def test_colors_jpg_palette(jpg_image):
         ("jpg", "JPEG", {"quality": 50}),
     ],
 )
-def test_save_image(png_image, jpg_image, tmp_path, src_fmt, dst_fmt, params):
+def test_save_image(
+    png_image: pathlib.Path,
+    jpg_image: pathlib.Path,
+    tmp_path: pathlib.Path,
+    src_fmt: str,
+    dst_fmt: str,
+    params: dict[str, Any] | None,
+):
     src, dst = get_src_dst(tmp_path, src_fmt, png_image=png_image, jpg_image=jpg_image)
     img = Image.open(src)
     save_image(img, dst, fmt=dst_fmt, **(params or {}))
@@ -142,7 +147,9 @@ def test_save_image(png_image, jpg_image, tmp_path, src_fmt, dst_fmt, params):
     "fmt",
     ["png", "jpg"],
 )
-def test_resize_thumbnail(png_image, jpg_image, tmp_path, fmt):
+def test_resize_thumbnail(
+    png_image: pathlib.Path, jpg_image: pathlib.Path, tmp_path: pathlib.Path, fmt: str
+):
     src, dst = get_src_dst(tmp_path, fmt, png_image=png_image, jpg_image=jpg_image)
 
     width, height = 100, 50
@@ -156,8 +163,10 @@ def test_resize_thumbnail(png_image, jpg_image, tmp_path, fmt):
     "fmt",
     ["png", "jpg"],
 )
-def test_resize_bytestream(png_image, jpg_image, tmp_path, fmt):
-    src, dst = get_src_dst(tmp_path, fmt, png_image=png_image, jpg_image=jpg_image)
+def test_resize_bytestream(
+    png_image: pathlib.Path, jpg_image: pathlib.Path, tmp_path: pathlib.Path, fmt: str
+):
+    src, _ = get_src_dst(tmp_path, fmt, png_image=png_image, jpg_image=jpg_image)
 
     # copy image content into a bytes stream
     img = io.BytesIO()
@@ -176,7 +185,9 @@ def test_resize_bytestream(png_image, jpg_image, tmp_path, fmt):
     "fmt",
     ["png", "jpg"],
 )
-def test_resize_width(png_image, jpg_image, tmp_path, fmt):
+def test_resize_width(
+    png_image: pathlib.Path, jpg_image: pathlib.Path, tmp_path: pathlib.Path, fmt: str
+):
     src, dst = get_src_dst(tmp_path, fmt, png_image=png_image, jpg_image=jpg_image)
 
     width, height = 100, 50
@@ -189,7 +200,9 @@ def test_resize_width(png_image, jpg_image, tmp_path, fmt):
     "fmt",
     ["png", "jpg"],
 )
-def test_resize_height(png_image, jpg_image, tmp_path, fmt):
+def test_resize_height(
+    png_image: pathlib.Path, jpg_image: pathlib.Path, tmp_path: pathlib.Path, fmt: str
+):
     src, dst = get_src_dst(tmp_path, fmt, png_image=png_image, jpg_image=jpg_image)
 
     width, height = 100, 50
@@ -202,7 +215,9 @@ def test_resize_height(png_image, jpg_image, tmp_path, fmt):
     "fmt",
     ["png", "jpg"],
 )
-def test_resize_crop(png_image, jpg_image, tmp_path, fmt):
+def test_resize_crop(
+    png_image: pathlib.Path, jpg_image: pathlib.Path, tmp_path: pathlib.Path, fmt: str
+):
     src, dst = get_src_dst(tmp_path, fmt, png_image=png_image, jpg_image=jpg_image)
 
     width, height = 5, 50
@@ -216,7 +231,9 @@ def test_resize_crop(png_image, jpg_image, tmp_path, fmt):
     "fmt",
     ["png", "jpg"],
 )
-def test_resize_cover(png_image, jpg_image, tmp_path, fmt):
+def test_resize_cover(
+    png_image: pathlib.Path, jpg_image: pathlib.Path, tmp_path: pathlib.Path, fmt: str
+):
     src, dst = get_src_dst(tmp_path, fmt, png_image=png_image, jpg_image=jpg_image)
 
     width, height = 5, 50
@@ -230,7 +247,9 @@ def test_resize_cover(png_image, jpg_image, tmp_path, fmt):
     "fmt",
     ["png", "jpg"],
 )
-def test_resize_contain(png_image, jpg_image, tmp_path, fmt):
+def test_resize_contain(
+    png_image: pathlib.Path, jpg_image: pathlib.Path, tmp_path: pathlib.Path, fmt: str
+):
     src, dst = get_src_dst(tmp_path, fmt, png_image=png_image, jpg_image=jpg_image)
 
     width, height = 5, 50
@@ -244,7 +263,9 @@ def test_resize_contain(png_image, jpg_image, tmp_path, fmt):
     "fmt",
     ["png", "jpg"],
 )
-def test_resize_upscale(png_image, jpg_image, tmp_path, fmt):
+def test_resize_upscale(
+    png_image: pathlib.Path, jpg_image: pathlib.Path, tmp_path: pathlib.Path, fmt: str
+):
     src, dst = get_src_dst(tmp_path, fmt, png_image=png_image, jpg_image=jpg_image)
 
     width, height = 500, 1000
@@ -258,7 +279,9 @@ def test_resize_upscale(png_image, jpg_image, tmp_path, fmt):
     "fmt",
     ["png", "jpg"],
 )
-def test_resize_small_image_error(png_image, jpg_image, tmp_path, fmt):
+def test_resize_small_image_error(
+    png_image: pathlib.Path, jpg_image: pathlib.Path, tmp_path: pathlib.Path, fmt: str
+):
     src, dst = get_src_dst(tmp_path, fmt, png_image=png_image, jpg_image=jpg_image)
 
     width, height = 500, 1000
@@ -278,7 +301,12 @@ def test_resize_small_image_error(png_image, jpg_image, tmp_path, fmt):
     [("png", "JPEG", "RGB"), ("png", "BMP", None), ("jpg", "JPEG", "CMYK")],
 )
 def test_change_image_format(
-    png_image, jpg_image, tmp_path, src_fmt, dst_fmt, colorspace
+    png_image: pathlib.Path,
+    jpg_image: pathlib.Path,
+    tmp_path: pathlib.Path,
+    src_fmt: str,
+    dst_fmt: str,
+    colorspace: str | None,
 ):
     src, _ = get_src_dst(tmp_path, src_fmt, png_image=png_image, jpg_image=jpg_image)
     dst = tmp_path / f"out.{dst_fmt.lower()}"
@@ -289,7 +317,7 @@ def test_change_image_format(
     assert dst_image.format == dst_fmt
 
 
-def test_change_image_format_defaults(png_image, tmp_path):
+def test_change_image_format_defaults(png_image: pathlib.Path, tmp_path: pathlib.Path):
     # PNG to JPEG (loosing alpha)
     dst = tmp_path.joinpath(f"{png_image.stem}.jpg")
     convert_image(png_image, dst)
@@ -377,7 +405,13 @@ def test_convert_svg_path_src_io_dst(svg_image: pathlib.Path):
     "fmt,exp_size",
     [("png", 128), ("jpg", 128)],
 )
-def test_create_favicon(png_image2, jpg_image, tmp_path, fmt, exp_size):
+def test_create_favicon(
+    png_image2: pathlib.Path,
+    jpg_image: pathlib.Path,
+    tmp_path: pathlib.Path,
+    fmt: str,
+    exp_size: int,
+):
     src, dst = get_src_dst(tmp_path, fmt, png_image=png_image2, jpg_image=jpg_image)
     dst = dst.parent.joinpath("favicon.ico")
     create_favicon(src, dst)
@@ -391,7 +425,12 @@ def test_create_favicon(png_image2, jpg_image, tmp_path, fmt, exp_size):
     "fmt",
     ["png", "jpg"],
 )
-def test_create_favicon_square(square_png_image, square_jpg_image, tmp_path, fmt):
+def test_create_favicon_square(
+    square_png_image: pathlib.Path,
+    square_jpg_image: pathlib.Path,
+    tmp_path: pathlib.Path,
+    fmt: str,
+):
     src, dst = get_src_dst(
         tmp_path, fmt, png_image=square_png_image, jpg_image=square_jpg_image
     )
@@ -407,7 +446,12 @@ def test_create_favicon_square(square_png_image, square_jpg_image, tmp_path, fmt
     "fmt",
     ["png", "jpg"],
 )
-def test_wrong_extension(square_png_image, square_jpg_image, tmp_path, fmt):
+def test_wrong_extension(
+    square_png_image: pathlib.Path,
+    square_jpg_image: pathlib.Path,
+    tmp_path: pathlib.Path,
+    fmt: str,
+):
     src, dst = get_src_dst(
         tmp_path, fmt, png_image=square_png_image, jpg_image=square_jpg_image
     )
@@ -420,7 +464,12 @@ def test_wrong_extension(square_png_image, square_jpg_image, tmp_path, fmt):
     ["png", "jpg", "gif", "webp"],
 )
 def test_optimize_image_default(
-    png_image2, jpg_image, gif_image, webp_image, tmp_path, fmt
+    png_image2: pathlib.Path,
+    jpg_image: pathlib.Path,
+    gif_image: pathlib.Path,
+    webp_image: pathlib.Path,
+    tmp_path: pathlib.Path,
+    fmt: str,
 ):
     src, dst = get_src_dst(
         tmp_path,
@@ -434,7 +483,7 @@ def test_optimize_image_default(
     assert os.path.getsize(dst) < os.path.getsize(src)
 
 
-def test_optimize_image_del_src(png_image, tmp_path):
+def test_optimize_image_del_src(png_image: pathlib.Path, tmp_path: pathlib.Path):
     shutil.copy(png_image, tmp_path)
     src = tmp_path / png_image.name
     dst = tmp_path / "out.png"
@@ -444,7 +493,7 @@ def test_optimize_image_del_src(png_image, tmp_path):
     assert not src.exists()
 
 
-def test_optimize_image_allow_convert(png_image, tmp_path):
+def test_optimize_image_allow_convert(png_image: pathlib.Path, tmp_path: pathlib.Path):
     shutil.copy(png_image, tmp_path)
     src = tmp_path / png_image.name
     dst = tmp_path / "out.webp"
@@ -453,7 +502,7 @@ def test_optimize_image_allow_convert(png_image, tmp_path):
     assert dst.exists() and os.path.getsize(dst) > 0
 
 
-def test_optimize_image_bad_dst(png_image, tmp_path):
+def test_optimize_image_bad_dst(png_image: pathlib.Path, tmp_path: pathlib.Path):
     shutil.copy(png_image, tmp_path)
     src = tmp_path / png_image.name
     dst = tmp_path / "out.raster"
@@ -535,15 +584,25 @@ def test_optimize_image_bad_dst(png_image, tmp_path):
     ],
 )
 def test_preset(
-    preset,
-    expected_version,
-    options,
-    fmt,
-    png_image,
-    jpg_image,
-    gif_image,
-    webp_image,
-    tmp_path,
+    preset: (
+        WebpLow
+        | WebpMedium
+        | WebpHigh
+        | JpegLow
+        | JpegMedium
+        | JpegHigh
+        | PngLow
+        | PngMedium
+        | PngHigh
+    ),
+    expected_version: int,
+    options: dict[str, str | bool | int | None],
+    fmt: str,
+    png_image: pathlib.Path,
+    jpg_image: pathlib.Path,
+    gif_image: pathlib.Path,
+    webp_image: pathlib.Path,
+    tmp_path: pathlib.Path,
 ):
     assert preset.VERSION == expected_version
     assert preset.options == options
@@ -555,7 +614,12 @@ def test_preset(
         gif_image=gif_image,
         webp_image=webp_image,
     )
-    optimize_image(src, dst, delete_src=False, **preset.options)
+    optimize_image(
+        src,
+        dst,
+        delete_src=False,
+        **preset.options,  # pyright: ignore[reportArgumentType]
+    )
     assert os.path.getsize(dst) < os.path.getsize(src)
 
     if fmt in ["jpg", "webp", "png"]:
@@ -582,19 +646,23 @@ def test_preset_has_mime_and_ext():
         assert preset().mimetype.startswith("image/")
 
 
-def test_remove_png_transparency(png_image, tmp_path):
+def test_remove_png_transparency(png_image: pathlib.Path, tmp_path: pathlib.Path):
     dst = tmp_path / "out.png"
     optimize_png(src=png_image, dst=dst, remove_transparency=True)
     assert os.path.getsize(dst) == 2352
 
 
-def test_jpeg_exif_preserve(jpg_exif_image, tmp_path):
+def test_jpeg_exif_preserve(jpg_exif_image: pathlib.Path, tmp_path: pathlib.Path):
     # in filesystem
     dst = tmp_path / "out.jpg"
     optimize_jpeg(src=jpg_exif_image, dst=dst)
-    assert piexif.load(str(dst))["Exif"] and (
-        piexif.load(str(dst))["Exif"]
-        == piexif.load(str(jpg_exif_image.resolve()))["Exif"]
+    assert piexif.load(str(dst))[  # pyright: ignore[reportUnknownMemberType]
+        "Exif"
+    ] and (
+        piexif.load(str(dst))["Exif"]  # pyright: ignore[reportUnknownMemberType]
+        == piexif.load(  # pyright: ignore[reportUnknownMemberType]
+            str(jpg_exif_image.resolve())
+        )["Exif"]
     )
 
     # in memory
@@ -602,19 +670,24 @@ def test_jpeg_exif_preserve(jpg_exif_image, tmp_path):
         src_bytes = fl.read()
     optimized_img = optimize_jpeg(src=io.BytesIO(src_bytes))
     assert isinstance(optimized_img, io.BytesIO)
-    assert piexif.load(optimized_img.getvalue())["Exif"] and (
-        piexif.load(src_bytes)["Exif"] == piexif.load(optimized_img.getvalue())["Exif"]
+    assert piexif.load(  # pyright: ignore[reportUnknownMemberType]
+        optimized_img.getvalue()
+    )["Exif"] and (
+        piexif.load(src_bytes)["Exif"]  # pyright: ignore[reportUnknownMemberType]
+        == piexif.load(  # pyright: ignore[reportUnknownMemberType]
+            optimized_img.getvalue()
+        )["Exif"]
     )
 
 
-def test_dynamic_jpeg_quality(jpg_image, tmp_path):
+def test_dynamic_jpeg_quality(jpg_image: pathlib.Path, tmp_path: pathlib.Path):
     # check optimization without fast mode
     dst = tmp_path / "out.jpg"
     optimize_jpeg(src=jpg_image, dst=dst, fast_mode=False)
     assert os.path.getsize(dst) < os.path.getsize(jpg_image)
 
 
-def test_ensure_matches(webp_image):
+def test_ensure_matches(webp_image: pathlib.Path):
     with pytest.raises(ValueError, match=re.escape("is not of format")):
         ensure_matches(webp_image, "PNG")
 
@@ -624,7 +697,14 @@ def test_ensure_matches(webp_image):
     [("png", "PNG"), ("jpg", "JPEG"), ("gif", "GIF"), ("webp", "WEBP"), ("svg", "SVG")],
 )
 def test_format_for_real_images_suffix(
-    png_image, jpg_image, gif_image, webp_image, svg_image, tmp_path, fmt, expected
+    png_image: pathlib.Path,
+    jpg_image: pathlib.Path,
+    gif_image: pathlib.Path,
+    webp_image: pathlib.Path,
+    svg_image: pathlib.Path,
+    tmp_path: pathlib.Path,
+    fmt: str,
+    expected: str,
 ):
     src, _ = get_src_dst(
         tmp_path,
@@ -643,7 +723,14 @@ def test_format_for_real_images_suffix(
     [("png", "PNG"), ("jpg", "JPEG"), ("gif", "GIF"), ("webp", "WEBP"), ("svg", "SVG")],
 )
 def test_format_for_real_images_content_path(
-    png_image, jpg_image, gif_image, webp_image, svg_image, tmp_path, fmt, expected
+    png_image: pathlib.Path,
+    jpg_image: pathlib.Path,
+    gif_image: pathlib.Path,
+    webp_image: pathlib.Path,
+    svg_image: pathlib.Path,
+    tmp_path: pathlib.Path,
+    fmt: str,
+    expected: str,
 ):
     src, _ = get_src_dst(
         tmp_path,
@@ -662,7 +749,14 @@ def test_format_for_real_images_content_path(
     [("png", "PNG"), ("jpg", "JPEG"), ("gif", "GIF"), ("webp", "WEBP"), ("svg", "SVG")],
 )
 def test_format_for_real_images_content_bytes(
-    png_image, jpg_image, gif_image, webp_image, svg_image, tmp_path, fmt, expected
+    png_image: pathlib.Path,
+    jpg_image: pathlib.Path,
+    gif_image: pathlib.Path,
+    webp_image: pathlib.Path,
+    svg_image: pathlib.Path,
+    tmp_path: pathlib.Path,
+    fmt: str,
+    expected: str,
 ):
     src, _ = get_src_dst(
         tmp_path,
@@ -687,7 +781,7 @@ def test_format_for_real_images_content_bytes(
         ("image.raster", None),
     ],
 )
-def test_format_for_from_suffix(src, expected):
+def test_format_for_from_suffix(src: str, expected: str):
     assert format_for(src=pathlib.Path(src), from_suffix=True) == expected
 
 
@@ -699,14 +793,19 @@ def test_format_for_cannot_use_suffix_with_byte_array():
         assert format_for(src=io.BytesIO(), from_suffix=True)
 
 
-def test_wrong_extension_optim(tmp_path, png_image):
+def test_wrong_extension_optim(tmp_path: pathlib.Path, png_image: pathlib.Path):
     dst = tmp_path.joinpath("image.jpg")
     shutil.copy(png_image, dst)
     with pytest.raises(ValueError, match=re.escape("is not of format JPEG")):
         optimize_jpeg(dst, dst)
 
 
-def test_is_valid_image(png_image, png_image2, jpg_image, font):
+def test_is_valid_image(
+    png_image: pathlib.Path,
+    png_image2: pathlib.Path,
+    jpg_image: pathlib.Path,
+    font: pathlib.Path,
+):
     assert is_valid_image(png_image, "PNG")
     assert not is_valid_image(png_image, "JPEG")
     assert is_valid_image(jpg_image, "JPEG")
@@ -720,13 +819,15 @@ def test_is_valid_image(png_image, png_image2, jpg_image, font):
         assert is_valid_image(io.BytesIO(fh.read()), "PNG", (48, 48))
 
 
-def test_optimize_gif_no_optimize_level(gif_image, tmp_path):
+def test_optimize_gif_no_optimize_level(
+    gif_image: pathlib.Path, tmp_path: pathlib.Path
+):
     optimize_gif(gif_image, tmp_path / "out.gif", delete_src=False, optimize_level=None)
 
 
-def test_optimize_gif_no_no_extensions(gif_image, tmp_path):
+def test_optimize_gif_no_no_extensions(gif_image: pathlib.Path, tmp_path: pathlib.Path):
     optimize_gif(gif_image, tmp_path / "out.gif", delete_src=False, no_extensions=None)
 
 
-def test_optimize_gif_no_interlace(gif_image, tmp_path):
+def test_optimize_gif_no_interlace(gif_image: pathlib.Path, tmp_path: pathlib.Path):
     optimize_gif(gif_image, tmp_path / "out.gif", delete_src=False, interlace=None)

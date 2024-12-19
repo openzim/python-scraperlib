@@ -1,7 +1,5 @@
 """ URI handling module"""
 
-from __future__ import annotations
-
 import urllib.parse
 
 from zimscraperlib.misc import first

@@ -1,4 +1,5 @@
 import urllib.parse
+from typing import Any
 
 import pytest
 
@@ -50,5 +51,5 @@ from zimscraperlib.uri import rebuild_uri
         ),
     ],
 )
-def test_rebuild_uri(uri, changes, expected):
+def test_rebuild_uri(uri: str, changes: dict[str, Any], expected: str):
     assert rebuild_uri(urllib.parse.urlparse(uri), **changes).geturl() == expected

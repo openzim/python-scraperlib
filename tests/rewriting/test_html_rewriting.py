@@ -476,7 +476,7 @@ def test_head_insert():
 )
 def test_js_module_detected_script(js_src: str, expected_js_module_path: str):
 
-    js_modules = []
+    js_modules: list[ZimPath] = []
 
     def custom_notify(zim_path: ZimPath):
         js_modules.append(zim_path)
@@ -511,7 +511,7 @@ def test_js_module_detected_script(js_src: str, expected_js_module_path: str):
 )
 def test_js_module_detected_module_preload(js_src: str, expected_js_module_path: str):
 
-    js_modules = []
+    js_modules: list[ZimPath] = []
 
     def custom_notify(zim_path: ZimPath):
         js_modules.append(zim_path)
@@ -539,7 +539,7 @@ def test_js_module_detected_module_preload(js_src: str, expected_js_module_path:
 )
 def test_no_js_module_detected(script_src: str):
 
-    js_modules = []
+    js_modules: list[ZimPath] = []
 
     def custom_notify(zim_path: ZimPath):
         js_modules.append(zim_path)
@@ -558,7 +558,7 @@ def test_no_js_module_detected(script_src: str):
 
 def test_js_module_base_href_src():
 
-    js_modules = []
+    js_modules: list[ZimPath] = []
 
     def custom_notify(zim_path: ZimPath):
         js_modules.append(zim_path)
@@ -582,7 +582,7 @@ def test_js_module_base_href_src():
 
 def test_js_module_base_href_inline():
 
-    js_modules = []
+    js_modules: list[ZimPath] = []
 
     def custom_notify(zim_path: ZimPath):
         js_modules.append(zim_path)
@@ -732,7 +732,7 @@ def test_extract_base_href(html_content: str, expected_base_href: str):
         ),
     ]
 )
-def rewrite_base_href_content(request):
+def rewrite_base_href_content(request: pytest.FixtureRequest):
     yield request.param
 
 
@@ -1070,7 +1070,7 @@ def test_bad_html_drop_rules_argument_name():
     with pytest.raises(TypeError, match="Parameter .* is unsupported in function"):
 
         @bad_rules.drop_attribute()
-        def bad_signature(foo: str) -> bool:
+        def bad_signature(foo: str) -> bool:  # pyright: ignore[reportUnusedFunction]
             return foo == "bar"
 
 
