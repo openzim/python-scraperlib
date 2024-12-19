@@ -40,6 +40,7 @@ def reencode(
     *,
     delete_src: bool = False,
     failsafe: bool = True,
+    existing_tmp_path: pathlib.Path | None = None,
 ) -> tuple[bool, subprocess.CompletedProcess[str]]:
     """Runs ffmpeg with given ffmpeg_args
 
@@ -52,7 +53,8 @@ def reencode(
         failsafe - Run in failsafe mode
     """
 
-    with tempfile.TemporaryDirectory() as tmp_dir:
+    with existing_tmp_path or tempfile.TemporaryDirectory() as tmp_dir:
+
         tmp_path = pathlib.Path(tmp_dir).joinpath(f"video.tmp{dst_path.suffix}")
         args = _build_ffmpeg_args(
             src_path=src_path,
