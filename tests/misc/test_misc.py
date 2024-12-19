@@ -12,5 +12,5 @@ from zimscraperlib.misc import first
         ([None, None, "a", None, "b"], "a"),
     ],
 )
-def test_first(args, expected):
+def test_first(args: list[str | None], expected: str):
     assert first(*args) == expected

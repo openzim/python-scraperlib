@@ -1,13 +1,8 @@
-#!/usr/bin/env python3
-# vim: ai ts=4 sts=4 et sw=4 nu
-
-from __future__ import annotations
-
 import io
 import pathlib
 
 from PIL.Image import open as pilopen
-from resizeimage import resizeimage
+from resizeimage import resizeimage  # pyright: ignore[reportMissingTypeStubs]
 
 from zimscraperlib.constants import ALPHA_NOT_SUPPORTED
 from zimscraperlib.image.utils import save_image
@@ -36,21 +31,27 @@ def resize_image(
         if allow_upscaling:
             height_width_ratio = float(image.size[1]) / float(image.size[0])
             if image.size[0] < width:
-                image = image.resize(  # noqa: PLW2901
+                image = image.resize(  # noqa: PLW2901 # pyright: ignore[reportUnknownMemberType]
                     (width, int(width * height_width_ratio))
                 )
             if height and image.size[1] < height:
-                image = image.resize(  # noqa: PLW2901
+                image = image.resize(  # noqa: PLW2901 # pyright: ignore[reportUnknownMemberType]
                     (int(height / height_width_ratio), height)
                 )
 
         # resize using the requested method
         if method == "width":
-            resized = resizeimage.resize(method, image, width)
+            resized = resizeimage.resize(  # pyright: ignore[reportUnknownMemberType]
+                method, image, width
+            )
         elif method == "height":
-            resized = resizeimage.resize(method, image, height)
+            resized = resizeimage.resize(  # pyright: ignore[reportUnknownMemberType]
+                method, image, height
+            )
         else:
-            resized = resizeimage.resize(method, image, [width, height])
+            resized = resizeimage.resize(  # pyright: ignore[reportUnknownMemberType]
+                method, image, [width, height]
+            )
 
     # remove alpha layer if not supported and added during resizing
     if resized.mode == "RGBA" and image_format in ALPHA_NOT_SUPPORTED:

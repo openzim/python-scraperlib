@@ -1,13 +1,10 @@
-#!/usr/bin/env python
-# vim: ai ts=4 sts=4 et sw=4 nu
-
 import io
 
 import pytest
 
-from zimscraperlib.zim._libkiwix import getline, parseMimetypeCounter
+from zimscraperlib.zim._libkiwix import CounterMap, getline, parseMimetypeCounter
 
-empty = {}
+empty: CounterMap = {}
 
 
 def test_geline_nodelim():
@@ -77,6 +74,6 @@ def test_getline():
         ("text/html=50;;foo", {"text/html": 50}),
     ],
 )
-def test_counter_parsing(counter_str, counter_map):
+def test_counter_parsing(counter_str: str, counter_map: CounterMap):
     # https://github.com/kiwix/libkiwix/blob/master/test/counterParsing.cpp
     assert parseMimetypeCounter(counter_str) == counter_map

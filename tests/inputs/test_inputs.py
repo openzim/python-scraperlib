@@ -1,9 +1,5 @@
-#!/usr/bin/env python3
-# vim: ai ts=4 sts=4 et sw=4 nu
-
-from __future__ import annotations
-
 import pathlib
+from typing import Any
 
 import pytest
 
@@ -36,7 +32,7 @@ def test_missing_local():
         handle_user_provided_file(source="/some/incorrect/path.txt")
 
 
-def test_local_copy(png_image):
+def test_local_copy(png_image: pathlib.Path):
     fpath = handle_user_provided_file(source=str(png_image))
     assert fpath is not None
     assert fpath.exists()
@@ -44,21 +40,21 @@ def test_local_copy(png_image):
     assert fpath.stat().st_size == png_image.stat().st_size
 
 
-def test_local_nocopy(png_image):
+def test_local_nocopy(png_image: pathlib.Path):
     fpath = handle_user_provided_file(source=str(png_image), nocopy=True)
     assert fpath is not None
     assert fpath.exists()
     assert str(fpath) == str(png_image)
 
 
-def test_remote(valid_http_url):
+def test_remote(valid_http_url: str):
     fpath = handle_user_provided_file(source=valid_http_url)
     assert fpath is not None
     assert fpath.exists()
     assert fpath.suffix == pathlib.Path(valid_http_url).suffix
 
 
-def test_local_dest(tmp_path, png_image):
+def test_local_dest(tmp_path: pathlib.Path, png_image: pathlib.Path):
     dest = tmp_path / png_image.name
     fpath = handle_user_provided_file(source=str(png_image), dest=dest)
     assert fpath is not None
@@ -66,7 +62,7 @@ def test_local_dest(tmp_path, png_image):
     assert fpath == dest
 
 
-def test_remote_dest(tmp_path, valid_http_url):
+def test_remote_dest(tmp_path: pathlib.Path, valid_http_url: str):
     dest = tmp_path / pathlib.Path(valid_http_url).name
     fpath = handle_user_provided_file(source=valid_http_url, dest=dest)
     assert fpath is not None
@@ -74,22 +70,24 @@ def test_remote_dest(tmp_path, valid_http_url):
     assert fpath == dest
 
 
-def test_local_indir(tmp_path, png_image):
+def test_local_indir(tmp_path: pathlib.Path, png_image: pathlib.Path):
     fpath = handle_user_provided_file(source=str(png_image), in_dir=tmp_path)
     assert fpath is not None
     assert fpath.exists()
     assert fpath.parent == tmp_path
 
 
-def test_remote_indir(tmp_path, valid_http_url):
+def test_remote_indir(tmp_path: pathlib.Path, valid_http_url: str):
     fpath = handle_user_provided_file(source=valid_http_url, in_dir=tmp_path)
     assert fpath is not None
     assert fpath.exists()
     assert fpath.parent == tmp_path
 
 
-def test_remote_default_user_agent(valid_http_url, monkeypatch):
-    def mock_stream_file(**kwargs):
+def test_remote_default_user_agent(
+    valid_http_url: str, monkeypatch: pytest.MonkeyPatch
+):
+    def mock_stream_file(**kwargs: Any):
         headers = kwargs.get("headers")
         assert headers is not None
         user_agent = headers.get("User-Agent")
@@ -98,7 +96,7 @@ def test_remote_default_user_agent(valid_http_url, monkeypatch):
         assert user_agent.endswith(f"({CONTACT})")
 
     monkeypatch.setattr(
-        zimscraperlib.inputs,  # pyright: ignore[reportAttributeAccessIssue]
+        zimscraperlib.inputs,  # pyright: ignore[reportAttributeAccessIssue, reportUnknownMemberType, reportUnknownArgumentType]
         "stream_file",
         mock_stream_file,
         raising=True,
@@ -106,8 +104,10 @@ def test_remote_default_user_agent(valid_http_url, monkeypatch):
     handle_user_provided_file(source=valid_http_url)
 
 
-def test_remote_provided_user_agent(valid_http_url, valid_user_agent, monkeypatch):
-    def mock_stream_file(**kwargs):
+def test_remote_provided_user_agent(
+    valid_http_url: str, valid_user_agent: str, monkeypatch: pytest.MonkeyPatch
+):
+    def mock_stream_file(**kwargs: Any):
         headers = kwargs.get("headers")
         assert headers is not None
         user_agent = headers.get("User-Agent")
@@ -115,7 +115,7 @@ def test_remote_provided_user_agent(valid_http_url, valid_user_agent, monkeypatc
         assert user_agent == valid_user_agent
 
     monkeypatch.setattr(
-        zimscraperlib.inputs,  # pyright: ignore[reportAttributeAccessIssue]
+        zimscraperlib.inputs,  # pyright: ignore[reportAttributeAccessIssue, reportUnknownMemberType, reportUnknownArgumentType]
         "stream_file",
         mock_stream_file,
         raising=True,
@@ -123,12 +123,14 @@ def test_remote_provided_user_agent(valid_http_url, valid_user_agent, monkeypatc
     handle_user_provided_file(source=valid_http_url, user_agent=valid_user_agent)
 
 
-def test_remote_provided_none_user_agent(valid_http_url, monkeypatch):
-    def mock_stream_file(**kwargs):
+def test_remote_provided_none_user_agent(
+    valid_http_url: str, monkeypatch: pytest.MonkeyPatch
+):
+    def mock_stream_file(**kwargs: Any):
         assert kwargs.get("headers") is None
 
     monkeypatch.setattr(
-        zimscraperlib.inputs,  # pyright: ignore[reportAttributeAccessIssue]
+        zimscraperlib.inputs,  # pyright: ignore[reportAttributeAccessIssue, reportUnknownMemberType, reportUnknownArgumentType]
         "stream_file",
         mock_stream_file,
         raising=True,
