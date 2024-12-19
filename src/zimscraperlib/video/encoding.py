@@ -1,8 +1,3 @@
-#!/usr/bin/env python3
-# vim: ai ts=4 sts=4 et sw=4 nu
-
-from __future__ import annotations
-
 import pathlib
 import shutil
 import subprocess
@@ -44,9 +39,8 @@ def reencode(
     threads: int | None = 1,
     *,
     delete_src: bool = False,
-    with_process: bool = False,
     failsafe: bool = True,
-) -> tuple[bool, subprocess.CompletedProcess[str]] | bool:
+) -> tuple[bool, subprocess.CompletedProcess[str]]:
     """Runs ffmpeg with given ffmpeg_args
 
     Arguments -
@@ -55,7 +49,6 @@ def reencode(
         ffmpeg_args - A list of ffmpeg arguments
         threads - Number of encoding threads used by ffmpeg
         delete_src - Delete source file after convertion
-        with_process - Optionally return the output from ffmpeg (stderr and stdout)
         failsafe - Run in failsafe mode
     """
 
@@ -84,6 +77,4 @@ def reencode(
             if delete_src:
                 src_path.unlink()
             shutil.copy(tmp_path, dst_path)
-        if with_process:
-            return ffmpeg.returncode == 0, ffmpeg
-        return ffmpeg.returncode == 0
+        return ffmpeg.returncode == 0, ffmpeg

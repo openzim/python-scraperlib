@@ -1,5 +1,4 @@
-#!/usr/bin/env python
-# vim: ai ts=4 sts=4 et sw=4 nu
+import pathlib
 
 import pytest
 
@@ -11,7 +10,9 @@ from zimscraperlib.html import (
 )
 
 
-def test_find_title(tmp_path, html_page, html_page_without_title):
+def test_find_title(
+    tmp_path: pathlib.Path, html_page: str, html_page_without_title: str
+):
     # find title in example HTML
     assert (
         find_title_in(html_page, "text/html")
@@ -38,7 +39,7 @@ def test_find_title(tmp_path, html_page, html_page_without_title):
     assert find_title_in_file(tmp_path / "nope", "text/html") == ""
 
 
-def test_find_language(tmp_path, html_page):
+def test_find_language(tmp_path: pathlib.Path, html_page: str):
     # find language in example HTML
     assert find_language_in(html_page, "text/html") == "en-US"
     # make sure non-HTML returns no language
@@ -91,5 +92,5 @@ def test_find_language(tmp_path, html_page):
         ),
     ],
 )
-def test_find_language_order(html_string, expected_language):
+def test_find_language_order(html_string: str, expected_language: str):
     assert find_language_in(html_string, "text/html") == expected_language
