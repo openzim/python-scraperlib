@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # vim: ai ts=4 sts=4 et sw=4 nu
 
+import pathlib
+
 import magic
 
 from zimscraperlib.filesystem import (
@@ -51,3 +53,5 @@ def test_delete_callback(tmp_path):
     delete_callback(fpath)
 
     assert not fpath.exists()
+
+    delete_callback(pathlib.Path("/foo.txt"))
