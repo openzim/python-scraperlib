@@ -1,21 +1,24 @@
-#!/usr/bin/env python
-# vim: ai ts=4 sts=4 et sw=4 nu
+import pathlib
+from tempfile import TemporaryDirectory
+from typing import Any
 
 import magic
+import pytest
 
 from zimscraperlib.filesystem import (
     delete_callback,
     get_content_mimetype,
     get_file_mimetype,
+    path_from,
 )
 
 
-def test_file_mimetype(png_image, jpg_image):
+def test_file_mimetype(png_image: pathlib.Path, jpg_image: pathlib.Path):
     assert get_file_mimetype(png_image) == "image/png"
     assert get_file_mimetype(jpg_image) == "image/jpeg"
 
 
-def test_content_mimetype(png_image, jpg_image):
+def test_content_mimetype(png_image: pathlib.Path, jpg_image: pathlib.Path):
     with open(png_image, "rb") as fh:
         assert get_content_mimetype(fh.read(64)) == "image/png"
 
@@ -23,19 +26,21 @@ def test_content_mimetype(png_image, jpg_image):
         assert get_content_mimetype(fh.read(64)) == "image/jpeg"
 
 
-def test_content_mimetype_fallback(monkeypatch, undecodable_byte_stream):
+def test_content_mimetype_fallback(
+    monkeypatch: pytest.MonkeyPatch, undecodable_byte_stream: bytes
+):
     # use raw function first to test actual code
     assert get_content_mimetype(undecodable_byte_stream) == "application/octet-stream"
 
     # mock then so we keep coverage on systems where magic works
-    def raising_magic(*args, **kwargs):  # noqa: ARG001
+    def raising_magic(*args: Any, **kwargs: Any):  # noqa: ARG001
         raise UnicodeDecodeError("nocodec", b"", 0, 1, "noreason")
 
     monkeypatch.setattr(magic, "from_buffer", raising_magic)
     assert get_content_mimetype(undecodable_byte_stream) == "application/octet-stream"
 
 
-def test_mime_overrides(svg_image):
+def test_mime_overrides(svg_image: pathlib.Path):
     mime_map = [(svg_image, "image/svg+xml")]
     for fpath, expected_mime in mime_map:
         assert get_file_mimetype(fpath) == expected_mime
@@ -43,7 +48,7 @@ def test_mime_overrides(svg_image):
             assert get_content_mimetype(fh.read(64)) == expected_mime
 
 
-def test_delete_callback(tmp_path):
+def test_delete_callback(tmp_path: pathlib.Path):
     fpath = tmp_path.joinpath("my-file")
     with open(fpath, "w") as fh:
         fh.write("content")
@@ -51,3 +56,42 @@ def test_delete_callback(tmp_path):
     delete_callback(fpath)
 
     assert not fpath.exists()
+
+
+def test_path_from_tmp_dir():
+    tempdir = TemporaryDirectory()
+    with path_from(tempdir) as tmp_dir:
+        file = tmp_dir / "file.txt"
+        file.touch()
+        assert file.exists()
+        assert pathlib.Path(tempdir.name).exists()
+
+    assert not pathlib.Path(tempdir.name).exists()
+
+
+def test_path_from_path():
+    tempdir = TemporaryDirectory()
+    tempdir_path = pathlib.Path(tempdir.name)
+    with path_from(tempdir_path) as tmp_dir:
+        file = tmp_dir / "file.txt"
+        file.touch()
+        assert file.exists()
+        assert pathlib.Path(tempdir.name).exists()
+
+    assert pathlib.Path(tempdir.name).exists()
+    tempdir.cleanup()
+    assert not pathlib.Path(tempdir.name).exists()
+
+
+def test_path_from_str():
+    tempdir = TemporaryDirectory()
+    tempdir_path = pathlib.Path(tempdir.name)
+    with path_from(str(tempdir_path)) as tmp_dir:
+        file = tmp_dir / "file.txt"
+        file.touch()
+        assert file.exists()
+        assert pathlib.Path(tempdir.name).exists()
+
+    assert pathlib.Path(tempdir.name).exists()
+    tempdir.cleanup()
+    assert not pathlib.Path(tempdir.name).exists()

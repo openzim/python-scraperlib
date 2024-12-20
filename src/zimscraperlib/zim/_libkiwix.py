@@ -12,8 +12,6 @@ https://github.com/kiwix/libkiwix/blob/master/src/tools/archiveTools.cpp
 https://github.com/kiwix/libkiwix/blob/master/src/tools/otherTools.cpp
 """
 
-from __future__ import annotations
-
 import io
 from typing import NamedTuple
 
@@ -79,7 +77,7 @@ def parseMimetypeCounter(
     counterData: str,
 ) -> CounterMap:
     """Mapping of MIME types with count for each from ZIM Counter metadata string"""
-    counters = {}
+    counters: CounterMap = {}
     ss = io.StringIO(counterData)
     eof = False
     while not eof:
@@ -94,7 +92,7 @@ def parseMimetypeCounter(
 def convertTags(tags_str: str) -> list[str]:
     """List of tags expanded with libkiwix's additional hints for pic/vid/det/index"""
     tags = tags_str.split(";")
-    tagsList = []
+    tagsList: list[str] = []
     picSeen = vidSeen = detSeen = indexSeen = False
     for tag in tags:
         # not upstream

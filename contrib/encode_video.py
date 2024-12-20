@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import sys
 from pathlib import Path
 
@@ -20,7 +18,6 @@ def encode_video(src_path: Path, dst_path: Path, preset: str):
         src_path=src_path,
         dst_path=dst_path,
         ffmpeg_args=preset_cls().to_ffmpeg_args(),
-        with_process=True,
     )  # pyright: ignore[reportGeneralTypeIssues] (returned type is variable, depending on `with_process` value)
     if not success:
         logger.error(f"conversion failed:\n{process.stdout}")

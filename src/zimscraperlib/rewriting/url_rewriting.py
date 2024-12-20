@@ -38,8 +38,6 @@ url-decode and find corresponding ZIM entry. Only '/' separators are considered 
 and not url-encoded.
 """
 
-from __future__ import annotations
-
 import re
 from dataclasses import dataclass
 from pathlib import PurePosixPath

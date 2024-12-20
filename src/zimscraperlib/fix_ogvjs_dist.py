@@ -1,10 +1,4 @@
-#!/usr/bin/env python3
-# vim: ai ts=4 sts=4 et sw=4 nu
-
-
 """ quick script to fix videojs-ogvjs so that it triggers on webm mimetype """
-
-from __future__ import annotations
 
 import logging
 import pathlib

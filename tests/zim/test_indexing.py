@@ -9,7 +9,7 @@ from zimscraperlib.zim.indexing import IndexData, get_pdf_index_data
 from zimscraperlib.zim.items import StaticItem
 
 
-def test_indexing_html_with_libzim(tmp_path, html_file):
+def test_indexing_html_with_libzim(tmp_path: pathlib.Path, html_file: pathlib.Path):
     """Two HTML entries automatically indexed by libzim"""
     fpath = tmp_path / "test.zim"
     main_path = "welcome"
@@ -31,7 +31,7 @@ def test_indexing_html_with_libzim(tmp_path, html_file):
     assert reader.get_search_results_count("foo") == 1
 
 
-def test_indexing_disabled(tmp_path, html_file):
+def test_indexing_disabled(tmp_path: pathlib.Path, html_file: pathlib.Path):
     """One HTML entry is disabled from libzim indexing"""
     fpath = tmp_path / "test.zim"
     main_path = "welcome"
@@ -56,7 +56,7 @@ def test_indexing_disabled(tmp_path, html_file):
     assert reader.get_search_results_count("foo") == 1
 
 
-def test_indexing_custom(tmp_path, html_file):
+def test_indexing_custom(tmp_path: pathlib.Path, html_file: pathlib.Path):
     """One HTML entry has custom indexing data"""
     fpath = tmp_path / "test.zim"
     main_path = "welcome"
@@ -82,7 +82,7 @@ def test_indexing_custom(tmp_path, html_file):
     assert "welcome" in list(reader.get_suggestions("blu"))
 
 
-def test_indexing_item_is_front(tmp_path, png_image):
+def test_indexing_item_is_front(tmp_path: pathlib.Path, png_image: pathlib.Path):
     """Create a ZIM with a single item with customized title and content for indexing"""
     fpath = tmp_path / "test.zim"
     main_path = "welcome"
@@ -111,7 +111,7 @@ def test_indexing_item_is_front(tmp_path, png_image):
     assert reader.get_search_results_count("food") == 0
 
 
-def test_indexing_item_not_front(tmp_path, png_image):
+def test_indexing_item_not_front(tmp_path: pathlib.Path, png_image: pathlib.Path):
     fpath = tmp_path / "test.zim"
     main_path = "welcome"
     with Creator(fpath, main_path).config_dev_metadata() as creator:
@@ -174,7 +174,9 @@ def _assert_png_zim(fpath: pathlib.Path):
     assert "welcome" not in list(reader.get_suggestions("feed"))
 
 
-def test_indexing_item_pdf_filepath(tmp_path, encrypted_pdf_file):
+def test_indexing_item_pdf_filepath(
+    tmp_path: pathlib.Path, encrypted_pdf_file: pathlib.Path
+):
     """A PDF item can be automatically indexed"""
     fpath = tmp_path / "test.zim"
     main_path = "welcome"
@@ -189,7 +191,9 @@ def test_indexing_item_pdf_filepath(tmp_path, encrypted_pdf_file):
     _assert_pdf_zim(fpath)
 
 
-def test_indexing_item_pdf_fileobj(tmp_path, encrypted_pdf_file):
+def test_indexing_item_pdf_fileobj(
+    tmp_path: pathlib.Path, encrypted_pdf_file: pathlib.Path
+):
     """A PDF item can be automatically indexed"""
     fpath = tmp_path / "test.zim"
     main_path = "welcome"
@@ -206,7 +210,9 @@ def test_indexing_item_pdf_fileobj(tmp_path, encrypted_pdf_file):
     _assert_pdf_zim(fpath)
 
 
-def test_indexing_item_pdf_content(tmp_path, encrypted_pdf_file):
+def test_indexing_item_pdf_content(
+    tmp_path: pathlib.Path, encrypted_pdf_file: pathlib.Path
+):
     """A PDF item can be automatically indexed"""
     fpath = tmp_path / "test.zim"
     main_path = "welcome"
@@ -222,7 +228,7 @@ def test_indexing_item_pdf_content(tmp_path, encrypted_pdf_file):
     _assert_pdf_zim(fpath)
 
 
-def test_indexing_item_png_filepath(tmp_path, png_image):
+def test_indexing_item_png_filepath(tmp_path: pathlib.Path, png_image: pathlib.Path):
     """A PNG item cannot automatically be indexed but it works properly"""
     fpath = tmp_path / "test.zim"
     main_path = "welcome"
@@ -237,7 +243,7 @@ def test_indexing_item_png_filepath(tmp_path, png_image):
         )
 
 
-def test_indexing_item_png_fileobj(tmp_path, png_image):
+def test_indexing_item_png_fileobj(tmp_path: pathlib.Path, png_image: pathlib.Path):
     """A PNG item cannot automatically be indexed but it works properly"""
     fpath = tmp_path / "test.zim"
     main_path = "welcome"
@@ -255,7 +261,7 @@ def test_indexing_item_png_fileobj(tmp_path, png_image):
     _assert_png_zim(fpath)
 
 
-def test_indexing_item_png_content(tmp_path, png_image):
+def test_indexing_item_png_content(tmp_path: pathlib.Path, png_image: pathlib.Path):
     """A PNG item cannot automatically be indexed but it works properly"""
     fpath = tmp_path / "test.zim"
     main_path = "welcome"
@@ -283,13 +289,13 @@ def test_indexing_item_png_content(tmp_path, png_image):
     ],
 )
 def test_get_pdf_index_data(
-    pdf_no,
-    expected_title,
-    expected_word_count,
-    encrypted_pdf_file,
-    encrypted_pdf_content,
-    big_pdf_file,
-    big_pdf_content,
+    pdf_no: int,
+    expected_title: str,
+    expected_word_count: int,
+    encrypted_pdf_file: pathlib.Path,
+    encrypted_pdf_content: pathlib.Path,
+    big_pdf_file: pathlib.Path,
+    big_pdf_content: pathlib.Path,
 ):
 
     index_data = get_pdf_index_data(
@@ -307,7 +313,9 @@ def test_get_pdf_index_data(
     assert index_data.get_keywords() == ""
 
 
-def test_indexing_item_pdf_custom_title(tmp_path, encrypted_pdf_file):
+def test_indexing_item_pdf_custom_title(
+    tmp_path: pathlib.Path, encrypted_pdf_file: pathlib.Path
+):
     """Test case with a custom title is passed, it is not overwritten by PDF title"""
     fpath = tmp_path / "test.zim"
     main_path = "welcome"
@@ -349,7 +357,9 @@ def test_indexing_item_pdf_custom_title(tmp_path, encrypted_pdf_file):
         ),  # wordcount is passed so it is not automatically computed
     ],
 )
-def test_index_data_wordcount(content, wordcount, expected_wordcount):
+def test_index_data_wordcount(
+    content: str, wordcount: int | None, expected_wordcount: int
+):
     assert (
         IndexData(title="foo", content=content, wordcount=wordcount).get_wordcount()
         == expected_wordcount

@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any, Protocol, TypeVar, runtime_checkable
@@ -10,7 +8,7 @@ _T_contra = TypeVar("_T_contra", contravariant=True)
 
 @dataclass
 class Callback:
-    func: Callable
+    func: Callable[..., Any]
     args: tuple[Any, ...] | None = None
     kwargs: dict[str, Any] | None = None
 
@@ -24,8 +22,8 @@ class Callback:
     def get_kwargs(self) -> dict[str, Any]:
         return self.kwargs or {}
 
-    def call_with(self, *args, **kwargs):
-        self.func.__call__(*args, **kwargs)
+    def call_with(self, *args: Any, **kwargs: Any):
+        self.func(*args, **kwargs)
 
     def call(self):
         self.call_with(*self.get_args(), **self.get_kwargs())
