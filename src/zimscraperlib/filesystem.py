@@ -12,6 +12,8 @@ import pathlib
 
 import magic
 
+from zimscraperlib import logger
+
 # override some MIME-types found by libmagic to different ones
 MIME_OVERRIDES = {
     "image/svg": "image/svg+xml",
@@ -44,5 +46,7 @@ def get_content_mimetype(content: bytes | str) -> str:
 
 def delete_callback(fpath: str | pathlib.Path):
     """helper deleting passed filepath"""
-
-    os.unlink(fpath)
+    if not pathlib.Path(fpath).exists():
+        logger.warning(f"delete callback: file {fpath} is already gone")
+    else:
+        os.unlink(fpath)
