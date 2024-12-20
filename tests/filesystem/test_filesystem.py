@@ -57,6 +57,12 @@ def test_delete_callback(tmp_path: pathlib.Path):
 
     assert not fpath.exists()
 
+    # file already gone should not be a problem
+    delete_callback(fpath)
+
+    # wrong path should not be a problem
+    delete_callback(pathlib.Path("/foo.txt"))
+
 
 def test_path_from_tmp_dir():
     tempdir = TemporaryDirectory()

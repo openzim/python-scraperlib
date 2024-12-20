@@ -2,7 +2,6 @@
 
     Shortcuts to retrieve mime type using magic"""
 
-import os
 import pathlib
 from contextlib import contextmanager
 from tempfile import TemporaryDirectory
@@ -40,10 +39,9 @@ def get_content_mimetype(content: bytes | str) -> str:
     return MIME_OVERRIDES.get(detected_mime, detected_mime)
 
 
-def delete_callback(fpath: str | pathlib.Path):
+def delete_callback(fpath: pathlib.Path):
     """helper deleting passed filepath"""
-
-    os.unlink(fpath)
+    fpath.unlink(missing_ok=True)
 
 
 @contextmanager
