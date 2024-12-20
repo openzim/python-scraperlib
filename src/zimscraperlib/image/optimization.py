@@ -18,13 +18,11 @@
     can still run on default settings which give
       a bit less size than the original images but maintain a high quality. """
 
-import functools
 import io
 import os
 import pathlib
 import subprocess
-from collections.abc import Callable
-from typing import Any
+from dataclasses import dataclass
 
 import piexif  # pyright: ignore[reportMissingTypeStubs]
 from optimize_images.img_aux_processing import (  # pyright: ignore[reportMissingTypeStubs]
@@ -54,18 +52,9 @@ def ensure_matches(
         raise ValueError(f"{src} is not of format {fmt}")
 
 
-def optimize_png(
-    src: pathlib.Path | io.BytesIO,
-    dst: pathlib.Path | io.BytesIO | None = None,
-    max_colors: int = 256,
-    background_color: tuple[int, int, int] = (255, 255, 255),
-    *,
-    reduce_colors: bool | None = False,
-    fast_mode: bool | None = True,
-    remove_transparency: bool | None = False,
-    **_: Any,
-) -> pathlib.Path | io.BytesIO:
-    """method to optimize PNG files using a pure python external optimizer
+@dataclass
+class OptimizePngOptions:
+    """Dataclass holding PNG optimization options
 
     Arguments:
         reduce_colors: Whether to reduce colors using adaptive color pallette (boolean)
@@ -79,20 +68,38 @@ def optimize_png(
             values: True | False
         background_color: Background color if remove_transparency is True (tuple
             containing RGB values)
-            values: (255, 255, 255) | (221, 121, 108) | (XX, YY, ZZ)"""
+            values: (255, 255, 255) | (221, 121, 108) | (XX, YY, ZZ)
+    """
+
+    max_colors: int = 256
+    background_color: tuple[int, int, int] = (255, 255, 255)
+    reduce_colors: bool | None = False
+    fast_mode: bool | None = True
+    remove_transparency: bool | None = False
+
+
+def optimize_png(
+    src: pathlib.Path | io.BytesIO,
+    dst: pathlib.Path | io.BytesIO | None = None,
+    options: OptimizePngOptions | None = None,
+) -> pathlib.Path | io.BytesIO:
+    """method to optimize PNG files using a pure python external optimizer"""
 
     ensure_matches(src, "PNG")
 
     img = Image.open(src)
 
-    if remove_transparency:
-        img = remove_alpha(img, background_color)
+    if options is None:
+        options = OptimizePngOptions()
 
-    if reduce_colors:
-        img, __, __ = do_reduce_colors(img, max_colors)
+    if options.remove_transparency:
+        img = remove_alpha(img, options.background_color)
 
-    if not fast_mode and img.mode == "P":
-        img, __ = rebuild_palette(img)
+    if options.reduce_colors:
+        img, _, _ = do_reduce_colors(img, options.max_colors)
+
+    if not options.fast_mode and img.mode == "P":
+        img, _ = rebuild_palette(img)
 
     if dst is None:
         dst = io.BytesIO()
@@ -102,16 +109,9 @@ def optimize_png(
     return dst
 
 
-def optimize_jpeg(
-    src: pathlib.Path | io.BytesIO,
-    dst: pathlib.Path | io.BytesIO | None = None,
-    quality: int | None = 85,
-    *,
-    fast_mode: bool | None = True,
-    keep_exif: bool | None = True,
-    **_: Any,
-) -> pathlib.Path | io.BytesIO:
-    """method to optimize JPEG files using a pure python external optimizer
+@dataclass
+class OptimizeJpgOptions:
+    """Dataclass holding JPG optimization options
 
     Arguments:
         quality: JPEG quality (integer between 1 and 100)
@@ -120,7 +120,23 @@ def optimize_jpeg(
             values: True | False
         fast_mode: Use the supplied quality value. If turned off, optimizer will
                 get dynamic quality value to ensure better compression
-            values: True | False"""
+            values: True | False
+    """
+
+    quality: int | None = 85
+    fast_mode: bool | None = True
+    keep_exif: bool | None = True
+
+
+def optimize_jpeg(
+    src: pathlib.Path | io.BytesIO,
+    dst: pathlib.Path | io.BytesIO | None = None,
+    options: OptimizeJpgOptions | None = None,
+) -> pathlib.Path | io.BytesIO:
+    """method to optimize JPEG files using a pure python external optimizer"""
+
+    if options is None:
+        options = OptimizeJpgOptions()
 
     ensure_matches(src, "JPEG")
 
@@ -146,10 +162,10 @@ def optimize_jpeg(
     # only use progressive if file size is bigger
     use_progressive_jpg = orig_size > 10240  # 10KiB  # noqa: PLR2004
 
-    if fast_mode:
-        quality_setting = quality
+    if options.fast_mode:
+        quality_setting = options.quality
     else:
-        quality_setting, __ = jpeg_dynamic_quality(img)
+        quality_setting, _ = jpeg_dynamic_quality(img)
 
     if dst is None:
         dst = io.BytesIO()
@@ -165,7 +181,7 @@ def optimize_jpeg(
     if isinstance(dst, io.BytesIO):
         dst.seek(0)
 
-    if keep_exif and had_exif:
+    if options.keep_exif and had_exif:
         piexif.transplant(  # pyright: ignore[reportUnknownMemberType]
             exif_src=(
                 str(src.resolve()) if isinstance(src, pathlib.Path) else src.getvalue()
@@ -179,16 +195,9 @@ def optimize_jpeg(
     return dst
 
 
-def optimize_webp(
-    src: pathlib.Path | io.BytesIO,
-    dst: pathlib.Path | io.BytesIO | None = None,
-    quality: int | None = 60,
-    method: int | None = 6,
-    *,
-    lossless: bool | None = False,
-    **_: Any,
-) -> pathlib.Path | io.BytesIO:
-    """method to optimize WebP using Pillow options
+@dataclass
+class OptimizeWebpOptions:
+    """Dataclass holding WebP optimization options
 
     Arguments:
         lossless: Whether to use lossless compression (boolean);
@@ -201,13 +210,29 @@ def optimize_webp(
             values: 1 | 2 | 3 | 4 | 5 | 6
 
     refer to the link for more details
-    https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html#webp"""
+    https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html#webp
+    """
+
+    quality: int | None = 60
+    method: int | None = 6
+    lossless: bool | None = False
+
+
+def optimize_webp(
+    src: pathlib.Path | io.BytesIO,
+    dst: pathlib.Path | io.BytesIO | None = None,
+    options: OptimizeWebpOptions | None = None,
+) -> pathlib.Path | io.BytesIO:
+    """method to optimize WebP using Pillow options"""
+
+    if options is None:
+        options = OptimizeWebpOptions()
 
     ensure_matches(src, "WEBP")
     params: dict[str, bool | int | None] = {
-        "lossless": lossless,
-        "quality": quality,
-        "method": method,
+        "lossless": options.lossless,
+        "quality": options.quality,
+        "method": options.method,
     }
 
     webp_image = Image.open(src)
@@ -230,18 +255,9 @@ def optimize_webp(
     return dst
 
 
-def optimize_gif(
-    src: pathlib.Path,
-    dst: pathlib.Path,
-    optimize_level: int | None = 1,
-    lossiness: int | None = None,
-    max_colors: int | None = None,
-    *,
-    interlace: bool | None = True,
-    no_extensions: bool | None = True,
-    **_: Any,
-) -> pathlib.Path:
-    """method to optimize GIFs using gifsicle >= 1.92
+@dataclass
+class OptimizeGifOptions:
+    """Dataclass holding GIF optimization options
 
     Arguments:
         optimize_level: Optimization level; higher values give better compression
@@ -258,21 +274,37 @@ def optimize_gif(
             (integer between 2 and 256)
             values: 2 | 86 | 128 | 256 | XX
 
-    refer to the link for more details - https://www.lcdf.org/gifsicle/man.html"""
+    refer to the link for more details - https://www.lcdf.org/gifsicle/man.html
+    """
+
+    optimize_level: int | None = 1
+    lossiness: int | None = None
+    max_colors: int | None = None
+    interlace: bool | None = True
+    no_extensions: bool | None = True
+
+
+def optimize_gif(
+    src: pathlib.Path, dst: pathlib.Path, options: OptimizeGifOptions | None = None
+) -> pathlib.Path:
+    """method to optimize GIFs using gifsicle >= 1.92"""
+
+    if options is None:
+        options = OptimizeGifOptions()
 
     ensure_matches(src, "GIF")
 
     # use gifsicle
     args = ["/usr/bin/env", "gifsicle"]
-    if optimize_level:
-        args += [f"-O{optimize_level}"]
-    if max_colors:
-        args += ["--colors", str(max_colors)]
-    if lossiness:
-        args += [f"--lossy={lossiness}"]
-    if no_extensions:
+    if options.optimize_level:
+        args += [f"-O{options.optimize_level}"]
+    if options.max_colors:
+        args += ["--colors", str(options.max_colors)]
+    if options.lossiness:
+        args += [f"--lossy={options.lossiness}"]
+    if options.no_extensions:
         args += ["--no-extensions"]
-    if interlace:
+    if options.interlace:
         args += ["--interlace"]
     args += [str(src)]
     with open(dst, "w") as out_file:
@@ -287,13 +319,39 @@ def optimize_gif(
     return dst
 
 
+@dataclass
+class OptimizeOptions:
+    """Dataclass holding GIF optimization options for all supported formats"""
+
+    gif: OptimizeGifOptions
+    webp: OptimizeWebpOptions
+    jpg: OptimizeJpgOptions
+    png: OptimizePngOptions
+
+    @classmethod
+    def of(
+        cls,
+        gif: OptimizeGifOptions | None = None,
+        webp: OptimizeWebpOptions | None = None,
+        jpg: OptimizeJpgOptions | None = None,
+        png: OptimizePngOptions | None = None,
+    ):
+        """Helper to override only few options from default value"""
+        return OptimizeOptions(
+            gif=gif or OptimizeGifOptions(),
+            png=png or OptimizePngOptions(),
+            webp=webp or OptimizeWebpOptions(),
+            jpg=jpg or OptimizeJpgOptions(),
+        )
+
+
 def optimize_image(
     src: pathlib.Path,
     dst: pathlib.Path,
+    options: OptimizeOptions | None = None,
     *,
     delete_src: bool | None = False,
     convert: bool | str | None = False,
-    **options: Any,
 ):
     """Optimize image, automatically selecting correct optimizer
 
@@ -304,6 +362,9 @@ def optimize_image(
             values: False: don't convert
                     True: convert to format implied by dst suffix
                     "FMT": convert to format FMT (use Pillow names)"""
+
+    if options is None:
+        options = OptimizeOptions.of()
 
     src_format, dst_format = format_for(src, from_suffix=False), format_for(dst)
 
@@ -321,26 +382,20 @@ def optimize_image(
     else:
         src_img = pathlib.Path(src)
 
-    get_optimization_method(src_format)(src_img, dst, **options)
+    src_format = src_format.lower()
+    if src_format in ("jpg", "jpeg"):
+        optimize_jpeg(src=src_img, dst=dst, options=options.jpg)
+    elif src_format == "gif":
+        optimize_gif(src=src_img, dst=dst, options=options.gif)
+    elif src_format == "png":
+        optimize_png(src=src_img, dst=dst, options=options.png)
+    elif src_format == "webp":
+        optimize_webp(src=src_img, dst=dst, options=options.webp)
+    else:
+        raise NotImplementedError(
+            f"Image format '{src_format}' cannot yet be optimized"
+        )
 
     # delete src image if requested
     if delete_src and src.exists() and src.resolve() != dst.resolve():
         src.unlink()
-
-
-def get_optimization_method(fmt: str) -> Callable[..., Any]:
-    """Return the proper optimization method to call for a given image format"""
-
-    def raise_error(*_, orig_format: str):
-        raise NotImplementedError(
-            f"Image format '{orig_format}' cannot yet be optimized"
-        )
-
-    fmt = fmt.lower().strip()
-    return {
-        "gif": optimize_gif,
-        "jpg": optimize_jpeg,
-        "jpeg": optimize_jpeg,
-        "webp": optimize_webp,
-        "png": optimize_png,
-    }.get(fmt, functools.partial(raise_error, orig_format=fmt))
