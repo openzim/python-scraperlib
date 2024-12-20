@@ -4,6 +4,7 @@ import os
 import pathlib
 import re
 import shutil
+from dataclasses import asdict, is_dataclass
 from typing import Any
 
 import piexif  # pyright: ignore[reportMissingTypeStubs]
@@ -20,12 +21,17 @@ from zimscraperlib.image.conversion import (
     create_favicon,
 )
 from zimscraperlib.image.optimization import (
+    OptimizeGifOptions,
+    OptimizeJpgOptions,
+    OptimizeOptions,
+    OptimizePngOptions,
+    OptimizeWebpOptions,
     ensure_matches,
-    get_optimization_method,
     optimize_gif,
     optimize_image,
     optimize_jpeg,
     optimize_png,
+    optimize_webp,
 )
 from zimscraperlib.image.presets import (
     GifHigh,
@@ -50,7 +56,11 @@ from zimscraperlib.image.probing import (
 from zimscraperlib.image.transformation import resize_image
 from zimscraperlib.image.utils import save_image
 
-ALL_PRESETS = [(n, p) for n, p in inspect.getmembers(presets) if inspect.isclass(p)]
+ALL_PRESETS = [
+    (n, p)
+    for n, p in inspect.getmembers(presets)
+    if inspect.isclass(p) and not is_dataclass(p)
+]
 
 
 def get_image_size(fpath: pathlib.Path | io.BytesIO) -> tuple[int, int]:
@@ -463,7 +473,7 @@ def test_wrong_extension(
     "fmt",
     ["png", "jpg", "gif", "webp"],
 )
-def test_optimize_image_default(
+def test_optimize_image_default_generic(
     png_image2: pathlib.Path,
     jpg_image: pathlib.Path,
     gif_image: pathlib.Path,
@@ -480,6 +490,40 @@ def test_optimize_image_default(
         webp_image=webp_image,
     )
     optimize_image(src, dst, delete_src=False)
+    assert os.path.getsize(dst) < os.path.getsize(src)
+
+
+@pytest.mark.parametrize(
+    "fmt",
+    ["png", "jpg", "gif", "webp"],
+)
+def test_optimize_image_default_direct(
+    png_image2: pathlib.Path,
+    jpg_image: pathlib.Path,
+    gif_image: pathlib.Path,
+    webp_image: pathlib.Path,
+    tmp_path: pathlib.Path,
+    fmt: str,
+):
+    src, dst = get_src_dst(
+        tmp_path,
+        fmt,
+        png_image=png_image2,
+        jpg_image=jpg_image,
+        gif_image=gif_image,
+        webp_image=webp_image,
+    )
+
+    if fmt in ("jpg", "jpeg"):
+        optimize_jpeg(src=src, dst=dst)
+    elif fmt == "gif":
+        optimize_gif(src=src, dst=dst)
+    elif fmt == "png":
+        optimize_png(src=src, dst=dst)
+    elif fmt == "webp":
+        optimize_webp(src=src, dst=dst)
+    else:
+        raise NotImplementedError(f"Image format '{fmt}' cannot yet be optimized")
     assert os.path.getsize(dst) < os.path.getsize(src)
 
 
@@ -511,11 +555,54 @@ def test_optimize_image_bad_dst(png_image: pathlib.Path, tmp_path: pathlib.Path)
 
 
 @pytest.mark.parametrize(
-    "preset,expected_version,options,fmt",
+    "preset,expected_version,options",
     [
-        (WebpLow(), 1, {"lossless": False, "quality": 40, "method": 6}, "webp"),
-        (WebpMedium(), 1, {"lossless": False, "quality": 50, "method": 6}, "webp"),
-        (WebpHigh(), 1, {"lossless": False, "quality": 90, "method": 6}, "webp"),
+        (WebpLow(), 1, {"lossless": False, "quality": 40, "method": 6}),
+        (WebpMedium(), 1, {"lossless": False, "quality": 50, "method": 6}),
+        (WebpHigh(), 1, {"lossless": False, "quality": 90, "method": 6}),
+    ],
+)
+def test_image_preset_webp(
+    preset: WebpLow | WebpMedium | WebpHigh,
+    expected_version: int,
+    options: dict[str, str | bool | int | None],
+    webp_image: pathlib.Path,
+    tmp_path: pathlib.Path,
+):
+    assert preset.VERSION == expected_version
+    assert preset.ext == "webp"
+    assert preset.mimetype == "image/webp"
+
+    default_options = OptimizeWebpOptions()
+    preset_options = asdict(preset.options)
+
+    for key, value in preset_options.items():
+        assert value == (
+            options[key] if key in options else getattr(default_options, key)
+        )
+
+    src = webp_image
+    dst = tmp_path / f"out.{preset.ext}"
+    optimize_image(
+        src,
+        tmp_path / f"out.{preset.ext}",
+        delete_src=False,
+        options=OptimizeOptions.of(webp=preset.options),
+    )
+    assert os.path.getsize(dst) < os.path.getsize(src)
+
+    image_bytes = ""
+    with open(src, "rb") as fl:
+        image_bytes = fl.read()
+    byte_stream = io.BytesIO(image_bytes)
+    dst_bytes = optimize_webp(src=byte_stream, options=preset.options)
+    assert isinstance(dst_bytes, io.BytesIO)
+    assert dst_bytes.getbuffer().nbytes < byte_stream.getbuffer().nbytes
+
+
+@pytest.mark.parametrize(
+    "preset,expected_version,options",
+    [
         (
             GifLow(),
             1,
@@ -526,7 +613,6 @@ def test_optimize_image_bad_dst(png_image: pathlib.Path, tmp_path: pathlib.Path)
                 "no_extensions": True,
                 "interlace": True,
             },
-            "gif",
         ),
         (
             GifMedium(),
@@ -537,7 +623,6 @@ def test_optimize_image_bad_dst(png_image: pathlib.Path, tmp_path: pathlib.Path)
                 "no_extensions": True,
                 "interlace": True,
             },
-            "gif",
         ),
         (
             GifHigh(),
@@ -548,8 +633,42 @@ def test_optimize_image_bad_dst(png_image: pathlib.Path, tmp_path: pathlib.Path)
                 "no_extensions": True,
                 "interlace": True,
             },
-            "gif",
         ),
+    ],
+)
+def test_image_preset_gif(
+    preset: GifLow | GifMedium | GifHigh,
+    expected_version: int,
+    options: dict[str, str | bool | int | None],
+    gif_image: pathlib.Path,
+    tmp_path: pathlib.Path,
+):
+    assert preset.VERSION == expected_version
+    assert preset.ext == "gif"
+    assert preset.mimetype == "image/gif"
+
+    default_options = OptimizeGifOptions()
+    preset_options = asdict(preset.options)
+
+    for key, value in preset_options.items():
+        assert value == (
+            options[key] if key in options else getattr(default_options, key)
+        )
+
+    src = gif_image
+    dst = tmp_path / f"out.{preset.ext}"
+    optimize_image(
+        src,
+        tmp_path / f"out.{preset.ext}",
+        delete_src=False,
+        options=OptimizeOptions.of(gif=preset.options),
+    )
+    assert os.path.getsize(dst) < os.path.getsize(src)
+
+
+@pytest.mark.parametrize(
+    "preset,expected_version,options",
+    [
         (
             PngLow(),
             1,
@@ -559,76 +678,105 @@ def test_optimize_image_bad_dst(png_image: pathlib.Path, tmp_path: pathlib.Path)
                 "max_colors": 256,
                 "fast_mode": False,
             },
-            "png",
         ),
         (
             PngMedium(),
             1,
             {"reduce_colors": False, "remove_transparency": False, "fast_mode": False},
-            "png",
         ),
         (
             PngHigh(),
             1,
             {"reduce_colors": False, "remove_transparency": False, "fast_mode": True},
-            "png",
         ),
-        (JpegLow(), 1, {"quality": 45, "keep_exif": False, "fast_mode": True}, "jpg"),
+    ],
+)
+def test_image_preset_png(
+    preset: PngLow | PngMedium | PngHigh,
+    expected_version: int,
+    options: dict[str, str | bool | int | None],
+    png_image: pathlib.Path,
+    tmp_path: pathlib.Path,
+):
+    assert preset.VERSION == expected_version
+    assert preset.ext == "png"
+    assert preset.mimetype == "image/png"
+
+    default_options = OptimizePngOptions()
+    preset_options = asdict(preset.options)
+
+    for key, value in preset_options.items():
+        assert value == (
+            options[key] if key in options else getattr(default_options, key)
+        )
+
+    src = png_image
+    dst = tmp_path / f"out.{preset.ext}"
+    optimize_image(
+        src,
+        tmp_path / f"out.{preset.ext}",
+        delete_src=False,
+        options=OptimizeOptions.of(png=preset.options),
+    )
+    assert os.path.getsize(dst) < os.path.getsize(src)
+
+    image_bytes = ""
+    with open(src, "rb") as fl:
+        image_bytes = fl.read()
+    byte_stream = io.BytesIO(image_bytes)
+    dst_bytes = optimize_png(src=byte_stream, options=preset.options)
+    assert isinstance(dst_bytes, io.BytesIO)
+    assert dst_bytes.getbuffer().nbytes < byte_stream.getbuffer().nbytes
+
+
+@pytest.mark.parametrize(
+    "preset,expected_version,options",
+    [
+        (JpegLow(), 1, {"quality": 45, "keep_exif": False, "fast_mode": True}),
         (
             JpegMedium(),
             1,
             {"quality": 65, "keep_exif": False, "fast_mode": True},
-            "jpg",
         ),
-        (JpegHigh(), 1, {"quality": 80, "keep_exif": True, "fast_mode": True}, "jpg"),
+        (JpegHigh(), 1, {"quality": 80, "keep_exif": True, "fast_mode": True}),
     ],
 )
-def test_preset(
-    preset: (
-        WebpLow
-        | WebpMedium
-        | WebpHigh
-        | JpegLow
-        | JpegMedium
-        | JpegHigh
-        | PngLow
-        | PngMedium
-        | PngHigh
-    ),
+def test_image_preset_jpg(
+    preset: JpegLow | JpegMedium | JpegHigh,
     expected_version: int,
     options: dict[str, str | bool | int | None],
-    fmt: str,
-    png_image: pathlib.Path,
     jpg_image: pathlib.Path,
-    gif_image: pathlib.Path,
-    webp_image: pathlib.Path,
     tmp_path: pathlib.Path,
 ):
     assert preset.VERSION == expected_version
-    assert preset.options == options
-    src, dst = get_src_dst(
-        tmp_path,
-        fmt,
-        png_image=png_image,
-        jpg_image=jpg_image,
-        gif_image=gif_image,
-        webp_image=webp_image,
-    )
+    assert preset.ext == "jpg"
+    assert preset.mimetype == "image/jpeg"
+
+    default_options = OptimizeJpgOptions()
+    preset_options = asdict(preset.options)
+
+    for key, value in preset_options.items():
+        assert value == (
+            options[key] if key in options else getattr(default_options, key)
+        )
+
+    src = jpg_image
+    dst = tmp_path / f"out.{preset.ext}"
     optimize_image(
         src,
-        dst,
+        tmp_path / f"out.{preset.ext}",
         delete_src=False,
-        **preset.options,  # pyright: ignore[reportArgumentType]
+        options=OptimizeOptions.of(jpg=preset.options),
     )
     assert os.path.getsize(dst) < os.path.getsize(src)
 
-    if fmt in ["jpg", "webp", "png"]:
-        image_bytes = ""
-        with open(src, "rb") as fl:
-            image_bytes = fl.read()
-        byte_stream = io.BytesIO(image_bytes)
-        dst_bytes = get_optimization_method(fmt)(src=byte_stream, **preset.options)
-        assert dst_bytes.getbuffer().nbytes < byte_stream.getbuffer().nbytes
+    image_bytes = ""
+    with open(src, "rb") as fl:
+        image_bytes = fl.read()
+    byte_stream = io.BytesIO(image_bytes)
+    dst_bytes = optimize_jpeg(src=byte_stream, options=preset.options)
+    assert isinstance(dst_bytes, io.BytesIO)
+    assert dst_bytes.getbuffer().nbytes < byte_stream.getbuffer().nbytes
 
 
 def test_optimize_image_unsupported_format():
@@ -640,7 +788,7 @@ def test_optimize_image_unsupported_format():
         optimize_image(src, dst, delete_src=False)
 
 
-def test_preset_has_mime_and_ext():
+def test_image_preset_has_mime_and_ext():
     for _, preset in ALL_PRESETS:
         assert preset().ext
         assert preset().mimetype.startswith("image/")
@@ -648,7 +796,9 @@ def test_preset_has_mime_and_ext():
 
 def test_remove_png_transparency(png_image: pathlib.Path, tmp_path: pathlib.Path):
     dst = tmp_path / "out.png"
-    optimize_png(src=png_image, dst=dst, remove_transparency=True)
+    optimize_png(
+        src=png_image, dst=dst, options=OptimizePngOptions(remove_transparency=True)
+    )
     assert os.path.getsize(dst) == 2352
 
 
@@ -683,7 +833,7 @@ def test_jpeg_exif_preserve(jpg_exif_image: pathlib.Path, tmp_path: pathlib.Path
 def test_dynamic_jpeg_quality(jpg_image: pathlib.Path, tmp_path: pathlib.Path):
     # check optimization without fast mode
     dst = tmp_path / "out.jpg"
-    optimize_jpeg(src=jpg_image, dst=dst, fast_mode=False)
+    optimize_jpeg(src=jpg_image, dst=dst, options=OptimizeJpgOptions(fast_mode=False))
     assert os.path.getsize(dst) < os.path.getsize(jpg_image)
 
 
@@ -822,12 +972,83 @@ def test_is_valid_image(
 def test_optimize_gif_no_optimize_level(
     gif_image: pathlib.Path, tmp_path: pathlib.Path
 ):
-    optimize_gif(gif_image, tmp_path / "out.gif", delete_src=False, optimize_level=None)
+    optimize_gif(
+        gif_image, tmp_path / "out.gif", options=OptimizeGifOptions(optimize_level=None)
+    )
 
 
 def test_optimize_gif_no_no_extensions(gif_image: pathlib.Path, tmp_path: pathlib.Path):
-    optimize_gif(gif_image, tmp_path / "out.gif", delete_src=False, no_extensions=None)
+    optimize_gif(
+        gif_image, tmp_path / "out.gif", options=OptimizeGifOptions(no_extensions=None)
+    )
 
 
 def test_optimize_gif_no_interlace(gif_image: pathlib.Path, tmp_path: pathlib.Path):
-    optimize_gif(gif_image, tmp_path / "out.gif", delete_src=False, interlace=None)
+    optimize_gif(
+        gif_image, tmp_path / "out.gif", options=OptimizeGifOptions(interlace=None)
+    )
+
+
+@pytest.mark.parametrize(
+    "fmt, preset",
+    [
+        ("png", "low"),
+        ("jpg", "low"),
+        ("gif", "low"),
+        ("webp", "low"),
+        ("png", "medium"),
+        ("jpg", "medium"),
+        ("gif", "medium"),
+        ("webp", "medium"),
+        ("png", "high"),
+        ("jpg", "high"),
+        ("gif", "high"),
+        ("webp", "high"),
+    ],
+)
+def test_optimize_any_image(
+    png_image: pathlib.Path,
+    jpg_image: pathlib.Path,
+    gif_image: pathlib.Path,
+    webp_image: pathlib.Path,
+    tmp_path: pathlib.Path,
+    fmt: str,
+    preset: str,
+):
+    src, dst = get_src_dst(
+        tmp_path,
+        fmt,
+        png_image=png_image,
+        jpg_image=jpg_image,
+        gif_image=gif_image,
+        webp_image=webp_image,
+    )
+    # test call to optimize_image where src format is not set and all options are
+    # different than default values, just checking that at least we can set these opts
+    optimize_image(
+        src,
+        dst,
+        options=OptimizeOptions(
+            gif=(
+                GifMedium.options
+                if preset == "low"
+                else GifHigh.options if preset == "high" else GifMedium.options
+            ),
+            webp=(
+                WebpLow.options
+                if preset == "low"
+                else WebpHigh.options if preset == "high" else WebpMedium.options
+            ),
+            jpg=(
+                JpegLow.options
+                if preset == "low"
+                else JpegHigh.options if preset == "high" else JpegMedium.options
+            ),
+            png=(
+                PngLow.options
+                if preset == "low"
+                else PngHigh.options if preset == "high" else PngMedium.options
+            ),
+        ),
+    )
+    assert os.path.getsize(dst) < os.path.getsize(src)
