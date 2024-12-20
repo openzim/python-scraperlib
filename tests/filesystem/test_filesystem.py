@@ -1,4 +1,5 @@
 import pathlib
+from tempfile import TemporaryDirectory
 from typing import Any
 
 import magic
@@ -8,6 +9,7 @@ from zimscraperlib.filesystem import (
     delete_callback,
     get_content_mimetype,
     get_file_mimetype,
+    path_from,
 )
 
 
@@ -54,3 +56,42 @@ def test_delete_callback(tmp_path: pathlib.Path):
     delete_callback(fpath)
 
     assert not fpath.exists()
+
+
+def test_path_from_tmp_dir():
+    tempdir = TemporaryDirectory()
+    with path_from(tempdir) as tmp_dir:
+        file = tmp_dir / "file.txt"
+        file.touch()
+        assert file.exists()
+        assert pathlib.Path(tempdir.name).exists()
+
+    assert not pathlib.Path(tempdir.name).exists()
+
+
+def test_path_from_path():
+    tempdir = TemporaryDirectory()
+    tempdir_path = pathlib.Path(tempdir.name)
+    with path_from(tempdir_path) as tmp_dir:
+        file = tmp_dir / "file.txt"
+        file.touch()
+        assert file.exists()
+        assert pathlib.Path(tempdir.name).exists()
+
+    assert pathlib.Path(tempdir.name).exists()
+    tempdir.cleanup()
+    assert not pathlib.Path(tempdir.name).exists()
+
+
+def test_path_from_str():
+    tempdir = TemporaryDirectory()
+    tempdir_path = pathlib.Path(tempdir.name)
+    with path_from(str(tempdir_path)) as tmp_dir:
+        file = tmp_dir / "file.txt"
+        file.touch()
+        assert file.exists()
+        assert pathlib.Path(tempdir.name).exists()
+
+    assert pathlib.Path(tempdir.name).exists()
+    tempdir.cleanup()
+    assert not pathlib.Path(tempdir.name).exists()
