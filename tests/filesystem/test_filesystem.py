@@ -33,7 +33,7 @@ def test_content_mimetype_fallback(
     assert get_content_mimetype(undecodable_byte_stream) == "application/octet-stream"
 
     # mock then so we keep coverage on systems where magic works
-    def raising_magic(*_: Any, **__: Any):
+    def raising_magic(*args: Any, **kwargs: Any):  # noqa: ARG001
         raise UnicodeDecodeError("nocodec", b"", 0, 1, "noreason")
 
     monkeypatch.setattr(magic, "from_buffer", raising_magic)

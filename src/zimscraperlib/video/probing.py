@@ -2,7 +2,7 @@ import pathlib
 import subprocess
 
 
-def get_media_info(src_path: str | pathlib.Path):
+def get_media_info(src_path: pathlib.Path):
     """dict of file's details from ffprobe
 
     codecs: list of codecs in use
