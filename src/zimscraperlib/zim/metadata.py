@@ -148,14 +148,14 @@ class MetadataBase[T](ABC):
         _ = self.libzim_value
 
     @abstractmethod
-    def get_cleaned_value(self, value: Any) -> T: ...  # pragma: no cover
+    def get_cleaned_value(self, value: Any) -> T: ...
 
     @property
     def libzim_value(self) -> bytes:
         return self.get_libzim_value()
 
     @abstractmethod
-    def get_libzim_value(self) -> bytes: ...  # pragma: no cover
+    def get_libzim_value(self) -> bytes: ...
 
 
 # Alias for convenience when function accept any metadata
@@ -236,12 +236,12 @@ class Metadata(MetadataBase[bytes]):
         elif isinstance(value, bytes):
             bvalue = value
         else:
-            last_pos: int
+            last_pos: int = 0
             if isinstance(value, SupportsSeekableRead) and value.seekable():
                 last_pos = value.tell()
             bvalue = value.read()
             if isinstance(value, SupportsSeekableRead) and value.seekable():
-                value.seek(last_pos)  # pyright: ignore[reportPossiblyUnboundVariable]
+                value.seek(last_pos)
         if not self.empty_allowed and not value:
             raise ValueError("Missing value (empty not allowed)")
         return bvalue
@@ -495,8 +495,8 @@ class StandardMetadataList:
         for field in fields(cls):
             if not isinstance(field.type, type):
                 continue
-            # if field type is a type, it means that it is required (otherwise field
-            # type is a string when None is allowed)
+            # field.type is a `type` only when expecting a single type
+            # and is a string in case of None Union
             names.append(getattr(field.type, "meta_name", ""))
         return names
 
