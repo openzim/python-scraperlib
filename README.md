@@ -32,6 +32,7 @@ See documentation at [Read the Docs](https://python-scraperlib.readthedocs.io/) 
 - Pillow
 - FFmpeg
 - gifsicle (>=1.92)
+- libcairo (if you use the image manipulation, this is used for svg conversion)
 
 ## macOS
 
