@@ -272,3 +272,105 @@ def test_lang_details_inequality(query_left: str, query_right: str):
 
 def test_lang_details_inequality_objects():
     assert get_language("ara") != "ara"
+
+
+@pytest.mark.parametrize(
+    "query,expected",
+    [
+        (
+            "fra",
+            {
+                "english": "French (France)",
+                "iso-639-1": "fr",
+                "iso-639-2b": "fre",
+                "iso-639-2t": "fra",
+                "iso-639-3": "fra",
+                "iso-639-5": None,
+                "iso-types": [
+                    "part2t",
+                    "part3",
+                ],
+                "native": "français (France)",
+                "query": "fra",
+                "querytype": "purecode",
+            },
+        ),
+        (
+            "zh",
+            {
+                "english": "Chinese",
+                "iso-639-1": "zh",
+                "iso-639-2b": "chi",
+                "iso-639-2t": "zho",
+                "iso-639-3": "zho",
+                "iso-639-5": None,
+                "iso-types": [
+                    "part1",
+                ],
+                "native": "中文",
+                "query": "zh",
+                "querytype": "purecode",
+            },
+        ),
+        (
+            "ar",
+            {
+                "english": "Arabic",
+                "iso-639-1": "ar",
+                "iso-639-2b": "ara",
+                "iso-639-2t": "ara",
+                "iso-639-3": "ara",
+                "iso-639-5": None,
+                "iso-types": [
+                    "part1",
+                ],
+                "native": "العربية",
+                "query": "ar",
+                "querytype": "purecode",
+            },
+        ),
+    ],
+)
+def test_lang_to_dict(query: str, expected: dict[str, str | None | list[str]]):
+    assert Language(query).todict() == expected
+
+
+@pytest.mark.parametrize(
+    "query,expected",
+    [
+        (
+            "fra",
+            'Language(iso_639_1="fr", iso_639_2b="fre", iso_639_2t="fra", '
+            'iso_639_3="fra", iso_639_5="None", english="French (France)", '
+            "iso_types=\"['part2t', 'part3']\", native=\"français (France)\", "
+            'querytype="purecode", query="fra")',
+        ),
+        (
+            "zh",
+            'Language(iso_639_1="zh", iso_639_2b="chi", iso_639_2t="zho", '
+            'iso_639_3="zho", iso_639_5="None", english="Chinese", '
+            'iso_types="[\'part1\']", native="中文", querytype="purecode", query="zh")',
+        ),
+        (
+            "ar",
+            'Language(iso_639_1="ar", iso_639_2b="ara", iso_639_2t="ara", '
+            'iso_639_3="ara", iso_639_5="None", english="Arabic", '
+            'iso_types="[\'part1\']", native="العربية", querytype="purecode", '
+            'query="ar")',
+        ),
+    ],
+)
+def test_lang_repr(query: str, expected: str):
+    assert Language(query).__repr__() == expected
+
+
+@pytest.mark.parametrize(
+    "query,expected",
+    [
+        ("fra", "fra: French (France)"),
+        ("zh", "zho: Chinese"),
+        ("ar", "ara: Arabic"),
+    ],
+)
+def test_lang_str(query: str, expected: str):
+    assert f"{Language(query)}" == expected
