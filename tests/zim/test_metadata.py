@@ -1,11 +1,10 @@
-from __future__ import annotations
-
 import base64
 import dataclasses
 import datetime
 import io
 import pathlib
 import re
+from collections.abc import Iterable
 from types import NoneType
 from typing import BinaryIO, NamedTuple
 
@@ -90,7 +89,7 @@ def test_validate_language_invalid(value: list[str] | str, exception: type, erro
         pytest.param(["wikipedia", "wikipedia"], True, id="two_identical"),
     ],
 )
-def test_validate_tags_valid(tags, is_valid):
+def test_validate_tags_valid(tags: Iterable[str] | str, *, is_valid: bool):
     if is_valid:
         metadata.TagsMetadata(tags)
     else:
@@ -142,7 +141,7 @@ def test_validate_too_long_title_check_enabled():
 
 
 def test_validate_too_long_title_check_disabled(
-    ignore_metadata_conventions,  # noqa: ARG001
+    ignore_metadata_conventions: NoneType,  # noqa: ARG001
 ):
     assert metadata.TitleMetadata("T" * 31)
 
@@ -161,7 +160,7 @@ def test_validate_too_long_description_check_enabled():
 
 
 def test_validate_too_long_description_check_disabled(
-    ignore_metadata_conventions,  # noqa: ARG001
+    ignore_metadata_conventions: NoneType,  # noqa: ARG001
 ):
     assert metadata.DescriptionMetadata("T" * 81)
 
@@ -180,7 +179,7 @@ def test_validate_too_long_longdescription_check_enabled():
 
 
 def test_validate_too_long_longdescription_check_disabled(
-    ignore_metadata_conventions,  # noqa: ARG001
+    ignore_metadata_conventions: NoneType,  # noqa: ARG001
 ):
     assert metadata.LongDescriptionMetadata("T" * 4001)
 
@@ -202,9 +201,9 @@ def test_validate_date_invalid_datee():
 
 
 @pytest.mark.parametrize("value", [("9999-99-99"), ("2023/02/29"), ("1969-13-31")])
-def test_validate_date_invalid_datetype(value):
+def test_validate_date_invalid_datetype(value: str):
     with pytest.raises(InvalidType, match="violates type hint"):
-        metadata.DateMetadata(value)
+        metadata.DateMetadata(value)  # pyright: ignore[reportArgumentType]
 
 
 def test_validate_illustration_invalid_image():
@@ -214,7 +213,7 @@ def test_validate_illustration_invalid_image():
         metadata.IllustrationMetadata(b"PN", size=48)
 
 
-def test_validate_illustration_wrong_sizes(png_image2):
+def test_validate_illustration_wrong_sizes(png_image2: pathlib.Path):
     with open(png_image2, "rb") as fh:
         png_data = fh.read()
     with pytest.raises(
@@ -332,7 +331,7 @@ def test_nonreserved_custom(metadata_name: str, metadata_type: type):
 
 
 def test_mandatory_value(metadata_init: MetadataInitConfig):
-    if not metadata_init.a_type.is_required:
+    if not getattr(metadata_init.a_type, "is_required", False):
         pytest.skip("Only testing mandatory ones")
     with pytest.raises(ValueError, match="Missing"):
         if issubclass(metadata_init.a_type, metadata.TextListBasedMetadata):
@@ -344,8 +343,8 @@ def test_mandatory_value(metadata_init: MetadataInitConfig):
         elif issubclass(metadata_init.a_type, metadata.DateBasedMetadata):
             pytest.skip("Cannot set an empty Date")
         elif issubclass(metadata_init.a_type, metadata.DefaultIllustrationMetadata):
-            metadata_init.a_type(b"")
-            metadata_init.a_type(b" ")
+            metadata_init.a_type(b"")  # pyright:ignore[reportUnknownMemberType]
+            metadata_init.a_type(b" ")  # pyright:ignore[reportUnknownMemberType]
         elif get_classvar_value_type(metadata_init.a_type) is bytes:
             if metadata_init.nb_args == 1:
                 metadata_init.a_type(b"")  # pyright: ignore[reportCallIssue]
@@ -433,22 +432,18 @@ def test_libzim_bytes_value(metadata_init: MetadataInitConfig, png_image: pathli
 def test_libzim_io_bytesio_value(
     metadata_init: MetadataInitConfig, png_image: pathlib.Path
 ):
-    if isinstance(metadata_init.a_type, metadata.IllustrationBasedMetadata):
+    if metadata_init.a_type == metadata.DefaultIllustrationMetadata:
         with open(png_image, "rb") as fh:
             png_data = fh.read()
-            if metadata_init.nb_args == 1:
-                assert (
-                    metadata_init.a_type(value=io.BytesIO(png_data)).libzim_value
-                    == png_data
-                )
-            else:
-                assert (
-                    metadata_init.a_type(
-                        value=io.BytesIO(png_data), size=48
-                    ).libzim_value
-                    == png_data
-                )
-    if get_classvar_value_type(metadata_init.a_type) in (
+        assert metadata_init.a_type(value=io.BytesIO(png_data)).libzim_value == png_data
+    elif metadata_init.a_type == metadata.IllustrationMetadata:
+        with open(png_image, "rb") as fh:
+            png_data = fh.read()
+        assert (
+            metadata_init.a_type(value=io.BytesIO(png_data), size=48).libzim_value
+            == png_data
+        )
+    elif get_classvar_value_type(metadata_init.a_type) in (
         bytes,
         BinaryIO,
         io.BytesIO,
@@ -475,7 +470,7 @@ def test_std_metadata_values():
     values = test_value.values()
     assert len(values) == 9
 
-    expected_values: list[metadata.Metadata] = [
+    expected_values: list[metadata.AnyMetadata] = [
         metadata.LicenseMetadata("Creative Commons CC0"),
         metadata.NameMetadata("Test Name"),
         metadata.TitleMetadata("Test Title"),
@@ -571,7 +566,7 @@ def test_default_dev_zim_metadata():
     assert len(metadata.DEFAULT_DEV_ZIM_METADATA.values()) == 8
 
 
-def test_get_binary_from(png_image):
+def test_get_binary_from(png_image: pathlib.Path):
     with open(png_image, "rb") as fh:
         png_data = fh.read()
     # bytes input

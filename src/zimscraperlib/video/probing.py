@@ -1,11 +1,8 @@
-#!/usr/bin/env python3
-# vim: ai ts=4 sts=4 et sw=4 nu
-
-
+import pathlib
 import subprocess
 
 
-def get_media_info(src_path):
+def get_media_info(src_path: pathlib.Path):
     """dict of file's details from ffprobe
 
     codecs: list of codecs in use

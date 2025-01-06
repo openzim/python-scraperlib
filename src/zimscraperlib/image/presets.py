@@ -1,9 +1,9 @@
-#!/usr/bin/env python3
-# vim: ai ts=4 sts=4 et sw=4 nu
-
-from __future__ import annotations
-
-from typing import ClassVar
+from zimscraperlib.image.optimization import (
+    OptimizeGifOptions,
+    OptimizeJpgOptions,
+    OptimizePngOptions,
+    OptimizeWebpOptions,
+)
 
 """ presets for ImageOptimizer in zimscraperlib.image.optimization module """
 
@@ -22,11 +22,11 @@ class WebpLow:
     ext = "webp"
     mimetype = f"{preset_type}/webp"
 
-    options: ClassVar[dict[str, str | bool | int | None]] = {
-        "lossless": False,
-        "quality": 40,
-        "method": 6,
-    }
+    options: OptimizeWebpOptions = OptimizeWebpOptions(
+        lossless=False,
+        quality=40,
+        method=6,
+    )
 
 
 class WebpMedium:
@@ -41,11 +41,11 @@ class WebpMedium:
     ext = "webp"
     mimetype = f"{preset_type}/webp"
 
-    options: ClassVar[dict[str, str | bool | int | None]] = {
-        "lossless": False,
-        "quality": 50,
-        "method": 6,
-    }
+    options: OptimizeWebpOptions = OptimizeWebpOptions(
+        lossless=False,
+        quality=50,
+        method=6,
+    )
 
 
 class WebpHigh:
@@ -60,11 +60,11 @@ class WebpHigh:
     ext = "webp"
     mimetype = f"{preset_type}/webp"
 
-    options: ClassVar[dict[str, str | bool | int | None]] = {
-        "lossless": False,
-        "quality": 90,
-        "method": 6,
-    }
+    options: OptimizeWebpOptions = OptimizeWebpOptions(
+        lossless=False,
+        quality=90,
+        method=6,
+    )
 
 
 class GifLow:
@@ -81,13 +81,13 @@ class GifLow:
     ext = "gif"
     mimetype = f"{preset_type}/gif"
 
-    options: ClassVar[dict[str, str | bool | int | None]] = {
-        "optimize_level": 3,
-        "max_colors": 256,
-        "lossiness": 80,
-        "no_extensions": True,
-        "interlace": True,
-    }
+    options: OptimizeGifOptions = OptimizeGifOptions(
+        optimize_level=3,
+        max_colors=256,
+        lossiness=80,
+        no_extensions=True,
+        interlace=True,
+    )
 
 
 class GifMedium:
@@ -104,12 +104,12 @@ class GifMedium:
     ext = "gif"
     mimetype = f"{preset_type}/gif"
 
-    options: ClassVar[dict[str, str | bool | int | None]] = {
-        "optimize_level": 3,
-        "lossiness": 20,
-        "no_extensions": True,
-        "interlace": True,
-    }
+    options: OptimizeGifOptions = OptimizeGifOptions(
+        optimize_level=3,
+        lossiness=20,
+        no_extensions=True,
+        interlace=True,
+    )
 
 
 class GifHigh:
@@ -126,12 +126,12 @@ class GifHigh:
     ext = "gif"
     mimetype = f"{preset_type}/gif"
 
-    options: ClassVar[dict[str, str | bool | int | None]] = {
-        "optimize_level": 2,
-        "lossiness": None,
-        "no_extensions": True,
-        "interlace": True,
-    }
+    options: OptimizeGifOptions = OptimizeGifOptions(
+        optimize_level=2,
+        lossiness=None,
+        no_extensions=True,
+        interlace=True,
+    )
 
 
 class PngLow:
@@ -145,12 +145,12 @@ class PngLow:
     ext = "png"
     mimetype = f"{preset_type}/png"
 
-    options: ClassVar[dict[str, str | bool | int | None]] = {
-        "reduce_colors": True,
-        "remove_transparency": False,
-        "max_colors": 256,
-        "fast_mode": False,
-    }
+    options: OptimizePngOptions = OptimizePngOptions(
+        reduce_colors=True,
+        remove_transparency=False,
+        max_colors=256,
+        fast_mode=False,
+    )
 
 
 class PngMedium:
@@ -164,11 +164,11 @@ class PngMedium:
     ext = "png"
     mimetype = f"{preset_type}/png"
 
-    options: ClassVar[dict[str, str | bool | int | None]] = {
-        "reduce_colors": False,
-        "remove_transparency": False,
-        "fast_mode": False,
-    }
+    options: OptimizePngOptions = OptimizePngOptions(
+        reduce_colors=False,
+        remove_transparency=False,
+        fast_mode=False,
+    )
 
 
 class PngHigh:
@@ -182,11 +182,11 @@ class PngHigh:
     ext = "png"
     mimetype = f"{preset_type}/png"
 
-    options: ClassVar[dict[str, str | bool | int | None]] = {
-        "reduce_colors": False,
-        "remove_transparency": False,
-        "fast_mode": True,
-    }
+    options: OptimizePngOptions = OptimizePngOptions(
+        reduce_colors=False,
+        remove_transparency=False,
+        fast_mode=True,
+    )
 
 
 class JpegLow:
@@ -198,14 +198,14 @@ class JpegLow:
 
     VERSION = 1
 
-    ext = "png"
-    mimetype = f"{preset_type}/png"
+    ext = "jpg"
+    mimetype = f"{preset_type}/jpeg"
 
-    options: ClassVar[dict[str, str | bool | int | None]] = {
-        "quality": 45,
-        "keep_exif": False,
-        "fast_mode": True,
-    }
+    options: OptimizeJpgOptions = OptimizeJpgOptions(
+        quality=45,
+        keep_exif=False,
+        fast_mode=True,
+    )
 
 
 class JpegMedium:
@@ -220,11 +220,11 @@ class JpegMedium:
     ext = "jpg"
     mimetype = f"{preset_type}/jpeg"
 
-    options: ClassVar[dict[str, str | bool | int | None]] = {
-        "quality": 65,
-        "keep_exif": False,
-        "fast_mode": True,
-    }
+    options: OptimizeJpgOptions = OptimizeJpgOptions(
+        quality=65,
+        keep_exif=False,
+        fast_mode=True,
+    )
 
 
 class JpegHigh:
@@ -239,8 +239,8 @@ class JpegHigh:
     ext = "jpg"
     mimetype = f"{preset_type}/jpeg"
 
-    options: ClassVar[dict[str, str | bool | int | None]] = {
-        "quality": 80,
-        "keep_exif": True,
-        "fast_mode": True,
-    }
+    options: OptimizeJpgOptions = OptimizeJpgOptions(
+        quality=80,
+        keep_exif=True,
+        fast_mode=True,
+    )

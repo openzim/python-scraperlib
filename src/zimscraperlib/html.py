@@ -1,8 +1,4 @@
-#!/usr/bin/env python
-# vim: ai ts=4 sts=4 et sw=4 nu
-
 """ Tools to work with HTML contents """
-from __future__ import annotations
 
 import pathlib
 from typing import BinaryIO, TextIO
@@ -43,9 +39,7 @@ def find_language_in(content: str | BinaryIO | TextIO, mime_type: str) -> str:
         for key in keylist:
             node = soup.find(nodename)
             if node:
-                if not isinstance(node, element.Tag) or (
-                    isinstance(node, element.Tag) and not node.has_attr(key)
-                ):
+                if not isinstance(node, element.Tag) or not node.has_attr(key):
                     continue
                 if (
                     nodename == "meta"

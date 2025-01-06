@@ -102,10 +102,13 @@ class TestNormalize:
             ),
         ],
     )
-    def test_normalize(self, url, zim_path):
+    def test_normalize(self, url: str, zim_path: str):
         assert (
             ArticleUrlRewriter.normalize(HttpUrl(url)).value == ZimPath(zim_path).value
         )
+
+
+_empty_zimpath_set: set[ZimPath] = set()
 
 
 class TestArticleUrlRewriter:
@@ -114,7 +117,7 @@ class TestArticleUrlRewriter:
         [
             (
                 "foo.html",
-                set(),
+                _empty_zimpath_set,
             ),
             (
                 "bar.html",
@@ -128,7 +131,7 @@ class TestArticleUrlRewriter:
         expected_missing_zim_paths: set[ZimPath],
     ):
         http_article_url = HttpUrl("https://kiwix.org/a/article/document.html")
-        missing_zim_paths = set()
+        missing_zim_paths: set[ZimPath] = set()
         rewriter = ArticleUrlRewriter(
             article_url=http_article_url,
             existing_zim_paths={ZimPath("kiwix.org/a/article/foo.html")},

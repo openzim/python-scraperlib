@@ -1,6 +1,3 @@
-#!/usr/bin/env python
-# vim: ai ts=4 sts=4 et sw=4 nu
-
 """ ZIM Archive helper
 
     Convenient subclass of libzim.reader.Archive with:
@@ -9,9 +6,8 @@
     - direct access to search results and number of results
     - public Entry access by Id"""
 
-from __future__ import annotations
-
 from collections.abc import Iterable
+from types import TracebackType
 
 import libzim.reader  # pyright: ignore[reportMissingModuleSource]
 import libzim.search  # pyright: ignore[reportMissingModuleSource]
@@ -24,7 +20,12 @@ class Archive(libzim.reader.Archive):
     def __enter__(self):
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None = None,
+        exc_val: BaseException | None = None,
+        exc_tb: TracebackType | None = None,
+    ):
         pass
 
     @property

@@ -1,16 +1,15 @@
 """ Special item with customized index data and helper classes """
 
-from __future__ import annotations
-
 import io
 import pathlib
 
 import libzim.writer  # pyright: ignore[reportMissingModuleSource]
 
 try:
-    import pymupdf
+    import pymupdf  # pyright: ignore[reportMissingTypeStubs]
 except ImportError:  # pragma: no cover
-    import fitz as pymupdf  # pymupdf main module was named fitz before 1.24.3
+    # pymupdf main module was named fitz before 1.24.3
+    import fitz as pymupdf  # pyright: ignore[reportMissingTypeStubs]
 
 from zimscraperlib import logger
 
@@ -78,7 +77,9 @@ def get_pdf_index_data(
     """
 
     # do not display all pymupdf errors, we will filter them afterwards
-    pymupdf.TOOLS.mupdf_display_errors(False)
+    pymupdf.TOOLS.mupdf_display_errors(  # pyright: ignore[reportUnknownMemberType]
+        False
+    )
 
     if content:
         doc = pymupdf.open(stream=content)
@@ -86,18 +87,23 @@ def get_pdf_index_data(
         doc = pymupdf.open(stream=fileobj)
     else:
         doc = pymupdf.open(filename=filepath)
-    metadata = doc.metadata
+    metadata = (  # pyright: ignore[reportUnknownVariableType, reportUnknownMemberType]
+        doc.metadata
+    )
     title = ""
     if metadata:  # pragma: no branch (always metadata in test PDFs)
-        parts = []
+        parts: list[str] = []
         for key in ["title", "author", "subject"]:
-            if metadata.get(key):
-                parts.append(metadata[key])
+            if metadata.get(key):  # pyright: ignore[reportUnknownMemberType]
+                parts.append(
+                    metadata[key]  # pyright: ignore[reportUnknownArgumentType]
+                )
         if parts:  # pragma: no branch (always metadata in test PDFs)
             title = " - ".join(parts)
 
     content = "\n".join(
-        page.get_text() for page in doc  # pyright: ignore[reportAttributeAccessIssue]
+        page.get_text()  # pyright: ignore[reportUnknownArgumentType, reportUnknownMemberType, reportAttributeAccessIssue]
+        for page in doc
     )
 
     # build list of messages and filter messages which are known to not be relevant

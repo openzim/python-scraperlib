@@ -1,8 +1,3 @@
-#!/usr/bin/env python3
-# vim: ai ts=4 sts=4 et sw=4 nu
-
-from __future__ import annotations
-
 from typing import ClassVar
 
 from zimscraperlib.video.config import Config
@@ -22,7 +17,7 @@ class VoiceMp3Low(Config):
     ext = "mp3"
     mimetype = "audio/mp3"
 
-    options: ClassVar[dict[str, str | bool | int | None]] = {
+    options: ClassVar[dict[str, str | None]] = {
         "-vn": "",  # remove video stream
         "-codec:a": "mp3",  # audio codec
         "-ar": "44100",  # audio sampling rate
@@ -42,7 +37,7 @@ class VideoWebmLow(Config):
     ext = "webm"
     mimetype = f"{preset_type}/webm"
 
-    options: ClassVar[dict[str, str | bool | int | None]] = {
+    options: ClassVar[dict[str, str | None]] = {
         "-codec:v": "libvpx-vp9",  # video codec
         "-b:v": "140k",  # Adjust quantizer within min/max to target this bitrate
         "-qmin": "30",  # Reduce the bitrate on very still videos
@@ -70,7 +65,7 @@ class VideoMp4Low(Config):
     ext = "mp4"
     mimetype = f"{preset_type}/mp4"
 
-    options: ClassVar[dict[str, str | bool | int | None]] = {
+    options: ClassVar[dict[str, str | None]] = {
         "-codec:v": "h264",  # video codec
         "-b:v": "300k",  # target video bitrate
         "-maxrate": "300k",  # max video bitrate
@@ -95,7 +90,7 @@ class VideoWebmHigh(Config):
     ext = "webm"
     mimetype = f"{preset_type}/webm"
 
-    options: ClassVar[dict[str, str | bool | int | None]] = {
+    options: ClassVar[dict[str, str | None]] = {
         "-codec:v": "libvpx-vp9",  # video codec
         "-b:v": "340k",  # Adjust quantizer within min/max to target this bitrate
         "-qmin": "26",  # Reduce the bitrate on very still videos
@@ -119,7 +114,7 @@ class VideoMp4High(Config):
     ext = "mp4"
     mimetype = f"{preset_type}/mp4"
 
-    options: ClassVar[dict[str, str | bool | int | None]] = {
+    options: ClassVar[dict[str, str | None]] = {
         "-codec:v": "h264",  # video codec
         "-codec:a": "aac",  # audio codec
         "-crf": "20",  # constant quality, lower value gives better qual and larger size

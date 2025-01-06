@@ -1,11 +1,8 @@
-#!/usr/bin/env python3
-# vim: ai ts=4 sts=4 et sw=4 nu
-
 import pytest
 
 
 @pytest.fixture(scope="function")
-def html_page():
+def html_page() -> str:
     """sample HTML content with title"""
     return """
 <!DOCTYPE html>
@@ -26,7 +23,7 @@ def html_page():
 
 
 @pytest.fixture(scope="function")
-def html_page_without_title():
+def html_page_without_title() -> str:
     """sample HTML content without title"""
     return """
 <!DOCTYPE html>

@@ -1,9 +1,5 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-# vim: ai ts=4 sts=4 et sw=4 nu
+from zimscraperlib.video.config import Config
+from zimscraperlib.video.encoding import reencode
+from zimscraperlib.video.probing import get_media_info
 
-from .config import Config
-
-# flake8: noqa
-from .encoding import reencode
-from .probing import get_media_info
+__all__ = ["Config", "get_media_info", "reencode"]

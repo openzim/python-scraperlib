@@ -1,14 +1,9 @@
-#!/usr/bin/env python3
-# vim: ai ts=4 sts=4 et sw=4 nu
-
-from __future__ import annotations
-
 import colorsys
 import io
 import pathlib
 import re
 
-import colorthief
+import colorthief  # pyright: ignore[reportMissingTypeStubs]
 import PIL.Image
 
 from zimscraperlib.filesystem import get_content_mimetype, get_file_mimetype
@@ -25,9 +20,7 @@ def get_colors(
 
     def solarize(r: int, g: int, b: int) -> tuple[int, int, int]:
         # calculate solarized color for main
-        h, l, s = colorsys.rgb_to_hls(  # noqa: E741
-            float(r) / 256, float(g) / 256, float(b) / 256
-        )
+        h, _, s = colorsys.rgb_to_hls(float(r) / 256, float(g) / 256, float(b) / 256)
         r2, g2, b2 = (int(x * 256) for x in colorsys.hls_to_rgb(h, 0.95, s))
         return r2, g2, b2
 
@@ -35,17 +28,23 @@ def get_colors(
 
     if use_palette:
         # extract two main colors from palette, solarizing second as background
-        palette = ct.get_palette(color_count=2, quality=1)
+        palette = ct.get_palette(  # pyright: ignore[reportUnknownVariableType]
+            color_count=2, quality=1
+        )
 
         # using the first two colors of the palette?
-        mr, mg, mb = palette[0]
-        sr, sg, sb = solarize(*palette[1])
+        mr, mg, mb = palette[0]  # pyright: ignore[reportUnknownVariableType]
+        sr, sg, sb = solarize(*palette[1])  # pyright: ignore[reportUnknownArgumentType]
     else:
         # extract main color from image and solarize it as background
-        mr, mg, mb = ct.get_color(quality=1)
-        sr, sg, sb = solarize(mr, mg, mb)
+        mr, mg, mb = ct.get_color(  # pyright: ignore[reportUnknownVariableType]
+            quality=1
+        )
+        sr, sg, sb = solarize(mr, mg, mb)  # pyright: ignore[reportUnknownArgumentType]
 
-    return rgb_to_hex(mr, mg, mb), rgb_to_hex(sr, sg, sb)
+    return rgb_to_hex(
+        mr, mg, mb  # pyright: ignore[reportUnknownArgumentType]
+    ), rgb_to_hex(sr, sg, sb)
 
 
 def is_hex_color(text: str) -> bool:

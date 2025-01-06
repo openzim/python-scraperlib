@@ -1,6 +1,3 @@
-#!/usr/bin/env python
-# vim: ai ts=4 sts=4 et sw=4 nu
-
 import pytest
 
 from zimscraperlib.types import ARTICLE_MIME, FONT_MIMES, get_mime_for_name
@@ -41,8 +38,13 @@ def test_constants():
         ("assets/test.css", "text/css", None, None),
     ],
 )
-def test_mime_for_name(filename, fallback, expected_mime, no_ext_to):
-    kwargs = {}
+def test_mime_for_name(
+    filename: str,
+    fallback: str | None,
+    expected_mime: str | tuple[str],
+    no_ext_to: str | None,
+):
+    kwargs: dict[str, str] = {}
     if fallback is not None:
         kwargs.update({"fallback": fallback})
     if no_ext_to is not None:

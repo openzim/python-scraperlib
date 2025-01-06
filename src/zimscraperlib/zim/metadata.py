@@ -1,12 +1,11 @@
-from __future__ import annotations
-
 import base64
 import datetime
 import io
+from abc import ABC, abstractmethod
 from collections.abc import Iterable
 from dataclasses import asdict, dataclass, fields
 from itertools import filterfalse
-from typing import Any
+from typing import Any, TypeVar
 
 import regex
 
@@ -27,68 +26,21 @@ UNWANTED_CONTROL_CHARACTERS_REGEX = regex.compile(r"(?![\n\t\r])\p{C}")
 # whether to apply openZIM recommendations (see https://wiki.openzim.org/wiki/Metadata)
 APPLY_RECOMMENDATIONS: bool = True
 
-
-def clean_str(value: str) -> str:
-    """Clean a string value for unwanted control characters and strip white chars"""
-    return UNWANTED_CONTROL_CHARACTERS_REGEX.sub("", value).strip(" \r\n\t")
+# TypeVar without any constraint
+T = TypeVar("T")
 
 
-def nb_grapheme_for(value: str) -> int:
-    """Number of graphemes (visually perceived characters) in a given string"""
-    return len(regex.findall(r"\X", value))
+class MetadataBase[T](ABC):
+    """Base class for metadata
 
+    Both generic (to accomodate any value type implemented in child classes) and
+    abstract (because it has no idea how to compute the cleaned_value and libzim_value
+    for any value type)
+    """
 
-def mandatory(cls):
-    """Marks a Metadata mandatory: must be set to please Creator and cannot be empty"""
-    cls.is_required = True
-    cls.empty_allowed = False
-    return cls
-
-
-def allow_empty(cls):
-    """Whether input can be blank"""
-    cls.empty_allowed = True
-    return cls
-
-
-def allow_duplicates(cls):
-    """Whether list input can accept duplicate values"""
-    cls.duplicates_allowed = True
-    return cls
-
-
-def deduplicate(cls):
-    """Whether duplicates in list inputs should be reduced"""
-    cls.duplicates_allowed = True
-    cls.require_deduplication = True
-    return cls
-
-
-def only_lang_codes(cls):
-    """Whether list input should be checked to only accept ISO-639-1 codes"""
-    cls.oz_only_iso636_3_allowed = True
-    return cls
-
-
-def x_protected(cls):
-    """Whether metadata name should be checked for collision with reserved names
-
-    when applying recommendations"""
-    cls.oz_x_protected = True
-    return cls
-
-
-def x_prefixed(cls):
-    """Whether metadata names should be automatically X-Prefixed"""
-    cls.oz_x_protected = False
-    cls.oz_x_prefixed = True
-    return cls
-
-
-class Metadata:
     # name of the metadata (not its value)
     meta_name: str
-    value: bytes
+    value: T
 
     # MIME type of the value
     meta_mimetype: str
@@ -191,9 +143,88 @@ class Metadata:
     def get_encoded(value: str) -> bytes:
         return value.encode()
 
+    def validate(self) -> None:
+        _ = self.name
+        _ = self.libzim_value
+
+    @abstractmethod
+    def get_cleaned_value(self, value: Any) -> T: ...
+
     @property
     def libzim_value(self) -> bytes:
         return self.get_libzim_value()
+
+    @abstractmethod
+    def get_libzim_value(self) -> bytes: ...
+
+
+# Alias for convenience when function accept any metadata
+AnyMetadata = MetadataBase[Any]
+
+# TypeVar bounded to subclasses of GenericMetadata, used by class decorators so that
+# they properly accommodate to the class they are used on while still knowing they have
+# access to all attributes of the MetadataBase class
+U = TypeVar("U", bound=AnyMetadata)
+
+
+def clean_str(value: str) -> str:
+    """Clean a string value for unwanted control characters and strip white chars"""
+    return UNWANTED_CONTROL_CHARACTERS_REGEX.sub("", value).strip(" \r\n\t")
+
+
+def nb_grapheme_for(value: str) -> int:
+    """Number of graphemes (visually perceived characters) in a given string"""
+    return len(regex.findall(r"\X", value))
+
+
+def mandatory(cls: type[U]):
+    """Marks a Metadata mandatory: must be set to please Creator and cannot be empty"""
+    cls.is_required = True
+    cls.empty_allowed = False
+    return cls
+
+
+def allow_empty(cls: type[U]):
+    """Whether input can be blank"""
+    cls.empty_allowed = True
+    return cls
+
+
+def allow_duplicates(cls: type[U]):
+    """Whether list input can accept duplicate values"""
+    cls.duplicates_allowed = True
+    return cls
+
+
+def deduplicate(cls: type[U]):
+    """Whether duplicates in list inputs should be reduced"""
+    cls.duplicates_allowed = True
+    cls.require_deduplication = True
+    return cls
+
+
+def only_lang_codes(cls: type[U]):
+    """Whether list input should be checked to only accept ISO-639-1 codes"""
+    cls.oz_only_iso636_3_allowed = True
+    return cls
+
+
+def x_protected(cls: type[U]):
+    """Whether metadata name should be checked for collision with reserved names
+
+    when applying recommendations"""
+    cls.oz_x_protected = True
+    return cls
+
+
+def x_prefixed(cls: type[U]):
+    """Whether metadata names should be automatically X-Prefixed"""
+    cls.oz_x_protected = False
+    cls.oz_x_prefixed = True
+    return cls
+
+
+class Metadata(MetadataBase[bytes]):
 
     def get_binary_from(
         self,
@@ -205,7 +236,7 @@ class Metadata:
         elif isinstance(value, bytes):
             bvalue = value
         else:
-            last_pos: int
+            last_pos: int = 0
             if isinstance(value, SupportsSeekableRead) and value.seekable():
                 last_pos = value.tell()
             bvalue = value.read()
@@ -222,12 +253,8 @@ class Metadata:
     def get_libzim_value(self) -> bytes:
         return self.value
 
-    def validate(self) -> None:
-        _ = self.name
-        _ = self.libzim_value
 
-
-class TextBasedMetadata(Metadata):
+class TextBasedMetadata(MetadataBase[str]):
     """Expects a Text (str) input. Will be cleaned-up and UTF-8 encoded"""
 
     value: str
@@ -257,7 +284,7 @@ class TextBasedMetadata(Metadata):
         return self.get_encoded(self.value)
 
 
-class TextListBasedMetadata(Metadata):
+class TextListBasedMetadata(MetadataBase[list[str]]):
     """Expects a Text List (list[str]) input. Each item will be cleaned-up.
 
     List will be joined (see `join_list_with`) and UTF-8 encoded"""
@@ -295,7 +322,7 @@ class TextListBasedMetadata(Metadata):
         return self.get_encoded(self.join_list_with.join(self.value))
 
 
-class DateBasedMetadata(Metadata):
+class DateBasedMetadata(MetadataBase[datetime.date]):
     """Expects a Date (date | datetime) input. Will be UTF-8 encoded as YYYY-MM-DD"""
 
     value: datetime.date
@@ -456,7 +483,7 @@ class StandardMetadataList:
     License: LicenseMetadata | None = None
     Relation: RelationMetadata | None = None
 
-    def values(self) -> list[Metadata]:
+    def values(self) -> list[AnyMetadata]:
         return list(filter(bool, asdict(self).values()))
 
     @classmethod
@@ -464,11 +491,13 @@ class StandardMetadataList:
         """list of mandatory metadata as per the spec.
 
         computed from metadata using @mandatory decorator"""
-        names = []
+        names: list[str] = []
         for field in fields(cls):
-            meta_type = globals().get(str(field.type))
-            if getattr(meta_type, "is_required", False):
-                names.append(getattr(meta_type, "meta_name", ""))
+            if not isinstance(field.type, type):
+                continue
+            # field.type is a `type` only when expecting a single type
+            # and is a string in case of None Union
+            names.append(getattr(field.type, "meta_name", ""))
         return names
 
 
