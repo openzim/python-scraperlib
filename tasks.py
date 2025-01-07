@@ -108,3 +108,17 @@ def fixall(ctx: Context, args: str = "."):
     fix_black(ctx, args)
     fix_ruff(ctx, args)
     lintall(ctx, args)
+
+
+@task(optional=["args"], help={"args": "mkdocs build additional arguments"})
+def docs_build(ctx: Context, args: str = ""):
+    """build mkdocs documentation"""
+    args = args or ""  # needed for hatch script
+    ctx.run(f"mkdocs build {args}", pty=use_pty)
+
+
+@task(optional=["args"], help={"args": "mkdocs serve additional arguments"})
+def docs_serve(ctx: Context, args: str = ""):
+    """serve mkdocs documentation locally"""
+    args = args or ""  # needed for hatch script
+    ctx.run(f"mkdocs serve {args}", pty=use_pty)
