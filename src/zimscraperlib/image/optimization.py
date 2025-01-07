@@ -321,7 +321,7 @@ def optimize_gif(
 
 @dataclass
 class OptimizeOptions:
-    """Dataclass holding GIF optimization options for all supported formats"""
+    """Dataclass holding optimization options for all supported formats"""
 
     gif: OptimizeGifOptions
     webp: OptimizeWebpOptions
