@@ -7,38 +7,128 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Breaking Changes
+This is a major release with a lot of breaking changes but most changes are easy to fix.
 
-- Renamed `filesystem.validate_zimfile_creatable` to `filesystem.file_creatable` to reflect general applicability to check file creation beyond ZIM files #200
-- Remove any "ZIM" reference in exceptions while working with files #200
-- Significantly enhance the safety of metadata manipulation (#205)
-  - add types for all metadata, one type per metadata name plus some generic ones for non-standard metadata
-    - all types are responsible to validate metadata value at initialization time
-    - validation checks for adherence to the ZIM specification and conventions are automated
-    - cleanup of unwanted control characters and stripping white characters are **automated in all text metadata**
-    - whenever possible, try to **automatically clean a "reasonably" bad metadata** (e.g. automaticall accept and remove duplicate tags - harmless - but not duplicate language codes - codes are supposed to be ordered, so it is a weird situation) ; this is an alignment of paradigm, because for some metadata the lib was permissive, while for other it was quite restrictive ; this PR tries to align this and **make the lib as permissive as possible**, avoiding to fail a scraper for something which could be automatically fixed
-    - it is now possible to disable ZIM conventions checks with `zim.metadata.check_metadata_conventions`
-  - simplify `zim.creator.Creator.config_metadata` by using these types and been more strict:
-    - add new `StandardMetadata` class for standard metadata, including list of mandatory one
-    - by default, all non-standard metadata must start with `X-` prefix
-      - this not yet an openZIM convention / specification, so it is possible to disable this check with `fail_on_missing_prefix` argument
-  - simplify `add_metadata`, use same metadata types
-  - simplify `zim.creator.Creator.start` with new types, and drop all metadata from memory after being passed to the libzim
-  - drop `zim.creator.convert_and_check_metadata` (not usefull anymore, simply use proper metadata type)
-  - move `MANDATORY_ZIM_METADATA_KEYS` and `DEFAULT_DEV_ZIM_METADATA` from `constants` to `zim.metadata` to avoid circular dependencies
-  - new `inputs.unique_values` utility function to compute the list of uniques values from a given list, but preserving initial list order
-  - in `__init__` of `zim.creator.Creator`, rename `disable_metadata_checks` to `check_metadata_conventions` for clarity and brevity
-    - beware that this manipulate the global `zim.metadata.check_metadata_conventions`, so if you have many creator running in parallel, they can't have different settings, last one initialized will "win"
+It focuses on type safety with the introduction of runtime checks: any call to zimscraperlib API must match the type definition or an exception will be raised.
+
+Documentation is available as docstrings and on https://python-scraperlib.readthedocs.io
+
+Main changes includes:
+
+- ZIM metadata handling has completely changed with new types for each kind of metadata.
+- `i18n` module has been redesigned around a single main class `Language`
+- New `rewriting` module for HTTML/CSS/JS (that one being done at runtime via Wombat)
+- Now supporting only Python 3.12
 
 ### Added
 
-- Add `filesystem.validate_folder_writable` to check if a folder can be written to #200
-- Expose `constants.VERSION` to have access to zimscraperlib version from scrapers #224
-- Added mkdocs based documentation site. #92
+- Documentation using `mkdocs`, published on readthedocs.com (#92)
+- `rewriting` module to rewrite URLs in content for generic scrapers
+  - `rewriting.css` to rewrite URLs in CSS files
+  - `rewriting.html` to rewrite URLs in HTML files
+  - `rewriting.js` to rewrite URLs in JS files (at runtime, using `wombat`)
+    - `wombat-setup` javascript module in `javascript/`
+- `typing` module with custom types:
+  - `Callback` to use where we expect callbacks
+  - `SupportsWrite`, `SupportsRead`, `SupportsSeeking` `SupportsSeekableRead` and `SupportsSeekableWrite`: protocols for IO type annotations
+- `zim.metadata` module with a type-based approach for each kind of metadata and helpers for custom ones
+  - [`zim.metadata`] `APPLY_RECOMMENDATIONS`: general flag to toggle openZIM-recommended constraints
+  - [`zim.metadata`] Type-based classes: `Metadata`, `TextBasedMetadata`, `TextListBasedMetadata`, `DateBasedMetadata`, `IllustrationBasedMetadata`
+  - [`zim.metadata`] Usage-based classes: `NameMetadata`, `LanguageMetadata`, `DefaultIllustrationMetadata`, etc.
+  - [`zim.metadata`] `StandardMetadataList` to package the standard metadata
+  - See details for additional API endpoints and variables
+- [`constants`] `DEFAULT_WEB_REQUESTS_TIMEOUT` exposed for `download` module
+- [`download`] `stream_file()` now accepts `timeout: int` param (defaults to constant timeout) (#222)
+- [`filesystem`] `path_from` context manager to acquire a pathlib `Path` from `Path` or `TemporaryDirectory`
+- [`i18n`] `Language`, `get_language()` and `get_language_or_none()`. See breaking changes
+- [`image.optimization`] `OptimizePngOptions` dataclass to store PNG options
+- [`image.optimization`] `OptimizeJpgOptions` dataclass to store JPEG options
+- [`image.optimization`] `OptimizeGifOptions` dataclass to store WebP options
+- [`image.optimization`] `OptimizeOptions` dataclass to store cross-formats options
+- [`inputs`] `unique_values()` to deduplicate a list while preserving order
+- [`logging`] `DEFAULT_FORMAT_WITH_THREADS` as many scrapers uses threads
+- [`video.encoding`] `reencode()`'s `existing_tmp_path` param
+- [`zim.filesystem`] `validate_folder_writable()` to ensure one can write into a folder (#200)
+- [`zim.creator`] `Creator._get_first_language_metadata_value()` to retrieve first language from metadata
+- [`zim.items`] `no_indexing_indexdata()` to get an IndexData that disables indexing
+- [`zim.items`] `URLItem.get_mimetype()` now only returning `str`
 
-### Fixed
+## Changed (Breaking)
 
-- Set default timeout in `download.stream_file` to 10 seconds, and allow to override value #222
+- Entire API is now type-protected using beartype. Any call to scraperlib that doesn't satisfy the annotated types will raise an exception
+- [`constants`] `MANDATORY_ZIM_METADATA_KEYS` and `DEFAULT_DEV_ZIM_METADATA` moved to `zim/metadata`
+- [`download`] `YoutubeDownloader.download`'s `options` parameters now expect an `dict[str, Any]` instead of `dict`
+- [`download`] `YoutubeConfig` options now limited to `str | bool | int | None`
+- [`download`] `_get_retry_adapter()` now exposed as `get_retry_adapter()`
+- [`download`] `stream_file`'s `byte_stream' param now more flexible, accepting `SupportsWrite[bytes] | SupportsSeekableWrite[bytes]`
+- [`download`] `stream_file`'s `proxies` param now accepting `dict[str, str]` instead of `dict`
+- [`filesystem`] `delete_callback()` is now a simple callback accepting an `fpath` and deleting it (doesn't chain other callback anymore).
+- [`filesystem`] `delete_callback()` doesn't fail on missing file (#192)
+- [`i18n`] Redesigned API around a single object:
+  - `Language` which is inited with any acceptable code. Raises `NotFoundError` on 639-3 matching failure
+  - `find_language_names()` is retained but only accepts a `query: str`
+  - added `get_language()` and `get_language_or_none()` as shortcuts around `Language`
+  - `is_valid_iso_639_3()` is retained
+- [`image.conversion`] `convert_image()` now accepts `io.BytesIO` in place of `IO[bytes]` for `src` and `dst`.
+- [`image.conversion`] `convert_svg2png()` now accepts `io.BytesIO` in place of `IO[bytes]` for `src` and `dst`.
+- [`image.optimization`] `optimize_png()` now accepts `options: OptimizePngOptions` instead of individual params.
+- [`image.optimization`] `optimize_jpeg()` now accepts `options: OptimizeJpgOptions` instead of individual params.
+- [`image.optimization`] `optimize_webp()` now accepts `options: OptimizeWebpOptions` instead of individual params.
+- [`image.optimization`] `optimize_gif()` now accepts `options: OptimizeGifOptions` instead of individual params.
+- [`image.presets`] All presets now use the new options dataclass instead of ClassVar dict
+- [`image.probing`] `format_for()` now accepts `io.BytesIO` in place of `IO[bytes]` for `src`.
+- [`image.probing`] `is_valid_image()` now accepts `io.BytesIO` in place of `IO[bytes]` for `image`.
+- [`image.utils`] `save_image()` now accepts `io.BytesIO` in place of `IO[bytes]` for `dst`.
+- [`video.config`] `Config` was mostly not using type annotations.
+- [`video.config`] `Config` options only expecting `str | None`
+- [`video.presets`] All options only expecting `str | None`
+- [`video.encoding`] `reencode()` now always returning a `tuple[bool, CompletedProcess]`
+- [`zim._libkiwix`] `MimetypeAndCounter` now expects specific types for `mimetype: str` and `value: int`
+- [`zim.filesystem`] `make_zim_file()` publisher`param now properly expects an`str`
+- [`zim.filesystem`] `IncorrectZIMPathError` renamed to `IncorrectPathError`
+- [`zim.filesystem`] `MissingZIMFolderError` renamed to `MissingFolderError`
+- [`zim.filesystem`] `NotADirectoryZIMFolderError` renamed to `NotADirectoryFolderError`
+- [`zim.filesystem`] `NotWritableZIMFolderError` renamed to `NotWritableFolderError`
+- [`zim.filesystem`] `IncorrectZIMFilenameError` renamed to `IncorrectFilenameError`
+- [`zim.filesystem`] `validate_zimfile_creatable()` renamed to `validate_file_creatable()`
+- [`zim.items`] `Item` and `StaticItem` now expecting `hints` as `dict[libzim.writer.Hint, int]` instead of `dict`
+- [`zim.items`] `Item.get_hints()` now returning `dict[libzim.writer.Hint, int]` instead of `dict`
+- [`zim.items`] `URLItem.download_for_size()` now specifying type annotations and reordered params
+- [`zim.providers`] `FileLikeProvider.gen_blob()` and `URLProvider.gen_blob()` now properly annotates return type (`Generator[libzim.writer.Blob, None, None]`)
+- [`zim.providers`] `URLProvider.get_size_of()` param `url` now explicitly expects an `str`
+- [`zim.creator`] `Creator.config_metadata()` signature changed, now mainly accepting a `StandardMetadataList`
+- [`zim.creator`] `Creator.config_dev_metadata()` signature changed to accept new metadata types
+- [`zim.creator`] `Creator.add_item_for()`'s `callback` renamed to `callbacks` and accepting `Callback`
+- [`zim.creator`] `Creator.add_item()`'s `callback` renamed to `callbacks` and accepting `Callback`
+
+## Changed
+
+- [deps] `iso639-lang` now requires at least v2.4.0
+- [`download`] `stream_file()` now return `tuple[int, requests.structures.CaseInsensitiveDict[str]]` instead of `tuple[int, requests.structures.CaseInsensitiveDict]`
+- [`download`] `stream_file()` now accepts both `fpath` and `byte_stream` params (writes to both)
+- [`image.utils`] `save_image()` now accepts `Any` `**params`.
+- [`zim.archive`] `Archive.counters` now returning `CounterMap` (compatible with previous `dict[str, int]`)
+
+## Fixed
+
+- Direct dependencies now properly references: pillow, urllib3, piexif, idna (#226)
+- [`download`] `YoutubeDownloader.download` now respects its return type (`bool | Future[Any]`)
+- [`image.conversion`] `convert_image()` `**params` properly declared as accepting `None`.
+- [`logging`] `getLogger()`'s' `console` now properly accepting `TextIO | io.StringIO | None`
+- [`video.probing`] `get_media_info()` type annotation for `src_path`
+- [`zim.archive`] `Archive.get_item()` return type (`libzim.reader.Item`)
+
+## Removed
+
+- Support for Python 3.8/3.9/3.10/3.11. Only Python 3.12 is supported now.
+- [`i18n`] `Lang` (See breaking changes)
+- [`i18n`] `get_iso_lang_data()` (See breaking changes)
+- [`i18n`] `update_with_macro()` (See breaking changes)
+- [`i18n`] `get_language_details()` (See breaking changes)
+- [`uri`] `rebuild_uri` `failsafe` param (was only handling incorrect types)
+- [`video.encoding`] `reencode()`'s `with_process` param
+- [`zim.creator`] `Creator.validate_metadata()`
+- [`zim.creator`] `Creator.convert_and_check_metadata()`
 
 ## [4.0.0] - 2024-08-05
 
