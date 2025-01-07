@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## Fixed
+
+- Fix wombatSetup.js location in wheel (#236)
+
 ## [5.0.0rc1] - 2025-01-07
 
 This is a major release with a lot of breaking changes but most changes are easy to fix.

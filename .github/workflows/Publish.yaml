@@ -3,7 +3,6 @@ name: Build and publish to PyPI
 on:
   release:
     types: [published]
-  workflow_dispatch:
 
 jobs:
   generate-rules:
@@ -93,7 +92,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: wombat-setup
-          path: src/zimscraperlib/rewriting/statics/wombatSetup.js
+          path: src/zimscraperlib/rewriting/statics
 
       - name: Set up Python
         uses: actions/setup-python@v5
