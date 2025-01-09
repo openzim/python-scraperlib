@@ -107,7 +107,7 @@ artifacts = [
 ]
 
 [tool.hatch.build.targets.sdist]
-include = [
+artifacts = [
   "src/zimscraperlib/rewriting/statics/**",
   "src/zimscraperlib/rewriting/rules.py",
   "tests/rewriting/test_fuzzy_rules.py",
