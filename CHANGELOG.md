@@ -5,23 +5,31 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) (as of version 1.5.0).
 
-## [Unreleased]
+## [5.0.0] - 2025-01-14
 
-## [5.0.0rc3] - 2025-01-07
+This is a major release with a lot of breaking changes but most changes are easy to fix.
 
-## Changed
+**In addition to item below, see content of Release Candidates for changes since 4.x.**
+
+### Changed
+
+- Add support for urllib3 2.3.x #243
+
+## [5.0.0rc4] - 2025-01-09
+
+### Changed
 
 - Mark library as typed and fix sdist content (#241)
 
 ## [5.0.0rc3] - 2025-01-07
 
-## Changed
+### Changed
 
 - Upgrade wombat to 3.8.7 (#239)
 
 ## [5.0.0rc2] - 2025-01-07
 
-## Fixed
+### Fixed
 
 - Fix wombatSetup.js location in wheel (#236)
 
