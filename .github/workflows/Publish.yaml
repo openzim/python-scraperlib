@@ -106,7 +106,7 @@ jobs:
           python -m build --sdist --wheel
 
       - name: Publish to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1.8
+        uses: pypa/gh-action-pypi-publish@release/v1.12
 # OPTIONAL PUBLICATION TO NPM, NOT NEEDED BY SCRAPERS IN THE END
 
 # publish-js:

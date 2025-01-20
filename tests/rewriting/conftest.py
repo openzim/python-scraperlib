@@ -44,9 +44,7 @@ class SimpleUrlRewriter(ArticleUrlRewriter):
 
 
 @pytest.fixture(scope="module")
-def simple_url_rewriter_gen() -> (
-    Generator[Callable[[str], ArticleUrlRewriter], None, None]
-):
+def simple_url_rewriter_gen() -> Generator[Callable[[str], ArticleUrlRewriter]]:
     """Fixture to create a basic url rewriter returning URLs as-is"""
 
     def get_simple_url_rewriter(url: str, suffix: str = "") -> ArticleUrlRewriter:
@@ -56,11 +54,13 @@ def simple_url_rewriter_gen() -> (
 
 
 @pytest.fixture(scope="module")
-def js_rewriter_gen() -> Generator[
-    Callable[[ArticleUrlRewriter, str | None, Callable[[ZimPath], None]], JsRewriter],
-    None,
-    None,
-]:
+def js_rewriter_gen() -> (
+    Generator[
+        Callable[
+            [ArticleUrlRewriter, str | None, Callable[[ZimPath], None]], JsRewriter
+        ]
+    ]
+):
     """Fixture to create a basic url rewriter returning URLs as-is"""
 
     def get_js_rewriter(
@@ -79,7 +79,7 @@ def js_rewriter_gen() -> Generator[
 
 @pytest.fixture(scope="module")
 def css_rewriter_gen() -> (
-    Generator[Callable[[ArticleUrlRewriter, str | None], CssRewriter], None, None]
+    Generator[Callable[[ArticleUrlRewriter, str | None], CssRewriter]]
 ):
     """Fixture to create a basic url rewriter returning URLs as-is"""
 
