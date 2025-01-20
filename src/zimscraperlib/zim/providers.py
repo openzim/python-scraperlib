@@ -57,7 +57,7 @@ class FileLikeProvider(libzim.writer.ContentProvider):
     def get_size(self) -> int:
         return getattr(self, "size", -1)
 
-    def gen_blob(self) -> Generator[libzim.writer.Blob, None, None]:
+    def gen_blob(self) -> Generator[libzim.writer.Blob]:
         yield libzim.writer.Blob(self.fileobj.getvalue())  # pragma: no cover
 
 
@@ -88,7 +88,7 @@ class URLProvider(libzim.writer.ContentProvider):
     def get_size(self) -> int:
         return getattr(self, "size", -1)
 
-    def gen_blob(self) -> Generator[libzim.writer.Blob, None, None]:  # pragma: no cover
+    def gen_blob(self) -> Generator[libzim.writer.Blob]:  # pragma: no cover
         for chunk in self.resp.iter_content(10 * 1024):
             if chunk:
                 yield libzim.writer.Blob(chunk)
