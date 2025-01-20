@@ -221,6 +221,8 @@ select = [
   "YTT",  # flake8-2020
 ]
 ignore = [
+  # Allow to shadow Python standard-library modules
+  "A005",
   # Allow non-abstract empty methods in abstract base classes
   "B027",
   # Remove flake8-errmsg since we consider they bloat the code and provide limited value
