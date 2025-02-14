@@ -1,18 +1,18 @@
-""" ZIM Creator helper
+"""ZIM Creator helper
 
-    Convenient subclass of libzim.writer.Creator with:
-    - easier configuration of commonly set props during init
-    - start/stop methods to bypass the contextmanager
-    - method to create an entry directly from args
-    - direct method to add redirects without title
-    - prevent exeption on double call to close()
+Convenient subclass of libzim.writer.Creator with:
+- easier configuration of commonly set props during init
+- start/stop methods to bypass the contextmanager
+- method to create an entry directly from args
+- direct method to add redirects without title
+- prevent exeption on double call to close()
 
-    Convenient subclasses of libzim.writer.Item with:
-    - metadata set on initialization
-    - metadata stored on object
-    Sister subclass StaticItem (inheriting from it) with:
-    - content stored on object
-    - can be used to store a filepath and content read from it (not stored) """
+Convenient subclasses of libzim.writer.Item with:
+- metadata set on initialization
+- metadata stored on object
+Sister subclass StaticItem (inheriting from it) with:
+- content stored on object
+- can be used to store a filepath and content read from it (not stored)"""
 
 import io
 import logging

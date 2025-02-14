@@ -1,10 +1,10 @@
-""" libzim Providers accepting a `ref` arg to keep it away from garbage collection
+"""libzim Providers accepting a `ref` arg to keep it away from garbage collection
 
-    Use case is to pass it the Item instance that created the Provider so that the
-    Item lives longer than the provider, thus allowing:
-    - to keep a single copy of the data if it is to be indexed
-        (and thus Provider instanced twice)
-    - to release whatever needs to be once we know data won't be fetched anymore """
+Use case is to pass it the Item instance that created the Provider so that the
+Item lives longer than the provider, thus allowing:
+- to keep a single copy of the data if it is to be indexed
+    (and thus Provider instanced twice)
+- to release whatever needs to be once we know data won't be fetched anymore"""
 
 import io
 import pathlib

@@ -1,4 +1,4 @@
-""" libzim Item helpers """
+"""libzim Item helpers"""
 
 import io
 import pathlib

@@ -337,24 +337,38 @@ def test_mandatory_value(metadata_init: MetadataInitConfig):
         if issubclass(metadata_init.a_type, metadata.TextListBasedMetadata):
             metadata_init.a_type([])
             metadata_init.a_type(["", " "])
-        elif issubclass(metadata_init.a_type, metadata.TextBasedMetadata):
+        elif issubclass(
+            metadata_init.a_type,  # pyright:ignore[reportUnknownMemberType, reportUnknownArgumentType]
+            metadata.TextBasedMetadata,
+        ):
             metadata_init.a_type("")
             metadata_init.a_type(" ")
-        elif issubclass(metadata_init.a_type, metadata.DateBasedMetadata):
+        elif issubclass(
+            metadata_init.a_type,  # pyright:ignore[reportUnknownMemberType, reportUnknownArgumentType]
+            metadata.DateBasedMetadata,
+        ):
             pytest.skip("Cannot set an empty Date")
-        elif issubclass(metadata_init.a_type, metadata.DefaultIllustrationMetadata):
+        elif issubclass(
+            metadata_init.a_type,  # pyright:ignore[reportUnknownMemberType, reportUnknownArgumentType]
+            metadata.DefaultIllustrationMetadata,
+        ):
             metadata_init.a_type(b"")  # pyright:ignore[reportUnknownMemberType]
             metadata_init.a_type(b" ")  # pyright:ignore[reportUnknownMemberType]
-        elif get_classvar_value_type(metadata_init.a_type) is bytes:
+        elif (
+            get_classvar_value_type(
+                metadata_init.a_type  # pyright:ignore[reportUnknownMemberType, reportUnknownArgumentType]
+            )
+            is bytes
+        ):
             if metadata_init.nb_args == 1:
-                metadata_init.a_type(b"")  # pyright: ignore[reportCallIssue]
-                metadata_init.a_type(b" ")  # pyright: ignore[reportCallIssue]
+                metadata_init.a_type(b"")  # pyright: ignore[reportUnknownMemberType]
+                metadata_init.a_type(b" ")  # pyright: ignore[reportUnknownMemberType]
             else:
-                metadata_init.a_type(
-                    b"", name="Foo"  # pyright: ignore[reportCallIssue]
+                metadata_init.a_type(  # pyright: ignore[reportUnknownMemberType]
+                    b"", name="Foo"
                 )
-                metadata_init.a_type(
-                    b" ", name="Foo"  # pyright: ignore[reportCallIssue]
+                metadata_init.a_type(  # pyright: ignore[reportUnknownMemberType]
+                    b" ", name="Foo"
                 )
         else:
             raise OSError("WTF")

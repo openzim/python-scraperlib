@@ -1,4 +1,4 @@
-r""" [INTERNAL] libkiwix's internal features copies
+r"""[INTERNAL] libkiwix's internal features copies
 
 CAUTION: this is __not__ part of zimscraperlib's API. Don't use outside scraperlib!
 

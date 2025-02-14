@@ -1,4 +1,4 @@
-""" Tools to work with HTML contents """
+"""Tools to work with HTML contents"""
 
 import pathlib
 from typing import BinaryIO, TextIO
@@ -43,11 +43,13 @@ def find_language_in(content: str | BinaryIO | TextIO, mime_type: str) -> str:
                     continue
                 if (
                     nodename == "meta"
-                    and not node.attrs.get("http-equiv", "").lower()
+                    and not node.attrs.get(
+                        "http-equiv", ""
+                    ).lower()  # pyright:ignore[reportUnknownMemberType, reportAttributeAccessIssue]
                     == "content-language"
                 ):
                     continue
-                return node.attrs[key]
+                return node.attrs[key]  # pyright:ignore[reportReturnType]
     return ""
 
 

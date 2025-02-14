@@ -1,4 +1,4 @@
-""" CSS Rewriting
+"""CSS Rewriting
 
 This modules contains tools to rewrite CSS retrieved from an online source so that it
 can safely operate within a ZIM, linking only to ZIM entries everytime a URL is used.

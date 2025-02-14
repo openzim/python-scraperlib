@@ -1,4 +1,4 @@
-""" Miscelaneous utils"""
+"""Miscelaneous utils"""
 
 from typing import TypeVar
 

@@ -1,22 +1,22 @@
-""" An image optimization module to optimize the following image formats:
+"""An image optimization module to optimize the following image formats:
 
-    - JPEG (using optimize-images)
-    - PNG (using optimize-images)
-    - GIF (using gifsicle with lossy optimization)
-    - WebP (using Pillow)
+- JPEG (using optimize-images)
+- PNG (using optimize-images)
+- GIF (using gifsicle with lossy optimization)
+- WebP (using Pillow)
 
-    Some important notes:
-    - This makes use of the --lossy option from gifsicle which is present
-     only in versions above 1.92.
-      If the package manager has a lower version, you can build gifsicle
-      from source and install or
-      do not use the lossiness option.
+Some important notes:
+- This makes use of the --lossy option from gifsicle which is present
+ only in versions above 1.92.
+  If the package manager has a lower version, you can build gifsicle
+  from source and install or
+  do not use the lossiness option.
 
-    - Presets for the optimizer are available in zimscraperlib.image.presets.
+- Presets for the optimizer are available in zimscraperlib.image.presets.
 
-    - If no options for an image optimization is passed, the optimizer
-    can still run on default settings which give
-      a bit less size than the original images but maintain a high quality. """
+- If no options for an image optimization is passed, the optimizer
+can still run on default settings which give
+  a bit less size than the original images but maintain a high quality."""
 
 import io
 import os

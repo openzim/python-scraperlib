@@ -1,4 +1,4 @@
-""" Special item with customized index data and helper classes """
+"""Special item with customized index data and helper classes"""
 
 import io
 import pathlib

@@ -14,7 +14,7 @@ from .utils import ContentForTests
 
 @pytest.fixture
 def simple_js_rewriter(
-    simple_url_rewriter_gen: Callable[[str], ArticleUrlRewriter]
+    simple_url_rewriter_gen: Callable[[str], ArticleUrlRewriter],
 ) -> JsRewriter:
     return JsRewriter(
         url_rewriter=simple_url_rewriter_gen("http://www.example.com"),

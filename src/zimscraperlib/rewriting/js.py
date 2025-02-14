@@ -1,4 +1,4 @@
-""" JS Rewriting
+"""JS Rewriting
 
 This modules contains tools to rewrite JS retrieved from an online source so that it
 can safely operate within a ZIM. It is based on the assumption that wombat.js will be
