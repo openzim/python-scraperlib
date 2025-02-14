@@ -180,7 +180,7 @@ def test_preset_video_webm_low():
     config = VideoWebmLow()
     assert config.VERSION == 3
     args = config.to_ffmpeg_args()
-    assert len(args) == 24
+    assert len(args) == 26
     options_map = [
         ("codec:v", "libvpx-vp9"),
         ("codec:a", "libvorbis"),
@@ -193,6 +193,7 @@ def test_preset_video_webm_low():
         ("vf", "scale='480:trunc(ow/a/2)*2'"),
         ("g", "240"),
         ("speed", "4"),
+        ("ac", "2"),
     ]
     for option, val in options_map:
         idx = args.index(f"-{option}")
@@ -213,7 +214,7 @@ def test_preset_video_webm_high():
     config = VideoWebmHigh()
     assert config.VERSION == 2
     args = config.to_ffmpeg_args()
-    assert len(args) == 22
+    assert len(args) == 24
     options_map = [
         ("codec:v", "libvpx-vp9"),
         ("codec:a", "libvorbis"),
@@ -225,6 +226,7 @@ def test_preset_video_webm_high():
         ("qmax", "54"),
         ("g", "240"),
         ("speed", "1"),
+        ("ac", "2"),
     ]
     for option, val in options_map:
         idx = args.index(f"-{option}")
@@ -245,7 +247,7 @@ def test_preset_video_mp4_low():
     config = VideoMp4Low()
     assert config.VERSION == 1
     args = config.to_ffmpeg_args()
-    assert len(args) == 24
+    assert len(args) == 26
     options_map = [
         ("codec:v", "h264"),
         ("codec:a", "aac"),
@@ -258,6 +260,7 @@ def test_preset_video_mp4_low():
         ("qmin", "30"),
         ("qmax", "42"),
         ("vf", "scale='480:trunc(ow/a/2)*2'"),
+        ("ac", "2"),
     ]
     for option, val in options_map:
         idx = args.index(f"-{option}")
@@ -303,11 +306,12 @@ def test_preset_voice_mp3_low():
     config = VoiceMp3Low()
     assert config.VERSION == 1
     args = config.to_ffmpeg_args()
-    assert len(args) == 9
+    assert len(args) == 11
     options_map = [
         ("codec:a", "mp3"),
         ("ar", "44100"),
         ("b:a", "48k"),
+        ("ac", "2"),
     ]
     for option, val in options_map:
         idx = args.index(f"-{option}")

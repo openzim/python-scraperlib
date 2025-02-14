@@ -22,6 +22,7 @@ class VoiceMp3Low(Config):
         "-codec:a": "mp3",  # audio codec
         "-ar": "44100",  # audio sampling rate
         "-b:a": "48k",  # target audio bitrate
+        "-ac": "2",  # force stereo
     }
 
 
@@ -49,6 +50,7 @@ class VideoWebmLow(Config):
         "-codec:a": "libvorbis",  # audio codec
         "-b:a": "48k",  # target audio bitrate
         "-ar": "44100",  # audio sampling rate
+        "-ac": "2",  # force stereo
     }
 
 
@@ -77,6 +79,7 @@ class VideoMp4Low(Config):
         "-ar": "44100",  # audio sampling rate
         "-b:a": "48k",  # target audio bitrate
         "-movflags": "+faststart",  # extra flag
+        "-ac": "2",  # force stereo
     }
 
 
@@ -101,6 +104,7 @@ class VideoWebmHigh(Config):
         "-codec:a": "libvorbis",  # audio codec
         "-b:a": "48k",  # target audio bitrate
         "-ar": "44100",  # audio sampling rate
+        "-ac": "2",  # force stereo
     }
 
 
