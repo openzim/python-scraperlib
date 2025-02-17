@@ -1,10 +1,10 @@
-""" ZIM Archive helper
+"""ZIM Archive helper
 
-    Convenient subclass of libzim.reader.Archive with:
-    - direct access to Item from path
-    - direct access to suggestions and suggestions count
-    - direct access to search results and number of results
-    - public Entry access by Id"""
+Convenient subclass of libzim.reader.Archive with:
+- direct access to Item from path
+- direct access to suggestions and suggestions count
+- direct access to search results and number of results
+- public Entry access by Id"""
 
 from collections.abc import Iterable
 from types import TracebackType

@@ -56,30 +56,30 @@ scripts = [
 
 ]
 lint = [
-  "black==24.10.0",
-  "ruff==0.9.2",
+  "black==25.1.0",
+  "ruff==0.9.6",
 ]
 check = [
-  "pyright==1.1.391",
+  "pyright==1.1.394",
   "pytest==8.3.4",
 ]
 test = [
   "pytest==8.3.4",
   "pytest-mock==3.14.0",
-  "coverage==7.6.10",
+  "coverage==7.6.12",
 ]
 docs = [
   "mkdocs==1.6.1",
-  "mkdocstrings[python]==0.27.0",
-  "mkdocs-material==9.5.50",
-  "pymdown-extensions==10.14",
+  "mkdocstrings[python]==0.28.1",
+  "mkdocs-material==9.6.4",
+  "pymdown-extensions==10.14.3",
   "mkdocs-gen-files==0.5.0",
   "mkdocs-literate-nav==0.6.1",
-  "mkdocs-include-markdown-plugin==7.1.2",
+  "mkdocs-include-markdown-plugin==7.1.4",
 ]
 dev = [
-  "ipython==8.31.0",
-  "pre-commit==4.0.1",
+  "ipython==8.32.0",
+  "pre-commit==4.1.0",
   "zimscraperlib[scripts]",
   "zimscraperlib[lint]",
   "zimscraperlib[test]",

@@ -1,6 +1,6 @@
-""" Files manipulation tools
+"""Files manipulation tools
 
-    Shortcuts to retrieve mime type using magic"""
+Shortcuts to retrieve mime type using magic"""
 
 import pathlib
 from contextlib import contextmanager

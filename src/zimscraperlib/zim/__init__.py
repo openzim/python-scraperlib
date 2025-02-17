@@ -1,10 +1,10 @@
-""" ZIM file creation tools
+"""ZIM file creation tools
 
-    zim.creator: create files by manually adding each article
-    zim.filesystem: zimwriterfs-like creation from a build folder
-    zim.providers: contentProvider for serving libzim with data
-    zim.items: item to add to creator
-    zim.archive: read ZIM files, accessing or searching its content"""
+zim.creator: create files by manually adding each article
+zim.filesystem: zimwriterfs-like creation from a build folder
+zim.providers: contentProvider for serving libzim with data
+zim.items: item to add to creator
+zim.archive: read ZIM files, accessing or searching its content"""
 
 from libzim.writer import Blob  # pyright: ignore[reportMissingModuleSource]
 

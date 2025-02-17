@@ -1,4 +1,4 @@
-""" quick script to fix videojs-ogvjs so that it triggers on webm mimetype """
+"""quick script to fix videojs-ogvjs so that it triggers on webm mimetype"""
 
 import logging
 import pathlib

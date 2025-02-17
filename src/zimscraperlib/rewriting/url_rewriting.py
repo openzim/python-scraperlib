@@ -1,4 +1,4 @@
-""" URL rewriting tools
+"""URL rewriting tools
 
 This module is about url and entry path rewriting.
 

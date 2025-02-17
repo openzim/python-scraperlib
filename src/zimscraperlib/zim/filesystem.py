@@ -1,27 +1,27 @@
-""" zimwriterfs-like tools to convert a build folder into a ZIM
+"""zimwriterfs-like tools to convert a build folder into a ZIM
 
-    make_zim_file behaves in a similar way to zimwriterfs and expects the same options:
+make_zim_file behaves in a similar way to zimwriterfs and expects the same options:
 
-    - Guesses file mime-type from filenames
-    - Add all files to respective namespaces based on mime type
-    - Add redirects from a zimwriterfs-compatible redirects TSV
-    - Adds common metadata
+- Guesses file mime-type from filenames
+- Add all files to respective namespaces based on mime type
+- Add redirects from a zimwriterfs-compatible redirects TSV
+- Adds common metadata
 
-    Also included:
-    - Add redirect from a list of (source, destination, title) strings
+Also included:
+- Add redirect from a list of (source, destination, title) strings
 
-    Note: due to the lack of a cancel() method in the libzim itself, it is not possible
-    to stop a zim creation process. Should an error occur in your code, a Zim file
-    with up-to-that-moment content will be created at destination.
+Note: due to the lack of a cancel() method in the libzim itself, it is not possible
+to stop a zim creation process. Should an error occur in your code, a Zim file
+with up-to-that-moment content will be created at destination.
 
-    To prevent this (creating an unwanted Zim file) from happening,
-    a workaround is in place. It prevents the libzim from finishing its process.
-    While it results in no Zim file being created, it results in the zim temp folder
-    to be left on disk and very frequently leads to a segmentation fault at garbage
-    collection (on exit mostly).
+To prevent this (creating an unwanted Zim file) from happening,
+a workaround is in place. It prevents the libzim from finishing its process.
+While it results in no Zim file being created, it results in the zim temp folder
+to be left on disk and very frequently leads to a segmentation fault at garbage
+collection (on exit mostly).
 
-    Meaning you should exit right after an exception in your code (during zim creation)
-    Use workaround_nocancel=False to disable the workaround. """
+Meaning you should exit right after an exception in your code (during zim creation)
+Use workaround_nocancel=False to disable the workaround."""
 
 import datetime
 import pathlib

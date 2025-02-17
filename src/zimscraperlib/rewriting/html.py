@@ -1,4 +1,4 @@
-""" HTML Rewriting
+"""HTML Rewriting
 
 This modules contains tools to rewrite HTML retrieved from an online source so that it
 can safely operate within a ZIM.
@@ -101,8 +101,12 @@ def extract_base_href(content: str) -> str | None:
     if not soup.head:
         return None
     for base in soup.head.find_all("base"):
-        if base.has_attr("href"):
-            return base["href"]
+        if base.has_attr(  # pyright:ignore[reportUnknownMemberType, reportAttributeAccessIssue]
+            "href"
+        ):
+            return base[  # pyright:ignore[reportIndexIssue, reportUnknownVariableType, reportArgumentType, reportReturnType]
+                "href"
+            ]
     return None
 
 

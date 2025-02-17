@@ -1,4 +1,4 @@
-""" URI handling module"""
+"""URI handling module"""
 
 import urllib.parse
 
