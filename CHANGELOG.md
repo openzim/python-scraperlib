@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Upgrade to wombat 3.8.8 and other Python/JS dependencies (#249)
+- Force stereo videos to solve issue with 5.1 sound videos (#250)
 
 ## [5.1.0] - 2025-01-21
 
