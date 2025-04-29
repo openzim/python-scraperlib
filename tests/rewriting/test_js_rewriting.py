@@ -271,6 +271,12 @@ import {E, F, G} from "/path.js";
 import { Z } from "../../../path.js";
 
 B = await import(somefile);
+
+class X {
+  import(a, b, c) {
+    await import (somefile);
+  }
+}
 """,
             expected="""
 import * from "../../../example.com/file.js"
@@ -282,6 +288,12 @@ import {E, F, G} from "../../path.js";
 import { Z } from "../../path.js";
 
 B = await ____wb_rewrite_import__(import.meta.url, somefile);
+
+class X {
+  import(a, b, c) {
+    await ____wb_rewrite_import__ (import.meta.url, somefile);
+  }
+}
 """,
         ),
         ImportTestContent(
@@ -341,6 +353,7 @@ def test_import_rewrite(rewrite_import_content: ImportTestContent):
         "a.window.x = 5",
         "  postMessage({'a': 'b'})",
         "simport(5);",
+        "import(e) {",
         "a.import(5);",
         "$import(5);",
         "async import(val) { ... }",

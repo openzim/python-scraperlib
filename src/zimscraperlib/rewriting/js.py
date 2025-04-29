@@ -186,6 +186,7 @@ def create_js_rules() -> list[TransformationRule]:
         # As the rule will match first, it will prevent next rule matching `import` to
         # be apply to `async import`.
         (re.compile(r"async\s+import\s*\("), m2str(lambda x: x)),
+        (re.compile(r"[^$.]\bimport\s*\([^)]*\)\s*\{"), m2str(lambda x: x)),
         # esm dynamic import, if found, mark as module
         (
             re.compile(r"[^$.]\bimport\s*\("),
