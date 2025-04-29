@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Upgrade to wombat 3.8.11 (#256)
+
 ## [5.1.1] - 2025-02-17
 
 ### Changed

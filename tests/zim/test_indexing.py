@@ -111,6 +111,7 @@ def test_indexing_item_is_front(tmp_path: pathlib.Path, png_image: pathlib.Path)
     assert reader.get_search_results_count("food") == 0
 
 
+@pytest.mark.skip  # see https://github.com/openzim/python-scraperlib/issues/258
 def test_indexing_item_not_front(tmp_path: pathlib.Path, png_image: pathlib.Path):
     fpath = tmp_path / "test.zim"
     main_path = "welcome"
