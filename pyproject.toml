@@ -32,7 +32,9 @@ dependencies = [
   "pillow>=7.0.0,<12.0",
   "urllib3>=1.26.5,<2.4.0",
   "piexif==1.1.3", # this dep is a nightmare in terms of release management, better pinned just like in optimize-images anyway
-  "idna>=2.5,<4.0"
+  "idna>=2.5,<4.0",
+  "xxhash>=2.0,<4.0",
+  "types-xxhash>=2.0,<4.0",
 ]
 dynamic = ["authors", "classifiers", "keywords", "license", "version", "urls"]
 
