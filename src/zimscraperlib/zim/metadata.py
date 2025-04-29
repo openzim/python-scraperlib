@@ -10,6 +10,8 @@ from typing import Any, TypeVar
 import regex
 
 from zimscraperlib.constants import (
+    DEFAULT_ZIM_ILLLUSTRATION_SCALE,
+    DEFAULT_ZIM_ILLLUSTRATION_SIZE,
     ILLUSTRATIONS_METADATA_RE,
     MAXIMUM_DESCRIPTION_METADATA_LENGTH,
     MAXIMUM_LONG_DESCRIPTION_METADATA_LENGTH,
@@ -423,8 +425,8 @@ class IllustrationMetadata(IllustrationBasedMetadata):
 @mandatory
 class DefaultIllustrationMetadata(IllustrationBasedMetadata):
     meta_name = "Illustration_48x48@1"
-    illustration_size: int = 48
-    illustration_scale: int = 1
+    illustration_size: int = DEFAULT_ZIM_ILLLUSTRATION_SIZE
+    illustration_scale: int = DEFAULT_ZIM_ILLLUSTRATION_SCALE
 
 
 @mandatory
