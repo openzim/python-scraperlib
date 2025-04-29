@@ -101,6 +101,40 @@ def test_js_rewrite_post_message(simple_js_rewriter: JsRewriter):
     )
 
 
+@pytest.mark.parametrize(
+    "raw_js,expected",
+    [
+        pytest.param("x = eval; x(a);", "x = self.eval; x(a);", id="case1"),
+        pytest.param(
+            " eval(a)",
+            " WB_wombat_runEval2((_______eval_arg, isGlobal) => { var ge = eval; "
+            "return isGlobal ? ge(_______eval_arg) : eval(_______eval_arg); })"
+            ".eval(this, (function() { return arguments })(),a)",
+            id="case2",
+        ),
+        pytest.param(
+            "$eval = eval; $eval(a);", "$eval = self.eval; $eval(a);", id="case3"
+        ),
+        pytest.param(
+            "foo(a, eval(data));",
+            "foo(a, WB_wombat_runEval2((_______eval_arg, isGlobal) => { var ge = eval; "
+            "return isGlobal ? ge(_______eval_arg) : eval(_______eval_arg); })"
+            ".eval(this, (function() { return arguments })(),data));",
+            id="case4",
+        ),
+        pytest.param(
+            "return(1, eval)(data);",
+            "return WB_wombat_runEval2((_______eval_arg, isGlobal) => { var ge = eval; "
+            "return isGlobal ? ge(_______eval_arg) : eval(_______eval_arg); })"
+            ".eval(this, (function() { return arguments })(),data);",
+            id="case5",
+        ),
+    ],
+)
+def test_js_rewrite_evals(simple_js_rewriter: JsRewriter, raw_js: str, expected: str):
+    assert simple_js_rewriter.rewrite(raw_js) == expected
+
+
 class WrappedTestContent(ContentForTests):
 
     def __init__(
@@ -174,10 +208,19 @@ class WrappedTestContent(ContentForTests):
             expected="this. location = 'http://example.com/'",
         ),
         WrappedTestContent(
+            input_="abc-location = http://example.com/",
+            expected="abc-location = http://example.com/",
+        ),
+        WrappedTestContent(
+            input_="func(location = 0)",
+            expected="func(location = 0)",
+        ),
+        WrappedTestContent(
             input_="if (self.foo) { console.log('blah') }",
             expected="if (self.foo) { console.log('blah') }",
         ),
         WrappedTestContent(input_="window.x = 5", expected="window.x = 5"),
+        WrappedTestContent(input_=" var    self  ", expected=" let    self  "),
     ]
 )
 def rewrite_wrapped_content(request: pytest.FixtureRequest):

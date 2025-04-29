@@ -154,13 +154,15 @@ def create_js_rules() -> list[TransformationRule]:
     return [
         # rewriting `eval(...)` - invocation
         (re.compile(r"(?:^|\s)\beval\s*\("), replace_prefix_from(eval_str, "eval")),
+        (re.compile(r"\([\w]+,\s*eval\)\("), m2str(lambda _: f" {eval_str}")),
         # rewriting `x = eval` - no invocation
         (re.compile(r"[=]\s*\beval\b(?![(:.$])"), replace("eval", "self.eval")),
+        (re.compile(r"var\s+self"), replace("var", "let")),
         # rewriting `.postMessage` -> `__WB_pmw(self).postMessage`
         (re.compile(r"\.postMessage\b\("), add_prefix(".__WB_pmw(self)")),
         # rewriting `location = ` to custom expression `(...).href =` assignement
         (
-            re.compile(r"[^$.]?\s?\blocation\b\s*[=]\s*(?![\s\d=])"),
+            re.compile(r"(?:^|[^$.+*/%^-])\s?\blocation\b\s*[=]\s*(?![\s\d=])"),
             add_suffix_non_prop(check_loc),
         ),
         # rewriting `return this`
