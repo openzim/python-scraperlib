@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `zimwriterfs` script that mimics zim-tools's zimwriterfs
+
 ### Changed
 
 - Upgrade to wombat 3.8.11 (#256)
