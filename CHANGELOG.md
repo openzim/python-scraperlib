@@ -10,6 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Upgrade to wombat 3.8.11 (#256)
+- Backport changes in wabac.js around JS rewriting rules (#259)
+
+### Fixed
+
+- JS rewriting abusively rewrite import function (#255)
 
 ## [5.1.1] - 2025-02-17
 
