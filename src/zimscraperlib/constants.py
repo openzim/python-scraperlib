@@ -29,3 +29,6 @@ ILLUSTRATIONS_METADATA_RE = re.compile(
 # default timeout to get responses from upstream when doing web requests ; this is not
 # the total time it gets to download the whole resource
 DEFAULT_WEB_REQUESTS_TIMEOUT = 10
+
+DEFAULT_ZIM_ILLLUSTRATION_SIZE = 48
+DEFAULT_ZIM_ILLLUSTRATION_SCALE = 1

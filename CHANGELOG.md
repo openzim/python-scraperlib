@@ -16,6 +16,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - JS rewriting abusively rewrite import function (#255)
 
+### Added
+
+- Add utility to fetch and prepare ZIM illustration (#254)
+
 ## [5.1.1] - 2025-02-17
 
 ### Changed
