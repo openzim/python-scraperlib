@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- New `zim.dedup.Deduplicator` class to handle automatic deduplication of content before adding to the ZIM (#33)
+
 ### Changed
 
 - Upgrade to wombat 3.8.11 (#256)
