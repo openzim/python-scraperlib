@@ -2,7 +2,7 @@ import io
 import pathlib
 from typing import Any
 
-import cairosvg.svg  # pyright: ignore[reportMissingTypeStubs]
+import cairosvg  # pyright: ignore[reportMissingTypeStubs]
 from PIL.Image import open as pilopen
 
 from zimscraperlib.constants import ALPHA_NOT_SUPPORTED

@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Upgrade to wombat 3.8.11 (#256)
+- Upgrade dependencies, especially wombat 3.8.12 (#262)
 - Backport changes in wabac.js around JS rewriting rules (#259)
 
 ### Fixed
