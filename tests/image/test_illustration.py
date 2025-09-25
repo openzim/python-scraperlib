@@ -40,7 +40,7 @@ def test_get_zim_illustration(
 
 
 def test_get_missing_user_zim_illustration():
-    with pytest.raises(Exception, match="missing.png could not be found"):
+    with pytest.raises(Exception, match=r"missing\.png could not be found"):
         get_zim_illustration("./missing.png")
 
 

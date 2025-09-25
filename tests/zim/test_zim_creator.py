@@ -600,7 +600,7 @@ def test_ignore_duplicates(tmp_path: pathlib.Path):
 
 
 def test_without_metadata(tmp_path: pathlib.Path):
-    with pytest.raises(ValueError, match="Mandatory metadata are not all set."):
+    with pytest.raises(ValueError, match=r"Mandatory metadata are not all set\."):
         Creator(tmp_path, "").start()
 
 
@@ -629,7 +629,7 @@ def test_start_logs_metadata_log_contents(
     tmp_path: pathlib.Path,
     ignore_metadata_conventions: NoneType,  # noqa: ARG001
 ):
-    mocked_logger.isEnabledFor.side_effect = (  # pyright: ignore[reportFunctionMemberAccess]
+    mocked_logger.isEnabledFor.side_effect = (  # pyright: ignore[reportAttributeAccessIssue]
         lambda level: level == logging.DEBUG  # pyright: ignore[reportUnknownLambdaType]
     )
     fpath = tmp_path / "test_config.zim"
@@ -690,7 +690,7 @@ def test_start_logs_metadata_log_contents(
         "BadRawValue"
     ] = "Value"
     creator._log_metadata()  # pyright: ignore[reportPrivateUsage]
-    mocked_logger.debug.assert_has_calls(  # pyright: ignore[reportFunctionMemberAccess]
+    mocked_logger.debug.assert_has_calls(  # pyright: ignore[reportUnknownMemberType, reportAttributeAccessIssue]
         [
             call("Metadata: BadRawValue is improper metadata type: str: Value"),
             call("Metadata: Chars = šɔɛ"),

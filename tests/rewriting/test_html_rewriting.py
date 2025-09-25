@@ -1067,7 +1067,7 @@ def test_html_drop_rules(
 def test_bad_html_drop_rules_argument_name():
     bad_rules = HTMLRewritingRules()
 
-    with pytest.raises(TypeError, match="Parameter .* is unsupported in function"):
+    with pytest.raises(TypeError, match=r"Parameter .* is unsupported in function"):
 
         @bad_rules.drop_attribute()
         def bad_signature(foo: str) -> bool:  # pyright: ignore[reportUnusedFunction]
@@ -1077,7 +1077,7 @@ def test_bad_html_drop_rules_argument_name():
 def test_bad_html_drop_rules_argument_type():
     bad_rules = HTMLRewritingRules()
 
-    with pytest.raises(TypeError, match="Parameter .* in function .* must be of type"):
+    with pytest.raises(TypeError, match=r"Parameter .* in function .* must be of type"):
 
         @bad_rules.drop_attribute()
         def bad_signature(  # pyright: ignore[reportUnusedFunction]
@@ -1231,7 +1231,7 @@ def test_html_attribute_rewrite_rules(
 def test_bad_html_attribute_rewrite_rules_argument_name():
     bad_rules = HTMLRewritingRules()
 
-    with pytest.raises(TypeError, match="Parameter .* is unsupported in function"):
+    with pytest.raises(TypeError, match=r"Parameter .* is unsupported in function"):
 
         @bad_rules.rewrite_attribute()
         def bad_signature(  # pyright: ignore[reportUnusedFunction]
@@ -1243,7 +1243,7 @@ def test_bad_html_attribute_rewrite_rules_argument_name():
 def test_bad_html_attribute_rewrite_rules_argument_type():
     bad_rules = HTMLRewritingRules()
 
-    with pytest.raises(TypeError, match="Parameter .* in function .* must be of type"):
+    with pytest.raises(TypeError, match=r"Parameter .* in function .* must be of type"):
 
         @bad_rules.rewrite_attribute()
         def bad_signature(  # pyright: ignore[reportUnusedFunction]
@@ -1375,7 +1375,7 @@ def test_html_tag_rewrite_rules(
 def test_bad_html_tag_rewrite_rules_argument_name():
     bad_rules = HTMLRewritingRules()
 
-    with pytest.raises(TypeError, match="Parameter .* is unsupported in function"):
+    with pytest.raises(TypeError, match=r"Parameter .* is unsupported in function"):
 
         @bad_rules.rewrite_tag()
         def bad_signature(foo: str) -> str:  # pyright: ignore[reportUnusedFunction]
@@ -1385,7 +1385,7 @@ def test_bad_html_tag_rewrite_rules_argument_name():
 def test_bad_html_tag_rewrite_rules_argument_type():
     bad_rules = HTMLRewritingRules()
 
-    with pytest.raises(TypeError, match="Parameter .* in function .* must be of type"):
+    with pytest.raises(TypeError, match=r"Parameter .* in function .* must be of type"):
 
         @bad_rules.rewrite_tag()
         def bad_signature(attrs: int) -> str:  # pyright: ignore[reportUnusedFunction]
@@ -1463,7 +1463,7 @@ def test_html_data_rewrite_rules(
 def test_bad_html_data_rewrite_rules_argument_name():
     bad_rules = HTMLRewritingRules()
 
-    with pytest.raises(TypeError, match="Parameter .* is unsupported in function"):
+    with pytest.raises(TypeError, match=r"Parameter .* is unsupported in function"):
 
         @bad_rules.rewrite_data()
         def bad_signature(  # pyright: ignore[reportUnusedFunction]
@@ -1475,7 +1475,7 @@ def test_bad_html_data_rewrite_rules_argument_name():
 def test_bad_html_data_rewrite_rules_argument_type():
     bad_rules = HTMLRewritingRules()
 
-    with pytest.raises(TypeError, match="Parameter .* in function .* must be of type"):
+    with pytest.raises(TypeError, match=r"Parameter .* in function .* must be of type"):
 
         @bad_rules.rewrite_data()
         def bad_signature(  # pyright: ignore[reportUnusedFunction]

@@ -235,6 +235,7 @@ class URLItem(StaticItem):
         title: str | None = None,
         mimetype: str | None = None,
         hints: dict[libzim.writer.Hint, int] | None = None,
+        *,
         use_disk: bool | None = None,
         **kwargs: Any,
     ):

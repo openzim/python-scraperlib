@@ -34,7 +34,9 @@ class YoutubeDownloader:
         self.executor.shutdown(wait=True)
 
     def _run_youtube_dl(self, url: str, options: dict[str, Any]) -> None:
-        with youtube_dl.YoutubeDL(options) as ydl:
+        with youtube_dl.YoutubeDL(
+            options  # pyright: ignore[reportArgumentType]
+        ) as ydl:
             ydl.download([url])  # pyright: ignore[reportUnknownMemberType]
 
     def download(

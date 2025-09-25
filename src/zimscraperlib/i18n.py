@@ -164,6 +164,17 @@ class Language:
             and self.native == getattr(value, "native", None)
         )
 
+    def __hash__(self):
+        return hash(
+            f"{getattr(self, "iso_639_1", None)}$"
+            f"{getattr(self, "iso_639_2b", None)}$"
+            f"{getattr(self, "iso_639_2t", None)}$"
+            f"{getattr(self, "iso_639_3", None)}$"
+            f"{getattr(self, "iso_639_5", None)}$"
+            f"{getattr(self, "english", None)}$"
+            f"{getattr(self, "native", None)}"
+        )
+
 
 def find_language_names(query: str) -> tuple[str, str]:
     """(native, english) language names for query"""

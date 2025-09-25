@@ -381,6 +381,7 @@ class Creator(libzim.writer.Creator):
     def add_item(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         item: libzim.writer.Item,
+        *,
         duplicate_ok: bool | None = None,
         callbacks: list[Callback] | Callback | None = None,
     ):
@@ -417,6 +418,7 @@ class Creator(libzim.writer.Creator):
         path: str,
         target_path: str,
         title: str | None = "",
+        *,
         is_front: bool | None = None,
         duplicate_ok: bool | None = None,
     ):

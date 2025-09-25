@@ -8,7 +8,7 @@ from unittest.mock import Mock
 import pytest
 import requests
 import requests.structures
-from yt_dlp import DownloadError  # pyright: ignore[reportMissingTypeStubs]
+from yt_dlp.utils import DownloadError
 
 from zimscraperlib.constants import DEFAULT_WEB_REQUESTS_TIMEOUT
 from zimscraperlib.download import (
