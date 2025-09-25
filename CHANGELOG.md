@@ -7,13 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
+### Added
 
 - New `zim.dedup.Deduplicator` class to handle automatic deduplication of content before adding to the ZIM (#33)
 
 ### Changed
 
-- Upgrade dependencies, especially wombat 3.8.12 (#262)
+- Upgrade dependencies, especially wombat 3.9.1 (#262, #263)
 - Backport changes in wabac.js around JS rewriting rules (#259)
 
 ### Fixed
