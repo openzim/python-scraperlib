@@ -331,7 +331,7 @@ def test_urlitem_html(tmp_path: pathlib.Path, gzip_html_url: str):
         creator.add_item(URLItem(url=gzip_html_url))
 
     zim = Archive(fpath)
-    assert bytes(zim.get_item("wiki/Main_Page").content) == file_bytes
+    assert bytes(zim.get_item("en").content) == file_bytes
 
 
 def test_urlitem_nonhtmlgzip(tmp_path: pathlib.Path, gzip_nonhtml_url: str):
@@ -362,10 +362,7 @@ def test_urlitem_binary(tmp_path: pathlib.Path, png_image_url: str):
         creator.add_item(URLItem(url=png_image_url))
 
     zim = Archive(fpath)
-    assert (
-        bytes(zim.get_item("static/images/project-logos/commonswiki.png").content)
-        == file_bytes
-    )
+    assert bytes(zim.get_item("assets/favicon-96x96.png").content) == file_bytes
 
 
 def test_urlitem_staticcontent(tmp_path: pathlib.Path, gzip_nonhtml_url: str):

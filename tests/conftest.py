@@ -64,12 +64,12 @@ def timeout_url() -> str:
 
 @pytest.fixture(scope="module")
 def png_image_url() -> str:
-    return "https://commons.wikimedia.org/static/images/project-logos/commonswiki.png"
+    return "https://farm.openzim.org/assets/favicon-96x96.png"
 
 
 @pytest.fixture(scope="module")
 def gzip_html_url() -> str:
-    return "https://en.wikipedia.org/wiki/Main_Page"
+    return "https://kiwix.org/en"
 
 
 @pytest.fixture(scope="module")
