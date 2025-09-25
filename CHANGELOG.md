@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - JS rewriting abusively rewrite import function (#255)
+- Test about badly escaped src in HTML is failing (#264)
 
 ### Added
 

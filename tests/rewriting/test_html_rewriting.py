@@ -789,7 +789,7 @@ def test_rewrite_base_href(rewrite_base_href_content: ContentForTests):
         ),
         pytest.param(
             """<img src="image.png?param1=value1&param2=value2">""",
-            """<img src="image.png%3Fparam1%3Dvalue1%C2%B6m2%3Dvalue2">""",
+            """<img src="image.png%3Fparam1%3Dvalue1%26param2%3Dvalue2">""",
             id="badly_escaped_src",
         ),
     ],
