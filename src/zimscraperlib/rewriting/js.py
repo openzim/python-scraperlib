@@ -29,13 +29,13 @@ from zimscraperlib.rewriting.rx_replacer import (
 from zimscraperlib.rewriting.url_rewriting import ArticleUrlRewriter, ZimPath
 
 # The regex used to rewrite `import ...` in module code.
-IMPORT_MATCH_RX = re.compile(
-    r"""^\s*?import(?:['"\s]*(?:[\w*${}\s,]+from\s*)?['"\s]?['"\s])(?:.*?)['"\s]""",
+IMPORT_EXPORT_MATCH_RX = re.compile(
+    r"""(^|;)\s*?(?:im|ex)port(?:['"\s]*(?:[\w*${}\s,]+from\s*)?['"\s]?['"\s])(?:.*?)['"\s]""",
 )
 
 # A sub regex used inside `import ...` rewrite to rewrite http url imported
-IMPORT_HTTP_RX = re.compile(
-    r"""(import(?:['"\s]*(?:[\w*${}\s,]+from\s*)?['"\s]?['"\s]))((?:https?|[./]).*?)(['"\s])""",
+IMPORT_EXPORT_HTTP_RX = re.compile(
+    r"""((?:im|ex)port(?:['"\s]*(?:[\w*${}\s,]+from\s*)?['"\s]?['"\s]))((?:https?|[./]).*?)(['"\s])""",
 )
 
 # This list of global variables we want to wrap.
@@ -312,8 +312,8 @@ class JsRewriter(RxRewriter):
                         f"{match.group(3)}"
                     )
 
-                return IMPORT_HTTP_RX.sub(sub_funct, m_object[0])
+                return IMPORT_EXPORT_HTTP_RX.sub(sub_funct, m_object[0])
 
             return func
 
-        return (IMPORT_MATCH_RX, rewrite_import())
+        return (IMPORT_EXPORT_MATCH_RX, rewrite_import())

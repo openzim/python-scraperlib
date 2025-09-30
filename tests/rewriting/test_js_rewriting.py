@@ -310,6 +310,20 @@ export { a };
 export { a };
 """,
         ),
+        # rewrite import same line
+        ImportTestContent(
+            input_='import{A, B} from "https://example.com/";'
+            'import{C, D} from "https://example.org"',
+            expected='import{A, B} from "../../../example.com/";'
+            'import{C, D} from "../../../example.org/"',
+        ),
+        # rewrite import / export same line
+        ImportTestContent(
+            input_='import{A, B} from "https://example.com/";'
+            'export{C, D} from "/another/path/to/file"',
+            expected='import{A, B} from "../../../example.com/";'
+            'export{C, D} from "../../another/path/to/file"',
+        ),
         # rewrite ESM module import
         ImportTestContent(
             input_='import "https://example.com/file.js"',
