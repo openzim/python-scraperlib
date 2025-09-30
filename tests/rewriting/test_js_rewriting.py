@@ -187,6 +187,10 @@ class WrappedTestContent(ContentForTests):
             "s)) || {}).href = http://example.com/",
         ),
         WrappedTestContent(
+            input_='location => "http://example.com/"',
+            expected='location => "http://example.com/"',
+        ),
+        WrappedTestContent(
             input_=" location = http://example.com/2",
             expected=" location = ((self.__WB_check_loc && "
             "self.__WB_check_loc(location, arguments)) || {}).href = "
@@ -220,6 +224,24 @@ class WrappedTestContent(ContentForTests):
             expected="if (self.foo) { console.log('blah') }",
         ),
         WrappedTestContent(input_="window.x = 5", expected="window.x = 5"),
+        WrappedTestContent(
+            input_="""
+            class A {}
+            const B = 5;
+            let C = 4;
+            var D = 3;
+
+            location = "http://example.com/2" """,
+            expected="""
+            class A {}
+            const B = 5;
+            let C = 4;
+            var D = 3;
+
+            location = ((self.__WB_check_loc && """
+            "self.__WB_check_loc(location, arguments)) || {}).href "
+            """= "http://example.com/2" """,
+        ),
         WrappedTestContent(input_=" var    self  ", expected=" let    self  "),
     ]
 )

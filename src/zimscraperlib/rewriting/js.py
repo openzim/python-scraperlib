@@ -162,7 +162,7 @@ def create_js_rules() -> list[TransformationRule]:
         (re.compile(r"\.postMessage\b\("), add_prefix(".__WB_pmw(self)")),
         # rewriting `location = ` to custom expression `(...).href =` assignement
         (
-            re.compile(r"(?:^|[^$.+*/%^-])\s?\blocation\b\s*[=]\s*(?![\s\d=])"),
+            re.compile(r"(?:^|[^$.+*/%^-])\s?\blocation\b\s*[=]\s*(?![\s\d=>])"),
             add_suffix_non_prop(check_loc),
         ),
         # rewriting `return this`
