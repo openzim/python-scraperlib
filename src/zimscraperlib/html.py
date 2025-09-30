@@ -39,7 +39,9 @@ def find_language_in(content: str | BinaryIO | TextIO, mime_type: str) -> str:
         for key in keylist:
             node = soup.find(nodename)
             if node:
-                if not isinstance(node, element.Tag) or not node.has_attr(key):
+                if not isinstance(
+                    node, element.Tag  # pyright:ignore[reportUnnecessaryIsInstance]
+                ) or not node.has_attr(key):
                     continue
                 if (
                     nodename == "meta"
