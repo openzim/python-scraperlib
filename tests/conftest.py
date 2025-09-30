@@ -2,6 +2,8 @@ import pathlib
 
 import pytest
 
+from zimscraperlib.download import stream_file
+
 
 def pytest_addoption(parser: pytest.Parser):
     parser.addoption(
@@ -62,12 +64,12 @@ def timeout_url() -> str:
 
 @pytest.fixture(scope="module")
 def png_image_url() -> str:
-    return "https://commons.wikimedia.org/static/images/project-logos/commonswiki.png"
+    return "https://farm.openzim.org/assets/favicon-96x96.png"
 
 
 @pytest.fixture(scope="module")
 def gzip_html_url() -> str:
-    return "https://en.wikipedia.org/wiki/Main_Page"
+    return "https://kiwix.org/en"
 
 
 @pytest.fixture(scope="module")
@@ -162,7 +164,6 @@ def valid_user_agent():
 
 @pytest.fixture(scope="session")
 def small_zim_file(tmpdir_factory: pytest.TempdirFactory) -> pathlib.Path:
-    from zimscraperlib.download import stream_file
 
     dst = pathlib.Path(tmpdir_factory.mktemp("data") / "small.zim")
     stream_file(
@@ -174,7 +175,6 @@ def small_zim_file(tmpdir_factory: pytest.TempdirFactory) -> pathlib.Path:
 
 @pytest.fixture(scope="session")
 def ns_zim_file(tmpdir_factory: pytest.TempdirFactory) -> pathlib.Path:
-    from zimscraperlib.download import stream_file
 
     dst = pathlib.Path(tmpdir_factory.mktemp("data") / "ns.zim")
     stream_file(
@@ -187,7 +187,6 @@ def ns_zim_file(tmpdir_factory: pytest.TempdirFactory) -> pathlib.Path:
 
 @pytest.fixture(scope="session")
 def real_zim_file(tmpdir_factory: pytest.TempdirFactory) -> pathlib.Path:
-    from zimscraperlib.download import stream_file
 
     dst = pathlib.Path(tmpdir_factory.mktemp("data") / "small.zim")
     stream_file(

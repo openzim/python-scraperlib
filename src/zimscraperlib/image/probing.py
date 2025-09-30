@@ -5,8 +5,15 @@ import re
 
 import colorthief  # pyright: ignore[reportMissingTypeStubs]
 import PIL.Image
+from PIL.Image import EXTENSION as PIL_FMT_EXTENSION
+from PIL.Image import init as init_pil
 
 from zimscraperlib.filesystem import get_content_mimetype, get_file_mimetype
+
+init_pil()  # populate the PIL_FMT_EXTENSION dictionary
+
+known_extensions = {".svg": "SVG"}
+known_extensions.update(PIL_FMT_EXTENSION)
 
 
 def get_colors(
@@ -82,13 +89,6 @@ def format_for(
             "Cannot guess image format from file suffix when byte array is passed"
         )
 
-    from PIL.Image import EXTENSION as PIL_FMT_EXTENSION
-    from PIL.Image import init as init_pil
-
-    init_pil()  # populate the PIL_FMT_EXTENSION dictionary
-
-    known_extensions = {".svg": "SVG"}
-    known_extensions.update(PIL_FMT_EXTENSION)
     return known_extensions[src.suffix] if src.suffix in known_extensions else None
 
 

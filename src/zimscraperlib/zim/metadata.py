@@ -163,11 +163,6 @@ class MetadataBase[T](ABC):
 # Alias for convenience when function accept any metadata
 AnyMetadata = MetadataBase[Any]
 
-# TypeVar bounded to subclasses of GenericMetadata, used by class decorators so that
-# they properly accommodate to the class they are used on while still knowing they have
-# access to all attributes of the MetadataBase class
-U = TypeVar("U", bound=AnyMetadata)
-
 
 def clean_str(value: str) -> str:
     """Clean a string value for unwanted control characters and strip white chars"""
@@ -179,39 +174,39 @@ def nb_grapheme_for(value: str) -> int:
     return len(regex.findall(r"\X", value))
 
 
-def mandatory(cls: type[U]):
+def mandatory[U: AnyMetadata](cls: type[U]):
     """Marks a Metadata mandatory: must be set to please Creator and cannot be empty"""
     cls.is_required = True
     cls.empty_allowed = False
     return cls
 
 
-def allow_empty(cls: type[U]):
+def allow_empty[U: AnyMetadata](cls: type[U]):
     """Whether input can be blank"""
     cls.empty_allowed = True
     return cls
 
 
-def allow_duplicates(cls: type[U]):
+def allow_duplicates[U: AnyMetadata](cls: type[U]):
     """Whether list input can accept duplicate values"""
     cls.duplicates_allowed = True
     return cls
 
 
-def deduplicate(cls: type[U]):
+def deduplicate[U: AnyMetadata](cls: type[U]):
     """Whether duplicates in list inputs should be reduced"""
     cls.duplicates_allowed = True
     cls.require_deduplication = True
     return cls
 
 
-def only_lang_codes(cls: type[U]):
+def only_lang_codes[U: AnyMetadata](cls: type[U]):
     """Whether list input should be checked to only accept ISO-639-1 codes"""
     cls.oz_only_iso636_3_allowed = True
     return cls
 
 
-def x_protected(cls: type[U]):
+def x_protected[U: AnyMetadata](cls: type[U]):
     """Whether metadata name should be checked for collision with reserved names
 
     when applying recommendations"""
@@ -219,7 +214,7 @@ def x_protected(cls: type[U]):
     return cls
 
 
-def x_prefixed(cls: type[U]):
+def x_prefixed[U: AnyMetadata](cls: type[U]):
     """Whether metadata names should be automatically X-Prefixed"""
     cls.oz_x_protected = False
     cls.oz_x_prefixed = True

@@ -331,7 +331,7 @@ def test_urlitem_html(tmp_path: pathlib.Path, gzip_html_url: str):
         creator.add_item(URLItem(url=gzip_html_url))
 
     zim = Archive(fpath)
-    assert bytes(zim.get_item("wiki/Main_Page").content) == file_bytes
+    assert bytes(zim.get_item("en").content) == file_bytes
 
 
 def test_urlitem_nonhtmlgzip(tmp_path: pathlib.Path, gzip_nonhtml_url: str):
@@ -362,10 +362,7 @@ def test_urlitem_binary(tmp_path: pathlib.Path, png_image_url: str):
         creator.add_item(URLItem(url=png_image_url))
 
     zim = Archive(fpath)
-    assert (
-        bytes(zim.get_item("static/images/project-logos/commonswiki.png").content)
-        == file_bytes
-    )
+    assert bytes(zim.get_item("assets/favicon-96x96.png").content) == file_bytes
 
 
 def test_urlitem_staticcontent(tmp_path: pathlib.Path, gzip_nonhtml_url: str):
@@ -600,7 +597,7 @@ def test_ignore_duplicates(tmp_path: pathlib.Path):
 
 
 def test_without_metadata(tmp_path: pathlib.Path):
-    with pytest.raises(ValueError, match="Mandatory metadata are not all set."):
+    with pytest.raises(ValueError, match=r"Mandatory metadata are not all set\."):
         Creator(tmp_path, "").start()
 
 
@@ -629,7 +626,7 @@ def test_start_logs_metadata_log_contents(
     tmp_path: pathlib.Path,
     ignore_metadata_conventions: NoneType,  # noqa: ARG001
 ):
-    mocked_logger.isEnabledFor.side_effect = (  # pyright: ignore[reportFunctionMemberAccess]
+    mocked_logger.isEnabledFor.side_effect = (  # pyright: ignore[reportAttributeAccessIssue]
         lambda level: level == logging.DEBUG  # pyright: ignore[reportUnknownLambdaType]
     )
     fpath = tmp_path / "test_config.zim"
@@ -690,7 +687,7 @@ def test_start_logs_metadata_log_contents(
         "BadRawValue"
     ] = "Value"
     creator._log_metadata()  # pyright: ignore[reportPrivateUsage]
-    mocked_logger.debug.assert_has_calls(  # pyright: ignore[reportFunctionMemberAccess]
+    mocked_logger.debug.assert_has_calls(  # pyright: ignore[reportUnknownMemberType, reportAttributeAccessIssue]
         [
             call("Metadata: BadRawValue is improper metadata type: str: Value"),
             call("Metadata: Chars = šɔɛ"),
