@@ -11,6 +11,10 @@ This modules assumes that:
 it appropriately
 - a specific JS file (provided in `statics` folder) for JS modules is included in the
 ZIM at `_zim_static/__wb_module_decl.js`
+
+This code is based on https://github.com/webrecorder/wabac.js/blob/main/src/rewrite/jsrewriter.ts
+Last backport of upstream changes is from Sept 13, 2025
+Commit 6dd2d9ae664cfcd2ea8637d7d6c7ed7a0ca332a0
 """
 
 import re
