@@ -11,6 +11,10 @@ This modules assumes that:
 it appropriately
 - a specific JS file (provided in `statics` folder) for JS modules is included in the
 ZIM at `_zim_static/__wb_module_decl.js`
+
+This code is based on https://github.com/webrecorder/wabac.js/blob/main/src/rewrite/jsrewriter.ts
+Last backport of upstream changes is from Sept 13, 2025
+Commit 6dd2d9ae664cfcd2ea8637d7d6c7ed7a0ca332a0
 """
 
 import re
@@ -29,13 +33,13 @@ from zimscraperlib.rewriting.rx_replacer import (
 from zimscraperlib.rewriting.url_rewriting import ArticleUrlRewriter, ZimPath
 
 # The regex used to rewrite `import ...` in module code.
-IMPORT_MATCH_RX = re.compile(
-    r"""^\s*?import(?:['"\s]*(?:[\w*${}\s,]+from\s*)?['"\s]?['"\s])(?:.*?)['"\s]""",
+IMPORT_EXPORT_MATCH_RX = re.compile(
+    r"""(^|;)\s*?(?:im|ex)port(?:['"\s]*(?:[\w*${}\s,]+from\s*)?['"\s]?['"\s])(?:.*?)['"\s]""",
 )
 
 # A sub regex used inside `import ...` rewrite to rewrite http url imported
-IMPORT_HTTP_RX = re.compile(
-    r"""(import(?:['"\s]*(?:[\w*${}\s,]+from\s*)?['"\s]?['"\s]))((?:https?|[./]).*?)(['"\s])""",
+IMPORT_EXPORT_HTTP_RX = re.compile(
+    r"""((?:im|ex)port(?:['"\s]*(?:[\w*${}\s,]+from\s*)?['"\s]?['"\s]))((?:https?|[./]).*?)(['"\s])""",
 )
 
 # This list of global variables we want to wrap.
@@ -153,7 +157,10 @@ def create_js_rules() -> list[TransformationRule]:
 
     return [
         # rewriting `eval(...)` - invocation
-        (re.compile(r"(?:^|\s)\beval\s*\("), replace_prefix_from(eval_str, "eval")),
+        (
+            re.compile(r"(?<!static)(?<!function)(?<!})(?:^|\s)\beval\s*\("),
+            replace_prefix_from(eval_str, "eval"),
+        ),
         (re.compile(r"\([\w]+,\s*eval\)\("), m2str(lambda _: f" {eval_str}")),
         # rewriting `x = eval` - no invocation
         (re.compile(r"[=]\s*\beval\b(?![(:.$])"), replace("eval", "self.eval")),
@@ -162,7 +169,7 @@ def create_js_rules() -> list[TransformationRule]:
         (re.compile(r"\.postMessage\b\("), add_prefix(".__WB_pmw(self)")),
         # rewriting `location = ` to custom expression `(...).href =` assignement
         (
-            re.compile(r"(?:^|[^$.+*/%^-])\s?\blocation\b\s*[=]\s*(?![\s\d=])"),
+            re.compile(r"(?:^|[^$.+*/%^-])\s?\blocation\b\s*[=]\s*(?![\s\d=>])"),
             add_suffix_non_prop(check_loc),
         ),
         # rewriting `return this`
@@ -312,8 +319,8 @@ class JsRewriter(RxRewriter):
                         f"{match.group(3)}"
                     )
 
-                return IMPORT_HTTP_RX.sub(sub_funct, m_object[0])
+                return IMPORT_EXPORT_HTTP_RX.sub(sub_funct, m_object[0])
 
             return func
 
-        return (IMPORT_MATCH_RX, rewrite_import())
+        return (IMPORT_EXPORT_MATCH_RX, rewrite_import())

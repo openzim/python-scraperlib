@@ -187,6 +187,10 @@ class WrappedTestContent(ContentForTests):
             "s)) || {}).href = http://example.com/",
         ),
         WrappedTestContent(
+            input_='location => "http://example.com/"',
+            expected='location => "http://example.com/"',
+        ),
+        WrappedTestContent(
             input_=" location = http://example.com/2",
             expected=" location = ((self.__WB_check_loc && "
             "self.__WB_check_loc(location, arguments)) || {}).href = "
@@ -220,6 +224,24 @@ class WrappedTestContent(ContentForTests):
             expected="if (self.foo) { console.log('blah') }",
         ),
         WrappedTestContent(input_="window.x = 5", expected="window.x = 5"),
+        WrappedTestContent(
+            input_="""
+            class A {}
+            const B = 5;
+            let C = 4;
+            var D = 3;
+
+            location = "http://example.com/2" """,
+            expected="""
+            class A {}
+            const B = 5;
+            let C = 4;
+            var D = 3;
+
+            location = ((self.__WB_check_loc && """
+            "self.__WB_check_loc(location, arguments)) || {}).href "
+            """= "http://example.com/2" """,
+        ),
         WrappedTestContent(input_=" var    self  ", expected=" let    self  "),
     ]
 )
@@ -287,6 +309,20 @@ export { a };
 
 export { a };
 """,
+        ),
+        # rewrite import same line
+        ImportTestContent(
+            input_='import{A, B} from "https://example.com/";'
+            'import{C, D} from "https://example.org"',
+            expected='import{A, B} from "../../../example.com/";'
+            'import{C, D} from "../../../example.org/"',
+        ),
+        # rewrite import / export same line
+        ImportTestContent(
+            input_='import{A, B} from "https://example.com/";'
+            'export{C, D} from "/another/path/to/file"',
+            expected='import{A, B} from "../../../example.com/";'
+            'export{C, D} from "../../another/path/to/file"',
         ),
         # rewrite ESM module import
         ImportTestContent(
@@ -387,6 +423,9 @@ def test_import_rewrite(rewrite_import_content: ImportTestContent):
         ",eval(a)",
         "this.$eval(a)",
         "x = $eval; x(a);",
+        "static eval(a,b){ }",
+        "function eval(a,b){ }",
+        "} eval(a,b){ }",
         "obj = { eval : 1 }",
         "x = obj.eval",
         "x = obj.eval(a)",
