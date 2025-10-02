@@ -5,25 +5,22 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) (as of version 1.5.0).
 
-## [Unreleased]
+## [5.2.0] - 2025-10-02
 
 ### Added
 
+- Add utility to fetch and prepare ZIM illustration (#254)
 - New `zim.dedup.Deduplicator` class to handle automatic deduplication of content before adding to the ZIM (#33)
 
 ### Changed
 
 - Upgrade dependencies, especially wombat 3.9.1 (#262, #263)
-- Backport changes in wabac.js around JS rewriting rules (#259)
+- Backport changes in wabac.js around JS rewriting rules (#259, #265)
 
 ### Fixed
 
 - JS rewriting abusively rewrite import function (#255)
 - Test about badly escaped src in HTML is failing (#264)
-
-### Added
-
-- Add utility to fetch and prepare ZIM illustration (#254)
 
 ## [5.1.1] - 2025-02-17
 
