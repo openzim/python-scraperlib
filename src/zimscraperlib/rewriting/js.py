@@ -13,8 +13,8 @@ it appropriately
 ZIM at `_zim_static/__wb_module_decl.js`
 
 This code is based on https://github.com/webrecorder/wabac.js/blob/main/src/rewrite/jsrewriter.ts
-Last backport of upstream changes is from Sept 13, 2025
-Commit 6dd2d9ae664cfcd2ea8637d7d6c7ed7a0ca332a0
+Last backport of upstream changes is from Oct 12, 2025
+Commit 1849552c3dbcbc065c05afac2dd80061db37b64d
 """
 
 import re

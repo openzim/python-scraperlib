@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Upgrade to support only Python 3.14 (#266)
+- Upgrade dependencies (#269)
 
 ## [5.2.0] - 2025-10-02
 
