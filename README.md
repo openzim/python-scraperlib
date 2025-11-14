@@ -24,6 +24,13 @@ zimscraperlib>=1.1,<1.2
 
 See documentation at [Read the Docs](https://python-scraperlib.readthedocs.io/) for details.
 
+> [!WARNING]
+> While this library brings support for downloading videos with yt-dlp, recent changes in Youtube have forced yt-dlp team
+> to require new dependencies for youtube videos (see https://github.com/yt-dlp/yt-dlp/issues/15012). These dependencies
+> are significantly big and not needed for all other backend supported by yt-dlp (only youtube needs it). These dependencies
+> are hence not included in this library dependencies (yet, see https://github.com/openzim/python-scraperlib/issues/268),
+> you have to install them on your own if you intend to download videos from Youtube.
+
 # Dependencies
 
 - libmagic
