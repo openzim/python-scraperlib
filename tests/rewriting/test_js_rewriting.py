@@ -450,6 +450,12 @@ import a from "https://example.com/B.js"
 }
 
 """,
+        """"use strict";(function() {
+    const text = `
+export { a };
+`;
+  })
+""",
         "let a = 7; var b = 5; const foo = 4;\n\n",
     ]
 )

@@ -101,10 +101,15 @@ def get_pdf_index_data(
         if parts:  # pragma: no branch (always metadata in test PDFs)
             title = " - ".join(parts)
 
-    content = "\n".join(
-        page.get_text()  # pyright: ignore[reportUnknownArgumentType, reportUnknownMemberType, reportAttributeAccessIssue]
-        for page in doc
-    )
+    def get_pdf_content(page: pymupdf.Page) -> str:
+        text = (  # pyright: ignore[reportUnknownVariableType]
+            page.get_text()  # pyright: ignore[reportUnknownMemberType]
+        )
+        if not isinstance(text, str):
+            raise Exception("Unexpected text content")
+        return text
+
+    content = "\n".join(get_pdf_content(page) for page in doc)
 
     # build list of messages and filter messages which are known to not be relevant
     # in our use-case
