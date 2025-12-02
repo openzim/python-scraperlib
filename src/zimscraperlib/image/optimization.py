@@ -23,6 +23,7 @@ import os
 import pathlib
 import subprocess
 from dataclasses import dataclass
+from typing import overload
 
 import piexif  # pyright: ignore[reportMissingTypeStubs]
 from optimize_images.img_aux_processing import (  # pyright: ignore[reportMissingTypeStubs]
@@ -78,6 +79,18 @@ class OptimizePngOptions:
     remove_transparency: bool | None = False
 
 
+@overload
+def optimize_png(
+    src: pathlib.Path | io.BytesIO,
+    dst: io.BytesIO | None = None,
+    options: OptimizePngOptions | None = None,
+) -> io.BytesIO: ...
+@overload
+def optimize_png(
+    src: pathlib.Path | io.BytesIO,
+    dst: pathlib.Path,
+    options: OptimizePngOptions | None = None,
+) -> pathlib.Path: ...
 def optimize_png(
     src: pathlib.Path | io.BytesIO,
     dst: pathlib.Path | io.BytesIO | None = None,
@@ -128,6 +141,18 @@ class OptimizeJpgOptions:
     keep_exif: bool | None = True
 
 
+@overload
+def optimize_jpeg(
+    src: pathlib.Path | io.BytesIO,
+    dst: io.BytesIO | None = None,
+    options: OptimizeJpgOptions | None = None,
+) -> io.BytesIO: ...
+@overload
+def optimize_jpeg(
+    src: pathlib.Path | io.BytesIO,
+    dst: pathlib.Path,
+    options: OptimizeJpgOptions | None = None,
+) -> pathlib.Path: ...
 def optimize_jpeg(
     src: pathlib.Path | io.BytesIO,
     dst: pathlib.Path | io.BytesIO | None = None,
@@ -218,6 +243,18 @@ class OptimizeWebpOptions:
     lossless: bool | None = False
 
 
+@overload
+def optimize_webp(
+    src: pathlib.Path | io.BytesIO,
+    dst: io.BytesIO | None = None,
+    options: OptimizeWebpOptions | None = None,
+) -> io.BytesIO: ...
+@overload
+def optimize_webp(
+    src: pathlib.Path | io.BytesIO,
+    dst: pathlib.Path,
+    options: OptimizeWebpOptions | None = None,
+) -> pathlib.Path: ...
 def optimize_webp(
     src: pathlib.Path | io.BytesIO,
     dst: pathlib.Path | io.BytesIO | None = None,
