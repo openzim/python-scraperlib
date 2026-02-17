@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Add support for custom number of retries and user-agent in save_large_file (#278)
+
 ### Fixed
 
 - Add proper typing @overload to `zimscraperlib.image.optimize_xxx` methods (#273)

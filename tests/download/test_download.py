@@ -196,6 +196,28 @@ def test_large_download_https(tmp_path: pathlib.Path, valid_https_url: str):
 
 
 @pytest.mark.slow
+def test_large_download_https_custom_retry(
+    tmp_path: pathlib.Path, valid_https_url: str
+):
+    dest_file = tmp_path / "favicon.ico"
+    save_large_file(valid_https_url, dest_file, 1)
+    assert_downloaded_file(valid_https_url, dest_file)
+
+
+@pytest.mark.slow
+def test_large_download_https_custom_ua(tmp_path: pathlib.Path, valid_https_url: str):
+    dest_file = tmp_path / "favicon.ico"
+    save_large_file(
+        valid_https_url,
+        dest_file,
+        user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/120.0.0.0 Safari/537.36",
+    )
+    assert_downloaded_file(valid_https_url, dest_file)
+
+
+@pytest.mark.slow
 @pytest.mark.parametrize(
     "url,video_id",
     [

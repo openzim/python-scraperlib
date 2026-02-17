@@ -121,21 +121,30 @@ class BestMp4(YoutubeConfig):
     }
 
 
-def save_large_file(url: str, fpath: pathlib.Path) -> None:
-    """download a binary file from its URL, using wget"""
+def save_large_file(
+    url: str, fpath: pathlib.Path, retries: int = 5, user_agent: str | None = None
+) -> None:
+    """download a binary file from its URL, using wget
+
+    Arguments -
+        url:
+    """
+    command = [
+        "/usr/bin/env",
+        "wget",
+        "-t",
+        f"{retries}",
+        "--retry-connrefused",
+        "--random-wait",
+        "-O",
+        str(fpath),
+        "-c",
+        url,
+    ]
+    if user_agent:
+        command += ["-U", user_agent]
     subprocess.run(
-        [
-            "/usr/bin/env",
-            "wget",
-            "-t",
-            "5",
-            "--retry-connrefused",
-            "--random-wait",
-            "-O",
-            str(fpath),
-            "-c",
-            url,
-        ],
+        command,
         check=True,
     )
 
