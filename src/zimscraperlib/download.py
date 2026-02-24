@@ -136,6 +136,7 @@ def save_large_file(
         f"{retries}",
         "--retry-connrefused",
         "--random-wait",
+        "--progress=dot:giga",
         "-O",
         str(fpath),
         "-c",
