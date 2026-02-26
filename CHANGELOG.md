@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Add support for custom number of retries and user-agent in save_large_file (#278)
+- Enhance save_large_file log level (#279)
 
 ### Fixed
 
