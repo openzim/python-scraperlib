@@ -15,6 +15,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Add proper typing @overload to `zimscraperlib.image.optimize_xxx` methods (#273)
+- Backport wabac.JS change around rewriting: detect when JS is in 'strict' mode and avoid using 'arguments' (#286)
+
+### Changed
+
+- Upgrade to wombat 3.10.3 (#286)
 
 ## [5.3.0] - 2025-11-14
 
