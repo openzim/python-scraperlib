@@ -8,3 +8,13 @@ execute_after=[
 action="get_file"
 source="https://cdn.jsdelivr.net/npm/@webrecorder/wombat@3.10.3/dist/wombat.js"
 target_file="wombat.js"
+
+# wombatSetup.js is supposed to be built locally from files in javascript folder.
+# Should someone install from Github repo directly, the configuration below ensures that
+# wombatSetup.js is downloaded from dev.kiwix.org, where we have the latest version from
+# `main` branch. wheel and sdist contains the wombatSetup.js which was built that time
+# (reminder: get_file action does not overwrite a file which already exists)
+[files.assets.actions."wombatSetup.js"]
+action="get_file"
+source="https://dev.kiwix.org/zimscraperlib/wombatSetup.js"
+target_file="wombatSetup.js"
