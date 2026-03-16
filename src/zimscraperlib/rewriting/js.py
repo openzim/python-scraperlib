@@ -13,8 +13,8 @@ it appropriately
 ZIM at `_zim_static/__wb_module_decl.js`
 
 This code is based on https://github.com/webrecorder/wabac.js/blob/main/src/rewrite/jsrewriter.ts
-Last backport of upstream changes is from Oct 12, 2025
-Commit 1849552c3dbcbc065c05afac2dd80061db37b64d
+Last backport of upstream changes is from wabac.js commit:
+Feb 20, 2026 - 25061cb53ff113d5cff28f2f1354819f6c41034b
 """
 
 import re
@@ -67,17 +67,36 @@ GLOBALS_RX = re.compile(
 this_rw = "_____WB$wombat$check$this$function_____(this)"
 
 
+def remove_args_if_strict(
+    target: str, opts: dict[str, Any] | None, offset: int, full_string: str
+) -> str:
+    """
+    Replace 'arguments' with '[]' if the code is in strict mode.
+    In strict mode, the arguments keyword is not allowed.
+    """
+    opts = opts or {}
+
+    # Detect strict mode if not already set by checking for class declaration
+    if "isStrict" not in opts:
+        opts["isStrict"] = full_string[:offset].find("class ") >= 0
+    if opts.get("isStrict"):
+        return target.replace("arguments", "[]")
+    return target
+
+
 def add_suffix_non_prop(suffix: str) -> TransformationAction:
     """
     Create a rewrite_function which add a `suffix` to the match str.
     The suffix is added only if the match is not preceded by `.` or `$`.
+    Applies strict mode transformation to handle 'arguments' keyword.
     """
 
-    def f(m_object: re.Match[str], _opts: dict[str, Any] | None) -> str:
+    def f(m_object: re.Match[str], opts: dict[str, Any] | None) -> str:
         offset = m_object.start()
-        if offset > 0 and m_object.string[offset - 1] in ".$":
+        full_string = m_object.string
+        if offset > 0 and full_string[offset - 1] in ".$":
             return m_object[0]
-        return m_object[0] + suffix
+        return m_object[0] + remove_args_if_strict(suffix, opts, offset, full_string)
 
     return f
 
@@ -145,7 +164,7 @@ def create_js_rules() -> list[TransformationRule]:
     # be set.
     check_loc = (
         "((self.__WB_check_loc && self.__WB_check_loc(location, arguments)) || "
-        "{}).href = "
+        "{}).maybeHref = "
     )
 
     # This will replace `eval(...)`.
@@ -258,6 +277,30 @@ class JsRewriter(RxRewriter):
             f"""import {{ {", ".join(local_decls)} }} from "{wb_module_decl_url}";\n"""
         )
 
+    def _detect_strict_mode(self, text: str) -> bool:
+        """
+        Detect if the JavaScript code is in strict mode.
+
+        Returns True if the code contains:
+        - "use strict"; directive
+        - import statements
+        - export statements
+        - class declarations
+        """
+        # Check for "use strict"; directive
+        if '"use strict";' in text or "'use strict';" in text:
+            return True
+
+        # Check for import or export statements
+        if re.search(r"(?:^|\s)(?:im|ex)port\s+", text):
+            return True
+
+        # Check for class declaration
+        if re.search(r"\bclass\s+", text):
+            return True
+
+        return False
+
     def rewrite(self, text: str | bytes, opts: dict[str, Any] | None = None) -> str:
         """
         Rewrite the js code in `text`.
@@ -268,6 +311,14 @@ class JsRewriter(RxRewriter):
         opts = opts or {}
 
         is_module = opts.get("isModule", False)
+
+        # Detect and set strict mode
+        # Modules are always strict mode
+        if is_module:
+            opts["isStrict"] = True
+        elif "isStrict" not in opts:
+            # Detect strict mode from the code itself
+            opts["isStrict"] = self._detect_strict_mode(text)
 
         rules = REWRITE_JS_RULES[:]
 

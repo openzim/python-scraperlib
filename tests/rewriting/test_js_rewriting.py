@@ -184,7 +184,7 @@ class WrappedTestContent(ContentForTests):
             input_="location = http://example.com/",
             expected="location = ((self.__WB_check_loc && "
             "self.__WB_check_loc(location, argument"
-            "s)) || {}).href = http://example.com/",
+            "s)) || {}).maybeHref = http://example.com/",
         ),
         WrappedTestContent(
             input_='location => "http://example.com/"',
@@ -193,16 +193,10 @@ class WrappedTestContent(ContentForTests):
         WrappedTestContent(
             input_=" location = http://example.com/2",
             expected=" location = ((self.__WB_check_loc && "
-            "self.__WB_check_loc(location, arguments)) || {}).href = "
+            "self.__WB_check_loc(location, arguments)) || {}).maybeHref = "
             "http://example.com/2",
         ),
         WrappedTestContent(input_="func(location = 0)", expected="func(location = 0)"),
-        WrappedTestContent(
-            input_=" location = http://example.com/2",
-            expected=" location = ((self.__WB_check_loc && "
-            "self.__WB_check_loc(location, arguments)) || {}).href = "
-            "http://example.com/2",
-        ),
         WrappedTestContent(input_="window.eval(a)", expected="window.eval(a)"),
         WrappedTestContent(
             input_="x = window.eval; x(a);", expected="x = window.eval; x(a);"
@@ -239,7 +233,7 @@ class WrappedTestContent(ContentForTests):
             var D = 3;
 
             location = ((self.__WB_check_loc && """
-            "self.__WB_check_loc(location, arguments)) || {}).href "
+            "self.__WB_check_loc(location, [])) || {}).maybeHref "
             """= "http://example.com/2" """,
         ),
         WrappedTestContent(input_=" var    self  ", expected=" let    self  "),
