@@ -4,12 +4,14 @@ import os
 import pathlib
 import re
 import shutil
+import subprocess
 from dataclasses import asdict, is_dataclass
 from typing import Any
 
 import piexif  # pyright: ignore[reportMissingTypeStubs]
 import pytest
 from PIL import Image
+from pytest_mock import MockerFixture
 from resizeimage.imageexceptions import (  # pyright: ignore[reportMissingTypeStubs]
     ImageSizeError,
 )
@@ -469,10 +471,9 @@ def test_wrong_extension(
         create_favicon(src, dst)
 
 
-@pytest.mark.parametrize(
-    "fmt",
-    ["png", "jpg", "gif", "webp"],
-)
+@pytest.mark.parametrize("fmt", ["png", "jpg", "gif", "webp"])
+@pytest.mark.parametrize("src_type", ["path", "bytesio", "bytes"])
+@pytest.mark.parametrize("dst_type", ["path", "bytesio"])
 def test_optimize_image_default_generic(
     png_image2: pathlib.Path,
     jpg_image: pathlib.Path,
@@ -480,8 +481,10 @@ def test_optimize_image_default_generic(
     webp_image: pathlib.Path,
     tmp_path: pathlib.Path,
     fmt: str,
+    src_type: str,
+    dst_type: str,
 ):
-    src, dst = get_src_dst(
+    src, dst_path = get_src_dst(
         tmp_path,
         fmt,
         png_image=png_image2,
@@ -489,14 +492,31 @@ def test_optimize_image_default_generic(
         gif_image=gif_image,
         webp_image=webp_image,
     )
-    optimize_image(src, dst, delete_src=False)
-    assert os.path.getsize(dst) < os.path.getsize(src)
+    original_size = os.path.getsize(src)
+
+    if src_type == "bytesio":
+        src = io.BytesIO(src.read_bytes())
+    elif src_type == "bytes":
+        src = src.read_bytes()
+
+    dst = io.BytesIO() if dst_type == "bytesio" else dst_path
+    optimize_image(src, dst, dst_format=fmt)
+
+    if dst_type == "path":
+        assert isinstance(dst, pathlib.Path)
+        assert dst.exists()
+        assert os.path.getsize(dst) < original_size
+        assert os.path.getsize(dst) > 0
+    else:
+        assert isinstance(dst, io.BytesIO)
+        assert dst.getbuffer().nbytes > 0
+        dst.seek(0)
+        assert Image.open(dst).format == fmt.upper().replace("JPG", "JPEG")
 
 
-@pytest.mark.parametrize(
-    "fmt",
-    ["png", "jpg", "gif", "webp"],
-)
+@pytest.mark.parametrize("fmt", ["png", "jpg", "gif", "webp"])
+@pytest.mark.parametrize("src_type", ["path", "bytesio"])
+@pytest.mark.parametrize("dst_type", ["path", "bytesio"])
 def test_optimize_image_default_direct(
     png_image2: pathlib.Path,
     jpg_image: pathlib.Path,
@@ -504,8 +524,10 @@ def test_optimize_image_default_direct(
     webp_image: pathlib.Path,
     tmp_path: pathlib.Path,
     fmt: str,
+    src_type: str,
+    dst_type: str,
 ):
-    src, dst = get_src_dst(
+    src, dst_path = get_src_dst(
         tmp_path,
         fmt,
         png_image=png_image2,
@@ -513,6 +535,12 @@ def test_optimize_image_default_direct(
         gif_image=gif_image,
         webp_image=webp_image,
     )
+    original_size = os.path.getsize(src)
+
+    if src_type == "bytesio":
+        src = io.BytesIO(src.read_bytes())
+
+    dst = io.BytesIO() if dst_type == "bytesio" else dst_path
 
     if fmt in ("jpg", "jpeg"):
         optimize_jpeg(src=src, dst=dst)
@@ -524,7 +552,17 @@ def test_optimize_image_default_direct(
         optimize_webp(src=src, dst=dst)
     else:
         raise NotImplementedError(f"Image format '{fmt}' cannot yet be optimized")
-    assert os.path.getsize(dst) < os.path.getsize(src)
+
+    if dst_type == "path":
+        assert isinstance(dst, pathlib.Path)
+        assert dst.exists()
+        assert os.path.getsize(dst) < original_size
+        assert os.path.getsize(dst) > 0
+    else:
+        assert isinstance(dst, io.BytesIO)
+        assert dst.getbuffer().nbytes > 0
+        dst.seek(0)
+        assert Image.open(dst).format == fmt.upper().replace("JPG", "JPEG")
 
 
 def test_optimize_image_del_src(png_image: pathlib.Path, tmp_path: pathlib.Path):
@@ -537,21 +575,81 @@ def test_optimize_image_del_src(png_image: pathlib.Path, tmp_path: pathlib.Path)
     assert not src.exists()
 
 
-def test_optimize_image_allow_convert(png_image: pathlib.Path, tmp_path: pathlib.Path):
-    shutil.copy(png_image, tmp_path)
-    src = tmp_path / png_image.name
-    dst = tmp_path / "out.webp"
-    optimize_image(src, dst, delete_src=True, convert=True)
-    assert not src.exists()
-    assert dst.exists() and os.path.getsize(dst) > 0
-
-
 def test_optimize_image_bad_dst(png_image: pathlib.Path, tmp_path: pathlib.Path):
     shutil.copy(png_image, tmp_path)
     src = tmp_path / png_image.name
     dst = tmp_path / "out.raster"
     with pytest.raises(ValueError, match="Impossible to guess format from dst image"):
-        optimize_image(src, dst, delete_src=True, convert=True)
+        optimize_image(src, dst)
+
+
+def test_optimize_image_unidentifiable_src(tmp_path: pathlib.Path):
+    src = tmp_path / "file.gbr"
+    src.write_bytes(b"test gbr content")
+    dst = tmp_path / "out.png"
+    with pytest.raises(Image.UnidentifiedImageError):
+        optimize_image(src, dst)
+
+
+def test_optimize_image_unsupported_format_dst(png_image: pathlib.Path):
+    src = png_image
+    dst = io.BytesIO()
+    with pytest.raises(
+        NotImplementedError, match="Image format 'bmp' cannot yet be optimized"
+    ):
+        optimize_image(src, dst, dst_format="bmp")
+
+
+def test_optimize_image_missing_dst_format_for_bytesio(png_image: pathlib.Path):
+    src = png_image
+    dst = io.BytesIO()
+    with pytest.raises(
+        ValueError, match=re.escape("dst_format is required when dst is io.BytesIO")
+    ):
+        optimize_image(src, dst)
+
+
+def test_optimize_image_delete_src_not_applicable_for_bytesio():
+    src = io.BytesIO(b"test image data")
+    dst = io.BytesIO()
+    with pytest.raises(
+        ValueError,
+        match=re.escape("delete_src is not applicable when src is io.BytesIO or bytes"),
+    ):
+        optimize_image(src, dst, dst_format="png", delete_src=True)
+
+
+def test_optimize_image_delete_src_not_applicable_for_bytes():
+    src = b"test image data"
+    dst = io.BytesIO()
+    with pytest.raises(
+        ValueError,
+        match=re.escape("delete_src is not applicable when src is io.BytesIO or bytes"),
+    ):
+        optimize_image(src, dst, dst_format="png", delete_src=True)
+
+
+def test_optimize_image_deprecated_convert_str(png_image: pathlib.Path):
+    src = png_image
+    dst = io.BytesIO()
+    with pytest.warns(DeprecationWarning, match="The 'convert' param is deprecated"):
+        optimize_image(src, dst, convert="jpg")
+
+    dst.seek(0)
+    assert Image.open(dst).format == "JPEG"
+
+
+def test_optimize_image_deprecated_convert_true(
+    png_image: pathlib.Path, tmp_path: pathlib.Path
+):
+    src = png_image
+    dst = tmp_path / "out.jpg"
+
+    with pytest.warns(DeprecationWarning, match="The 'convert' param is deprecated"):
+        optimize_image(src, dst, convert=True)
+
+    assert dst.exists()
+    assert Image.open(dst).format == "JPEG"
 
 
 @pytest.mark.parametrize(
@@ -779,15 +877,6 @@ def test_image_preset_jpg(
     assert dst_bytes.getbuffer().nbytes < byte_stream.getbuffer().nbytes
 
 
-def test_optimize_image_unsupported_format():
-    src = pathlib.Path(__file__).parent.parent / "files" / "single_wave_icon.gbr"
-    dst = pathlib.Path("image.png")
-    with pytest.raises(
-        NotImplementedError, match="Image format 'gbr' cannot yet be optimized"
-    ):
-        optimize_image(src, dst, delete_src=False)
-
-
 def test_image_preset_has_mime_and_ext():
     for _, preset in ALL_PRESETS:
         assert preset().ext
@@ -943,13 +1032,6 @@ def test_format_for_cannot_use_suffix_with_byte_array():
         assert format_for(src=io.BytesIO(), from_suffix=True)
 
 
-def test_wrong_extension_optim(tmp_path: pathlib.Path, png_image: pathlib.Path):
-    dst = tmp_path.joinpath("image.jpg")
-    shutil.copy(png_image, dst)
-    with pytest.raises(ValueError, match=re.escape("is not of format JPEG")):
-        optimize_jpeg(dst, dst)
-
-
 def test_is_valid_image(
     png_image: pathlib.Path,
     png_image2: pathlib.Path,
@@ -987,6 +1069,72 @@ def test_optimize_gif_no_interlace(gif_image: pathlib.Path, tmp_path: pathlib.Pa
     optimize_gif(
         gif_image, tmp_path / "out.gif", options=OptimizeGifOptions(interlace=None)
     )
+
+
+def test_optimize_gif_with_non_gif_src(png_image: pathlib.Path, tmp_path: pathlib.Path):
+    dst = tmp_path / "out.gif"
+    result = optimize_gif(src=png_image, dst=dst)
+    assert isinstance(result, pathlib.Path)
+    assert result == dst
+    assert dst.exists()
+    assert Image.open(dst).format == "GIF"
+
+
+def test_optimize_gif_with_rgb_src(tmp_path: pathlib.Path):
+    img = Image.new("RGB", (100, 100), color=(255, 0, 0))
+    src = tmp_path / "rgb.png"
+    img.save(src, format="PNG")
+
+    dst = tmp_path / "out.gif"
+    optimize_gif(src=src, dst=dst)
+
+    assert dst.exists()
+    assert Image.open(dst).format == "GIF"
+
+
+def test_optimize_gif_gifsicle_failure_path(
+    gif_image: pathlib.Path, tmp_path: pathlib.Path, mocker: MockerFixture
+):
+    gifsicle = subprocess.CompletedProcess(
+        args=["gifsicle"],
+        returncode=1,
+        stdout=b"",
+        stderr=b"gifsicle processing failed",
+    )
+    mocker.patch(
+        "zimscraperlib.image.optimization.subprocess.run", return_value=gifsicle
+    )
+
+    dst = tmp_path / "out.gif"
+    dst.touch()
+
+    with pytest.raises(subprocess.CalledProcessError):
+        optimize_gif(src=gif_image, dst=dst)
+
+    assert not dst.exists()
+
+
+def test_optimize_gif_gifsicle_failure_bytesio(
+    gif_image: pathlib.Path, mocker: MockerFixture
+):
+    gifsicle = subprocess.CompletedProcess(
+        args=["gifsicle"],
+        returncode=1,
+        stdout=b"",
+        stderr=b"gifsicle processing failed",
+    )
+    mocker.patch(
+        "zimscraperlib.image.optimization.subprocess.run", return_value=gifsicle
+    )
+
+    src_bytes = io.BytesIO(gif_image.read_bytes())
+    dst_bytes = io.BytesIO(b"data to be cleared")
+
+    with pytest.raises(subprocess.CalledProcessError):
+        optimize_gif(src=src_bytes, dst=dst_bytes)
+
+    dst_bytes.seek(0)
+    assert dst_bytes.read() == b""
 
 
 @pytest.mark.parametrize(
