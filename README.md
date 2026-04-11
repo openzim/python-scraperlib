@@ -33,33 +33,33 @@ See documentation at [Read the Docs](https://python-scraperlib.readthedocs.io/) 
 
 # Dependencies
 
-- libmagic
-- wget
-- libzim (auto-installed, not available on Windows)
-- Pillow
-- FFmpeg
-- gifsicle (>=1.92)
-- libcairo (if you use the image manipulation, this is used for svg conversion)
+Most dependencies are installed automatically by pip (from PyPI by default). The following system packages may be required depending on which features you use:
+
+- **libmagic** — required for file type detection (used in most scrapers)
+- **wget** — required only for `zimscraperlib.download` functions
+- **FFmpeg** — required only for video processing functions
+- **gifsicle** (>=1.92) — required only for GIF optimization
+- **libcairo** — required only for SVG-to-PNG conversion
+- **libzim** — auto-installed via PyPI, not available on Windows
+- **Pillow** — auto-installed via PyPI; pre-built wheels are used by default and no system image libraries are needed. Only if you need to build Pillow from source should you install additional system libraries — see [Pillow's build documentation](https://pillow.readthedocs.io/en/latest/installation/building-from-source.html) for details.
+  > **Note:** To run the full test suite, all system dependencies listed above must be installed.
 
 ## macOS
 
 ```sh
-brew install libmagic wget libtiff libjpeg webp little-cms2 ffmpeg gifsicle
+brew install libmagic wget ffmpeg gifsicle cairo
 ```
 
 ## Linux
 
 ```sh
-sudo apt install libmagic1 wget ffmpeg \
-    libtiff5-dev libjpeg8-dev libopenjp2-7-dev zlib1g-dev \
-    libfreetype6-dev liblcms2-dev libwebp-dev tcl8.6-dev tk8.6-dev python3-tk \
-    libharfbuzz-dev libfribidi-dev libxcb1-dev gifsicle
+sudo apt install libmagic1 wget ffmpeg gifsicle libcairo2
 ```
 
 ## Alpine
 
-```
-apk add ffmpeg gifsicle libmagic wget libjpeg
+```sh
+apk add ffmpeg gifsicle libmagic wget cairo
 ```
 
 # Contribution
@@ -68,11 +68,29 @@ This project adheres to openZIM's [Contribution Guidelines](https://github.com/o
 
 This project has implemented openZIM's [Python bootstrap, conventions and policies](https://github.com/openzim/_python-bootstrap/docs/Policy.md) **v1.0.2**.
 
+All instructions below must be run from the root of your local clone of this repository.
+
+If you do not already have it on your system, install [hatch](https://hatch.pypa.io/latest/install/):
+
 ```shell
 pip install hatch
-pip install ".[dev]"
+```
+
+Start a hatch shell — this will install all dependencies including dev in an isolated virtual environment:
+
+```shell
+hatch shell
+```
+
+Set up the pre-commit Git hook (runs linters automatically before each commit):
+
+```shell
 pre-commit install
-# For tests
+```
+
+Run tests with coverage:
+
+```shell
 invoke coverage
 ```
 
