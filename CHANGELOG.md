@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add proper typing @overload to `zimscraperlib.image.optimize_xxx` methods (#273)
 - Backport wabac.JS change around rewriting: detect when JS is in 'strict' mode and avoid using 'arguments' (#286)
 - Fix installation from source, which missed wombatSetup.js (#287)
+- Fix outdated system dependencies in README: remove Pillow build-time deps (bundled in wheels), add missing `libcairo` across all platforms (#152)
+- Improve contribution setup instructions: use `hatch shell`, clarify commands must be run from local clone root (#153)
 
 ### Changed
 
