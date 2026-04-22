@@ -973,3 +973,33 @@ def test_config_indexing(tmp_path: pathlib.Path):
     assert Creator(tmp_path / "_.zim", "").config_indexing(True, "bam")
     assert Creator(tmp_path / "_.zim", "").config_indexing(False, "bam")
     assert Creator(tmp_path / "_.zim", "").config_indexing(False)
+
+
+def test_item_backpressure(tmp_path: pathlib.Path, html_file: pathlib.Path):
+    fpath = tmp_path / "test.zim"
+
+    class Store:
+        inflight_count = 0
+
+    def cb():
+        Store.inflight_count -= 1
+
+    with Creator(fpath, "").config_dev_metadata() as creator:
+        max_inflight = 0
+        for i in range(200):
+            while Store.inflight_count > 100:
+                time.sleep(0.01)
+                # adding GC collection to trigger finalization does not help
+                # gc.collect()
+            creator.add_item(
+                StaticItem(
+                    path=f"{i}_{html_file.name}",
+                    filepath=html_file,
+                    mimetype="text/html",
+                ),
+                callbacks=Callback(func=cb),
+            )
+            Store.inflight_count += 1
+            max_inflight = max(Store.inflight_count, max_inflight)
+
+    assert max_inflight < 1000
