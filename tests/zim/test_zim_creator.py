@@ -973,3 +973,11 @@ def test_config_indexing(tmp_path: pathlib.Path):
     assert Creator(tmp_path / "_.zim", "").config_indexing(True, "bam")
     assert Creator(tmp_path / "_.zim", "").config_indexing(False, "bam")
     assert Creator(tmp_path / "_.zim", "").config_indexing(False)
+
+
+def test_config_indexing_docstring_only_mentions_full_text():
+    """Regression test for #294: docstring must not claim title indexing
+    is toggled (libzim only toggles the full-text index)."""
+    doc = Creator.config_indexing.__doc__ or ""
+    assert "full-text" in doc
+    assert "full-text and title indexing" not in doc

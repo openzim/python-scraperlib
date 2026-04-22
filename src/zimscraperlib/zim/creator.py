@@ -127,9 +127,12 @@ class Creator(libzim.writer.Creator):
     def config_indexing(
         self, indexing: bool, language: str | None = None  # noqa: FBT001
     ):
-        """Toggle full-text and title indexing of entries
+        """Toggle full-text indexing of entries
 
-        Uses Language metadata's value (or "") if not set"""
+        Uses Language metadata's value (or "") if not set.
+
+        Note: title indexing is always performed by libzim and cannot be
+        disabled via this method; only the full-text index is toggled."""
         language = language or self._get_first_language_metadata_value() or ""
         if indexing and not is_valid_iso_639_3(language):
             raise ValueError("Not a valid ISO-639-3 language code")
