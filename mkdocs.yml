@@ -71,7 +71,7 @@ plugins:
       handlers:
         python:
           # Set up cross-references to Python types
-          import:
+          inventories:
             - https://docs.python.org/3/objects.inv
           paths: [src]
           options:
