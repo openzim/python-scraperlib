@@ -16,7 +16,7 @@ def test(ctx: Context, args: str = ""):
 @task(optional=["args"], help={"args": "pytest additional arguments"})
 def test_cov(ctx: Context, args: str = ""):
     """run test vith coverage"""
-    ctx.run(f"coverage run -m pytest {args}", pty=use_pty)
+    ctx.run(f"coverage run -m pytest --runslow {args}", pty=use_pty)
 
 
 @task(optional=["html"], help={"html": "flag to export html report"})
