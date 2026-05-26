@@ -68,6 +68,9 @@ def format_for(
 ) -> str | None:
     """Pillow format of a given filename, either Pillow-detected or from suffix"""
     if not from_suffix:
+        original_position = 0
+        if isinstance(src, io.BytesIO):
+            original_position = src.tell()
         try:
             with PIL.Image.open(src) as img:
                 return img.format
@@ -85,6 +88,9 @@ def format_for(
                 return "SVG"
             else:  # pragma: no cover
                 raise
+        finally:
+            if isinstance(src, io.BytesIO):
+                src.seek(original_position)
 
     if not isinstance(src, pathlib.Path):
         raise ValueError(

@@ -1058,6 +1058,25 @@ def test_format_for_cannot_use_suffix_with_byte_array():
         assert format_for(src=io.BytesIO(), from_suffix=True)
 
 
+@pytest.mark.parametrize(
+    "seek_to_zero",
+    [
+        (True),
+        (False),
+    ],
+)
+def test_format_for_does_not_alter_buffer(
+    svg_image: pathlib.Path, *, seek_to_zero: bool
+):
+    svg_bytes = io.BytesIO()
+    svg_bytes.write(svg_image.read_bytes())
+    if seek_to_zero:
+        svg_bytes.seek(0)
+    original_position = svg_bytes.tell()
+    assert format_for(svg_bytes, from_suffix=False) == "SVG"
+    assert svg_bytes.tell() == original_position
+
+
 def test_is_valid_image(
     png_image: pathlib.Path,
     png_image2: pathlib.Path,

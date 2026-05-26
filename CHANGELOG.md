@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Improve contribution setup instructions: use `hatch shell`, clarify commands must be run from local clone root (#153)
 - Bring coverage back to 100% (#293)
 - Fix `Creator.config_indexing` docstring to reflect that only the full-text index is toggled; title indexing is always performed by libzim (#294)
+- Fix `format_for` to not modify input BytesIO position (#296)
 
 ### Changed
 
