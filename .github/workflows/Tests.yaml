@@ -133,10 +133,9 @@ jobs:
           python-version-file: pyproject.toml
           architecture: x64
 
-      - name: Install dependencies (and project)
+      - name: Install dependencies
         run: |
           pip install -U pip hatch
-          pip install -e .[docs]
 
       - name: Build mkdoc documentation
         run: hatch run docs:build
