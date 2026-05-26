@@ -1,5 +1,4 @@
 class ContentForTests:
-
     def __init__(
         self,
         input_: str | bytes,

@@ -93,7 +93,8 @@ def test_indexing_item_is_front(tmp_path: pathlib.Path, png_image: pathlib.Path)
                 path="welcome",
                 title="brain food",  # title used for suggestions
                 index_data=IndexData(
-                    title="screen", content="car"  # title and content used for search
+                    title="screen",
+                    content="car",  # title and content used for search
                 ),
                 hints={libzim.writer.Hint.FRONT_ARTICLE: True},
             )
@@ -122,7 +123,8 @@ def test_indexing_item_not_front(tmp_path: pathlib.Path, png_image: pathlib.Path
                 path="welcome",
                 title="brain food",  # title used for suggestions
                 index_data=IndexData(
-                    title="screen", content="car"  # title and content used for search
+                    title="screen",
+                    content="car",  # title and content used for search
                 ),
                 hints={libzim.writer.Hint.FRONT_ARTICLE: False},  # mark as not front
             )

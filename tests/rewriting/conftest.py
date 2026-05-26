@@ -33,12 +33,16 @@ class SimpleUrlRewriter(ArticleUrlRewriter):
         )
 
     def get_item_path(
-        self, item_url: str, base_href: str | None  # noqa: ARG002
+        self,
+        item_url: str,  # noqa: ARG002
+        base_href: str | None,  # noqa: ARG002
     ) -> ZimPath:
         return ZimPath("")
 
     def get_document_uri(
-        self, item_path: ZimPath, item_fragment: str  # noqa: ARG002
+        self,
+        item_path: ZimPath,  # noqa: ARG002
+        item_fragment: str,  # noqa: ARG002
     ) -> str:
         return ""
 
@@ -54,13 +58,9 @@ def simple_url_rewriter_gen() -> Generator[Callable[[str], ArticleUrlRewriter]]:
 
 
 @pytest.fixture(scope="module")
-def js_rewriter_gen() -> (
-    Generator[
-        Callable[
-            [ArticleUrlRewriter, str | None, Callable[[ZimPath], None]], JsRewriter
-        ]
-    ]
-):
+def js_rewriter_gen() -> Generator[
+    Callable[[ArticleUrlRewriter, str | None, Callable[[ZimPath], None]], JsRewriter]
+]:
     """Fixture to create a basic url rewriter returning URLs as-is"""
 
     def get_js_rewriter(
@@ -78,9 +78,9 @@ def js_rewriter_gen() -> (
 
 
 @pytest.fixture(scope="module")
-def css_rewriter_gen() -> (
-    Generator[Callable[[ArticleUrlRewriter, str | None], CssRewriter]]
-):
+def css_rewriter_gen() -> Generator[
+    Callable[[ArticleUrlRewriter, str | None], CssRewriter]
+]:
     """Fixture to create a basic url rewriter returning URLs as-is"""
 
     def get_css_rewriter(

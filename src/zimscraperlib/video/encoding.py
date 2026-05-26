@@ -55,7 +55,6 @@ def reencode(
     """
 
     with path_from(existing_tmp_path or tempfile.TemporaryDirectory()) as tmp_dir:
-
         tmp_path = pathlib.Path(tmp_dir).joinpath(f"video.tmp{dst_path.suffix}")
         args = _build_ffmpeg_args(
             src_path=src_path,

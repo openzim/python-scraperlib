@@ -65,7 +65,9 @@ def mimetype_for(
         mimetype = (
             get_file_mimetype(fpath)
             if fpath
-            else get_content_mimetype(content[:2048]) if content else None
+            else get_content_mimetype(content[:2048])
+            if content
+            else None
         )
         # try to guess more-defined mime if it's text
         if (
@@ -125,7 +127,9 @@ class Creator(libzim.writer.Creator):
         self.ignore_duplicates = ignore_duplicates
 
     def config_indexing(
-        self, indexing: bool, language: str | None = None  # noqa: FBT001
+        self,
+        indexing: bool,  # noqa: FBT001
+        language: str | None = None,
     ):
         """Toggle full-text indexing of entries
 
@@ -143,7 +147,6 @@ class Creator(libzim.writer.Creator):
     def _log_metadata(self):
         """Log in DEBUG level all metadata key and value"""
         for name, metadata in sorted(self._metadata.items()):
-
             if not hasattr(metadata, "value"):
                 logger.debug(
                     f"Metadata: {name} is improper metadata type: "
@@ -211,7 +214,7 @@ class Creator(libzim.writer.Creator):
             ]
             raise ValueError(
                 "Mandatory metadata are not all set. Missing metadata: "
-                f'{",".join(missing_keys)}. You should prefer to use '
+                f"{','.join(missing_keys)}. You should prefer to use "
                 "StandardMetadataList if possible."
             )
 

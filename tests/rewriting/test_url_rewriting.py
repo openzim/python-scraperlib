@@ -9,7 +9,6 @@ from zimscraperlib.rewriting.url_rewriting import (
 
 
 class TestNormalize:
-
     @pytest.mark.parametrize(
         "url,zim_path",
         [
@@ -960,7 +959,6 @@ class CustomRewriter(ArticleUrlRewriter):
 
 
 class TestCustomRewriter:
-
     def test_items_to_download(self):
         rewriter = CustomRewriter(
             article_url=HttpUrl("https://kiwix.org/a/article/document.html"),
@@ -985,7 +983,6 @@ class TestCustomRewriter:
 
 
 class TestHttpUrl:
-
     @pytest.mark.parametrize(
         "http_url",
         [("https://bob@acme.com"), ("http://bob@acme.com"), ("hTtPs://bob@acme.com")],
@@ -1012,7 +1009,7 @@ class TestHttpUrl:
 
     def test_http_urls_str(self):
         assert str(HttpUrl("http://bob@acme.com")) == "HttpUrl(http://bob@acme.com)"
-        assert f'{HttpUrl("http://bob@acme.com")}' == "HttpUrl(http://bob@acme.com)"
+        assert f"{HttpUrl('http://bob@acme.com')}" == "HttpUrl(http://bob@acme.com)"
 
     def test_bad_http_urls_no_host(self):
         with pytest.raises(ValueError, match="Unsupported empty hostname in value"):
@@ -1026,7 +1023,6 @@ class TestHttpUrl:
 
 
 class TestZimPath:
-
     @pytest.mark.parametrize(
         "path",
         [
@@ -1092,4 +1088,4 @@ class TestZimPath:
 
     def test_zim_path_str(self):
         assert str(ZimPath("content/index.html")) == "ZimPath(content/index.html)"
-        assert f'{ZimPath("content/index.html")}' == "ZimPath(content/index.html)"
+        assert f"{ZimPath('content/index.html')}" == "ZimPath(content/index.html)"

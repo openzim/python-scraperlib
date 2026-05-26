@@ -167,13 +167,13 @@ class Language:
 
     def __hash__(self):
         return hash(
-            f"{getattr(self, "iso_639_1", None)}$"
-            f"{getattr(self, "iso_639_2b", None)}$"
-            f"{getattr(self, "iso_639_2t", None)}$"
-            f"{getattr(self, "iso_639_3", None)}$"
-            f"{getattr(self, "iso_639_5", None)}$"
-            f"{getattr(self, "english", None)}$"
-            f"{getattr(self, "native", None)}"
+            f"{getattr(self, 'iso_639_1', None)}$"
+            f"{getattr(self, 'iso_639_2b', None)}$"
+            f"{getattr(self, 'iso_639_2t', None)}$"
+            f"{getattr(self, 'iso_639_3', None)}$"
+            f"{getattr(self, 'iso_639_5', None)}$"
+            f"{getattr(self, 'english', None)}$"
+            f"{getattr(self, 'native', None)}"
         )
 
 

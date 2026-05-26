@@ -40,14 +40,13 @@ def find_language_in(content: str | BinaryIO | TextIO, mime_type: str) -> str:
             node = soup.find(nodename)
             if node:
                 if not isinstance(
-                    node, element.Tag  # pyright:ignore[reportUnnecessaryIsInstance]
+                    node,
+                    element.Tag,  # pyright:ignore[reportUnnecessaryIsInstance]
                 ) or not node.has_attr(key):
                     continue
                 if (
                     nodename == "meta"
-                    and not node.attrs.get(
-                        "http-equiv", ""
-                    ).lower()  # pyright:ignore[reportUnknownMemberType, reportAttributeAccessIssue]
+                    and not node.attrs.get("http-equiv", "").lower()  # pyright:ignore[reportUnknownMemberType, reportAttributeAccessIssue]
                     == "content-language"
                 ):
                     continue
