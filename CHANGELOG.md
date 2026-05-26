@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix installation from source, which missed wombatSetup.js (#287)
 - Fix outdated system dependencies in README: remove Pillow build-time deps (bundled in wheels), add missing `libcairo` across all platforms (#152)
 - Improve contribution setup instructions: use `hatch shell`, clarify commands must be run from local clone root (#153)
+- Bring coverage back to 100% (#293)
 
 ### Changed
 

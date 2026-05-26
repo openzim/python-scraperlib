@@ -926,7 +926,33 @@ def test_dynamic_jpeg_quality(jpg_image: pathlib.Path, tmp_path: pathlib.Path):
     assert os.path.getsize(dst) < os.path.getsize(jpg_image)
 
 
-def test_ensure_matches(webp_image: pathlib.Path):
+@pytest.mark.parametrize(
+    "fmt,expected",
+    [("png", "PNG"), ("jpg", "JPEG"), ("gif", "GIF"), ("webp", "WEBP"), ("svg", "SVG")],
+)
+def test_ensure_matches_ok(
+    png_image: pathlib.Path,
+    jpg_image: pathlib.Path,
+    gif_image: pathlib.Path,
+    webp_image: pathlib.Path,
+    svg_image: pathlib.Path,
+    tmp_path: pathlib.Path,
+    fmt: str,
+    expected: str,
+):
+    src, _ = get_src_dst(
+        tmp_path,
+        fmt,
+        png_image=png_image,
+        jpg_image=jpg_image,
+        gif_image=gif_image,
+        webp_image=webp_image,
+        svg_image=svg_image,
+    )
+    ensure_matches(src, expected)
+
+
+def test_ensure_matches_ko(webp_image: pathlib.Path):
     with pytest.raises(ValueError, match=re.escape("is not of format")):
         ensure_matches(webp_image, "PNG")
 

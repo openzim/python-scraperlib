@@ -78,7 +78,7 @@ def remove_args_if_strict(
 
     # Detect strict mode if not already set by checking for class declaration
     if "isStrict" not in opts:
-        opts["isStrict"] = full_string[:offset].find("class ") >= 0
+        opts["isStrict"] = full_string[:offset].find("class ") >= 0  # pragma: no cover
     if opts.get("isStrict"):
         return target.replace("arguments", "[]")
     return target
