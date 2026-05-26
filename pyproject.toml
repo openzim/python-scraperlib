@@ -68,6 +68,7 @@ test = [
   "coverage==7.11.3",
 ]
 docs = [
+  "ruff==0.15.12",
   "mkdocs==1.6.1",
   "mkdocs-include-markdown-plugin==7.2.0",
   "mkdocs-material==9.7.0",
