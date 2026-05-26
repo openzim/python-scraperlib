@@ -316,7 +316,7 @@ class JsRewriter(RxRewriter):
         # Modules are always strict mode
         if is_module:
             opts["isStrict"] = True
-        elif "isStrict" not in opts:
+        elif "isStrict" not in opts:  # pragma: no branch
             # Detect strict mode from the code itself
             opts["isStrict"] = self._detect_strict_mode(text)
 
