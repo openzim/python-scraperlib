@@ -67,7 +67,7 @@ apk add ffmpeg gifsicle libmagic wget cairo
 
 This project adheres to openZIM's [Contribution Guidelines](https://github.com/openzim/overview/wiki/Contributing).
 
-This project has implemented openZIM's [Python bootstrap, conventions and policies](https://github.com/openzim/_python-bootstrap/docs/Policy.md) **v1.0.2**.
+This project has implemented openZIM's [Python bootstrap, conventions and policies](https://github.com/openzim/_python-bootstrap/docs/Policy.md) **v2.0.0**.
 
 All instructions below must be run from the root of your local clone of this repository.
 
