@@ -118,3 +118,33 @@ jobs:
       - name: Ensure we can build JS package
         run: yarn pack
         working-directory: javascript
+
+  build-docs: # validate that doc can be built
+    runs-on: ubuntu-24.04
+    needs: generate-rules
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: pyproject.toml
+          architecture: x64
+
+      - name: Install dependencies (and project)
+        run: |
+          pip install -U pip hatch
+          pip install -e .[docs]
+
+      - name: Build mkdoc documentation
+        run: hatch run docs:build
+
+      - name: Save doc artifact
+        uses: actions/upload-artifact@v4
+        with:
+          path: |
+            site/
+          name: doc
+          retention-days: 1

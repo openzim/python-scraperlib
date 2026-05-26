@@ -78,6 +78,7 @@ docs = [
   "pymdown-extensions==10.17.1",
   "mkdocs-gen-files==0.5.0",
   "mkdocs-literate-nav==0.6.2",
+  "pygments==2.19.2", # See https://github.com/pygments/pygments/issues/3076
 ]
 dev = [
   "ipython==9.7.0",
