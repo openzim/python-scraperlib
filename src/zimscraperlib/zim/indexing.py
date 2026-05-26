@@ -105,7 +105,7 @@ def get_pdf_index_data(
         text = (  # pyright: ignore[reportUnknownVariableType]
             page.get_text()  # pyright: ignore[reportUnknownMemberType]
         )
-        if not isinstance(text, str):
+        if not isinstance(text, str):  # pragma: no cover
             raise Exception("Unexpected text content")
         return text
 

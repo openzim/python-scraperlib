@@ -7,7 +7,8 @@ import iso639.exceptions  # pyright: ignore[reportMissingTypeStubs]
 ISO_LEVELS = ["1", "2b", "2t", "3", "5"]
 
 
-class NotFoundError(ValueError): ...
+class NotFoundError(ValueError):
+    pass  # pragma: no cover
 
 
 class Language:
@@ -105,7 +106,7 @@ class Language:
             if native_display_name := query_locale.get_display_name():
                 if english_display_name := query_locale.get_display_name("en"):
                     return native_display_name, english_display_name
-        except (babel.UnknownLocaleError, TypeError, ValueError, AttributeError):
+        except babel.UnknownLocaleError, TypeError, ValueError, AttributeError:
             pass
 
         # ISO code lookup order matters (most qualified first)!
