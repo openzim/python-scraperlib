@@ -454,9 +454,7 @@ def test_head_insert():
         url_rewriter, "PRE_HEAD_INSERT", "POST_HEAD_INSERT", None
     ).rewrite(content).content == content.replace(
         "<head>", "<head>PRE_HEAD_INSERT"
-    ).replace(
-        "</head>", "POST_HEAD_INSERT</head>"
-    )
+    ).replace("</head>", "POST_HEAD_INSERT</head>")
 
 
 @pytest.mark.parametrize(

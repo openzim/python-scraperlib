@@ -50,7 +50,9 @@ def get_colors(
         sr, sg, sb = solarize(mr, mg, mb)  # pyright: ignore[reportUnknownArgumentType]
 
     return rgb_to_hex(
-        mr, mg, mb  # pyright: ignore[reportUnknownArgumentType]
+        mr,  # pyright: ignore[reportUnknownArgumentType]
+        mg,  # pyright: ignore[reportUnknownArgumentType]
+        mb,  # pyright: ignore[reportUnknownArgumentType]
     ), rgb_to_hex(sr, sg, sb)
 
 

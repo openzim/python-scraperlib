@@ -57,11 +57,8 @@ scripts = [
   "PyYAML==6.0.3",
 
 ]
-lint = [
-  "black==25.11.0",
-  "ruff==0.14.5",
-]
-check = [
+qa = [
+  "ruff==0.15.12",
   "pyright==1.1.407",
   "pytest==9.0.1",
 ]
@@ -71,6 +68,7 @@ test = [
   "coverage==7.11.3",
 ]
 docs = [
+  "ruff==0.15.12",
   "mkdocs==1.6.1",
   "mkdocs-include-markdown-plugin==7.2.0",
   "mkdocs-material==9.7.0",
@@ -84,9 +82,8 @@ dev = [
   "ipython==9.7.0",
   "pre-commit==4.4.0",
   "zimscraperlib[scripts]",
-  "zimscraperlib[lint]",
+  "zimscraperlib[qa]",
   "zimscraperlib[test]",
-  "zimscraperlib[check]",
   "zimscraperlib[docs]",
 ]
 
@@ -129,25 +126,19 @@ report-cov = "inv report-cov"
 coverage = "inv coverage --args '{args}'"
 html = "inv coverage --html --args '{args}'"
 
-[tool.hatch.envs.lint]
-template = "lint"
+[tool.hatch.envs.qa]
+template = "qa"
 skip-install = false
-features = ["scripts", "lint"]
+features = ["scripts", "qa", "test"]
 
-[tool.hatch.envs.lint.scripts]
-black = "inv lint-black --args '{args}'"
-ruff = "inv lint-ruff --args '{args}'"
-all = "inv lintall --args '{args}'"
-fix-black = "inv fix-black --args '{args}'"
-fix-ruff = "inv fix-ruff --args '{args}'"
-fixall = "inv fixall --args '{args}'"
-
-[tool.hatch.envs.check]
-features = ["scripts", "check"]
-
-[tool.hatch.envs.check.scripts]
-pyright = "inv check-pyright --args '{args}'"
-all = "inv checkall --args '{args}'"
+[tool.hatch.envs.qa.scripts]
+check-lint = "inv check-lint --args '{args}'"
+check-format = "inv check-format --args '{args}'"
+check-type = "inv check-type --args '{args}'"
+check-all = "inv check-all --args '{args}'"
+fix-format = "inv fix-format --args '{args}'"
+fix-lint = "inv fix-lint --args '{args}'"
+fix-all = "inv fix-all --args '{args}'"
 
 [tool.hatch.envs.docs]
 features = ["scripts", "docs"]

@@ -143,8 +143,8 @@ import pathlib
 from zimscraperlib.zim.filesystem import make_zim_file
 try:
     make_zim_file(
-        build_dir=pathlib.Path("{build_data['build_dir']}"),
-        fpath=pathlib.Path("{build_data['fpath']}"),
+        build_dir=pathlib.Path("{build_data["build_dir"]}"),
+        fpath=pathlib.Path("{build_data["fpath"]}"),
         name="test-zim",
         main_page="welcome",
         illustration="{png_image.name}",

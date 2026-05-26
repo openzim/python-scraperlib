@@ -387,9 +387,7 @@ def test_clean_value(metadata_init: MetadataInitConfig):
             value=[raw_value, raw_value]
         ).libzim_value == metadata_init.a_type.join_list_with.join(
             [clean_value.decode("UTF-8")]
-        ).encode(
-            "UTF-8"
-        )
+        ).encode("UTF-8")
     elif isinstance(metadata_init.a_type, metadata.TextBasedMetadata):
         if metadata_init.nb_args == 1:
             assert metadata_init.a_type(value=raw_value).libzim_value == clean_value

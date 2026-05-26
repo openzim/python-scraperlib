@@ -1206,22 +1206,30 @@ def test_optimize_any_image(
             gif=(
                 GifMedium.options
                 if preset == "low"
-                else GifHigh.options if preset == "high" else GifMedium.options
+                else GifHigh.options
+                if preset == "high"
+                else GifMedium.options
             ),
             webp=(
                 WebpLow.options
                 if preset == "low"
-                else WebpHigh.options if preset == "high" else WebpMedium.options
+                else WebpHigh.options
+                if preset == "high"
+                else WebpMedium.options
             ),
             jpg=(
                 JpegLow.options
                 if preset == "low"
-                else JpegHigh.options if preset == "high" else JpegMedium.options
+                else JpegHigh.options
+                if preset == "high"
+                else JpegMedium.options
             ),
             png=(
                 PngLow.options
                 if preset == "low"
-                else PngHigh.options if preset == "high" else PngMedium.options
+                else PngHigh.options
+                if preset == "high"
+                else PngMedium.options
             ),
         ),
     )

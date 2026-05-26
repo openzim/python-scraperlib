@@ -222,7 +222,6 @@ def x_prefixed[U: AnyMetadata](cls: type[U]):
 
 
 class Metadata(MetadataBase[bytes]):
-
     def get_binary_from(
         self,
         value: bytes | SupportsRead[bytes] | SupportsSeekableRead[bytes] | io.BytesIO,
@@ -463,7 +462,6 @@ class RelationMetadata(TextBasedMetadata):
 
 @dataclass
 class StandardMetadataList:
-
     Name: NameMetadata
     Language: LanguageMetadata
     Title: TitleMetadata

@@ -136,7 +136,6 @@ def test_js_rewrite_evals(simple_js_rewriter: JsRewriter, raw_js: str, expected:
 
 
 class WrappedTestContent(ContentForTests):
-
     def __init__(
         self,
         input_: str | bytes,
@@ -253,7 +252,6 @@ def test_wrapped_rewrite(
 
 
 class ImportTestContent(ContentForTests):
-
     def __init__(
         self,
         input_: str | bytes,
