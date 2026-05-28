@@ -28,8 +28,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Upgrade to wombat 3.10.3 (#286)
+- Upgrade to wombat 3.10.5 (#306)
 - Adopt openzim/\_python-bootstrap 2.0.0 (#303)
+- Upgrade Python dependencies, Node.JS runtime and Node.JS dependencies (#306)
 
 ## [5.3.0] - 2025-11-14
 
