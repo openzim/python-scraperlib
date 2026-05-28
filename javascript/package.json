@@ -5,17 +5,17 @@
   "license": "GPL-3.0-or-later",
   "author": "openZIM",
   "devDependencies": {
-    "@rollup/plugin-commonjs": "28.0.2",
-    "@rollup/plugin-node-resolve": "16.0.0",
-    "@rollup/plugin-strip": "^3.0.4",
-    "@rollup/plugin-terser": "0.4.4",
-    "ava": "^6.2.0",
-    "babel-eslint": "^10.1.0",
-    "eslint": "9.20.1",
-    "eslint-config-prettier": "10.0.1",
-    "prettier": "3.5.1",
-    "rollup": "4.34.7",
-    "rollup-plugin-version-injector": "^1.3.3"
+    "@rollup/plugin-commonjs": "29.0.2",
+    "@rollup/plugin-node-resolve": "16.0.3",
+    "@rollup/plugin-strip": "3.0.4",
+    "@rollup/plugin-terser": "1.0.0",
+    "ava": "8.0.1",
+    "babel-eslint": "10.1.0",
+    "eslint": "10.4.0",
+    "eslint-config-prettier": "10.1.8",
+    "prettier": "3.8.3",
+    "rollup": "4.60.4",
+    "rollup-plugin-version-injector": "1.3.3"
   },
   "scripts": {
     "prettier-check": "prettier . --check",
@@ -41,9 +41,9 @@
     ]
   },
   "dependencies": {
-    "uri-js": "^4.4.1"
+    "uri-js": "4.4.1"
   },
   "engines": {
-    "node": ">=20.0.0 <21.0.0"
+    "node": ">=26.0.0 <27.0.0"
   }
 }
