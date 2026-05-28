@@ -10,7 +10,7 @@ fallback to simple regex rewriting or we prefer to drop the offending rule.
 """
 
 import re
-from collections.abc import Iterable
+from collections.abc import Iterable, Sequence
 from functools import partial
 from typing import Any
 
@@ -112,19 +112,11 @@ class CssRewriter:
         """
         try:
             if isinstance(content, bytes):
-                rules, _ = (  # pyright: ignore[reportUnknownVariableType]
-                    parse_stylesheet_bytes(content)
-                )
-
+                rules, _ = parse_stylesheet_bytes(content)
             else:
-                rules = parse_stylesheet(  # pyright: ignore[reportUnknownVariableType]
-                    content
-                )
-            self._process_list(rules)  # pyright: ignore[reportUnknownArgumentType]
-
-            return self._serialize_rules(
-                rules  # pyright: ignore[reportUnknownArgumentType]
-            )
+                rules = parse_stylesheet(content)
+            self._process_list(rules)
+            return self._serialize_rules(rules)
         except Exception:
             # If tinycss fail to parse css, it will generate a "Error" token.
             # Exception is raised at serialization time.
@@ -145,13 +137,9 @@ class CssRewriter:
         'inline' means "inline an HTML document"
         """
         try:
-            rules = (  # pyright: ignore[reportUnknownVariableType]
-                parse_declaration_list(content)
-            )
-            self._process_list(rules)  # pyright: ignore[reportUnknownArgumentType]
-            return self._serialize_rules(
-                rules  # pyright: ignore[reportUnknownArgumentType]
-            )
+            rules = parse_declaration_list(content)
+            self._process_list(rules)
+            return self._serialize_rules(rules)
         except Exception:
             # If tinycss fail to parse css, it will generate a "Error" token.
             # Exception is raised at serialization time.
@@ -231,7 +219,7 @@ class CssRewriter:
             node.value = new_url
             node.representation = f"url({serialize_url(new_url)})"
 
-    def _serialize_rules(self, rules: list[ast.Node]) -> str:
+    def _serialize_rules(self, rules: Sequence[ast.Node]) -> str:
         """Serialize back all CSS rules to a string"""
         return serialize(
             [
