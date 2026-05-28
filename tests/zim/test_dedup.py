@@ -76,7 +76,7 @@ def test_deduplicator(
     for zim_path in [fpath_with_dedup, fpath_without_dedup]:
         reader = Archive(zim_path)
 
-        assert reader.all_entry_count == 24
+        assert reader.all_entry_count == 25
 
         for html_path in [
             "welcome1",

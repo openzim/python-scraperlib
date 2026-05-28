@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add support for custom number of retries and user-agent in save_large_file (#278)
 - Enhance save_large_file log level (#279)
 - Extend image optimization to support in-memory streams(BytesIO/bytes) and dst_format param (#289)
+- Automatically add \_ftindex:<yes/no> tag at creator start based on indexing configuration (#295)
+  - **BEHAVIOR CHANGE**: it is not possible anymore to add "Tags" metadata with Creator.add_metadata method after creator has started ; this is anyway not recommended anymore since 5.x (one should prefer Creator.config_metadata)
 
 ### Fixed
 
