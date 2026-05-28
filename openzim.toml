@@ -6,7 +6,7 @@ execute_after=[
 
 [files.assets.actions."wombat.js"]
 action="get_file"
-source="https://cdn.jsdelivr.net/npm/@webrecorder/wombat@3.10.3/dist/wombat.js"
+source="https://cdn.jsdelivr.net/npm/@webrecorder/wombat@3.10.5/dist/wombat.js"
 target_file="wombat.js"
 
 # wombatSetup.js is supposed to be built locally from files in javascript folder.
