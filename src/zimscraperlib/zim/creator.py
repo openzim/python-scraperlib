@@ -44,6 +44,7 @@ from zimscraperlib.zim.metadata import (
     LanguageMetadata,
     MetadataBase,
     StandardMetadataList,
+    TagsMetadata,
 )
 
 DUPLICATE_EXC_STR = re.compile(
@@ -114,6 +115,7 @@ class Creator(libzim.writer.Creator):
         super().__init__(filename=filename)
         self._metadata: dict[str, AnyMetadata] = {}
         self.__indexing_configured = False
+        self.__indexing_value: bool = False
         self.can_finish = True
 
         self.set_mainpath(main_path)
@@ -142,6 +144,7 @@ class Creator(libzim.writer.Creator):
             raise ValueError("Not a valid ISO-639-3 language code")
         super().config_indexing(indexing, language)
         self.__indexing_configured = True
+        self.__indexing_value = indexing
         return self
 
     def _log_metadata(self):
@@ -222,6 +225,20 @@ class Creator(libzim.writer.Creator):
             language := self._get_first_language_metadata_value()
         ) and not self.__indexing_configured:
             self.config_indexing(True, language)
+
+        ftindex_tag = f"_ftindex:{'yes' if self.__indexing_value else 'no'}"
+        tags_metadata = self._metadata.get(TagsMetadata.meta_name)
+        if isinstance(tags_metadata, TagsMetadata):
+            if not any(
+                re.sub(r"\s+", "", part).startswith("_ftindex:")
+                for tag in tags_metadata.value
+                for part in tag.split(";")
+            ):
+                tags_metadata.value.append(ftindex_tag)
+                logger.debug(f"Metadata: Tags has been altered with '{ftindex_tag}'")
+        else:
+            self._metadata[TagsMetadata.meta_name] = TagsMetadata([ftindex_tag])
+            logger.debug(f"Metadata: Tags has been set with '{ftindex_tag}'")
 
         super().__enter__()
 

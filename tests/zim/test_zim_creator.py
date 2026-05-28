@@ -119,7 +119,7 @@ def test_zim_creator(
     assert reader.get_text_metadata(
         "Language"
     ) == DEFAULT_DEV_ZIM_METADATA.Language.libzim_value.decode("UTF-8")
-    assert reader.get_text_metadata("Tags") == tags
+    assert reader.get_text_metadata("Tags") == f"{tags};_ftindex:yes"
     assert reader.main_entry.get_item().path == f"{main_path}"
     # make sure we have our image
     assert reader.get_item("images/yahoo.png")
@@ -950,7 +950,7 @@ def test_metadata_extras_missing_prefix(tmp_path: pathlib.Path):
             DEFAULT_DEV_ZIM_METADATA.Title.libzim_value.decode() + "Foo",
             id="simple_str",
         ),
-        pytest.param("Tags", TagsMetadata(["tag1", "tag2"]), "tag1;tag2", id="tags"),
+        pytest.param("Source", SourceMetadata("asource"), "asource", id="source"),
     ],
 )
 def test_add_metadata(
@@ -973,3 +973,63 @@ def test_config_indexing(tmp_path: pathlib.Path):
     assert Creator(tmp_path / "_.zim", "").config_indexing(True, "bam")
     assert Creator(tmp_path / "_.zim", "").config_indexing(False, "bam")
     assert Creator(tmp_path / "_.zim", "").config_indexing(False)
+
+
+@pytest.mark.parametrize(
+    "indexing, expected_tag",
+    [
+        pytest.param(True, "_ftindex:yes", id="explicit_yes"),
+        pytest.param(False, "_ftindex:no", id="explicit_no"),
+    ],
+)
+def test_start_ftindex_tag_from_explicit_config_indexing(
+    tmp_path: pathlib.Path, *, indexing: bool, expected_tag: str
+):
+    fpath = tmp_path / "test.zim"
+    with Creator(fpath, "").config_dev_metadata().config_indexing(indexing, "fra"):
+        pass
+    tags = Archive(fpath).get_text_metadata("Tags").split(";")
+    assert expected_tag in tags
+    assert len([t for t in tags if t.startswith("_ftindex:")]) == 1
+
+
+def test_start_ftindex_yes_when_auto_configured_via_language(tmp_path: pathlib.Path):
+    # DEFAULT_DEV_ZIM_METADATA has Language=fra but no Tags; language triggers
+    # auto config_indexing(True) which should result in _ftindex:yes being added.
+    fpath = tmp_path / "test.zim"
+    with Creator(fpath, "").config_dev_metadata():
+        pass
+    tags = Archive(fpath).get_text_metadata("Tags").split(";")
+    assert "_ftindex:yes" in tags
+
+
+def test_start_ftindex_appended_to_existing_tags(tmp_path: pathlib.Path):
+    fpath = tmp_path / "test.zim"
+    with Creator(fpath, "").config_dev_metadata(
+        TagsMetadata(["mytag", "_pictures:no"])
+    ):
+        pass
+    tags = Archive(fpath).get_text_metadata("Tags").split(";")
+    assert "_ftindex:yes" in tags
+    assert "mytag" in tags
+    assert "_pictures:no" in tags
+
+
+def test_start_ftindex_not_duplicated_when_already_set(tmp_path: pathlib.Path):
+    fpath = tmp_path / "test.zim"
+    with Creator(fpath, "").config_dev_metadata(TagsMetadata(["_ftindex:no"])):
+        pass
+    tags = Archive(fpath).get_text_metadata("Tags").split(";")
+    # _ftindex:no was set explicitly; auto-configured indexing=True should not override
+    assert tags.count("_ftindex:no") == 1
+    assert "_ftindex:yes" not in tags
+
+
+def test_start_ftindex_not_duplicated_when_set_with_spaces(tmp_path: pathlib.Path):
+    # " _ftindex : no" has spaces; after clean_str it becomes "_ftindex : no"
+    # The check must still recognise it and not add a second _ftindex tag.
+    fpath = tmp_path / "test.zim"
+    with Creator(fpath, "").config_dev_metadata(TagsMetadata([" _ftindex : no "])):
+        pass
+    tags = Archive(fpath).get_text_metadata("Tags").split(";")
+    assert sum(1 for t in tags if t.replace(" ", "").startswith("_ftindex:")) == 1
