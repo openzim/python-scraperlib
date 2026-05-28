@@ -11,10 +11,10 @@ jobs:
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version-file: pyproject.toml
           architecture: x64
@@ -29,7 +29,7 @@ jobs:
           python rules/generate_rules.py
 
       - name: Setup Node.JS
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version-file: 'javascript/package.json'
           registry-url: 'https://registry.npmjs.org'
