@@ -10,10 +10,10 @@ jobs:
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version-file: pyproject.toml
           architecture: x64
@@ -28,7 +28,7 @@ jobs:
           python rules/generate_rules.py
 
       - name: Save rules artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           path: |
             src/zimscraperlib/rewriting/rules.py
@@ -44,15 +44,15 @@ jobs:
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Restore rules artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: rules
 
       - name: Setup Node.JS
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version-file: 'javascript/package.json'
 
@@ -65,7 +65,7 @@ jobs:
         working-directory: javascript
 
       - name: Save wombat-setup artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           path: javascript/dist/wombatSetup.js
           name: wombat-setup
@@ -81,21 +81,21 @@ jobs:
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Restore rules artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: rules
 
       - name: Restore wombat-setup artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: wombat-setup
           path: src/zimscraperlib/rewriting/statics
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version-file: pyproject.toml
           architecture: x64
@@ -106,7 +106,7 @@ jobs:
           python -m build --sdist --wheel
 
       - name: Publish to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1.12
+        uses: pypa/gh-action-pypi-publish@release/v1.14
 # OPTIONAL PUBLICATION TO NPM, NOT NEEDED BY SCRAPERS IN THE END
 
 # publish-js:
@@ -116,15 +116,15 @@ jobs:
 
 #   steps:
 #     - name: Checkout repo
-#       uses: actions/checkout@v4
+#       uses: actions/checkout@v6
 
 #     - name: Restore rules artifact
-#       uses: actions/download-artifact@v4
+#       uses: actions/download-artifact@v8
 #       with:
 #         name: rules
 
 #     - name: Setup Node.JS
-#       uses: actions/setup-node@v4
+#       uses: actions/setup-node@v6
 #       with:
 #         node-version-file: 'javascript/package.json'
 #         registry-url: 'https://registry.npmjs.org' # Setup .npmrc file to publish to npm
