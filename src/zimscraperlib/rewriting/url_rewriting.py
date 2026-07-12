@@ -313,25 +313,33 @@ class ArticleUrlRewriter:
 
         """
         item_parts = urlsplit(item_path.value)
+        article_parts = urlsplit(self.article_path.value)
 
-        # item_path is both path + querystring, both will be url-encoded in the document
-        # so that readers consider them as a whole and properly pass them to libzim
-        item_url = item_parts.path
-        if item_parts.query:
-            item_url += "?" + item_parts.query
+        # The relative path is computed using only the path components. A querystring is
+        # part of the ZIM entry name (a leaf), it is not a navigable directory, so its
+        # content (which may contain `/` or even `..` segments) must not be interpreted
+        # as path navigation when computing the relative path ; doing so crashes on `..`
+        # segments (see https://github.com/openzim/warc2zim/issues/380). The querystring
+        # is re-appended and url-encoded together with the path below so that readers
+        # consider path + querystring as a single whole entry.
         relative_path = str(
-            PurePosixPath(item_url).relative_to(
+            PurePosixPath(item_parts.path).relative_to(
                 (
-                    PurePosixPath(self.article_path.value)
-                    if self.article_path.value.endswith("/")
-                    else PurePosixPath(self.article_path.value).parent
+                    PurePosixPath(article_parts.path)
+                    if article_parts.path.endswith("/")
+                    else PurePosixPath(article_parts.path).parent
                 ),
                 walk_up=True,
             )
         )
-        # relative_to removes a potential last '/' in the path, we add it back
-        if item_path.value.endswith("/"):
+        # relative_to removes a potential last '/' in the path, we add it back before
+        # appending the querystring
+        if item_parts.path.endswith("/"):
             relative_path += "/"
+        # re-append the querystring (part of the ZIM entry name) now that the relative
+        # path has been computed
+        if item_parts.query:
+            relative_path += "?" + item_parts.query
 
         return (
             f"{quote(relative_path, safe='/=,')}"

@@ -555,6 +555,46 @@ class TestArticleUrlRewriter:
         )
 
     @pytest.mark.parametrize(
+        "article_url, item_url, expected_document_uri",
+        [
+            # `..` in the querystring of the document being rewritten must not be
+            # interpreted as a navigable path segment (see
+            # https://github.com/openzim/warc2zim/issues/380 ; it used to raise
+            # `ValueError: '..' segment ... cannot be walked`)
+            pytest.param(
+                "http://kiwix.org/common/sub/page.html?css=../../prg",
+                "http://kiwix.org/_zim_static/wombat.js",
+                "../../_zim_static/wombat.js",
+                id="dotdot_in_article_querystring",
+            ),
+            # `..` in the querystring of the linked item is kept as-is in the (encoded)
+            # entry name and must not trigger path navigation either
+            pytest.param(
+                "http://kiwix.org/common/page.html",
+                "http://kiwix.org/common/other.html?css=../../prg",
+                "other.html%3Fcss=../../prg",
+                id="dotdot_in_item_querystring",
+            ),
+            # a `/` inside the querystring is part of the entry name, not a directory
+            pytest.param(
+                "http://kiwix.org/a/b/page.html",
+                "http://kiwix.org/a/b/img.png?x=1/2",
+                "img.png%3Fx=1/2",
+                id="slash_in_item_querystring",
+            ),
+        ],
+    )
+    def test_get_document_uri_querystring_segments(
+        self,
+        article_url: str,
+        item_url: str,
+        expected_document_uri: str,
+    ):
+        rewriter = ArticleUrlRewriter(article_url=HttpUrl(article_url))
+        item_path = ArticleUrlRewriter.normalize(HttpUrl(item_url))
+        assert rewriter.get_document_uri(item_path, "") == expected_document_uri
+
+    @pytest.mark.parametrize(
         "article_url, original_content_url, expected_rewrite_result, know_paths, "
         "rewrite_all_url",
         [

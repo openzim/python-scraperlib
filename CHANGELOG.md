@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Do not URL-encode `=` and `,` characters when rewriting document URIs, fixing YouTube JS player breakage (#316)
+- Fix crash in `ArticleUrlRewriter.get_document_uri` when the document or a linked item has a `..` (or `/`) segment in its querystring ; querystrings are part of the ZIM entry name and must not be interpreted as navigable path segments (#321)
 
 ### Changed
 
