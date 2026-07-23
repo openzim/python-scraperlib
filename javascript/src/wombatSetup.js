@@ -194,7 +194,11 @@ export function urlRewriteFunction(
 
   // Reencode everything but '/' (we decode it afterwards for simplicity)
   const finalUrl =
-    prefix + encodeURIComponent(fuzzifiedPath).replaceAll('%2F', '/');
+    prefix +
+    encodeURIComponent(fuzzifiedPath)
+      .replaceAll('%2F', '/')
+      .replaceAll('%3D', '=')
+      .replaceAll('%2C', ',');
 
   console.debug(
     'urlRewriten:\n\t- current_url: ' +

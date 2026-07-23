@@ -44,7 +44,7 @@ Below is an example case of the rewrite operation on an image URL found in an HT
 - Document original URL: `https://kiwix.org/a/article/document.html`
 - Document ZIM path: `kiwix.org/a/article/document.html`
 - Image original URL: `//xn--exmple-cva.com/a/resource/image.png?foo=bar`
-- Image rewritten URL: `../../../ex%C3%A9mple.com/a/resource/image.png%3Ffoo%3Dbar`
+- Image rewritten URL: `../../../ex%C3%A9mple.com/a/resource/image.png%3Ffoo=bar`
 - Image ZIM Path: `exémple.com/a/resource/image.png?foo=bar`
 
 ## JS Rewriting

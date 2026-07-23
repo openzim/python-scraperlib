@@ -270,7 +270,7 @@ class URLItem(StaticItem):
             if self.headers.get("Content-Encoding", "identity") != "identity":
                 raise ValueError("Can't trust Content-Length for size")
             # non-html, non-compressed data.
-            self.size = int(self.headers["Content-Length"])
+            self.size = int(self.headers["Content-Length"])  # pragma: no cover
         except Exception:
             # we couldn't retrieve size so we have to download resource to
             target, self.size = self.download_for_size(

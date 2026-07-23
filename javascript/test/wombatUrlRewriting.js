@@ -335,7 +335,7 @@ test('contentWithEncodedQuestionMarkAndQueryParam', (t) => {
       undefined,
       undefined,
     ),
-    'http://library.kiwix.org/content/myzim_yyyy-mm/www.example.com/javascript/cont%3Fnt.txt%3Fquery%3Dvalue',
+    'http://library.kiwix.org/content/myzim_yyyy-mm/www.example.com/javascript/cont%3Fnt.txt%3Fquery=value',
   );
 });
 
@@ -454,7 +454,24 @@ test('contentWithSimpleQueryString', (t) => {
       undefined,
       undefined,
     ),
-    'http://library.kiwix.org/content/myzim_yyyy-mm/www.example.com/javascript/content.txt%3Fquery%3Dvalue',
+    'http://library.kiwix.org/content/myzim_yyyy-mm/www.example.com/javascript/content.txt%3Fquery=value',
+  );
+});
+
+test('contentWithSimplePathWithEqualAndComma', (t) => {
+  t.is(
+    urlRewriteFunction(
+      t.context.currentUrl,
+      t.context.originalHost,
+      t.context.originalScheme,
+      t.context.originalUrl,
+      t.context.prefix,
+      'https://www.example.com/javascript/content.txt/query1=value1,param2=value2',
+      undefined,
+      undefined,
+      undefined,
+    ),
+    'http://library.kiwix.org/content/myzim_yyyy-mm/www.example.com/javascript/content.txt/query1=value1,param2=value2',
   );
 });
 
@@ -471,7 +488,7 @@ test('contentWithQueryValueEqualSign', (t) => {
       undefined,
       undefined,
     ),
-    'http://library.kiwix.org/content/myzim_yyyy-mm/www.example.com/javascript/content.txt%3Fquery%3Dval%3Deue',
+    'http://library.kiwix.org/content/myzim_yyyy-mm/www.example.com/javascript/content.txt%3Fquery=val=eue',
   );
 });
 
@@ -488,7 +505,7 @@ test('contentWithQueryValuePercentSign', (t) => {
       undefined,
       undefined,
     ),
-    'http://library.kiwix.org/content/myzim_yyyy-mm/www.example.com/javascript/content.txt%3Fquery%3Dval%25eue',
+    'http://library.kiwix.org/content/myzim_yyyy-mm/www.example.com/javascript/content.txt%3Fquery=val%25eue',
   );
 });
 
@@ -505,7 +522,7 @@ test('contentWithQueryParamPercentSign', (t) => {
       undefined,
       undefined,
     ),
-    'http://library.kiwix.org/content/myzim_yyyy-mm/www.example.com/javascript/content.txt%3Fque%25ry%3Dvaleue',
+    'http://library.kiwix.org/content/myzim_yyyy-mm/www.example.com/javascript/content.txt%3Fque%25ry=valeue',
   );
 });
 
@@ -522,7 +539,7 @@ test('contentWithQueryParamPlusSign', (t) => {
       undefined,
       undefined,
     ),
-    'http://library.kiwix.org/content/myzim_yyyy-mm/www.example.com/javascript/content.txt%3Fparam%3Dval%20ue',
+    'http://library.kiwix.org/content/myzim_yyyy-mm/www.example.com/javascript/content.txt%3Fparam=val%20ue',
   );
 });
 
@@ -811,7 +828,7 @@ test('youtubeFuzzyNotEncoded', (t) => {
       undefined,
       undefined,
     ),
-    'http://library.kiwix.org/content/myzim_yyyy-mm/www.example.com/path1/youtube.fuzzy.replayweb.page/get_video_info%3Fvideo_id%3D123ah',
+    'http://library.kiwix.org/content/myzim_yyyy-mm/www.example.com/path1/youtube.fuzzy.replayweb.page/get_video_info%3Fvideo_id=123ah',
   );
 });
 
@@ -828,7 +845,7 @@ test('youtubeFuzzyEncoded', (t) => {
       undefined,
       undefined,
     ),
-    'http://library.kiwix.org/content/myzim_yyyy-mm/www.example.com/path1/youtube.fuzzy.replayweb.page/get_video_info%3Fvideo_id%3D12%3D3ah',
+    'http://library.kiwix.org/content/myzim_yyyy-mm/www.example.com/path1/youtube.fuzzy.replayweb.page/get_video_info%3Fvideo_id=12=3ah',
   );
 });
 
@@ -931,7 +948,7 @@ test('relAlreadyEncoded', (t) => {
       undefined,
       undefined,
     ),
-    'http://library.kiwix.org/content/myzim_yyyy-mm/www.example.com/javascript/content.txt%3Fquery%3Dvalue',
+    'http://library.kiwix.org/content/myzim_yyyy-mm/www.example.com/javascript/content.txt%3Fquery=value',
   );
 });
 
@@ -1001,7 +1018,8 @@ test('relAnotherHostAlreadyRewrittenEmptyPath', (t) => {
 });
 
 // this is an edge case where the URL has already been statically rewritten and is located
-// on a different fuzzified domain name => we do not touch it at all
+// on a different fuzzified domain name => we do not touch it at all (for instance it keeps
+// %3D even if it should not have them)
 test('relAnotherFuzzifiedHostAlreadyRewritten', (t) => {
   t.is(
     urlRewriteFunction(
