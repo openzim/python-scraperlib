@@ -170,7 +170,7 @@ class TestArticleUrlRewriter:
                 "foo.html?foo=bar",
                 RewriteResult(
                     "https://kiwix.org/a/article/foo.html?foo=bar",
-                    "foo.html%3Ffoo%3Dbar",
+                    "foo.html%3Ffoo=bar",
                     ZimPath("kiwix.org/a/article/foo.html?foo=bar"),
                 ),
                 ["kiwix.org/a/article/foo.html?foo=bar"],
@@ -181,7 +181,7 @@ class TestArticleUrlRewriter:
                 "foo.html?foo=b%24ar",
                 RewriteResult(
                     "https://kiwix.org/a/article/foo.html?foo=b%24ar",
-                    "foo.html%3Ffoo%3Db%24ar",
+                    "foo.html%3Ffoo=b%24ar",
                     ZimPath("kiwix.org/a/article/foo.html?foo=b$ar"),
                 ),
                 ["kiwix.org/a/article/foo.html?foo=b$ar"],
@@ -192,7 +192,7 @@ class TestArticleUrlRewriter:
                 "foo.html?foo=b%3Far",  # a query string with an encoded ? char in value
                 RewriteResult(
                     "https://kiwix.org/a/article/foo.html?foo=b%3Far",
-                    "foo.html%3Ffoo%3Db%3Far",
+                    "foo.html%3Ffoo=b%3Far",
                     ZimPath("kiwix.org/a/article/foo.html?foo=b?ar"),
                 ),
                 ["kiwix.org/a/article/foo.html?foo=b?ar"],
@@ -316,7 +316,7 @@ class TestArticleUrlRewriter:
                 "foo?param=value",
                 RewriteResult(
                     "https://kiwix.org/a/article/foo?param=value",
-                    "foo%3Fparam%3Dvalue",
+                    "foo%3Fparam=value",
                     ZimPath("kiwix.org/a/article/foo?param=value"),
                 ),
                 ["kiwix.org/a/article/foo?param=value"],
@@ -327,7 +327,7 @@ class TestArticleUrlRewriter:
                 "foo?param=value%2F",
                 RewriteResult(
                     "https://kiwix.org/a/article/foo?param=value%2F",
-                    "foo%3Fparam%3Dvalue/",
+                    "foo%3Fparam=value/",
                     ZimPath("kiwix.org/a/article/foo?param=value/"),
                 ),
                 ["kiwix.org/a/article/foo?param=value/"],
@@ -338,10 +338,24 @@ class TestArticleUrlRewriter:
                 "foo?param=value%2Fend",
                 RewriteResult(
                     "https://kiwix.org/a/article/foo?param=value%2Fend",
-                    "foo%3Fparam%3Dvalue/end",
+                    "foo%3Fparam=value/end",
                     ZimPath("kiwix.org/a/article/foo?param=value/end"),
                 ),
                 ["kiwix.org/a/article/foo?param=value/end"],
+                False,
+            ),
+            (
+                # regression test for #316: '=' and ',' must not be encoded so that
+                # e.g. the YouTube JS player can parse its own script URL properly,
+                # while other reserved characters (e.g. '?') are still encoded
+                "https://kiwix.org/a/article/document.html",
+                "foo?k=ytembeds.base.en_US,foo.bar",
+                RewriteResult(
+                    "https://kiwix.org/a/article/foo?k=ytembeds.base.en_US,foo.bar",
+                    "foo%3Fk=ytembeds.base.en_US,foo.bar",
+                    ZimPath("kiwix.org/a/article/foo?k=ytembeds.base.en_US,foo.bar"),
+                ),
+                ["kiwix.org/a/article/foo?k=ytembeds.base.en_US,foo.bar"],
                 False,
             ),
             (
@@ -393,7 +407,7 @@ class TestArticleUrlRewriter:
                 "/foo.html?param=val+ue",
                 RewriteResult(
                     "https://kiwix.org/foo.html?param=val+ue",
-                    "../../foo.html%3Fparam%3Dval%20ue",
+                    "../../foo.html%3Fparam=val%20ue",
                     ZimPath("kiwix.org/foo.html?param=val ue"),
                 ),
                 ["kiwix.org/foo.html?param=val ue"],

@@ -190,7 +190,7 @@ p, input {
 
     expected = """
     /* A comment with a link : http://foo.com */
-    @import url(../fonts.googleapis.com/icon%3Ffamily%3DMaterial%20Icons);
+    @import url(../fonts.googleapis.com/icon%3Ffamily=Material%20Icons);
 
     p, input {
         color: rbg(1, 2, 3);

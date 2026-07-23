@@ -34,8 +34,10 @@ When rewriting documents (HTML, CSS, JS, ...), every time we find a URI to rewri
 start by resolving it into an absolute URL (based on the containing document absolute
 URI), applying the transformation to compute the corresponding ZIM path and we
 url-encode the whole ZIM path, so that readers will have one single blob to process,
-url-decode and find corresponding ZIM entry. Only '/' separators are considered safe
-and not url-encoded.
+url-decode and find corresponding ZIM entry. Only '/', '=' and ',' are considered safe
+and not url-encoded. '=' and ',' are kept unencoded because some sites (e.g. YouTube)
+embed scripts that parse their own script URL and expect these characters to appear
+literally in it.
 """
 
 import re
@@ -332,7 +334,7 @@ class ArticleUrlRewriter:
             relative_path += "/"
 
         return (
-            f"{quote(relative_path, safe='/')}"
+            f"{quote(relative_path, safe='/=,')}"
             f"{'#' + item_fragment if item_fragment else ''}"
         )
 

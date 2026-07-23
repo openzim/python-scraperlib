@@ -74,7 +74,7 @@ def gzip_html_url() -> str:
 
 @pytest.fixture(scope="module")
 def gzip_nonhtml_url() -> str:
-    return "http://mirror.download.kiwix.org/robots.txt"
+    return "http://lb.download.kiwix.org/robots.txt"
 
 
 def file_src(fname: str) -> pathlib.Path:
