@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Do not URL-encode `=` and `,` characters when rewriting document URIs, fixing YouTube JS player breakage (#316)
 
+### Changed
+
+- Upgrade Python and Javascript dependencies (#319)
+
 ## [5.4.0] - 2026-05-28
 
 ### Added
