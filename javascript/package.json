@@ -42,5 +42,6 @@
   },
   "engines": {
     "node": ">=26.0.0 <27.0.0"
-  }
+  },
+  "packageManager": "yarn@4.17.1"
 }

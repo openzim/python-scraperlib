@@ -34,6 +34,9 @@ jobs:
           node-version-file: 'javascript/package.json'
           registry-url: 'https://registry.npmjs.org'
 
+      - name: Enable corepack
+        run: corepack enable
+
       - name: Install JS dependencies
         run: yarn install
         working-directory: javascript
