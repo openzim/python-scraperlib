@@ -172,8 +172,8 @@ def test_get_media_info(
 
 def test_preset_has_mime_and_ext():
     for _, preset in ALL_PRESETS:
-        assert preset().ext
-        assert preset().mimetype.split("/")[0] in ("audio", "video")
+        assert preset().ext  # pyright: ignore
+        assert preset().mimetype.split("/")[0] in ("audio", "video")  # pyright: ignore
 
 
 def test_preset_video_webm_low():

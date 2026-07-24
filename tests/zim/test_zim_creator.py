@@ -612,8 +612,10 @@ def test_without_metadata(tmp_path: pathlib.Path):
                 "_videos:no",
                 "_details:yes",
                 "_ftindex:yes",
-                "wikipedia;_category:wikipedia;_pictures:no;_videos:no;_details:yes;"
-                "_ftindex:yes",
+                (
+                    "wikipedia;_category:wikipedia;_pictures:no;_videos:no;_details:yes;"
+                    "_ftindex:yes"
+                ),
             ]
         ),
     ],

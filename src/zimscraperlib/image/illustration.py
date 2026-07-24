@@ -25,7 +25,8 @@ def get_zim_illustration(
         width: target illustration width
         height: target illustration height
         resize_method: method to resize the image ; in general only 'contain' or
-          'cover' make sense, but 'crop', 'width', 'height' and 'thumbnail' can be used
+            'cover' make sense, but 'crop', 'width', 'height' and 'thumbnail' can be
+            used
     """
 
     illustration_path = handle_user_provided_file(illustration_location)

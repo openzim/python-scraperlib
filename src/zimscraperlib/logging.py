@@ -15,7 +15,7 @@ DEFAULT_FORMAT_WITH_THREADS = (
 VERBOSE_DEPENDENCIES = ["urllib3", "PIL", "boto3", "botocore", "s3transfer"]
 
 
-def getLogger(  # noqa: N802 (intentionally matches the stdlib getLogger name)
+def getLogger(  # noqa: PLR0917, N802 (intentionally matches the stdlib getLogger name)
     name: str,
     level: int = logging.INFO,
     console: TextIO | io.StringIO | None = sys.stdout,

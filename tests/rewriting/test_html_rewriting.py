@@ -1186,13 +1186,13 @@ def rewrite_attr2_value_with_attr1_value(
     ],
 )
 def test_html_attribute_rewrite_rules(
+    *,
     tag: str,
     attr_name: str,
     attr_value: str | None,
     attrs: AttrsList,
     base_href: str,
     expected_result: AttrNameAndValue,
-    *,
     should_notify: bool,
     simple_url_rewriter_gen: Callable[[str], ArticleUrlRewriter],
     js_rewriter_gen: Callable[
@@ -1568,6 +1568,7 @@ def test_bad_html_data_rewrite_rules_argument_type():
     ],
 )
 def test_rewrite_meta_http_equiv_redirect_rule(
+    *,
     tag: str,
     attr_name: str,
     attr_value: str | None,

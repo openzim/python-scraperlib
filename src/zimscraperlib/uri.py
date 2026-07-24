@@ -5,7 +5,7 @@ import urllib.parse
 from zimscraperlib.misc import first
 
 
-def rebuild_uri(
+def rebuild_uri(  # noqa: PLR0917
     uri: urllib.parse.ParseResult,
     scheme: str | None = None,
     username: str | None = None,

@@ -331,7 +331,7 @@ def test_lang_details_inequality_objects():
         ),
     ],
 )
-def test_lang_to_dict(query: str, expected: dict[str, str | None | list[str]]):
+def test_lang_to_dict(query: str, expected: dict[str, str | list[str] | None]):
     assert Language(query).todict() == expected
 
 
@@ -340,23 +340,30 @@ def test_lang_to_dict(query: str, expected: dict[str, str | None | list[str]]):
     [
         (
             "fra",
-            'Language(iso_639_1="fr", iso_639_2b="fre", iso_639_2t="fra", '
-            'iso_639_3="fra", iso_639_5="None", english="French (France)", '
-            "iso_types=\"['part2t', 'part3']\", native=\"français (France)\", "
-            'querytype="purecode", query="fra")',
+            (
+                'Language(iso_639_1="fr", iso_639_2b="fre", iso_639_2t="fra", '
+                'iso_639_3="fra", iso_639_5="None", english="French (France)", '
+                "iso_types=\"['part2t', 'part3']\", native=\"français (France)\", "
+                'querytype="purecode", query="fra")'
+            ),
         ),
         (
             "zh",
-            'Language(iso_639_1="zh", iso_639_2b="chi", iso_639_2t="zho", '
-            'iso_639_3="zho", iso_639_5="None", english="Chinese", '
-            'iso_types="[\'part1\']", native="中文", querytype="purecode", query="zh")',
+            (
+                'Language(iso_639_1="zh", iso_639_2b="chi", iso_639_2t="zho", '
+                'iso_639_3="zho", iso_639_5="None", english="Chinese", '
+                'iso_types="[\'part1\']", native="中文", querytype="purecode", '
+                'query="zh")'
+            ),
         ),
         (
             "ar",
-            'Language(iso_639_1="ar", iso_639_2b="ara", iso_639_2t="ara", '
-            'iso_639_3="ara", iso_639_5="None", english="Arabic", '
-            'iso_types="[\'part1\']", native="العربية", querytype="purecode", '
-            'query="ar")',
+            (
+                'Language(iso_639_1="ar", iso_639_2b="ara", iso_639_2t="ara", '
+                'iso_639_3="ara", iso_639_5="None", english="Arabic", '
+                'iso_types="[\'part1\']", native="العربية", querytype="purecode", '
+                'query="ar")'
+            ),
         ),
     ],
 )

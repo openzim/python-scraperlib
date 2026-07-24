@@ -181,7 +181,7 @@ def get_session(max_retries: int | None = 5) -> requests.Session:
     return session
 
 
-def stream_file(
+def stream_file(  # noqa: PLR0917
     url: str,
     fpath: pathlib.Path | None = None,
     byte_stream: SupportsWrite[bytes] | SupportsSeekableWrite[bytes] | None = None,
