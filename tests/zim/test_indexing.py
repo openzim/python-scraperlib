@@ -292,6 +292,7 @@ def test_indexing_item_png_content(tmp_path: pathlib.Path, png_image: pathlib.Pa
     ],
 )
 def test_get_pdf_index_data(
+    *,
     pdf_no: int,
     expected_title: str,
     expected_word_count: int,

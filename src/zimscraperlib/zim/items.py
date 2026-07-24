@@ -84,7 +84,7 @@ class StaticItem(Item):
     If item title is not set by caller, it is automatically populated from index_data.
     """
 
-    def __init__(
+    def __init__(  # noqa: PLR0917
         self,
         content: str | bytes | None = None,
         fileobj: io.IOBase | None = None,

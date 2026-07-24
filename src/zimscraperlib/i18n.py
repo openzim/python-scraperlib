@@ -126,7 +126,7 @@ class Language:
         default = self.english or query
         return default, default
 
-    def todict(self) -> dict[str, str | None | list[str]]:
+    def todict(self) -> dict[str, str | list[str] | None]:
         return {
             key.replace("_", "-") if key.startswith("iso") else key: getattr(
                 self, key, None

@@ -69,7 +69,7 @@ def get_image_size(fpath: pathlib.Path | io.BytesIO) -> tuple[int, int]:
     return Image.open(fpath).size
 
 
-def get_src_dst(
+def get_src_dst(  # noqa: PLR0917
     tmp_path: pathlib.Path,
     fmt: str,
     png_image: pathlib.Path | None = None,
@@ -142,6 +142,7 @@ def test_colors_jpg_palette(jpg_image: pathlib.Path):
     ],
 )
 def test_save_image(
+    *,
     png_image: pathlib.Path,
     jpg_image: pathlib.Path,
     tmp_path: pathlib.Path,
@@ -313,6 +314,7 @@ def test_resize_small_image_error(
     [("png", "JPEG", "RGB"), ("png", "BMP", None), ("jpg", "JPEG", "CMYK")],
 )
 def test_change_image_format(
+    *,
     png_image: pathlib.Path,
     jpg_image: pathlib.Path,
     tmp_path: pathlib.Path,
@@ -475,6 +477,7 @@ def test_wrong_extension(
 @pytest.mark.parametrize("src_type", ["path", "bytesio", "bytes"])
 @pytest.mark.parametrize("dst_type", ["path", "bytesio"])
 def test_optimize_image_default_generic(
+    *,
     png_image2: pathlib.Path,
     jpg_image: pathlib.Path,
     gif_image: pathlib.Path,
@@ -518,6 +521,7 @@ def test_optimize_image_default_generic(
 @pytest.mark.parametrize("src_type", ["path", "bytesio"])
 @pytest.mark.parametrize("dst_type", ["path", "bytesio"])
 def test_optimize_image_default_direct(
+    *,
     png_image2: pathlib.Path,
     jpg_image: pathlib.Path,
     gif_image: pathlib.Path,
@@ -879,8 +883,8 @@ def test_image_preset_jpg(
 
 def test_image_preset_has_mime_and_ext():
     for _, preset in ALL_PRESETS:
-        assert preset().ext
-        assert preset().mimetype.startswith("image/")
+        assert preset().ext  # pyright: ignore
+        assert preset().mimetype.startswith("image/")  # pyright: ignore
 
 
 def test_remove_png_transparency(png_image: pathlib.Path, tmp_path: pathlib.Path):
@@ -931,6 +935,7 @@ def test_dynamic_jpeg_quality(jpg_image: pathlib.Path, tmp_path: pathlib.Path):
     [("png", "PNG"), ("jpg", "JPEG"), ("gif", "GIF"), ("webp", "WEBP"), ("svg", "SVG")],
 )
 def test_ensure_matches_ok(
+    *,
     png_image: pathlib.Path,
     jpg_image: pathlib.Path,
     gif_image: pathlib.Path,
@@ -962,6 +967,7 @@ def test_ensure_matches_ko(webp_image: pathlib.Path):
     [("png", "PNG"), ("jpg", "JPEG"), ("gif", "GIF"), ("webp", "WEBP"), ("svg", "SVG")],
 )
 def test_format_for_real_images_suffix(
+    *,
     png_image: pathlib.Path,
     jpg_image: pathlib.Path,
     gif_image: pathlib.Path,
@@ -988,6 +994,7 @@ def test_format_for_real_images_suffix(
     [("png", "PNG"), ("jpg", "JPEG"), ("gif", "GIF"), ("webp", "WEBP"), ("svg", "SVG")],
 )
 def test_format_for_real_images_content_path(
+    *,
     png_image: pathlib.Path,
     jpg_image: pathlib.Path,
     gif_image: pathlib.Path,
@@ -1014,6 +1021,7 @@ def test_format_for_real_images_content_path(
     [("png", "PNG"), ("jpg", "JPEG"), ("gif", "GIF"), ("webp", "WEBP"), ("svg", "SVG")],
 )
 def test_format_for_real_images_content_bytes(
+    *,
     png_image: pathlib.Path,
     jpg_image: pathlib.Path,
     gif_image: pathlib.Path,
@@ -1200,6 +1208,7 @@ def test_optimize_gif_gifsicle_failure_bytesio(
     ],
 )
 def test_optimize_any_image(
+    *,
     png_image: pathlib.Path,
     jpg_image: pathlib.Path,
     gif_image: pathlib.Path,

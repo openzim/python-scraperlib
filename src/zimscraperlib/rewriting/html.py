@@ -428,7 +428,7 @@ class HTMLRewritingRules:
             for rule in self.drop_attribute_rules
         )
 
-    def do_attribute_rewrite(
+    def do_attribute_rewrite(  # noqa: PLR0917
         self,
         tag: str,
         attr_name: str,
@@ -594,7 +594,7 @@ def rewrite_style_tags(
 
 
 @rules.rewrite_attribute()
-def rewrite_href_src_attributes(
+def rewrite_href_src_attributes(  # noqa: PLR0917
     tag: str,
     attr_name: str,
     attr_value: str | None,
@@ -709,7 +709,7 @@ def rewrite_js_data(
 
 
 @rules.rewrite_attribute()
-def rewrite_meta_http_equiv_redirect(
+def rewrite_meta_http_equiv_redirect(  # noqa: PLR0917
     tag: str,
     attr_name: str,
     attr_value: str | None,
@@ -731,6 +731,8 @@ def rewrite_meta_http_equiv_redirect(
         return
     return (
         attr_name,
-        f"{match['interval']};"
-        f"url={url_rewriter(match['url'], base_href=base_href).rewriten_url}",
+        (
+            f"{match['interval']};"
+            f"url={url_rewriter(match['url'], base_href=base_href).rewriten_url}"
+        ),
     )

@@ -88,16 +88,24 @@ class TestNormalize:
             # the two URI below are an illustration of a potential collision (two
             # differents URI leading to the same ZIM path)
             (
-                "http://tmp.kiwix.org/ci/test-website/images/urlencoding1_ico%CC%82ne-"
-                "de%CC%81buter-Solidarite%CC%81-Nume%CC%81rique_1%40300x.png",
-                "tmp.kiwix.org/ci/test-website/images/urlencoding1_icône-débuter-"
-                "Solidarité-Numérique_1@300x.png",
+                (
+                    "http://tmp.kiwix.org/ci/test-website/images/urlencoding1_ico%CC%82ne-"
+                    "de%CC%81buter-Solidarite%CC%81-Nume%CC%81rique_1%40300x.png"
+                ),
+                (
+                    "tmp.kiwix.org/ci/test-website/images/urlencoding1_icône-débuter-"
+                    "Solidarité-Numérique_1@300x.png"
+                ),
             ),
             (
-                "https://tmp.kiwix.org/ci/test-website/images/urlencoding1_ico%CC%82ne-"
-                "de%CC%81buter-Solidarite%CC%81-Nume%CC%81rique_1@300x.png",
-                "tmp.kiwix.org/ci/test-website/images/urlencoding1_icône-débuter-"
-                "Solidarité-Numérique_1@300x.png",
+                (
+                    "https://tmp.kiwix.org/ci/test-website/images/urlencoding1_ico%CC%82ne-"
+                    "de%CC%81buter-Solidarite%CC%81-Nume%CC%81rique_1@300x.png"
+                ),
+                (
+                    "tmp.kiwix.org/ci/test-website/images/urlencoding1_icône-débuter-"
+                    "Solidarité-Numérique_1@300x.png"
+                ),
             ),
         ],
     )
