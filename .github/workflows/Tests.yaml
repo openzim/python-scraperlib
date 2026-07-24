@@ -99,6 +99,9 @@ jobs:
         with:
           node-version-file: 'javascript/package.json'
 
+      - name: Enable corepack
+        run: corepack enable
+
       - name: Install JS dependencies
         run: yarn install
         working-directory: javascript
