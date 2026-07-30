@@ -1,5 +1,6 @@
 import re
 from collections.abc import Callable, Iterable
+from functools import partial
 from typing import Any
 
 TransformationAction = Callable[[re.Match[str], dict[str, Any] | None], str]
@@ -117,6 +118,30 @@ class RxRewriter:
         rx_buff = "|".join(f"({rule[0].pattern})" for rule in rules)
         self.compiled_rule = re.compile(f"(?:{rx_buff})", re.M)
 
+    def _replace_match(
+        self,
+        m_object: re.Match[str],
+        opts: dict[str, Any] | None,
+        text: str,
+    ) -> str:
+        """
+        This method search for the specific rule which have matched and apply it.
+
+        Kept as a real method rather than a closure inside `rewrite`: with
+        `beartype_this_package()`, a closure redefined on every call gets
+        re-decorated by beartype every time, and beartype's own blacklist cache
+        keeps a permanent strong reference to it (see is_object_blacklisted).
+        """
+        for i, rule in enumerate(self.rules, 1):
+            if not m_object.group(i):
+                # This is not the ith rules which match
+                continue
+            result = rule[1](m_object, opts)
+            return result
+        # fallback never supposed to be reached since this method is called
+        # by Pattern.sub which already checks there is a match
+        return text  # pragma: no cover
+
     def rewrite(
         self,
         text: str | bytes,
@@ -128,19 +153,7 @@ class RxRewriter:
         if isinstance(text, bytes):
             text = text.decode()
 
-        def replace(m_object: re.Match[str]) -> str:
-            """
-            This method search for the specific rule which have matched and apply it.
-            """
-            for i, rule in enumerate(self.rules, 1):
-                if not m_object.group(i):
-                    # This is not the ith rules which match
-                    continue
-                result = rule[1](m_object, opts)
-                return result
-            # fallback never supposed to be reached since this method is called
-            # by Pattern.sub which already checks there is a match
-            return text  # pragma: no cover
-
         assert self.compiled_rule is not None  # noqa
-        return self.compiled_rule.sub(replace, text)
+        return self.compiled_rule.sub(
+            partial(self._replace_match, opts=opts, text=text), text
+        )
