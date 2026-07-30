@@ -39,8 +39,8 @@ class FallbackRegexCssRewriter(RxRewriter):
     parsing issue, not necessarily a bad CSS rule)
     """
 
+    @staticmethod
     def __simple_transform(
-        self,
         m_object: re.Match[str],
         _opts: dict[str, Any] | None,
         url_rewriter: ArticleUrlRewriter,

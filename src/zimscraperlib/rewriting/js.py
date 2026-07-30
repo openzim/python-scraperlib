@@ -341,13 +341,21 @@ class JsRewriter(RxRewriter):
         return new_text
 
     def _get_esm_import_rule(self) -> TransformationRule:
+        # Capture plain local values instead of closing over `self`: a closure that
+        # references `self` here would end up stored in `self.rules`, creating a
+        # self -> self.rules -> closure -> self reference cycle that only the cyclic
+        # GC (not refcounting) can collect.
+        url_rewriter = self.url_rewriter
+        base_href = self.base_href
+        notify_js_module = self.notify_js_module
+
         def get_rewriten_import_url(url: str) -> str:
             """Rewrite the import URL
 
             This takes into account that the result must be a relative URL, i.e. it
             cannot be 'vendor.module.js' but must be './vendor.module.js'.
             """
-            url = self.url_rewriter(url, base_href=self.base_href).rewriten_url
+            url = url_rewriter(url, base_href=base_href).rewriten_url
             if not (
                 url.startswith("/") or url.startswith("./") or url.startswith("../")
             ):
@@ -359,10 +367,10 @@ class JsRewriter(RxRewriter):
                 m_object: re.Match[str], _opts: dict[str, Any] | None = None
             ) -> str:
                 def sub_funct(match: re.Match[str]) -> str:
-                    if self.notify_js_module:
-                        self.notify_js_module(
-                            self.url_rewriter.get_item_path(
-                                match.group(2), base_href=self.base_href
+                    if notify_js_module:
+                        notify_js_module(
+                            url_rewriter.get_item_path(
+                                match.group(2), base_href=base_href
                             )
                         )
                     return (
