@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Do not URL-encode `=` and `,` characters when rewriting document URIs, fixing YouTube JS player breakage (#316)
+- Fix two sources of memory leaks in JS and CSS rewriting (#322)
 
 ### Changed
 
