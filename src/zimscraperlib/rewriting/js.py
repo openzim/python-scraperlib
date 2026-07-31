@@ -14,12 +14,12 @@ ZIM at `_zim_static/__wb_module_decl.js`
 
 This code is based on https://github.com/webrecorder/wabac.js/blob/main/src/rewrite/jsrewriter.ts
 Last backport of upstream changes is from wabac.js commit:
-Feb 20, 2026 - 25061cb53ff113d5cff28f2f1354819f6c41034b
+Jul 30, 2026 - 0564e36993f4044f17119e71dd7b2892512ee59c
 """
 
 import re
 from collections.abc import Callable, Iterable
-from typing import Any
+from typing import Any, Literal
 
 from zimscraperlib.rewriting.rx_replacer import (
     RxRewriter,
@@ -33,6 +33,12 @@ from zimscraperlib.rewriting.rx_replacer import (
 from zimscraperlib.rewriting.url_rewriting import ArticleUrlRewriter, ZimPath
 
 # The regex used to rewrite `import ...` in module code.
+IMPORT_RX = re.compile(
+    r"""^\s*?import\s*?[{"'*]""",
+)
+EXPORT_RX = re.compile(
+    r"""\s*?export\s*?({([\s\w,$\n]+?)}[\s;]*|default|class)\s+""", re.MULTILINE
+)
 IMPORT_EXPORT_MATCH_RX = re.compile(
     r"""(^|;)\s*?(?:im|ex)port(?:['"\s]*(?:[\w*${}\s,]+from\s*)?['"\s]?['"\s])(?:.*?)['"\s]""",
 )
@@ -56,11 +62,15 @@ GLOBAL_OVERRIDES = [
     "opener",
 ]
 
-GLOBALS_RX = re.compile(
+WORKER_GLOBAL_OVERRIDES = ["globalThis", "self", "location"]
+
+GLOBALS_CONCAT_STR = (
     r"("
     + "|".join([r"(?:^|[^$.])\b" + x + r"\b(?:$|[^$])" for x in GLOBAL_OVERRIDES])
     + ")"
 )
+
+GLOBALS_RX = re.compile(GLOBALS_CONCAT_STR)
 
 # This will replace `this` in code. The `_____WB$wombat$check$this$function_____`
 # will "see" with wombat and may return a "wrapper" around `this`
@@ -84,7 +94,7 @@ def remove_args_if_strict(
     return target
 
 
-def add_suffix_non_prop(suffix: str) -> TransformationAction:
+def add_suffix(suffix: str) -> TransformationAction:
     """
     Create a rewrite_function which add a `suffix` to the match str.
     The suffix is added only if the match is not preceded by `.` or `$`.
@@ -108,7 +118,7 @@ def replace_this() -> TransformationAction:
     return replace("this", this_rw)
 
 
-def replace_this_non_prop() -> TransformationAction:
+def replace_this_prop() -> TransformationAction:
     """
     Create a rewrite_function replacing "this" by `this_rw`.
 
@@ -117,12 +127,12 @@ def replace_this_non_prop() -> TransformationAction:
 
     def f(m_object: re.Match[str], _opts: dict[str, Any] | None) -> str:
         offset = m_object.start()
-        prev = m_object.string[offset - 1] if offset > 0 else ""
-        if prev == "\n":
+        first_char = m_object.string[offset - 1] if offset > 0 else ""
+        if first_char == "\n":
             # This detection of new line is probably buggy, plus it is hard to get the
             # intent of this, see https://github.com/openzim/warc2zim/issues/410
             return m_object[0].replace("this", ";" + this_rw)
-        if prev not in ".$":
+        if first_char not in ".$":
             return m_object[0].replace("this", this_rw)
         return m_object[0]
 
@@ -186,10 +196,14 @@ def create_js_rules() -> list[TransformationRule]:
         (re.compile(r"var\s+self"), replace("var", "let")),
         # rewriting `.postMessage` -> `__WB_pmw(self).postMessage`
         (re.compile(r"\.postMessage\b\("), add_prefix(".__WB_pmw(self)")),
+        # Avoid doing the below rewrite for `let/const` assignments,
+        # which will break the scoping
+        # See: https://github.com/webrecorder/wabac.js/issues/336
+        (re.compile(r"(?:let|const)\s+location\s*="), m2str(lambda x: x)),
         # rewriting `location = ` to custom expression `(...).href =` assignement
         (
             re.compile(r"(?:^|[^$.+*/%^-])\s?\blocation\b\s*[=]\s*(?![\s\d=>])"),
-            add_suffix_non_prop(check_loc),
+            add_suffix(check_loc),
         ),
         # rewriting `return this`
         (re.compile(r"\breturn\s+this\b\s*(?![\s\w.$])"), replace_this()),
@@ -199,7 +213,7 @@ def create_js_rules() -> list[TransformationRule]:
             re.compile(
                 rf"[^$.]\s?\bthis\b(?=(?:\.(?:{'|'.join(GLOBAL_OVERRIDES)})\b))"
             ),
-            replace_this_non_prop(),
+            replace_this_prop(),
         ),
         # rewrite `= this` or `, this`
         (re.compile(r"[=,]\s*\bthis\b\s*(?![\s\w:.$])"), replace_this()),
@@ -239,7 +253,7 @@ class JsRewriter(RxRewriter):
     ):
         super().__init__(None)
         self.first_buff = self._init_local_declaration(GLOBAL_OVERRIDES)
-        self.last_buff = "\n}"
+        self.last_buff = "\n\n}"
         self.url_rewriter = url_rewriter
         self.notify_js_module = notify_js_module
         self.base_href = base_href
@@ -277,29 +291,20 @@ class JsRewriter(RxRewriter):
             f"""import {{ {", ".join(local_decls)} }} from "{wb_module_decl_url}";\n"""
         )
 
-    def _detect_strict_mode(self, text: str) -> bool:
+    def _detect_module_or_strict(self, text: str) -> Literal["strict", "module", "lax"]:
         """
-        Detect if the JavaScript code is in strict mode.
-
-        Returns True if the code contains:
-        - "use strict"; directive
-        - import statements
-        - export statements
-        - class declarations
+        Detect if the JavaScript code mode.
         """
-        # Check for "use strict"; directive
-        if '"use strict";' in text or "'use strict';" in text:
-            return True
+        if "import" in text and IMPORT_RX.search(text):
+            return "module"
 
-        # Check for import or export statements
-        if re.search(r"(?:^|\s)(?:im|ex)port\s+", text):
-            return True
+        if '"use strict";' in text:
+            return "strict"
 
-        # Check for class declaration
-        if re.search(r"\bclass\s+", text):
-            return True
+        if "export" in text and EXPORT_RX.search(text):
+            return "module"
 
-        return False
+        return "lax"
 
     def rewrite(self, text: str | bytes, opts: dict[str, Any] | None = None) -> str:
         """
@@ -310,17 +315,23 @@ class JsRewriter(RxRewriter):
 
         opts = opts or {}
 
-        is_module = opts.get("isModule", False)
+        if "isModule" not in opts:
+            match self._detect_module_or_strict(text):
+                case "module":
+                    opts["isModule"] = True
+                    opts["isStrict"] = True
+                case "strict":
+                    opts["isModule"] = False
+                    opts["isStrict"] = True
+                case _:
+                    pass
 
-        # Detect and set strict mode
-        # Modules are always strict mode
-        if is_module:
+        elif opts["isModule"]:
             opts["isStrict"] = True
-        elif "isStrict" not in opts:  # pragma: no branch
-            # Detect strict mode from the code itself
-            opts["isStrict"] = self._detect_strict_mode(text)
 
         rules = REWRITE_JS_RULES[:]
+
+        is_module = opts.get("isModule", False)
 
         if is_module:
             rules.append(self._get_esm_import_rule())
@@ -332,11 +343,15 @@ class JsRewriter(RxRewriter):
         if is_module:
             return self._get_module_decl(GLOBAL_OVERRIDES) + new_text
 
-        if GLOBALS_RX.search(text):
-            new_text = self.first_buff + new_text + self.last_buff
+        wrap_globals = GLOBALS_RX.search(text) is not None
 
         if opts.get("inline", False):
             new_text = new_text.replace("\n", " ")
+
+        # This is not totally correctly handling globals,
+        # see https://github.com/openzim/python-scraperlib/issues/329
+        if wrap_globals:
+            new_text = self.first_buff + new_text + self.last_buff
 
         return new_text
 
