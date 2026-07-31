@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Upgrade Python and Javascript dependencies (#319)
 - Migrate `javascript/` from Yarn Classic to Yarn Berry (#320)
+- Test bogus Content-Length HTTP header behavior (#318)
 
 ## [5.4.0] - 2026-05-28
 
