@@ -351,6 +351,61 @@ def test_urlitem_nonhtmlgzip(tmp_path: pathlib.Path, gzip_nonhtml_url: str):
     assert bytes(zim.get_item("robots.txt").content) == file_bytes
 
 
+def test_urlitem_content_encoding_ignores_content_length(
+    tmp_path: pathlib.Path, png_image: pathlib.Path
+):
+    with open(png_image, "rb") as fh:
+        png_image_bytes = fh.read()
+
+    # create and start an http server serving a gzip-encoded resource. The
+    # Content-Length header reflects the *compressed* payload size (as it would
+    # for a real gzip-encoding server), which must not be trusted as the
+    # decoded resource size (real size is retrieved by downloading instead)
+    server_fpath = tmp_path / "httpd.py"
+    port = random.randint(10000, 20000)  # noqa: S311
+    server_code = """
+import gzip
+from http.server import BaseHTTPRequestHandler, HTTPServer
+
+class handler(BaseHTTPRequestHandler):
+
+    def do_GET(self):
+        with open("{src}", "rb") as fh:
+            compressed = gzip.compress(fh.read())
+        self.send_response(200)
+        self.send_header("Content-type", "image/png")
+        self.send_header("Content-Encoding", "gzip")
+        self.send_header("Content-Length", str(len(compressed)))
+        self.end_headers()
+        self.wfile.write(compressed)
+
+
+with HTTPServer(('', {port}), handler) as server:
+    server.serve_forever()
+
+"""
+    with open(server_fpath, "w") as fh:
+        fh.write(
+            server_code.replace("{port}", str(port)).replace("{src}", str(png_image))
+        )
+
+    httpd = subprocess.Popen([sys.executable, server_fpath])
+    time.sleep(2)  # allow http server to start
+
+    fpath = tmp_path / "test.zim"
+    try:
+        with Creator(fpath, "").config_dev_metadata() as creator:
+            item = URLItem(url=f"http://localhost:{port}/image.png")
+            # bogus Content-Length header must not have been trusted
+            assert item.size == len(png_image_bytes)
+            creator.add_item(item)
+    finally:
+        httpd.terminate()
+
+    zim = Archive(fpath)
+    assert bytes(zim.get_item("image.png").content) == png_image_bytes
+
+
 def test_urlitem_binary(tmp_path: pathlib.Path, png_image_url: str):
     file_path = tmp_path / "file.png"
     save_large_file(png_image_url, file_path)
