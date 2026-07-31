@@ -173,6 +173,7 @@ class WrappedTestContent(ContentForTests):
             "\n"
             f"{text}"
             "\n"
+            "\n"
             "}"
         )
 
@@ -234,6 +235,27 @@ class WrappedTestContent(ContentForTests):
             location = ((self.__WB_check_loc && """
             "self.__WB_check_loc(location, [])) || {}).maybeHref "
             """= "http://example.com/2" """,
+        ),
+        # Ensure these *don't* get rewritten
+        WrappedTestContent(
+            input_='function() { const location = "http://example.com/" }',
+        ),
+        WrappedTestContent(
+            input_='function() { let location = "http://example.com/"; }',
+        ),
+        WrappedTestContent(
+            input_="function() { const location = foo.location }",
+        ),
+        WrappedTestContent(
+            input_="function() { const location = window.location }",
+        ),
+        # this. is still rewritten
+        WrappedTestContent(
+            input_="function() { const location = this.location; }",
+            expected=(
+                "function() { const location ="
+                " _____WB$wombat$check$this$function_____(this).location; }"
+            ),
         ),
         WrappedTestContent(input_=" var    self  ", expected=" let    self  "),
     ]
@@ -389,7 +411,19 @@ def rewrite_import_content(request: pytest.FixtureRequest):
     yield request.param
 
 
-def test_import_rewrite(rewrite_import_content: ImportTestContent):
+def test_import_rewrite_module_detect(rewrite_import_content: ImportTestContent):
+    url_rewriter = ArticleUrlRewriter(
+        article_url=HttpUrl(rewrite_import_content.article_url)
+    )
+    assert (
+        JsRewriter(
+            url_rewriter=url_rewriter, base_href=None, notify_js_module=None
+        ).rewrite(rewrite_import_content.input_str)
+        == rewrite_import_content.expected_str
+    )
+
+
+def test_import_rewrite_force_module(rewrite_import_content: ImportTestContent):
     url_rewriter = ArticleUrlRewriter(
         article_url=HttpUrl(rewrite_import_content.article_url)
     )
@@ -398,6 +432,14 @@ def test_import_rewrite(rewrite_import_content: ImportTestContent):
             url_rewriter=url_rewriter, base_href=None, notify_js_module=None
         ).rewrite(rewrite_import_content.input_str, opts={"isModule": True})
         == rewrite_import_content.expected_str
+    )
+
+
+# Check that forcing isModule to False works as expected
+def test_import_rewrite_force_not_module(simple_js_rewriter: JsRewriter):
+    assert (
+        simple_js_rewriter.rewrite("""import "foo";""", opts={"isModule": False})
+        == """import "foo";"""
     )
 
 

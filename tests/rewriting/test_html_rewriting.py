@@ -160,7 +160,7 @@ def test_escaped_content(escaped_content: ContentForTests):
                 """let frames = _____WB$wombat$assign$function_____("frames");\n"""
                 """let opener = _____WB$wombat$assign$function_____("opener");\n"""
                 "let arguments;\n\n"
-                """document.title="HELLO";\n"""
+                """document.title="HELLO";\n\n"""
                 "}</script>"
             ),
         ),
@@ -186,7 +186,7 @@ def test_escaped_content(escaped_content: ContentForTests):
                 """let frames = _____WB$wombat$assign$function_____("frames");\n"""
                 """let opener = _____WB$wombat$assign$function_____("opener");\n"""
                 "let arguments;\n\n"
-                """document.title="HELLO";\n"""
+                """document.title="HELLO";\n\n"""
                 "}</script>"
             ),
         ),
@@ -211,7 +211,7 @@ def test_escaped_content(escaped_content: ContentForTests):
                 """let frames = _____WB$wombat$assign$function_____("frames");\n"""
                 """let opener = _____WB$wombat$assign$function_____("opener");\n"""
                 "let arguments;\n\n"
-                """document.title="HELLO";\n"""
+                """document.title="HELLO";\n\n"""
                 "}</script>"
             ),
         ),
@@ -847,7 +847,7 @@ def test_simple_rewrite(input_content: str, expected_output: str):
                 "let opener = "
                 "_____WB$wombat$assign$function_____(&quot;opener&quot;);\n"
                 "let arguments;\n\n"
-                "document.location.href=&#x27;./index.html&#x27;;\n"
+                "document.location.href=&#x27;./index.html&#x27;;\n\n"
                 """}">"""
             ),  # NOTA: quotes and ampersand are escaped since we are inside HTML attr
         ),
