@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Upgrade Python and Javascript dependencies (#319)
+- Upgrade Python and Javascript dependencies (especially wombat 3.10.6) (#319, #328)
 - Migrate `javascript/` from Yarn Classic to Yarn Berry (#320)
 - Test bogus Content-Length HTTP header behavior (#318)
 
