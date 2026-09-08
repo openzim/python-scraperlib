@@ -15,13 +15,9 @@ from collections.abc import Callable
 
 import pytest
 
+from zimscraperlib.rewriting import js_ast
 from zimscraperlib.rewriting.js import JsRewriter
-from zimscraperlib.rewriting.js_ast import parser_available
 from zimscraperlib.rewriting.url_rewriting import ArticleUrlRewriter
-
-pytestmark = pytest.mark.skipif(
-    not parser_available(), reason="no JavaScript parser installed"
-)
 
 
 @pytest.fixture
@@ -129,7 +125,9 @@ def test_a_carried_const_and_a_document_write_together(js_rewriter: JsRewriter):
 
 def test_let_var_and_const_in_one_script(js_rewriter: JsRewriter):
     # wabac.js: "add global injection".
-    out = js_rewriter.rewrite("let a = document.location.href; var b = 5; const foo = 4")
+    out = js_rewriter.rewrite(
+        "let a = document.location.href; var b = 5; const foo = 4"
+    )
     assert out.startswith("let a;\n")
     assert "\n a = document.location.href; var b = 5; const foo = 4" in out
     assert ";self.___WB_const_foo = foo;\n" in out
@@ -169,3 +167,48 @@ def test_a_script_with_no_globals_is_unchanged_around_the_block(
     assert not out.startswith("let ")
     assert "___WB_const_" not in out
     assert out.endswith("\n\n}")
+
+
+def test_a_destructured_declaration_is_left_alone(js_rewriter: JsRewriter):
+    # Carrying `const {a, b} = x` across the block would mean rebuilding the
+    # pattern; wabac.js skips these for the same reason.
+    out = js_rewriter.rewrite("const {a, b} = window.data;\nwindow.x = 1;")
+    assert "___WB_const_" not in out
+    assert "const {a, b} = window.data;" in out
+
+
+def test_an_inline_script_stays_on_one_line(js_rewriter: JsRewriter):
+    # An inline script is rewritten into an attribute, where a newline would
+    # end it. The hoisting adds lines, so the collapse happens after it too.
+    out = js_rewriter.rewrite("const a = 1;\nwindow.x = 2;", opts={"inline": True})
+    assert "\n" not in out
+    assert "self.___WB_const_a = a;" in out
+
+
+def test_a_script_the_parser_cannot_read_is_wrapped_unchanged(
+    js_rewriter: JsRewriter, monkeypatch: pytest.MonkeyPatch
+):
+    # parse_top_level answers None for anything it cannot make sense of, and
+    # the rewriter must then do exactly what it did before this existed.
+    monkeypatch.setattr(
+        "zimscraperlib.rewriting.js.parse_top_level", lambda _text: None
+    )
+    out = js_rewriter.rewrite("const glyphs = {a: 1};\nwindow.x = 1;")
+    assert "___WB_const_" not in out
+    assert "const glyphs = {a: 1};" in out
+    assert out.endswith("\n\n}")
+
+
+def test_the_parser_never_throws_into_a_scrape(monkeypatch: pytest.MonkeyPatch):
+    class _Boom:
+        def parse(self, _source):
+            raise RuntimeError("the parser fell over")
+
+    monkeypatch.setattr(js_ast, "_PARSER", _Boom())
+    assert js_ast.parse_top_level("const a = 1;") is None
+
+
+def test_a_missing_node_reads_as_no_text():
+    # `_text` takes optional fields so its callers need no guard; an absent
+    # one is empty, never an exception.
+    assert js_ast._text(None, b"anything") == ""

@@ -8,11 +8,11 @@ those names back out; this module is the parsing half of that, kept behind one
 function so the choice of parser is one import to change.
 
 Only the top level matters. Nothing nested can leak a global, so this never
-walks into a function body, and it answers four questions:
+walks into a function body, and it answers three questions:
 
-  * which `const` / `let` / `class` names the script declares at the top level
-  * where each `let` statement starts, so the keyword can be removed
-  * which of the names shadow a global the wrapper is about to declare
+  * which `const`, `let`, `var` and `class` names the script declares at the
+    top level, and of what kind
+  * where each declaration starts, so a `let` keyword can be removed
   * whether the script calls `document.write()` at the top level
 
 Why tree-sitter and not a pure-Python parser: the scripts this runs on are
@@ -25,10 +25,14 @@ the declarations it could read rather than an exception.
 
 from __future__ import annotations
 
-import functools
 from dataclasses import dataclass
 
-__all__ = ["Declaration", "TopLevel", "parse_top_level", "parser_available"]
+import tree_sitter_javascript
+from tree_sitter import Language, Node, Parser
+
+__all__ = ["Declaration", "TopLevel", "parse_top_level"]
+
+_PARSER = Parser(Language(tree_sitter_javascript.language()))
 
 
 @dataclass(frozen=True)
@@ -46,108 +50,76 @@ class TopLevel:
     has_document_write: bool
 
 
-@functools.lru_cache(maxsize=1)
-def _parser():
-    """The parser, built once. None when tree-sitter is not installed, which
-    is not an error: the rewriter falls back to its unparsed behaviour."""
-    try:
-        import tree_sitter_javascript
-        from tree_sitter import Language, Parser
-
-        return Parser(Language(tree_sitter_javascript.language()))
-    except Exception:  # noqa: BLE001 - any import or ABI trouble means no parser
-        return None
-
-
-def parser_available() -> bool:
-    return _parser() is not None
-
-
-def _text(node, source: bytes) -> str:
+def _text(node: Node | None, source: bytes) -> str:
+    """The source a node covers. A missing node reads as no text, so callers
+    can ask for an optional field without a guard at every site."""
+    if node is None:
+        return ""
     return source[node.start_byte : node.end_byte].decode("utf-8", errors="replace")
 
 
-def _identifiers(node, source: bytes) -> list[str]:
-    """The plain identifiers a declarator binds.
+def _identifiers(node: Node, source: bytes) -> list[str]:
+    """The plain identifiers a declaration binds.
 
     Destructuring (`const {a, b} = x`) is deliberately skipped, exactly as
     wabac.js skips anything whose id is not an Identifier: hoisting a
     destructured binding would mean rebuilding the pattern, and the names it
     binds are rare enough at the top level of a script to be worth leaving
     alone rather than getting subtly wrong."""
-    names = []
+    names: list[str] = []
     for child in node.named_children:
-        if child.type == "variable_declarator":
-            first = child.child_by_field_name("name")
-            if first is not None and first.type == "identifier":
-                names.append(_text(first, source))
+        name = child.child_by_field_name("name")
+        if name is not None and name.type == "identifier":
+            names.append(_text(name, source))
     return names
 
 
-def _is_document_write(node, source: bytes) -> bool:
-    if node.type != "expression_statement":
+def _is_document_write(node: Node, source: bytes) -> bool:
+    if node.type != "expression_statement" or not node.named_children:
         return False
-    call = node.named_children[0] if node.named_children else None
-    if call is None or call.type != "call_expression":
+    call = node.named_children[0]
+    if call.type != "call_expression":
         return False
     callee = call.child_by_field_name("function")
     if callee is None or callee.type != "member_expression":
         return False
+    # A member expression always has both fields; anything else is a parser
+    # surprise, and parse_top_level's own net catches those.
     obj = callee.child_by_field_name("object")
     prop = callee.child_by_field_name("property")
-    return (
-        obj is not None
-        and prop is not None
-        and obj.type == "identifier"
-        and prop.type == "property_identifier"
-        and _text(obj, source) == "document"
-        and _text(prop, source) == "write"
-    )
+    return _text(obj, source) == "document" and _text(prop, source) == "write"
 
 
 def parse_top_level(text: str) -> TopLevel | None:
     """Read a script's top-level declarations, or None when it cannot be read.
 
-    None means "no opinion" and the caller must fall back to leaving the
-    script alone, which is what happened before this existed."""
-    parser = _parser()
-    if parser is None:
-        return None
-    source = text.encode("utf-8")
+    None means "no opinion", and the caller leaves the script alone — which is
+    what happened to every script before this existed. wabac.js wraps its whole
+    parseGlobals in a try/catch for the same reason, and so does this: nothing
+    here may throw into a scrape."""
     try:
-        return _walk(parser.parse(source), source)
-    except Exception:  # noqa: BLE001 - nothing here may fail a scrape
-        # wabac.js wraps its whole parseGlobals in a try/catch, not just the
-        # parse, and this keeps that posture: any surprise from the parser or
-        # from walking what it returned means "no opinion", not an exception
-        # escaping into a scrape.
-        return None
-
-
-def _walk(tree, source: bytes) -> TopLevel | None:
-    root = tree.root_node if tree is not None else None
-    if root is None:
-        return None
-
-    declarations: list[Declaration] = []
-    has_document_write = False
-    for node in root.named_children:
-        if node.type == "lexical_declaration":
-            # `const` / `let`: the keyword is the first token of the statement.
-            kind = _text(node.children[0], source) if node.children else ""
-            if kind in ("const", "let"):
+        source = text.encode("utf-8")
+        root = _PARSER.parse(source).root_node
+        declarations: list[Declaration] = []
+        has_document_write = False
+        for node in root.named_children:
+            if node.type == "lexical_declaration":
+                # `const` or `let` — `using` has its own node type.
+                kind = _text(node.children[0], source)
                 for name in _identifiers(node, source):
                     declarations.append(Declaration(name, kind, node.start_byte))
-        elif node.type == "variable_declaration":
-            for name in _identifiers(node, source):
-                declarations.append(Declaration(name, "var", node.start_byte))
-        elif node.type == "class_declaration":
-            named = node.child_by_field_name("name")
-            if named is not None:
+            elif node.type == "variable_declaration":
+                for name in _identifiers(node, source):
+                    declarations.append(Declaration(name, "var", node.start_byte))
+            elif node.type == "class_declaration":
+                name_node = node.child_by_field_name("name")
                 declarations.append(
-                    Declaration(_text(named, source), "class", node.start_byte)
+                    Declaration(_text(name_node, source), "class", node.start_byte)
                 )
-        elif not has_document_write and _is_document_write(node, source):
-            has_document_write = True
-
-    return TopLevel(declarations=declarations, has_document_write=has_document_write)
+            elif not has_document_write and _is_document_write(node, source):
+                has_document_write = True
+        return TopLevel(
+            declarations=declarations, has_document_write=has_document_write
+        )
+    except Exception:
+        return None
