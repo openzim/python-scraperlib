@@ -115,10 +115,17 @@ def parse_top_level(text: str) -> TopLevel | None:
         return None
     source = text.encode("utf-8")
     try:
-        tree = parser.parse(source)
-    except Exception:  # noqa: BLE001 - a parser crash must not fail a scrape
+        return _walk(parser.parse(source), source)
+    except Exception:  # noqa: BLE001 - nothing here may fail a scrape
+        # wabac.js wraps its whole parseGlobals in a try/catch, not just the
+        # parse, and this keeps that posture: any surprise from the parser or
+        # from walking what it returned means "no opinion", not an exception
+        # escaping into a scrape.
         return None
-    root = tree.root_node
+
+
+def _walk(tree, source: bytes) -> TopLevel | None:
+    root = tree.root_node if tree is not None else None
     if root is None:
         return None
 

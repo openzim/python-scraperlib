@@ -104,6 +104,37 @@ def test_the_whole_wabac_fixture(js_rewriter: JsRewriter):
     ) in out
 
 
+def test_several_declarators_on_one_line(js_rewriter: JsRewriter):
+    # wabac.js: "multiple globals on same line". Each `let` name is declared
+    # before the block, but the statement's keyword is removed only once.
+    out = js_rewriter.rewrite(
+        "let a = document.location.href, b = 1, c = 2;\nconst foo = 4, bar = 5"
+    )
+    assert out.startswith("let a;\nlet b;\nlet c;\n")
+    assert "\n a = document.location.href, b = 1, c = 2;" in out
+    assert ";self.___WB_const_foo = foo;\nself.___WB_const_bar = bar;\n" in out
+    assert (
+        "const foo = self.___WB_const_foo; delete self.___WB_const_foo;\n"
+        "const bar = self.___WB_const_bar; delete self.___WB_const_bar;\n"
+    ) in out
+
+
+def test_a_carried_const_and_a_document_write_together(js_rewriter: JsRewriter):
+    # wabac.js: "global + document.close append". The close goes after the
+    # carrier assignment and still inside the block.
+    out = js_rewriter.rewrite("\n\nconst y = document.location;\ndocument.write(x);")
+    assert ";self.___WB_const_y = y;\n;document.close();" in out
+    assert "const y = self.___WB_const_y; delete self.___WB_const_y;\n" in out
+
+
+def test_let_var_and_const_in_one_script(js_rewriter: JsRewriter):
+    # wabac.js: "add global injection".
+    out = js_rewriter.rewrite("let a = document.location.href; var b = 5; const foo = 4")
+    assert out.startswith("let a;\n")
+    assert "\n a = document.location.href; var b = 5; const foo = 4" in out
+    assert ";self.___WB_const_foo = foo;\n" in out
+
+
 def test_nothing_is_carried_out_of_a_nested_scope(js_rewriter: JsRewriter):
     # Only the top level can leak a global; a const inside a function is the
     # function's business and must be left exactly as written.
