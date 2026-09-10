@@ -30,7 +30,7 @@ from dataclasses import dataclass
 import tree_sitter_javascript
 from tree_sitter import Language, Node, Parser
 
-__all__ = ["Declaration", "TopLevel", "parse_top_level"]
+__all__ = ["Declaration", "TopLevel", "node_text", "parse_top_level"]
 
 _PARSER = Parser(Language(tree_sitter_javascript.language()))
 
@@ -50,7 +50,7 @@ class TopLevel:
     has_document_write: bool
 
 
-def _text(node: Node | None, source: bytes) -> str:
+def node_text(node: Node | None, source: bytes) -> str:
     """The source a node covers. A missing node reads as no text, so callers
     can ask for an optional field without a guard at every site."""
     if node is None:
@@ -70,7 +70,7 @@ def _identifiers(node: Node, source: bytes) -> list[str]:
     for child in node.named_children:
         name = child.child_by_field_name("name")
         if name is not None and name.type == "identifier":
-            names.append(_text(name, source))
+            names.append(node_text(name, source))
     return names
 
 
@@ -87,7 +87,7 @@ def _is_document_write(node: Node, source: bytes) -> bool:
     # surprise, and parse_top_level's own net catches those.
     obj = callee.child_by_field_name("object")
     prop = callee.child_by_field_name("property")
-    return _text(obj, source) == "document" and _text(prop, source) == "write"
+    return node_text(obj, source) == "document" and node_text(prop, source) == "write"
 
 
 def parse_top_level(text: str) -> TopLevel | None:
@@ -105,7 +105,7 @@ def parse_top_level(text: str) -> TopLevel | None:
         for node in root.named_children:
             if node.type == "lexical_declaration":
                 # `const` or `let` — `using` has its own node type.
-                kind = _text(node.children[0], source)
+                kind = node_text(node.children[0], source)
                 for name in _identifiers(node, source):
                     declarations.append(Declaration(name, kind, node.start_byte))
             elif node.type == "variable_declaration":
@@ -114,7 +114,7 @@ def parse_top_level(text: str) -> TopLevel | None:
             elif node.type == "class_declaration":
                 name_node = node.child_by_field_name("name")
                 declarations.append(
-                    Declaration(_text(name_node, source), "class", node.start_byte)
+                    Declaration(node_text(name_node, source), "class", node.start_byte)
                 )
             elif not has_document_write and _is_document_write(node, source):
                 has_document_write = True

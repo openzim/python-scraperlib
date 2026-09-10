@@ -17,6 +17,7 @@ import pytest
 
 from zimscraperlib.rewriting import js_ast
 from zimscraperlib.rewriting.js import JsRewriter
+from zimscraperlib.rewriting.js_ast import TopLevel
 from zimscraperlib.rewriting.url_rewriting import ArticleUrlRewriter
 
 
@@ -190,9 +191,10 @@ def test_a_script_the_parser_cannot_read_is_wrapped_unchanged(
 ):
     # parse_top_level answers None for anything it cannot make sense of, and
     # the rewriter must then do exactly what it did before this existed.
-    monkeypatch.setattr(
-        "zimscraperlib.rewriting.js.parse_top_level", lambda _text: None
-    )
+    def cannot_read(_text: str) -> TopLevel | None:
+        return None
+
+    monkeypatch.setattr("zimscraperlib.rewriting.js.parse_top_level", cannot_read)
     out = js_rewriter.rewrite("const glyphs = {a: 1};\nwindow.x = 1;")
     assert "___WB_const_" not in out
     assert "const glyphs = {a: 1};" in out
@@ -201,7 +203,7 @@ def test_a_script_the_parser_cannot_read_is_wrapped_unchanged(
 
 def test_the_parser_never_throws_into_a_scrape(monkeypatch: pytest.MonkeyPatch):
     class _Boom:
-        def parse(self, _source):
+        def parse(self, _source: bytes) -> None:
             raise RuntimeError("the parser fell over")
 
     monkeypatch.setattr(js_ast, "_PARSER", _Boom())
@@ -209,6 +211,6 @@ def test_the_parser_never_throws_into_a_scrape(monkeypatch: pytest.MonkeyPatch):
 
 
 def test_a_missing_node_reads_as_no_text():
-    # `_text` takes optional fields so its callers need no guard; an absent
-    # one is empty, never an exception.
-    assert js_ast._text(None, b"anything") == ""
+    # `node_text` takes optional fields so its callers need no guard; an
+    # absent one reads as empty, never as an exception.
+    assert js_ast.node_text(None, b"anything") == ""
