@@ -21,6 +21,7 @@ import re
 from collections.abc import Callable, Iterable
 from typing import Any, Literal
 
+from zimscraperlib.rewriting.js_ast import parse_top_level
 from zimscraperlib.rewriting.rx_replacer import (
     RxRewriter,
     TransformationAction,
@@ -348,12 +349,96 @@ class JsRewriter(RxRewriter):
         if opts.get("inline", False):
             new_text = new_text.replace("\n", " ")
 
-        # This is not totally correctly handling globals,
-        # see https://github.com/openzim/python-scraperlib/issues/329
         if wrap_globals:
-            new_text = self.first_buff + new_text + self.last_buff
+            new_text = self._wrap(new_text, GLOBAL_OVERRIDES)
+            if opts.get("inline", False):
+                new_text = new_text.replace("\n", " ")
 
         return new_text
+
+    def _wrap(self, new_text: str, overrides: list[str]) -> str:
+        """Put the script inside the wombat block, and put its globals back.
+
+        The block is a scope, so `const`, `let` and `class` declared at the top
+        level of the script stop being reachable from any other script on the
+        page — which is how a page that declares its data in one <script> and
+        reads it from another comes out broken but silent (#329).
+
+        So the declarations are carried across the block boundary, exactly as
+        wabac.js does it:
+
+          * `let x` is declared before the block and the keyword removed
+            inside it, so the assignment inside writes the outer binding
+          * `const x` and `class X` cannot be split that way, so their value
+            is handed out through `self.___WB_const_x` and re-declared as a
+            const after the block, and the carrier deleted
+          * a name that shadows one of the wombat globals is left alone, and
+            that global is dropped from the wrapper instead
+          * a top-level `document.write()` gets its `document.close()`
+
+        If the script cannot be parsed, none of this happens and the wrapper is
+        exactly what it was before: a script Zimi cannot read is still a script
+        it must not corrupt."""
+        first_buff = self.first_buff
+        last_buff = self.last_buff
+        pre_scope_globals = ""
+        in_scope_globals = ""
+        post_scope_globals = ""
+
+        parsed = parse_top_level(new_text) if new_text else None
+        if parsed is not None:
+            names: list[tuple[str, str]] = []
+            exclude_overrides: set[str] = set()
+            let_offsets: list[int] = []
+            last_start = -1
+            for decl in parsed.declarations:
+                if decl.name in overrides:
+                    exclude_overrides.add(decl.name)
+                    continue
+                if decl.kind == "class":
+                    names.append((decl.name, "const"))
+                elif decl.kind in ("const", "let"):
+                    names.append((decl.name, decl.kind))
+                    if decl.kind == "let" and last_start != decl.start:
+                        let_offsets.insert(0, decl.start)
+                        last_start = decl.start
+
+            if exclude_overrides:
+                first_buff = self._init_local_declaration(
+                    [name for name in overrides if name not in exclude_overrides]
+                )
+            if parsed.has_document_write:
+                last_buff = ";document.close();" + self.last_buff
+
+            # Offsets are byte offsets into the source, and descending, so each
+            # removal leaves the ones still to come valid.
+            data = new_text.encode("utf-8")
+            for offset in let_offsets:
+                data = data[:offset] + data[offset + len("let") :]
+            new_text = data.decode("utf-8", errors="replace")
+
+            for name, kind in names:
+                if kind == "const":
+                    varname = f"self.___WB_const_{name}"
+                    in_scope_globals += f"{varname} = {name};\n"
+                    post_scope_globals += (
+                        f"{kind} {name} = {varname}; delete {varname};\n"
+                    )
+                else:
+                    pre_scope_globals += f"let {name};\n"
+            if in_scope_globals:
+                in_scope_globals = "\n;" + in_scope_globals
+            if post_scope_globals:
+                post_scope_globals = "\n" + post_scope_globals
+
+        return (
+            pre_scope_globals
+            + first_buff
+            + new_text
+            + in_scope_globals
+            + last_buff
+            + post_scope_globals
+        )
 
     def _get_esm_import_rule(self) -> TransformationRule:
         # Capture plain local values instead of closing over `self`: a closure that

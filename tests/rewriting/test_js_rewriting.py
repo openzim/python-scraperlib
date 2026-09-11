@@ -141,18 +141,43 @@ class WrappedTestContent(ContentForTests):
         input_: str | bytes,
         expected: str | bytes | None = None,
         article_url: str = "https://kiwix.org",
+        *,
+        without: tuple[str, ...] = (),
+        before: str = "",
+        after: str = "",
     ) -> None:
+        """``without`` names globals the script declares itself, so the wrapper
+        must not declare them too; ``before`` and ``after`` are what the
+        hoisting of the script's own top-level declarations adds around the
+        block (see #329)."""
         super().__init__(input_=input_, expected=expected, article_url=article_url)
-        self.expected = self.wrap_script(self.expected_str)
+        self.expected = (
+            before + self.wrap_script(self.expected_str, without=without) + after
+        )
 
     @staticmethod
-    def wrap_script(text: str) -> str:
+    def wrap_script(text: str, without: tuple[str, ...] = ()) -> str:
         """
         A small wrapper to help generate the expected content.
 
         JsRewriter must add this local definition around all js code (when we access on
         of the local varibles)
         """
+        decls = "".join(
+            f'let {name} = _____WB$wombat$assign$function_____("{name}");\n'
+            for name in (
+                "window",
+                "globalThis",
+                "self",
+                "document",
+                "location",
+                "top",
+                "parent",
+                "frames",
+                "opener",
+            )
+            if name not in without
+        )
         return (
             "var _____WB$wombat$assign$function_____ = function(name) {return (self."
             "_wb_wombat && self._wb_wombat.local_init && self._wb_wombat.local_init"
@@ -160,15 +185,7 @@ class WrappedTestContent(ContentForTests):
             "if (!self.__WB_pmw) { self.__WB_pmw = function(obj) { this.__WB_source ="
             " obj; return this; } }\n"
             "{\n"
-            'let window = _____WB$wombat$assign$function_____("window");\n'
-            'let globalThis = _____WB$wombat$assign$function_____("globalThis");\n'
-            'let self = _____WB$wombat$assign$function_____("self");\n'
-            'let document = _____WB$wombat$assign$function_____("document");\n'
-            'let location = _____WB$wombat$assign$function_____("location");\n'
-            'let top = _____WB$wombat$assign$function_____("top");\n'
-            'let parent = _____WB$wombat$assign$function_____("parent");\n'
-            'let frames = _____WB$wombat$assign$function_____("frames");\n'
-            'let opener = _____WB$wombat$assign$function_____("opener");\n'
+            f"{decls}"
             "let arguments;\n"
             "\n"
             f"{text}"
@@ -218,6 +235,9 @@ class WrappedTestContent(ContentForTests):
             expected="if (self.foo) { console.log('blah') }",
         ),
         WrappedTestContent(input_="window.x = 5", expected="window.x = 5"),
+        # A script's own top-level declarations survive the block (#329):
+        # `let` is declared before it and assigned inside, `const` and `class`
+        # are handed out through a carrier and re-declared after it.
         WrappedTestContent(
             input_="""
             class A {}
@@ -229,12 +249,18 @@ class WrappedTestContent(ContentForTests):
             expected="""
             class A {}
             const B = 5;
-            let C = 4;
+             C = 4;
             var D = 3;
 
             location = ((self.__WB_check_loc && """
             "self.__WB_check_loc(location, [])) || {}).maybeHref "
-            """= "http://example.com/2" """,
+            """= "http://example.com/2" """
+            "\n;self.___WB_const_A = A;\nself.___WB_const_B = B;\n",
+            before="let C;\n",
+            after=(
+                "\nconst A = self.___WB_const_A; delete self.___WB_const_A;\n"
+                "const B = self.___WB_const_B; delete self.___WB_const_B;\n"
+            ),
         ),
         # Ensure these *don't* get rewritten
         WrappedTestContent(
@@ -257,7 +283,14 @@ class WrappedTestContent(ContentForTests):
                 " _____WB$wombat$check$this$function_____(this).location; }"
             ),
         ),
-        WrappedTestContent(input_=" var    self  ", expected=" let    self  "),
+        # The script declares its own `self`, so the wrapper must not declare
+        # one as well: before #329 was fixed this produced `let self` twice in
+        # the same block, which is a SyntaxError and killed the whole script.
+        WrappedTestContent(
+            input_=" var    self  ",
+            expected=" let    self  ",
+            without=("self",),
+        ),
     ]
 )
 def rewrite_wrapped_content(request: pytest.FixtureRequest):

@@ -1,6 +1,7 @@
 import pathlib
 
 import pytest
+import requests
 
 from zimscraperlib.download import stream_file
 
@@ -72,9 +73,41 @@ def gzip_html_url() -> str:
     return "https://kiwix.org/en"
 
 
+# A non-HTML resource served with `Content-Encoding: gzip`, which is the
+# property the tests using it exercise. The first one that answers is used.
+#
+# It was a single URL, lb.download.kiwix.org/robots.txt, until that file
+# stopped being served: it 404s now and took two tests down with it, on every
+# branch and on main. A list is not a mirror list on purpose — the download
+# mirrors carry ZIM files, not this, and each one decides its own compression,
+# so falling back to a mirror would quietly turn a gzip test into a plain one.
+GZIP_NONHTML_URLS = (
+    "https://kiwix.org/robots.txt",
+    "https://www.kiwix.org/robots.txt",
+)
+
+
+def _serves_gzipped(url: str) -> bool:
+    """Whether this URL answers, and answers gzipped. Never raises."""
+    try:
+        response = requests.get(
+            url, headers={"Accept-Encoding": "gzip"}, timeout=10, stream=True
+        )
+    except requests.RequestException:
+        return False
+    with response:
+        encoding = response.headers.get("Content-Encoding", "")
+        return response.ok and "gzip" in encoding.lower()
+
+
 @pytest.fixture(scope="module")
 def gzip_nonhtml_url() -> str:
-    return "http://lb.download.kiwix.org/robots.txt"
+    for url in GZIP_NONHTML_URLS:
+        if _serves_gzipped(url):
+            return url
+    pytest.skip(
+        "no gzipped non-HTML fixture URL is reachable: " + ", ".join(GZIP_NONHTML_URLS)
+    )
 
 
 def file_src(fname: str) -> pathlib.Path:
