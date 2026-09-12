@@ -221,7 +221,9 @@ def test_escaped_content(escaped_content: ContentForTests):
             '8Q7RZcHPHksttq7/GFoxjCVUjkjvPdw=="'
             ' crossorigin="anonymous" referrerpolicy="no-referrer"></script>',
             '<script src="../cdnjs.cloudflare.com/ajax/libs/jquery/3.7.0/jquery.min.js"'
-            ' crossorigin="anonymous" referrerpolicy="no-referrer"></script>',
+            ' crossorigin="anonymous" referrerpolicy="no-referrer"'
+            ' __wb_orig_src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.0/'
+            'jquery.min.js"></script>',
         ),
         ContentForTests(
             '<link rel="preload" src="https://cdnjs.cloudflare.com/jquery.min.js"'
@@ -711,7 +713,8 @@ def test_extract_base_href(html_content: str, expected_base_href: str):
         ContentForTests(
             '<html><head><base href="../"></head>'
             '<body><script src="foo.js"></script></body></html>',
-            '<html><head></head><body><script src="../foo.js"></script></body></html>',
+            "<html><head></head><body>"
+            '<script src="../foo.js" __wb_orig_src="foo.js"></script></body></html>',
             "kiwix.org/a/index.html",
         ),
         ContentForTests(
@@ -1588,4 +1591,68 @@ def test_rewrite_meta_http_equiv_redirect_rule(
             base_href=None,
         )
         == expected_result
+    )
+
+
+@pytest.mark.parametrize(
+    "input_str, expected_str",
+    [
+        pytest.param(
+            '<script src="/_next/static/chunks/a.js"></script>',
+            '<script src="../_next/static/chunks/a.js"'
+            ' __wb_orig_src="/_next/static/chunks/a.js"></script>',
+            id="root_relative_src_is_remembered",
+        ),
+        pytest.param(
+            '<script src="https://kiwix.org/_next/a.js"></script>',
+            '<script src="../_next/a.js"'
+            ' __wb_orig_src="https://kiwix.org/_next/a.js"></script>',
+            id="absolute_src_is_remembered",
+        ),
+        pytest.param(
+            '<script src="a.js"></script>',
+            '<script src="a.js"></script>',
+            id="an_unchanged_src_adds_nothing",
+        ),
+        pytest.param(
+            '<script>console.log("hi")</script>',
+            '<script>console.log("hi")</script>',
+            id="an_inline_script_adds_nothing",
+        ),
+        pytest.param(
+            '<img src="/img/a.png">',
+            '<img src="../img/a.png">',
+            id="only_scripts_get_it",
+        ),
+        pytest.param(
+            '<script src="/_next/a.js" __wb_orig_src="/original/a.js"></script>',
+            '<script src="../_next/a.js" __wb_orig_src="/original/a.js"></script>',
+            id="rewriting_twice_keeps_the_first_original",
+        ),
+    ],
+)
+def test_script_keeps_its_original_src(input_str: str, expected_str: str):
+    """A rewritten <script> remembers the src the server sent, for wombat.
+
+    Bundlers identify a chunk by the raw ``getAttribute("src")`` rather than by
+    the ``.src`` property, and they expect the string the server sent. Next.js
+    with Turbopack strips a leading ``/_next/`` to get a chunk's name; once the
+    src has been made relative the strip no longer matches, every chunk
+    registers under a name nothing is waiting for, and the page never hydrates.
+
+    wombat cannot repair this by itself — its getAttribute override un-rewrites
+    URLs that wombat rewrote, and this one was rewritten here. But it already
+    reads ``__wb_orig_src`` on script elements first, and only the rewriter can
+    fill that in.
+    """
+    assert (
+        HtmlRewriter(
+            ArticleUrlRewriter(article_url=HttpUrl("https://kiwix.org/a/index.html")),
+            None,
+            None,
+            None,
+        )
+        .rewrite(input_str)
+        .content
+        == expected_str
     )

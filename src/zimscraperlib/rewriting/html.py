@@ -54,6 +54,57 @@ def get_attr_value_from(
     return default
 
 
+# The attribute wombat reads a script's pre-rewrite src back out of.
+#
+# wombat already overrides Element.prototype.getAttribute and, for a <script>,
+# checks this attribute before anything else (retrieveWBOSRC). It exists for
+# exactly this situation and nothing was filling it in.
+WB_ORIG_SRC_ATTRIBUTE = "__wb_orig_src"
+
+
+def get_script_original_src(
+    tag: str, attrs: AttrsList, rewritten_attrs: list[AttrNameAndValue]
+) -> str | None:
+    """The src a <script> had before rewriting, when rewriting changed it.
+
+    Bundlers identify their chunks by the raw ``getAttribute("src")``, not by
+    the ``.src`` property, and they expect the string the server sent. Rewriting
+    an absolute path to a relative one therefore breaks them silently: Next.js
+    with Turbopack strips a leading ``/_next/`` to get a chunk's name, the strip
+    no longer matches, every chunk registers under a name nothing is waiting
+    for, and the page never hydrates. Vite is reported to be affected the same
+    way.
+
+    wombat cannot repair this on its own. Its getAttribute override un-rewrites
+    URLs that WOMBAT rewrote, and this one was rewritten here, at scrape time —
+    so extractOriginalURL sees no prefix it knows and hands the value straight
+    back. What it does have is ``__wb_orig_src``, which it checks first for
+    script elements and which only the rewriter can fill in.
+
+    None when the tag is not a script, when it had no src, when rewriting left
+    the src alone, or when the tag already carries the attribute — there is
+    nothing to remember in those cases, and an attribute that merely repeats
+    the src is noise in every captured page.
+
+    The already-carries case is HTML being rewritten a second time. What is
+    recorded then is the src of the FIRST pass, which is already a rewritten
+    value; keeping the attribute that is there preserves the true original, and
+    appending a second one would both duplicate the attribute and let the stale
+    value win, since a browser takes the first.
+    """
+    if tag != "script":
+        return None
+    if get_attr_value_from(attrs, WB_ORIG_SRC_ATTRIBUTE) is not None:
+        return None
+    original = get_attr_value_from(attrs, "src")
+    if not original:
+        return None
+    rewritten = get_attr_value_from(rewritten_attrs, "src")
+    if rewritten is None or rewritten == original:
+        return None
+    return original
+
+
 def format_attr(name: str, value: str | None) -> str:
     """Format a given attribute name and value, properly escaping the value"""
     if value is None:
@@ -195,28 +246,27 @@ class HtmlRewriter(HTMLParser):
         self.send(f"<{tag}")
         if attrs:
             self.send(" ")
-        self.send(
-            " ".join(
-                format_attr(*attr)
-                for attr in (
-                    rules.do_attribute_rewrite(
-                        tag=tag,
-                        attr_name=attr_name,
-                        attr_value=attr_value,
-                        attrs=attrs,
-                        js_rewriter=self.js_rewriter,
-                        css_rewriter=self.css_rewriter,
-                        url_rewriter=self.url_rewriter,
-                        base_href=self.base_href,
-                        notify_js_module=self.notify_js_module,
-                    )
-                    for attr_name, attr_value in attrs
-                    if not rules.do_drop_attribute(
-                        tag=tag, attr_name=attr_name, attr_value=attr_value, attrs=attrs
-                    )
-                )
+        rewritten_attrs = [
+            rules.do_attribute_rewrite(
+                tag=tag,
+                attr_name=attr_name,
+                attr_value=attr_value,
+                attrs=attrs,
+                js_rewriter=self.js_rewriter,
+                css_rewriter=self.css_rewriter,
+                url_rewriter=self.url_rewriter,
+                base_href=self.base_href,
+                notify_js_module=self.notify_js_module,
             )
-        )
+            for attr_name, attr_value in attrs
+            if not rules.do_drop_attribute(
+                tag=tag, attr_name=attr_name, attr_value=attr_value, attrs=attrs
+            )
+        ]
+        original_src = get_script_original_src(tag, attrs, rewritten_attrs)
+        if original_src is not None:
+            rewritten_attrs.append((WB_ORIG_SRC_ATTRIBUTE, original_src))
+        self.send(" ".join(format_attr(*attr) for attr in rewritten_attrs))
 
         if auto_close:
             self.send(" />")
