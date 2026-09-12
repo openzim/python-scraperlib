@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Carry a script's top-level `const`, `let` and `class` declarations across the wombat block, so other scripts on the page can still see them (#329)
+- Keep a rewritten `<script>`'s original `src` in `__wb_orig_src`, so wombat can return it from `getAttribute("src")` and bundlers that identify chunks by it (Next.js/Turbopack, Vite) still work (openzim/warc2zim#473)
 
 ## [5.4.1] - 2026-07-31
 
