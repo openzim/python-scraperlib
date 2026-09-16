@@ -229,7 +229,8 @@ def test_escaped_content(escaped_content: ContentForTests):
             '<link rel="preload" src="https://cdnjs.cloudflare.com/jquery.min.js"'
             ' integrity="sha512-3gJwYpMe3QewGELv8k/BX9vcqhryRdzRMxVfq6ngyWXwo03GFEzjsUm'
             '8Q7RZcHPHksttq7/GFoxjCVUjkjvPdw=="></link>',
-            '<link rel="preload" src="../cdnjs.cloudflare.com/jquery.min.js"></link>',
+            '<link rel="preload" src="../cdnjs.cloudflare.com/jquery.min.js"'
+            ' __wb_orig_src="https://cdnjs.cloudflare.com/jquery.min.js"></link>',
         ),
         ContentForTests(
             '<link rel="preload" as="script"'
@@ -237,7 +238,8 @@ def test_escaped_content(escaped_content: ContentForTests):
             ' integrity="sha512-3gJwYpMe3QewGELv8k/BX9vcqhryRdzRMxVfq6ngyWXwo03GFEzjsUm'
             '8Q7RZcHPHksttq7/GFoxjCVUjkjvPdw=="></link>',
             '<link rel="preload" as="script" '
-            'src="../cdnjs.cloudflare.com/jquery.min.js"></link>',
+            'src="../cdnjs.cloudflare.com/jquery.min.js"'
+            ' __wb_orig_src="https://cdnjs.cloudflare.com/jquery.min.js"></link>',
         ),
     ]
 )
@@ -261,8 +263,16 @@ def test_js_rewrites(js_rewrites: ContentForTests):
     assert transformed == js_rewrites.expected_str
 
 
+LONG_PATH = "http://exemple.com/a/long/path"
+
+
 def long_path_replace_test_content(input_: str, rewriten_url: str, article_url: str):
-    expected = input_.replace("http://exemple.com/a/long/path", rewriten_url)
+    expected = input_.replace(LONG_PATH, rewriten_url)
+    if rewriten_url != LONG_PATH:
+        # A rewritten href records the value the server sent, for wombat.
+        expected = expected.replace(
+            '">A link', f'" __wb_orig_href="{LONG_PATH}">A link'
+        )
     return ContentForTests(input_, expected, article_url)
 
 
@@ -394,12 +404,12 @@ def test_rewrite_attributes():
 
     assert (
         rewriter.rewrite("<a href='https://kiwix.org/foo'>A link</a>").content
-        == '<a href="foo">A link</a>'
+        == '<a href="foo" __wb_orig_href="https://kiwix.org/foo">A link</a>'
     )
 
     assert (
         rewriter.rewrite("<img src='https://kiwix.org/foo'></img>").content
-        == '<img src="foo"></img>'
+        == '<img src="foo" __wb_orig_src="https://kiwix.org/foo"></img>'
     )
 
     assert (
@@ -676,7 +686,8 @@ def test_extract_base_href(html_content: str, expected_base_href: str):
         ContentForTests(
             '<html><head><base href="../"></head>'
             '<body><a href="foo.html"></a></body></html>',
-            '<html><head></head><body><a href="../foo.html"></a></body></html>',
+            "<html><head></head><body>"
+            '<a href="../foo.html" __wb_orig_href="foo.html"></a></body></html>',
             "kiwix.org/a/index.html",
         ),
         ContentForTests(
@@ -727,8 +738,8 @@ def test_extract_base_href(html_content: str, expected_base_href: str):
         ContentForTests(
             '<html><head> <link rel="shortcut icon" href="favicon.ico">'
             '<base href="../"></head><body></body></html>',
-            '<html><head> <link rel="shortcut icon" href="../favicon.ico">'
-            "</head><body></body></html>",
+            '<html><head> <link rel="shortcut icon" href="../favicon.ico"'
+            ' __wb_orig_href="favicon.ico"></head><body></body></html>',
             "kiwix.org/a/index.html",
         ),
     ]
@@ -790,7 +801,8 @@ def test_rewrite_base_href(rewrite_base_href_content: ContentForTests):
         ),
         pytest.param(
             """<img src="image.png?param1=value1&param2=value2">""",
-            """<img src="image.png%3Fparam1=value1%26param2=value2">""",
+            '<img src="image.png%3Fparam1=value1%26param2=value2"'
+            ' __wb_orig_src="image.png?param1=value1&amp;param2=value2">',
             id="badly_escaped_src",
         ),
     ],
@@ -1621,8 +1633,25 @@ def test_rewrite_meta_http_equiv_redirect_rule(
         ),
         pytest.param(
             '<img src="/img/a.png">',
-            '<img src="../img/a.png">',
-            id="only_scripts_get_it",
+            '<img src="../img/a.png" __wb_orig_src="/img/a.png">',
+            id="an_image_gets_one_too",
+        ),
+        pytest.param(
+            '<a href="/page?ref=noted.lol">z</a>',
+            '<a href="https://kiwix.org/page?ref=noted.lol"'
+            ' __wb_orig_href="/page?ref=noted.lol">z</a>',
+            id="a_link_gets_one_too",
+        ),
+        pytest.param(
+            '<a href="#anchor">x</a>',
+            '<a href="#anchor">x</a>',
+            id="an_unchanged_href_adds_nothing",
+        ),
+        pytest.param(
+            '<a href="/b.html" __wb_orig_href="/original/b.html">x</a>',
+            '<a href="https://kiwix.org/b.html"'
+            ' __wb_orig_href="/original/b.html">x</a>',
+            id="rewriting_twice_keeps_the_first_original_for_any_attribute",
         ),
         pytest.param(
             '<script src="/_next/a.js" __wb_orig_src="/original/a.js"></script>',
@@ -1631,7 +1660,9 @@ def test_rewrite_meta_http_equiv_redirect_rule(
         ),
     ],
 )
-def test_script_keeps_its_original_src(input_str: str, expected_str: str):
+def test_rewritten_url_attributes_keep_their_original(
+    input_str: str, expected_str: str
+):
     """A rewritten <script> remembers the src the server sent, for wombat.
 
     Bundlers identify a chunk by the raw ``getAttribute("src")`` rather than by

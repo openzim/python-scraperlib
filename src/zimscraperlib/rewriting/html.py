@@ -54,55 +54,55 @@ def get_attr_value_from(
     return default
 
 
-# The attribute wombat reads a script's pre-rewrite src back out of.
+# The attributes wombat asks for a pre-rewrite value of.
 #
-# wombat already overrides Element.prototype.getAttribute and, for a <script>,
-# checks this attribute before anything else (retrieveWBOSRC). It exists for
-# exactly this situation and nothing was filling it in.
-WB_ORIG_SRC_ATTRIBUTE = "__wb_orig_src"
+# wombat overrides Element.prototype.getAttribute, and for any attribute it
+# considers a URL it first looks for the original the server-side rewriter
+# recorded (retrieveWBOSRC), falling back to extractOriginalURL. That fallback
+# can only reverse rewrites WOMBAT performed; a value rewritten here, at scrape
+# time, is unrecognisable to it, and it ends up prepending the original scheme
+# to an already-relative path.
+#
+# These are the attributes wombat treats as a URL on every tag, and so the ones
+# it will come asking about.
+WB_ORIG_ATTRIBUTE_PREFIX = "__wb_orig_"
+WB_ORIG_ATTRIBUTES = ("src", "href", "xlink:href")
 
 
-def get_script_original_src(
-    tag: str, attrs: AttrsList, rewritten_attrs: list[AttrNameAndValue]
-) -> str | None:
-    """The src a <script> had before rewriting, when rewriting changed it.
+def wb_orig_attribute(attr_name: str) -> str:
+    """The attribute wombat reads ``attr_name``'s pre-rewrite value out of."""
+    return WB_ORIG_ATTRIBUTE_PREFIX + attr_name
 
-    Bundlers identify their chunks by the raw ``getAttribute("src")``, not by
-    the ``.src`` property, and they expect the string the server sent. Rewriting
-    an absolute path to a relative one therefore breaks them silently: Next.js
-    with Turbopack strips a leading ``/_next/`` to get a chunk's name, the strip
-    no longer matches, every chunk registers under a name nothing is waiting
-    for, and the page never hydrates. Vite is reported to be affected the same
-    way.
 
-    wombat cannot repair this on its own. Its getAttribute override un-rewrites
-    URLs that WOMBAT rewrote, and this one was rewritten here, at scrape time —
-    so extractOriginalURL sees no prefix it knows and hands the value straight
-    back. What it does have is ``__wb_orig_src``, which it checks first for
-    script elements and which only the rewriter can fill in.
+def get_original_attr_values(
+    attrs: AttrsList, rewritten_attrs: list[AttrNameAndValue]
+) -> list[AttrNameAndValue]:
+    """The pre-rewrite values worth recording, as (attribute, value) pairs.
 
-    None when the tag is not a script, when it had no src, when rewriting left
-    the src alone, or when the tag already carries the attribute — there is
-    nothing to remember in those cases, and an attribute that merely repeats
-    the src is noise in every captured page.
+    Two symptoms, one cause. A bundler identifies its chunks by the raw
+    ``getAttribute("src")`` and expects the string the server sent, so a
+    rewritten src stops matching and the page never hydrates. And a rewritten
+    href comes back with the original scheme glued onto a relative path
+    (openzim/warc2zim#413).
 
-    The already-carries case is HTML being rewritten a second time. What is
-    recorded then is the src of the FIRST pass, which is already a rewritten
-    value; keeping the attribute that is there preserves the true original, and
-    appending a second one would both duplicate the attribute and let the stale
-    value win, since a browser takes the first.
+    Nothing is recorded for an attribute that had no value, that rewriting left
+    alone, or that already carries its original. That last is HTML rewritten
+    twice: the attribute already present is the true original, and a second
+    would both duplicate it and win, since a browser takes the first.
     """
-    if tag != "script":
-        return None
-    if get_attr_value_from(attrs, WB_ORIG_SRC_ATTRIBUTE) is not None:
-        return None
-    original = get_attr_value_from(attrs, "src")
-    if not original:
-        return None
-    rewritten = get_attr_value_from(rewritten_attrs, "src")
-    if rewritten is None or rewritten == original:
-        return None
-    return original
+    recorded: list[AttrNameAndValue] = []
+    for attr_name in WB_ORIG_ATTRIBUTES:
+        orig_name = wb_orig_attribute(attr_name)
+        if get_attr_value_from(attrs, orig_name) is not None:
+            continue
+        original = get_attr_value_from(attrs, attr_name)
+        if not original:
+            continue
+        rewritten = get_attr_value_from(rewritten_attrs, attr_name)
+        if rewritten is None or rewritten == original:
+            continue
+        recorded.append((orig_name, original))
+    return recorded
 
 
 def format_attr(name: str, value: str | None) -> str:
@@ -263,9 +263,7 @@ class HtmlRewriter(HTMLParser):
                 tag=tag, attr_name=attr_name, attr_value=attr_value, attrs=attrs
             )
         ]
-        original_src = get_script_original_src(tag, attrs, rewritten_attrs)
-        if original_src is not None:
-            rewritten_attrs.append((WB_ORIG_SRC_ATTRIBUTE, original_src))
+        rewritten_attrs.extend(get_original_attr_values(attrs, rewritten_attrs))
         self.send(" ".join(format_attr(*attr) for attr in rewritten_attrs))
 
         if auto_close:
