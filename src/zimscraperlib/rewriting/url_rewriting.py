@@ -312,7 +312,9 @@ class ArticleUrlRewriter:
         URI.
 
         """
-        item_parts = urlsplit(item_path.value)
+        # a ZIM path is never URL-encoded, so a `#` in it is a literal character
+        # (e.g. coming from a `%23` in original URL) and not a fragment delimiter
+        item_parts = urlsplit(item_path.value, allow_fragments=False)
 
         # item_path is both path + querystring, both will be url-encoded in the document
         # so that readers consider them as a whole and properly pass them to libzim

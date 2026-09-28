@@ -208,6 +208,39 @@ class TestArticleUrlRewriter:
             ),
             (
                 "https://kiwix.org/a/article/document.html",
+                "foo%23bar.html",  # a path with an encoded # char
+                RewriteResult(
+                    "https://kiwix.org/a/article/foo%23bar.html",
+                    "foo%23bar.html",
+                    ZimPath("kiwix.org/a/article/foo#bar.html"),
+                ),
+                ["kiwix.org/a/article/foo#bar.html"],
+                False,
+            ),
+            (
+                "https://kiwix.org/a/article/document.html",
+                "foo%23bar.html#anchor1",  # encoded # char followed by a fragment
+                RewriteResult(
+                    "https://kiwix.org/a/article/foo%23bar.html#anchor1",
+                    "foo%23bar.html#anchor1",
+                    ZimPath("kiwix.org/a/article/foo#bar.html"),
+                ),
+                ["kiwix.org/a/article/foo#bar.html"],
+                False,
+            ),
+            (
+                "https://kiwix.org/a/article/document.html",
+                "foo.html?foo=b%23ar",  # a query string with an encoded # char
+                RewriteResult(
+                    "https://kiwix.org/a/article/foo.html?foo=b%23ar",
+                    "foo.html%3Ffoo=b%23ar",
+                    ZimPath("kiwix.org/a/article/foo.html?foo=b#ar"),
+                ),
+                ["kiwix.org/a/article/foo.html?foo=b#ar"],
+                False,
+            ),
+            (
+                "https://kiwix.org/a/article/document.html",
                 "fo%o.html",
                 RewriteResult(
                     "https://kiwix.org/a/article/fo%o.html",
