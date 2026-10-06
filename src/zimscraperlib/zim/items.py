@@ -12,7 +12,11 @@ import libzim.writer  # pyright: ignore[reportMissingModuleSource]
 
 from zimscraperlib.download import stream_file
 from zimscraperlib.filesystem import get_content_mimetype, get_file_mimetype
-from zimscraperlib.zim.indexing import IndexData, get_pdf_index_data
+from zimscraperlib.zim.indexing import (
+    IndexData,
+    get_epub_index_data,
+    get_pdf_index_data,
+)
 from zimscraperlib.zim.providers import (
     FileLikeProvider,
     FileProvider,
@@ -75,8 +79,8 @@ class StaticItem(Item):
     the Item and we can be notified that we're effectively through with our content
 
     By default, content is automatically indexed (either by the libzim itself for
-    supported documents - text or html for now or by the python-scraperlib - only PDF
-    supported for now). If you do not want this, set `auto_index` to False to disable
+    supported documents - text or html for now or by the python-scraperlib - PDF and
+    ePub for now). If you do not want this, set `auto_index` to False to disable
     both indexing (libzim and python-scraperlib).
 
     It is also possible to pass index_data to configure custom indexing of the item.
@@ -160,6 +164,9 @@ class StaticItem(Item):
             if mimetype == "application/pdf":
                 index_data = get_pdf_index_data(content=content)
                 self.get_indexdata = lambda: index_data
+            elif mimetype == "application/epub+zip":
+                index_data = get_epub_index_data(content=content)
+                self.get_indexdata = lambda: index_data
             else:
                 return
 
@@ -174,6 +181,9 @@ class StaticItem(Item):
             if mimetype == "application/pdf":
                 index_data = get_pdf_index_data(fileobj=fileobj)
                 self.get_indexdata = lambda: index_data
+            elif mimetype == "application/epub+zip":
+                index_data = get_epub_index_data(fileobj=fileobj)
+                self.get_indexdata = lambda: index_data
             else:
                 return
 
@@ -187,6 +197,11 @@ class StaticItem(Item):
             mimetype = get_file_mimetype(filepath)
             if mimetype == "application/pdf":
                 index_data = get_pdf_index_data(filepath=filepath)
+                self.get_indexdata = (  # pyright:ignore [reportIncompatibleVariableOverride]
+                    lambda: index_data
+                )
+            elif mimetype == "application/epub+zip":
+                index_data = get_epub_index_data(filepath=filepath)
                 self.get_indexdata = (  # pyright:ignore [reportIncompatibleVariableOverride]
                     lambda: index_data
                 )

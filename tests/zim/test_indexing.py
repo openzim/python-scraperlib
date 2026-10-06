@@ -3,9 +3,14 @@ import pathlib
 
 import libzim.writer  # pyright: ignore[reportMissingModuleSource]
 import pytest
+from pytest_mock import MockerFixture
 
-from zimscraperlib.zim import Archive, Creator
-from zimscraperlib.zim.indexing import IndexData, get_pdf_index_data
+from zimscraperlib.zim import Archive, Creator, indexing
+from zimscraperlib.zim.indexing import (
+    IndexData,
+    get_epub_index_data,
+    get_pdf_index_data,
+)
 from zimscraperlib.zim.items import StaticItem
 
 
@@ -368,3 +373,46 @@ def test_index_data_wordcount(
         IndexData(title="foo", content=content, wordcount=wordcount).get_wordcount()
         == expected_wordcount
     )
+
+
+@pytest.mark.parametrize("source", ["content", "fileobj", "filepath"])
+def test_get_epub_index_data(
+    source: str, epub_file: pathlib.Path, mocker: MockerFixture
+):
+    warning = mocker.patch.object(indexing.logger, "warning")
+    if source == "content":
+        index_data = get_epub_index_data(content=epub_file.read_bytes())
+    elif source == "fileobj":
+        index_data = get_epub_index_data(fileobj=io.BytesIO(epub_file.read_bytes()))
+    else:
+        index_data = get_epub_index_data(filepath=epub_file)
+    assert index_data.get_title() == "Lighthouse Almanac - Ada Quillfeather"
+    assert "The keeper trimmed the wick." in index_data.get_content()
+    assert "Gulls circled the breakwater." in index_data.get_content()
+    assert index_data.has_indexdata()
+    # MuPDF does not know EPUB 3 but reads it fine, this must not be reported
+    warning.assert_not_called()
+
+
+@pytest.mark.parametrize("source", ["content", "fileobj", "filepath"])
+def test_indexing_item_epub(
+    tmp_path: pathlib.Path, epub_file: pathlib.Path, source: str
+):
+    """An EPUB item can be automatically indexed"""
+    fpath = tmp_path / "test.zim"
+    hints: dict[libzim.writer.Hint, int] = {libzim.writer.Hint.FRONT_ARTICLE: True}
+    if source == "content":
+        item = StaticItem(content=epub_file.read_bytes(), path="welcome", hints=hints)
+    elif source == "fileobj":
+        fileobj = io.BytesIO(epub_file.read_bytes())
+        item = StaticItem(fileobj=fileobj, path="welcome", hints=hints)
+    else:
+        item = StaticItem(filepath=epub_file, path="welcome", hints=hints)
+    with Creator(fpath, "welcome").config_dev_metadata() as creator:
+        creator.add_item(item)
+
+    reader = Archive(fpath)
+    assert "welcome" in list(reader.get_suggestions("lighthouse"))
+    assert "welcome" in list(reader.get_suggestions("quillfeather"))
+    assert reader.get_search_results_count("breakwater") == 1
+    assert reader.get_search_results_count("wick") == 1
