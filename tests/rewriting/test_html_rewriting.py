@@ -411,6 +411,46 @@ def test_rewrite_attributes():
     )
 
 
+@pytest.mark.parametrize(
+    "input_str, expected_str",
+    [
+        pytest.param(
+            '<video poster="https://kiwix.org/img/poster.jpg"></video>',
+            '<video poster="../img/poster.jpg"></video>',
+            id="absolute_url",
+        ),
+        pytest.param(
+            '<video poster="/img/poster.jpg" src="/video.mp4"></video>',
+            '<video poster="../img/poster.jpg" src="../video.mp4"></video>',
+            id="alongside_src",
+        ),
+        pytest.param(
+            '<video poster="poster.jpg?size=big"></video>',
+            '<video poster="poster.jpg%3Fsize=big"></video>',
+            id="relative_url_with_query",
+        ),
+        pytest.param(
+            '<video poster="data:image/png;base64,iVBORw0KGgo="></video>',
+            '<video poster="data:image/png;base64,iVBORw0KGgo="></video>',
+            id="data_url_is_kept",
+        ),
+        pytest.param(
+            "<video poster></video>",
+            "<video poster></video>",
+            id="no_value",
+        ),
+    ],
+)
+def test_rewrite_poster_attribute(input_str: str, expected_str: str):
+    rewriter = HtmlRewriter(
+        ArticleUrlRewriter(article_url=HttpUrl("https://kiwix.org/a/article.html")),
+        None,
+        None,
+        None,
+    )
+    assert rewriter.rewrite(input_str).content == expected_str
+
+
 def test_rewrite_css():
     output = (
         HtmlRewriter(
