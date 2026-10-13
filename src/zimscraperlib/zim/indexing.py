@@ -62,7 +62,16 @@ IGNORED_MUPDF_MESSAGES = [
     "lcms: not an ICC profile, invalid signature.",
     "format error: cmsOpenProfileFromMem failed",
     "ignoring broken ICC profile",
+    # MuPDF only knows EPUB 2 but reads EPUB 3 documents fine
+    "unknown epub version: 3.0",
 ]
+
+# messages carrying a document-specific detail, ignored by prefix; images and
+# styles do not matter for the text content
+IGNORED_MUPDF_MESSAGE_PREFIXES = (
+    "html: cannot load image",
+    "syntax error: css syntax error",
+)
 
 
 def get_pdf_index_data(
@@ -75,6 +84,34 @@ def get_pdf_index_data(
 
     PDF can be passed either as content or fileobject or filepath
     """
+    return _get_document_index_data(
+        filetype="pdf", content=content, fileobj=fileobj, filepath=filepath
+    )
+
+
+def get_epub_index_data(
+    *,
+    content: str | bytes | None = None,
+    fileobj: io.BytesIO | None = None,
+    filepath: pathlib.Path | None = None,
+) -> IndexData:
+    """Returns the IndexData information for a given EPUB
+
+    EPUB can be passed either as content or fileobject or filepath
+    """
+    return _get_document_index_data(
+        filetype="epub", content=content, fileobj=fileobj, filepath=filepath
+    )
+
+
+def _get_document_index_data(
+    *,
+    filetype: str,
+    content: str | bytes | None = None,
+    fileobj: io.BytesIO | None = None,
+    filepath: pathlib.Path | None = None,
+) -> IndexData:
+    """IndexData of any document PyMuPDF can read, title built from its metadata"""
 
     # do not display all pymupdf errors, we will filter them afterwards
     pymupdf.TOOLS.mupdf_display_errors(  # pyright: ignore[reportUnknownMemberType]
@@ -82,26 +119,26 @@ def get_pdf_index_data(
     )
 
     if content:
-        doc = pymupdf.open(stream=content)
+        doc = pymupdf.open(stream=content, filetype=filetype)
     elif fileobj:
-        doc = pymupdf.open(stream=fileobj)
+        doc = pymupdf.open(stream=fileobj, filetype=filetype)
     else:
-        doc = pymupdf.open(filename=filepath)
+        doc = pymupdf.open(filename=filepath, filetype=filetype)
     metadata = (  # pyright: ignore[reportUnknownVariableType, reportUnknownMemberType]
         doc.metadata
     )
     title = ""
-    if metadata:  # pragma: no branch (always metadata in test PDFs)
+    if metadata:  # pragma: no branch (always metadata in test documents)
         parts: list[str] = []
         for key in ["title", "author", "subject"]:
             if metadata.get(key):  # pyright: ignore[reportUnknownMemberType]
                 parts.append(
                     metadata[key]  # pyright: ignore[reportUnknownArgumentType]
                 )
-        if parts:  # pragma: no branch (always metadata in test PDFs)
+        if parts:  # pragma: no branch (always metadata in test documents)
             title = " - ".join(parts)
 
-    def get_pdf_content(page: pymupdf.Page) -> str:
+    def get_page_content(page: pymupdf.Page) -> str:
         text = (  # pyright: ignore[reportUnknownVariableType]
             page.get_text()  # pyright: ignore[reportUnknownMemberType]
         )
@@ -109,7 +146,7 @@ def get_pdf_index_data(
             raise Exception("Unexpected text content")
         return text
 
-    content = "\n".join(get_pdf_content(page) for page in doc)
+    content = "\n".join(get_page_content(page) for page in doc)
 
     # build list of messages and filter messages which are known to not be relevant
     # in our use-case
@@ -117,12 +154,13 @@ def get_pdf_index_data(
         warning
         for warning in pymupdf.TOOLS.mupdf_warnings().splitlines()
         if warning not in IGNORED_MUPDF_MESSAGES
+        and not warning.startswith(IGNORED_MUPDF_MESSAGE_PREFIXES)
     )
 
     if mupdf_messages:
         logger.warning(
             f"PyMuPDF issues:\n{mupdf_messages}"
-        )  # pragma: no cover (no known error in test PDFs)
+        )  # pragma: no cover (no known error in test documents)
 
     return IndexData(
         title=title,
