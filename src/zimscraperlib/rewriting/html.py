@@ -653,13 +653,13 @@ def rewrite_href_src_attributes(  # noqa: PLR0917
     base_href: str | None,
     notify_js_module: Callable[[ZimPath], None] | None,
 ):
-    """Rewrite href and src attributes
+    """Rewrite href, src and poster attributes
 
     This is also notifying of any JS script found used as a module, so that this script
     is properly rewritten when encountered later on.
     """
     if (
-        attr_name not in ("href", "src")
+        attr_name not in ("href", "src", "poster")
         or not attr_value
         or attr_value.startswith("data:")
     ):
