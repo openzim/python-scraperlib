@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Keep a rewritten `<script>`'s original `src` in `__wb_orig_src`, so wombat can return it from `getAttribute("src")` and bundlers that identify chunks by it (Next.js/Turbopack, Vite) still work (openzim/warc2zim#473)
 - Keep URL-encoded `#` characters of the path or querystring when rewriting document URIs, instead of dropping everything after them (#341)
 - Rewrite the `poster` attribute (e.g. of `<video>`) when rewriting HTML, like `src` and `href` (#339)
+- Do not collapse consecutive slashes `//` into a single `/` when normalizing URLs into ZIM paths, in both Python and JS rewriting (#340)
 
 ## [5.4.1] - 2026-07-31
 
