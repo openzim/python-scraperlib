@@ -1,5 +1,5 @@
 import pathlib
-import subprocess
+import time
 from concurrent.futures import Future, ThreadPoolExecutor
 from typing import Any, ClassVar
 from urllib.parse import urlparse
@@ -126,33 +126,85 @@ class BestMp4(YoutubeConfig):
     }
 
 
+_RETRYABLE_HTTP_STATUS_CODES = (413, 429, 500, 502, 503, 504)
+_HTTP_PARTIAL_CONTENT = 206
+_DOWNLOAD_BLOCK_SIZE = 1024 * 1024
+_DOWNLOAD_BACKOFF_FACTOR = 1.0
+
+
+class DownloadError(Exception):
+    """Raised when a file could not be completely downloaded."""
+
+
 def save_large_file(
     url: str, fpath: pathlib.Path, retries: int = 5, user_agent: str | None = None
 ) -> None:
-    """download a binary file from its URL, using wget
+    """Download a binary file from its URL, streaming its content with resume.
+
+    Unlike a single wget run, whose -t counter is a budget for the whole download,
+    the retry counter here only grows on attempts that make no progress at all:
+    any attempt that writes at least one byte resets it, so a download that keeps
+    resuming is not abandoned early.
 
     Arguments -
         url:
+        fpath:
+        retries: number of consecutive attempts without progress tolerated
+        user_agent:
     """
-    command = [
-        "/usr/bin/env",
-        "wget",
-        "-t",
-        f"{retries}",
-        "--retry-connrefused",
-        "--random-wait",
-        "--progress=dot:giga",
-        "-O",
-        str(fpath),
-        "-c",
-        url,
-    ]
-    if user_agent:
-        command += ["-U", user_agent]
-    subprocess.run(
-        command,
-        check=True,
-    )
+    headers: dict[str, str] = {"User-Agent": user_agent} if user_agent else {}
+    attempts_without_progress = 0
+    with requests.Session() as session:
+        while True:
+            resume_from = fpath.stat().st_size if fpath.exists() else 0
+            request_headers = dict(headers)
+            if resume_from:
+                request_headers["Range"] = f"bytes={resume_from}-"
+            made_progress = False
+            try:
+                with session.get(
+                    url,
+                    stream=True,
+                    headers=request_headers,
+                    timeout=DEFAULT_WEB_REQUESTS_TIMEOUT,
+                ) as response:
+                    if resume_from and response.status_code != _HTTP_PARTIAL_CONTENT:
+                        resume_from = 0
+                    response.raise_for_status()
+                    with open(fpath, "ab" if resume_from else "wb") as fh:
+                        for chunk in response.iter_content(_DOWNLOAD_BLOCK_SIZE):
+                            if not chunk:
+                                continue
+                            fh.write(chunk)
+                            made_progress = True
+            except requests.HTTPError as exc:
+                status = exc.response.status_code if exc.response is not None else None
+                if status not in _RETRYABLE_HTTP_STATUS_CODES:
+                    raise DownloadError(
+                        f"Failed to download {url}: HTTP status {status}"
+                    ) from exc
+            except (
+                requests.ConnectionError,
+                requests.Timeout,
+                requests.exceptions.ChunkedEncodingError,
+            ):
+                logger.warning(f"Download of {url} interrupted")
+            else:
+                return
+
+            if made_progress:
+                attempts_without_progress = 0
+            else:
+                attempts_without_progress += 1
+            if attempts_without_progress > retries:
+                raise DownloadError(
+                    f"Failed to download {url}: {retries} attempts without progress"
+                )
+            wait = _DOWNLOAD_BACKOFF_FACTOR * 2 ** (attempts_without_progress - 1)
+            logger.warning(
+                f"Retrying download of {url} in {wait:.0f}s from byte {resume_from}"
+            )
+            time.sleep(wait)
 
 
 def get_retry_adapter(
@@ -166,14 +218,7 @@ def get_retry_adapter(
         status=2,  # failure HTTP status (only those bellow)
         redirect=False,  # don't fail on redirections
         backoff_factor=30,  # sleep factor between retries
-        status_forcelist=[
-            413,
-            429,
-            500,
-            502,
-            503,
-            504,
-        ],  # force retry on the following codes
+        status_forcelist=list(_RETRYABLE_HTTP_STATUS_CODES),
     )
 
     return requests.adapters.HTTPAdapter(max_retries=retries)
