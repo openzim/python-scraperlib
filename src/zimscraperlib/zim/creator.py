@@ -467,6 +467,36 @@ class Creator(libzim.writer.Creator):
                 self.can_finish = False  # pragma: no cover
             raise
 
+    def add_alias(  # pyright: ignore[reportIncompatibleMethodOverride]
+        self,
+        path: str,
+        target_path: str,
+        title: str | None = "",
+        *,
+        is_front: bool | None = None,
+        duplicate_ok: bool | None = None,
+    ):
+        """Add an alias from path to target_path
+
+        title is optional. when set, the alias itself
+        can be found on suggestions (indexed) if considered FRONT_ARTICLE"""
+        hints: dict[libzim.writer.Hint, int] = {}
+        if is_front is not None:
+            hints[libzim.writer.Hint.FRONT_ARTICLE] = bool(is_front)
+
+        duplicate_ok = duplicate_ok or self.ignore_duplicates
+
+        try:
+            try:
+                super().add_alias(path, title or path, target_path, hints)
+            except RuntimeError as exc:
+                if not DUPLICATE_EXC_STR.match(str(exc)) or not duplicate_ok:
+                    raise exc
+        except Exception:
+            if self.workaround_nocancel:
+                self.can_finish = False  # pragma: no cover
+            raise
+
     def finish(
         self,
         _: type[BaseException] | None = None,

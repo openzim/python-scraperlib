@@ -653,10 +653,13 @@ def test_duplicates(tmp_path: pathlib.Path):
         creator.add_item_for(path="A", content="A")
         creator.add_item_for(path="C", content="C")
         creator.add_redirect(path="B", target_path="A")
+        creator.add_alias(path="D", target_path="A")
         with pytest.raises(RuntimeError, match="existing dirent's title"):
             creator.add_item_for(path="A", content="test2")
         with pytest.raises(RuntimeError, match="existing dirent's title"):
             creator.add_redirect(path="B", target_path="C")
+        with pytest.raises(RuntimeError, match="existing dirent's title"):
+            creator.add_alias(path="D", target_path="C")
 
 
 def test_ignore_duplicates(tmp_path: pathlib.Path):
@@ -667,6 +670,41 @@ def test_ignore_duplicates(tmp_path: pathlib.Path):
         creator.add_item_for(path="A", content="A2")
         creator.add_redirect(path="B", target_path="A")
         creator.add_redirect(path="B", target_path="C")
+        creator.add_alias(path="D", target_path="A")
+        creator.add_alias(path="D", target_path="C")
+
+
+def test_alias_duplicate_ok(tmp_path: pathlib.Path):
+    with Creator(tmp_path / "test.zim", "").config_dev_metadata() as creator:
+        creator.add_item_for(path="A", content="A")
+        creator.add_item_for(path="C", content="C")
+        creator.add_alias(path="D", target_path="A")
+        creator.add_alias(path="D", target_path="C", duplicate_ok=True)
+
+
+def test_add_alias(tmp_path: pathlib.Path, html_str: str):
+    fpath = tmp_path / "test.zim"
+
+    with Creator(fpath, "welcome").config_dev_metadata() as creator:
+        creator.add_item_for("welcome", "wel", content=html_str, is_front=True)
+        creator.add_alias("welcome-alias", "welcome")
+        creator.add_alias("welcome-alias2", "welcome", "Home !!")
+        creator.add_alias("welcome-alias3", "welcome", "Home !!", is_front=True)
+        creator.add_alias("welcome-alias4", "welcome", "Home !!", is_front=False)
+
+    reader = Archive(fpath)
+    for path in (
+        "welcome-alias",
+        "welcome-alias2",
+        "welcome-alias3",
+        "welcome-alias4",
+    ):
+        entry = reader.get_entry_by_path(path)
+        assert not entry.is_redirect
+        assert bytes(entry.get_item().content).decode(UTF8) == html_str
+    assert reader.get_entry_by_path("welcome-alias").title == "welcome-alias"
+    assert reader.get_entry_by_path("welcome-alias2").title == "Home !!"
+    assert reader.main_entry.get_item().path == "welcome"
 
 
 def test_without_metadata(tmp_path: pathlib.Path):

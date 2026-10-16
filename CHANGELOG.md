@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Index ePub documents for full-text search, with a new `get_epub_index_data` helper and automatic indexing of ePub items, like PDFs already are (#333)
 - Send a Wikimedia-compliant default `User-Agent` in `stream_file` when downloading from `upload.wikimedia.org` (#214)
+- Add `add_alias` to `zim/creator` and `add_aliases_to_zim` to `zim/filesystem` to support ZIM aliases, alongside existing redirects (#148)
 
 ### Fixed
 
