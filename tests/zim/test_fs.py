@@ -55,6 +55,60 @@ def test_redirects_file(
     )
 
 
+def test_aliases(png_image: pathlib.Path, build_data: dict[str, Any]):
+    build_data["build_dir"].mkdir()
+    shutil.copyfile(png_image, build_data["build_dir"] / png_image.name)
+
+    make_zim_file(
+        build_dir=build_data["build_dir"],
+        fpath=build_data["fpath"],
+        name="test-zim",
+        main_page="welcome",
+        illustration=png_image.name,
+        title="Test ZIM",
+        description="A test ZIM",
+        aliases=[
+            ("alias", "commons48.png", ""),
+            ("alias2", "commons48.png", "Alias 2"),
+        ],
+    )
+
+    reader = Archive(build_data["fpath"])
+    for path in ("alias", "alias2"):
+        assert not reader.get_entry_by_path(path).is_redirect
+        assert bytes(reader.get_item(path).content) == png_image.read_bytes()
+    assert reader.get_entry_by_path("alias").title == "alias"
+    assert reader.get_entry_by_path("alias2").title == "Alias 2"
+
+
+def test_aliases_file(
+    tmp_path: pathlib.Path, png_image: pathlib.Path, build_data: dict[str, Any]
+):
+    build_data["build_dir"].mkdir()
+    shutil.copyfile(png_image, build_data["build_dir"] / png_image.name)
+    build_data["aliases_file"] = tmp_path / "aliases.tsv"
+    with open(build_data["aliases_file"], "w") as fh:
+        fh.write("A\tAccueil\t\tcommons48.png\n")
+        fh.write(" \timage\t\tcommons48.png\n")
+        fh.write("this_is_not_matching")
+
+    make_zim_file(
+        build_dir=build_data["build_dir"],
+        fpath=build_data["fpath"],
+        name="test-zim",
+        main_page="welcome",
+        illustration=png_image.name,
+        title="Test ZIM",
+        description="A test ZIM",
+        aliases_file=build_data["aliases_file"],
+    )
+
+    reader = Archive(build_data["fpath"])
+    for path in ("A/Accueil", "image"):
+        assert not reader.get_entry_by_path(path).is_redirect
+        assert bytes(reader.get_item(path).content) == png_image.read_bytes()
+
+
 def test_make_zim_file_fail_nobuildir(build_data: dict[str, Any]):
     # ensure we fail on missing build dir
     with pytest.raises(IOError):

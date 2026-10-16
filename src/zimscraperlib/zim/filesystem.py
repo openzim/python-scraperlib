@@ -9,6 +9,7 @@ make_zim_file behaves in a similar way to zimwriterfs and expects the same optio
 
 Also included:
 - Add redirect from a list of (source, destination, title) strings
+- Add alias from a list of (source, destination, title) strings
 
 Note: due to the lack of a cancel() method in the libzim itself, it is not possible
 to stop a zim creation process. Should an error occur in your code, a Zim file
@@ -114,6 +115,33 @@ def add_redirects_to_zim(
                 zim_file.add_redirect(path, target_url, title)
 
 
+def add_aliases_to_zim(
+    zim_file: Creator,
+    aliases: Sequence[tuple[str, str, str | None]] | None = None,
+    aliases_file: pathlib.Path | None = None,
+):
+    """add aliases from list of source/target or aliases file to zim"""
+    if aliases is None:
+        aliases = []
+    for source_url, target_url, title in aliases:
+        zim_file.add_alias(source_url, target_url, title)
+
+    if aliases_file:
+        with open(aliases_file) as fh:
+            for linenumber, line in enumerate(fh.readlines()):
+                match = re.match(r"^(.)\t(.+)\t(.*)\t(.+)$", line)
+                if not match:
+                    logger.warning(
+                        f"Aliases file: line {linenumber} does not match expected "
+                        f"regexp: {line}"
+                    )
+                    continue
+                namespace, path, title, target_url = match.groups()
+                if namespace.strip():
+                    path = f"{namespace.strip()}/{path}"
+                zim_file.add_alias(path, target_url, title)
+
+
 def make_zim_file(
     *,
     build_dir: pathlib.Path,
@@ -135,6 +163,8 @@ def make_zim_file(
     without_fulltext_index: bool = False,  # noqa: ARG001
     redirects: Sequence[tuple[str, str, str]] | None = None,
     redirects_file: pathlib.Path | None = None,
+    aliases: Sequence[tuple[str, str, str]] | None = None,
+    aliases_file: pathlib.Path | None = None,
     rewrite_links: bool = True,  # noqa: ARG001
     workaround_nocancel: bool = True,
     ignore_duplicates: bool = True,
@@ -146,6 +176,7 @@ def make_zim_file(
     illustration: relative path to illustration file in build_dir
     tags: list of str tags to add to meta
     redirects: list of (src, dst, title) tuple to create redirects from
+    aliases: list of (src, dst, title) tuple to create aliases from
     rewrite_links controls whether to rewrite HTML/CSS content
       -> add namespaces to relative links
     workaround_nocancel: disable workaround to prevent ZIM creation on error"""
@@ -207,6 +238,10 @@ def make_zim_file(
             add_redirects_to_zim(
                 zim_file, redirects=redirects, redirects_file=redirects_file
             )
+
+        if aliases or aliases_file:
+            logger.debug("Creating aliases")
+            add_aliases_to_zim(zim_file, aliases=aliases, aliases_file=aliases_file)
 
     # prevents .finish() which would create an incomplete .zim file
     # this would leave a .zim.tmp folder behind.
