@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Keep URL-encoded `#` characters of the path or querystring when rewriting document URIs, instead of dropping everything after them (#341)
 - Rewrite the `poster` attribute (e.g. of `<video>`) when rewriting HTML, like `src` and `href` (#339)
 - Do not collapse consecutive slashes `//` into a single `/` when normalizing URLs into ZIM paths, in both Python and JS rewriting (#340)
+- `Creator.finish()` no longer silently discards errors raised by libzim while finalizing the ZIM, so a failure during finalization is no longer reported as a successful run (openzim/warc2zim#462)
 
 ## [5.4.1] - 2026-07-31
 
