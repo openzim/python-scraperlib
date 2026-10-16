@@ -11,12 +11,14 @@ import requests
 import requests.structures
 from yt_dlp.utils import DownloadError as YtDlpDownloadError
 
-from zimscraperlib.constants import DEFAULT_WEB_REQUESTS_TIMEOUT
+from zimscraperlib.constants import DEFAULT_USER_AGENT, DEFAULT_WEB_REQUESTS_TIMEOUT
 from zimscraperlib.download import (
     BestMp4,
     BestWebm,
     DownloadError,
     YoutubeDownloader,
+    has_user_agent_header,
+    is_wikimedia_upload_url,
     save_large_file,
     stream_file,
 )
@@ -114,6 +116,98 @@ def test_first_block_download_custom_session(mocker: Mock, valid_http_url: str):
         stream=True,
         proxies=None,
         headers=None,
+        timeout=DEFAULT_WEB_REQUESTS_TIMEOUT,
+    )
+    requests.Session.assert_not_called()  # pyright: ignore[reportAttributeAccessIssue, reportUnknownMemberType]
+
+
+@pytest.mark.parametrize(
+    "url,expected",
+    [
+        ("https://upload.wikimedia.org/wikipedia/commons/4/4a/Commons-logo.svg", True),
+        ("http://upload.wikimedia.org/wikipedia/commons/a/b.png", True),
+        ("https://UPLOAD.WIKIMEDIA.ORG/wikipedia/commons/a/b.png", True),
+        ("https://commons.wikimedia.org/wiki/File:Commons-logo.svg", False),
+        ("https://wikimedia.org/", False),
+        ("https://example.com/favicon.ico", False),
+        ("not-an-url", False),
+    ],
+)
+def test_is_wikimedia_upload_url(url: str, *, expected: bool):
+    assert is_wikimedia_upload_url(url) is expected
+
+
+@pytest.mark.parametrize(
+    "headers,expected",
+    [
+        (None, False),
+        ({}, False),
+        ({"Accept": "image/png"}, False),
+        ({"User-Agent": "zimscraperlib-test"}, True),
+        ({"user-agent": "zimscraperlib-test"}, True),
+    ],
+)
+def test_has_user_agent_header(headers: dict[str, str] | None, *, expected: bool):
+    assert has_user_agent_header(headers) is expected
+
+
+@pytest.mark.parametrize(
+    "headers",
+    [None, {}, {"Accept": "image/png"}],
+)
+def test_wikimedia_upload_default_user_agent(
+    mocker: Mock, headers: dict[str, str] | None
+):
+    url = "https://upload.wikimedia.org/wikipedia/commons/4/4a/Commons-logo.svg"
+    byte_stream = io.BytesIO()
+    custom_session = mocker.Mock(spec=requests.Session)
+
+    expected_response = requests.Response()
+    expected_response.status_code = 200
+    expected_response.raw = io.BytesIO(b"Whatever\n")
+    custom_session.get.return_value = expected_response
+
+    mocker.patch("requests.Session")
+    stream_file(
+        url=url,
+        byte_stream=byte_stream,
+        headers=headers,
+        only_first_block=True,
+        session=custom_session,
+    )
+    custom_session.get.assert_called_once_with(
+        url,
+        stream=True,
+        proxies=None,
+        headers={**(headers or {}), "User-Agent": DEFAULT_USER_AGENT},
+        timeout=DEFAULT_WEB_REQUESTS_TIMEOUT,
+    )
+    requests.Session.assert_not_called()  # pyright: ignore[reportAttributeAccessIssue, reportUnknownMemberType]
+
+
+def test_wikimedia_upload_custom_user_agent(mocker: Mock):
+    url = "https://upload.wikimedia.org/wikipedia/commons/4/4a/Commons-logo.svg"
+    byte_stream = io.BytesIO()
+    custom_session = mocker.Mock(spec=requests.Session)
+
+    expected_response = requests.Response()
+    expected_response.status_code = 200
+    expected_response.raw = io.BytesIO(b"Whatever\n")
+    custom_session.get.return_value = expected_response
+
+    mocker.patch("requests.Session")
+    stream_file(
+        url=url,
+        byte_stream=byte_stream,
+        headers={"User-Agent": "myscraper/1.0 (me@example.org)"},
+        only_first_block=True,
+        session=custom_session,
+    )
+    custom_session.get.assert_called_once_with(
+        url,
+        stream=True,
+        proxies=None,
+        headers={"User-Agent": "myscraper/1.0 (me@example.org)"},
         timeout=DEFAULT_WEB_REQUESTS_TIMEOUT,
     )
     requests.Session.assert_not_called()  # pyright: ignore[reportAttributeAccessIssue, reportUnknownMemberType]

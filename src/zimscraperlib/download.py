@@ -2,6 +2,7 @@ import pathlib
 import time
 from concurrent.futures import Future, ThreadPoolExecutor
 from typing import Any, ClassVar
+from urllib.parse import urlparse
 
 import requests
 import requests.adapters
@@ -10,7 +11,11 @@ import urllib3.util
 import yt_dlp as youtube_dl  # pyright: ignore[reportMissingTypeStubs]
 
 from zimscraperlib import logger
-from zimscraperlib.constants import DEFAULT_WEB_REQUESTS_TIMEOUT
+from zimscraperlib.constants import (
+    DEFAULT_USER_AGENT,
+    DEFAULT_WEB_REQUESTS_TIMEOUT,
+    WIKIMEDIA_UPLOAD_HOST,
+)
 from zimscraperlib.typing import SupportsSeekableWrite, SupportsWrite
 
 
@@ -226,6 +231,16 @@ def get_session(max_retries: int | None = 5) -> requests.Session:
     return session
 
 
+def is_wikimedia_upload_url(url: str) -> bool:
+    """Whether the URL points to a file hosted on Wikimedia upload servers"""
+    return (urlparse(url).hostname or "").lower() == WIKIMEDIA_UPLOAD_HOST
+
+
+def has_user_agent_header(headers: dict[str, str] | None) -> bool:
+    """Whether a User-Agent header is already set, whatever its casing"""
+    return any(key.lower() == "user-agent" for key in (headers or {}))
+
+
 def stream_file(  # noqa: PLR0917
     url: str,
     fpath: pathlib.Path | None = None,
@@ -258,6 +273,10 @@ def stream_file(  # noqa: PLR0917
 
     if not session:
         session = get_session(max_retries)
+
+    if is_wikimedia_upload_url(url) and not has_user_agent_header(headers):
+        headers = {**(headers or {}), "User-Agent": DEFAULT_USER_AGENT}
+
     resp = session.get(
         url,
         stream=True,

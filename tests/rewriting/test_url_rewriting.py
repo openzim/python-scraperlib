@@ -1,3 +1,5 @@
+from urllib.parse import unquote, urlsplit
+
 import pytest
 
 from zimscraperlib.rewriting.url_rewriting import (
@@ -47,16 +49,18 @@ class TestNormalize:
             ("http://example.com/#anchor1", "example.com/"),
             (
                 "http://example.com/some/path/http://example.com//some/path",
-                "example.com/some/path/http:/example.com/some/path",
+                "example.com/some/path/http://example.com//some/path",
             ),
             (
                 "http://example.com/some/pa?th/http://example.com//some/path",
-                "example.com/some/pa?th/http:/example.com/some/path",
+                "example.com/some/pa?th/http://example.com//some/path",
             ),
             (
                 "http://example.com/so?me/pa?th/http://example.com//some/path",
-                "example.com/so?me/pa?th/http:/example.com/some/path",
+                "example.com/so?me/pa?th/http://example.com//some/path",
             ),
+            ("http://example.com/a///b", "example.com/a///b"),
+            ("http://example.com/a//b?c=d//e", "example.com/a//b?c=d//e"),
             ("http://example.com/resource?", "example.com/resource"),
             ("http://example.com/resource#", "example.com/resource"),
             ("http://user@example.com/resource", "example.com/resource"),
@@ -585,6 +589,121 @@ class TestArticleUrlRewriter:
                 original_content_url, base_href=None, rewrite_all_url=rewrite_all_url
             )
             == expected_rewrite_result
+        )
+
+    @pytest.mark.parametrize(
+        "article_url, original_content_url, expected_rewrite_result",
+        [
+            (
+                "https://example.com/index.html",
+                "https://example.com/a///b",
+                RewriteResult(
+                    "https://example.com/a///b",
+                    "a///b",
+                    ZimPath("example.com/a///b"),
+                ),
+            ),
+            (
+                "https://example.com/index.html",
+                "https://example.com/p?q=x//y",
+                RewriteResult(
+                    "https://example.com/p?q=x//y",
+                    "p%3Fq=x//y",
+                    ZimPath("example.com/p?q=x//y"),
+                ),
+            ),
+            (
+                "https://example.com/index.html",
+                "https://example.com/a//b/",
+                RewriteResult(
+                    "https://example.com/a//b/",
+                    "a//b/",
+                    ZimPath("example.com/a//b/"),
+                ),
+            ),
+            (
+                "https://example.com/x//y/page.html",
+                "https://example.com/x//y/other.html",
+                RewriteResult(
+                    "https://example.com/x//y/other.html",
+                    "other.html",
+                    ZimPath("example.com/x//y/other.html"),
+                ),
+            ),
+            (
+                "https://example.com/x//y/page.html",
+                "https://example.com/x//z.html",
+                RewriteResult(
+                    "https://example.com/x//z.html",
+                    "../z.html",
+                    ZimPath("example.com/x//z.html"),
+                ),
+            ),
+            (
+                "https://example.com/x//y/page.html",
+                "/a.html",
+                RewriteResult(
+                    "https://example.com/a.html",
+                    "../../../a.html",
+                    ZimPath("example.com/a.html"),
+                ),
+            ),
+        ],
+    )
+    def test_relative_url_keeps_consecutive_slashes(
+        self,
+        article_url: str,
+        original_content_url: str,
+        expected_rewrite_result: RewriteResult,
+    ):
+        """The link must point to the ZIM path, consecutive slashes included"""
+        rewriter = ArticleUrlRewriter(article_url=HttpUrl(article_url))
+        assert (
+            rewriter(original_content_url, base_href=None, rewrite_all_url=True)
+            == expected_rewrite_result
+        )
+
+    @pytest.mark.parametrize(
+        "article_url, original_content_url, expected_rewritten_url",
+        [
+            # leading empty segments must not make the link absolute (`/b`) or
+            # scheme-relative (`//b`)
+            ("https://example.com/index.html", "https://example.com//b", ".//b"),
+            ("https://example.com/index.html", "https://example.com///b", ".///b"),
+            # empty segment right after the shared directory
+            ("https://example.com/a/index.html", "https://example.com/a//b", ".//b"),
+            (
+                "https://example.com/a/b/index.html",
+                "https://example.com//c",
+                "../..//c",
+            ),
+            ("https://example.com/index.html", "https://example.com/a///b", "a///b"),
+            ("https://example.com/index.html", "https://example.com/p?q=x//y", None),
+            ("https://example.com/index.html", "https://example.com/a//b/", "a//b/"),
+            (
+                "https://example.com/x//y/page.html",
+                "https://example.com/x//z.html",
+                None,
+            ),
+            ("https://example.com/x//y/page.html", "https://example.com/a.html", None),
+        ],
+    )
+    def test_relative_url_round_trip(
+        self,
+        article_url: str,
+        original_content_url: str,
+        expected_rewritten_url: str | None,
+    ):
+        """Resolving the rewritten link from the article gives back its ZIM path"""
+        rewriter = ArticleUrlRewriter(article_url=HttpUrl(article_url))
+        result = rewriter(original_content_url, base_href=None, rewrite_all_url=True)
+        if expected_rewritten_url is not None:
+            assert result.rewriten_url == expected_rewritten_url
+        assert result.zim_path is not None
+        assert not result.rewriten_url.startswith("/")
+        assert (
+            unquote(_resolve_relative_reference(article_url, result.rewriten_url))
+            == result.zim_path.value
         )
 
     @pytest.mark.parametrize(
@@ -1144,3 +1263,30 @@ class TestZimPath:
     def test_zim_path_str(self):
         assert str(ZimPath("content/index.html")) == "ZimPath(content/index.html)"
         assert f"{ZimPath('content/index.html')}" == "ZimPath(content/index.html)"
+
+
+def _resolve_relative_reference(base_url: str, reference: str) -> str:
+    """Resolve a relative-path reference as browsers do (RFC 3986 section 5.2)
+
+    Unlike `urllib.parse.urljoin`, empty path segments are kept. Returns the host
+    and path of the resolved URL, i.e. the form of a ZIM path.
+    """
+    base = urlsplit(base_url)
+    path = base.path.rpartition("/")[0] + "/" + reference.partition("#")[0]
+    output: list[str] = []
+    while path:
+        if path.startswith(("../", "./")):
+            path = path.partition("/")[2]
+        elif path.startswith("/./") or path == "/.":
+            path = "/" + path[3:]
+        elif path.startswith("/../") or path == "/..":
+            path = "/" + path[4:]
+            if output:
+                output.pop()
+        elif path in (".", ".."):
+            path = ""
+        else:
+            end = path.find("/", 1)
+            segment, path = (path, "") if end == -1 else (path[:end], path[end:])
+            output.append(segment)
+    return f"{base.netloc}{''.join(output)}"

@@ -84,6 +84,23 @@ test('simpleContentNoScheme', (t) => {
   );
 });
 
+test('consecutiveSlashesAreKept', (t) => {
+  t.is(
+    urlRewriteFunction(
+      t.context.currentUrl,
+      t.context.originalHost,
+      t.context.originalScheme,
+      t.context.originalUrl,
+      t.context.prefix,
+      'https://www.example.com/a///b',
+      undefined,
+      undefined,
+      undefined,
+    ),
+    'http://library.kiwix.org/content/myzim_yyyy-mm/www.example.com/a///b',
+  );
+});
+
 test('simpleContentEmptyPath', (t) => {
   t.is(
     urlRewriteFunction(
@@ -1159,7 +1176,7 @@ test('doubleSlash1', (t) => {
       undefined,
       undefined,
     ),
-    'http://library.kiwix.org/content/myzim_yyyy-mm/example.com/some/path/http%3A/example.com/some/path',
+    'http://library.kiwix.org/content/myzim_yyyy-mm/example.com/some/path/http%3A//example.com//some/path',
   );
 });
 
@@ -1176,7 +1193,7 @@ test('doubleSlash2', (t) => {
       undefined,
       undefined,
     ),
-    'http://library.kiwix.org/content/myzim_yyyy-mm/example.com/some/pa%3Fth/http%3A/example.com/some/path',
+    'http://library.kiwix.org/content/myzim_yyyy-mm/example.com/some/pa%3Fth/http%3A//example.com//some/path',
   );
 });
 
@@ -1193,6 +1210,6 @@ test('doubleSlash3', (t) => {
       undefined,
       undefined,
     ),
-    'http://library.kiwix.org/content/myzim_yyyy-mm/example.com/so%3Fme/pa%3Fth/http%3A/example.com/some/path',
+    'http://library.kiwix.org/content/myzim_yyyy-mm/example.com/so%3Fme/pa%3Fth/http%3A//example.com//some/path',
   );
 });
