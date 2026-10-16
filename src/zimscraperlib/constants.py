@@ -9,6 +9,7 @@ SCRAPER = f"{NAME} {__version__}"
 VERSION = __version__
 CONTACT = "dev@openzim.org"
 DEFAULT_USER_AGENT = f"{NAME}/{__version__} ({CONTACT})"
+WIKIMEDIA_UPLOAD_HOST = "upload.wikimedia.org"
 
 UTF8 = "UTF-8"
 
