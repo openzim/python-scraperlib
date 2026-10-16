@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Index ePub documents for full-text search, with a new `get_epub_index_data` helper and automatic indexing of ePub items, like PDFs already are (#333)
 
+### Removed
+
+- **BREAKING** Remove deprecated `convert` parameter from `optimize_image` (use `dst_format` instead) (#292)
+
 ### Fixed
 
 - Carry a script's top-level `const`, `let` and `class` declarations across the wombat block, so other scripts on the page can still see them (#329)
