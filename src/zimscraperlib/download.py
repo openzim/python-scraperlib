@@ -1,5 +1,6 @@
 import pathlib
-import subprocess
+import random
+import time
 from concurrent.futures import Future, ThreadPoolExecutor
 from typing import Any, ClassVar
 from urllib.parse import urlparse
@@ -126,33 +127,105 @@ class BestMp4(YoutubeConfig):
     }
 
 
-def save_large_file(
-    url: str, fpath: pathlib.Path, retries: int = 5, user_agent: str | None = None
-) -> None:
-    """download a binary file from its URL, using wget
+HTTP_OK = 200
+RETRYABLE_HTTP_STATUSES = {429, 500, 502, 503, 504}
+CHUNK_SIZE = 1024 * 1024
+CONNECT_TIMEOUT_SECONDS = 30
+READ_TIMEOUT_SECONDS = 60
+BACKOFF_BASE_SECONDS = 2
+BACKOFF_MAX_SECONDS = 60
 
-    Arguments -
-        url:
+
+class DownloadError(Exception):
+    """Raised when a download fails and cannot be retried any further."""
+
+
+def save_large_file(
+    url: str,
+    fpath: pathlib.Path,
+    retries: int = 5,
+    user_agent: str | None = None,
+) -> None:
+    """Download a binary file from its URL, streaming the response with resume.
+
+    Retries on connection errors, timeouts, incomplete reads, and HTTP
+    429/500/502/503/504, resuming from the last byte written each time via a
+    `Range` request. `retries` is the number of consecutive attempts that may
+    fail *without making any progress* before giving up; an attempt that
+    writes at least one byte resets this counter.
     """
-    command = [
-        "/usr/bin/env",
-        "wget",
-        "-t",
-        f"{retries}",
-        "--retry-connrefused",
-        "--random-wait",
-        "--progress=dot:giga",
-        "-O",
-        str(fpath),
-        "-c",
-        url,
-    ]
-    if user_agent:
-        command += ["-U", user_agent]
-    subprocess.run(
-        command,
-        check=True,
-    )
+    headers = {"User-Agent": user_agent} if user_agent else {}
+    consecutive_failures = 0
+
+    with requests.Session() as session:
+        while True:
+            resume_from = fpath.stat().st_size if fpath.exists() else 0
+            request_headers = dict(headers)
+            if resume_from:
+                request_headers["Range"] = f"bytes={resume_from}-"
+
+            bytes_written = 0
+            error: Exception | None = None
+            try:
+                with session.get(
+                    url,
+                    headers=request_headers,
+                    stream=True,
+                    timeout=(CONNECT_TIMEOUT_SECONDS, READ_TIMEOUT_SECONDS),
+                ) as response:
+                    if resume_from and response.status_code == HTTP_OK:
+                        logger.warning(
+                            f"{url} does not support resuming downloads, "
+                            "restarting from scratch"
+                        )
+                        fpath.unlink(missing_ok=True)
+                        resume_from = 0
+
+                    response.raise_for_status()
+
+                    mode = "ab" if resume_from else "wb"
+                    with fpath.open(mode) as fh:
+                        for chunk in response.iter_content(chunk_size=CHUNK_SIZE):
+                            if not chunk:
+                                continue
+                            fh.write(chunk)
+                            bytes_written += len(chunk)
+                return  # response body was fully consumed without error
+            except (
+                requests.ConnectionError,
+                requests.Timeout,
+                requests.exceptions.ChunkedEncodingError,
+            ) as exc:
+                error = exc
+            except requests.HTTPError as exc:
+                status = exc.response.status_code if exc.response is not None else None
+                if status not in RETRYABLE_HTTP_STATUSES:
+                    raise DownloadError(
+                        f"Download of {url} failed with non-retryable error"
+                    ) from exc
+                error = exc
+
+            if bytes_written:
+                consecutive_failures = 0
+            else:
+                consecutive_failures += 1
+
+            if consecutive_failures > retries:
+                raise DownloadError(
+                    f"Download of {url} failed after {retries} consecutive "
+                    "attempts without progress"
+                ) from error
+
+            wait = min(
+                BACKOFF_MAX_SECONDS,
+                BACKOFF_BASE_SECONDS * 2 ** (consecutive_failures - 1),
+            )
+            wait += random.uniform(0, wait * 0.1)  # noqa: S311
+            logger.warning(
+                f"Download of {url} interrupted ({error}), retrying in "
+                f"{wait:.1f}s from byte {resume_from}"
+            )
+            time.sleep(wait)
 
 
 def get_retry_adapter(

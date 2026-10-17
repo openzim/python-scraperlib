@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Make `save_large_file` robust against transient HTTP and host/connection errors by streaming with range-based resume and resetting retries on progress (#348)
 - Carry a script's top-level `const`, `let` and `class` declarations across the wombat block, so other scripts on the page can still see them (#329)
 - Keep a rewritten `<script>`'s original `src` in `__wb_orig_src`, so wombat can return it from `getAttribute("src")` and bundlers that identify chunks by it (Next.js/Turbopack, Vite) still work (openzim/warc2zim#473)
 - Keep URL-encoded `#` characters of the path or querystring when rewriting document URIs, instead of dropping everything after them (#341)
