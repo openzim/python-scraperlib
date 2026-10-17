@@ -12,6 +12,7 @@ from types import NoneType
 from typing import Any, NamedTuple
 from unittest.mock import call, patch
 
+import libzim.writer  # pyright: ignore[reportMissingModuleSource]
 import pytest
 from libzim.writer import Compression  # pyright: ignore[reportMissingModuleSource]
 
@@ -266,6 +267,23 @@ def test_cannot_finish(tmp_path: pathlib.Path):
     creator = Creator(tmp_path / "test.zim", "")
     creator.can_finish = False
     creator.finish()
+
+
+def test_finish_error_propagates(tmp_path: pathlib.Path):
+    fpath = tmp_path / "test.zim"
+    creator = Creator(fpath, "welcome").config_dev_metadata()
+    creator.start()
+    creator.add_item(StaticItem(path="welcome", content="hello"))
+
+    with (
+        patch.object(
+            libzim.writer.Creator,
+            "__exit__",
+            side_effect=RuntimeError("boom"),
+        ),
+        pytest.raises(RuntimeError, match="boom"),
+    ):
+        creator.finish()
 
 
 def test_sourcefile_removal(tmp_path: pathlib.Path, html_file: pathlib.Path):

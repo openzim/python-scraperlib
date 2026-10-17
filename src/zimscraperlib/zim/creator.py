@@ -117,6 +117,7 @@ class Creator(libzim.writer.Creator):
         self.__indexing_configured = False
         self.__indexing_value: bool = False
         self.can_finish = True
+        self._finish_called = False
 
         self.set_mainpath(main_path)
 
@@ -475,10 +476,12 @@ class Creator(libzim.writer.Creator):
         """Triggers finalization of ZIM creation and create final ZIM file."""
         if not getattr(self, "can_finish", False):
             return
-        try:
-            super().__exit__(None, None, None)
-        except RuntimeError:
-            pass
+        # finishing an already-finished creator makes libzim raise a RuntimeError;
+        # make this a no-op instead of calling into libzim again
+        if getattr(self, "_finish_called", False):
+            return
+        self._finish_called = True
+        super().__exit__(None, None, None)
 
     def __enter__(self):
         self.start()
