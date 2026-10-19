@@ -212,3 +212,23 @@ fuzzyRules:
         fuzzified_url: iranwire.com/questions/detail/1723
       - raw_url: iranwire.com/questions/detail/1725?foo=bar&_=1721804454220
         fuzzified_url: iranwire.com/questions/detail/1725
+  - name: lesbases_anct_gouv_fr
+    pattern: ((?:www\.)?lesbases\.anct\.gouv\.fr\/[^?]*(?:\?[^#]*?)?)_rsc=[^&]+(.*)
+    replace: \1_rsc=1\2
+    tests:
+      - raw_url: lesbases.anct.gouv.fr/mentions-legales?_rsc=ut8ee
+        fuzzified_url: lesbases.anct.gouv.fr/mentions-legales?_rsc=1
+      - raw_url: www.lesbases.anct.gouv.fr/mentions-legales?_rsc=ut8ee
+        fuzzified_url: www.lesbases.anct.gouv.fr/mentions-legales?_rsc=1
+      - raw_url: lesbases.anct.gouv.fr/?_rsc=ut8ee
+        fuzzified_url: lesbases.anct.gouv.fr/?_rsc=1
+      - raw_url: lesbases.anct.gouv.fr/cgu?foo=bar&_rsc=ut8ee
+        fuzzified_url: lesbases.anct.gouv.fr/cgu?foo=bar&_rsc=1
+      - raw_url: lesbases.anct.gouv.fr/cgu?_rsc=ut8ee&foo=bar
+        fuzzified_url: lesbases.anct.gouv.fr/cgu?_rsc=1&foo=bar
+      - raw_url: lesbases.anct.gouv.fr/mentions-legales
+        unchanged: true
+      - raw_url: other.site.fr/mentions-legales?_rsc=ut8ee
+        unchanged: true
+
+
