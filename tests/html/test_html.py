@@ -98,6 +98,14 @@ def test_find_language(tmp_path: pathlib.Path, html_page: str):
             ),
             "en-UK",
         ),
+        (
+            (
+                "<html><head><meta charset='utf-8'>"
+                "<meta http-equiv='content-language' content='en-UK'>"
+                "</head><body></body></html>"
+            ),
+            "en-UK",
+        ),
     ],
 )
 def test_find_language_order(html_string: str, expected_language: str):
