@@ -101,6 +101,29 @@ test('consecutiveSlashesAreKept', (t) => {
   );
 });
 
+test('relativeLinkOnPageWithConsecutiveSlashesKeepsThem', (t) => {
+  // #346: a relative link must be resolved against the page's own URL the way a
+  // browser would, keeping consecutive slashes in that URL instead of collapsing
+  // them (uri-js's URI.resolve, unlike Python's urllib.parse.urljoin, already does
+  // this correctly)
+  const originalUrl = 'https://www.example.com/path1//resource1.html';
+  const currentUrl = t.context.prefix + 'www.example.com/path1//resource1.html';
+  t.is(
+    urlRewriteFunction(
+      currentUrl,
+      t.context.originalHost,
+      t.context.originalScheme,
+      originalUrl,
+      t.context.prefix,
+      'other.html',
+      undefined,
+      undefined,
+      undefined,
+    ),
+    t.context.prefix + 'www.example.com/path1//other.html',
+  );
+});
+
 test('simpleContentEmptyPath', (t) => {
   t.is(
     urlRewriteFunction(

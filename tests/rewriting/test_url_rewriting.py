@@ -648,6 +648,24 @@ class TestArticleUrlRewriter:
                     ZimPath("example.com/a.html"),
                 ),
             ),
+            (
+                "https://example.com/x//y/page.html",
+                "other.html",
+                RewriteResult(
+                    "https://example.com/x//y/other.html",
+                    "other.html",
+                    ZimPath("example.com/x//y/other.html"),
+                ),
+            ),
+            (
+                "https://example.com/x//y/page.html",
+                "../z.html",
+                RewriteResult(
+                    "https://example.com/x//z.html",
+                    "../z.html",
+                    ZimPath("example.com/x//z.html"),
+                ),
+            ),
         ],
     )
     def test_relative_url_keeps_consecutive_slashes(
@@ -1074,6 +1092,17 @@ class TestArticleUrlRewriter:
                     ZimPath("www.example.com/foo.html"),
                 ),
                 id="base_on_absolute_url",
+            ),
+            pytest.param(
+                "foo.html",
+                "kiwix.org/a/a//bar/foo.html",
+                "../a//bar/",
+                RewriteResult(
+                    "https://kiwix.org/a/a//bar/foo.html",
+                    "../a//bar/foo.html",
+                    ZimPath("kiwix.org/a/a//bar/foo.html"),
+                ),
+                id="base_with_consecutive_slashes",
             ),
         ],
     )
