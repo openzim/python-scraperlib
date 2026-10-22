@@ -18,6 +18,20 @@ export function applyFuzzyRules(path) {
   return path;
 }
 
+export function escapeDotSegments(path) {
+  // Escape '.' and '..' path segments so they are not resolved as navigation.
+  // Per RFC 3986, a '.' or '..' path segment is a dot-segment which any URI consumer
+  // removes/resolves while normalizing a reference. A ZIM path must keep such a
+  // segment as a literal entry name instead (e.g. one folded in from a querystring),
+  // so it is prefixed with a '_', which is not itself special in a ZIM path.
+  // Segments which only look like a dot-segment (e.g. 'foo..', '..foo', '...') are
+  // not dot-segments and are left untouched.
+  return path
+    .split('/')
+    .map((part) => (part === '.' || part === '..' ? '_' + part : part))
+    .join('/');
+}
+
 export function hasAlreadyBeenRewritten(
   original_absolute_url,
   orig_url,
@@ -186,10 +200,14 @@ export function urlRewriteFunction(
   // apply the fuzzy rules to the ZIM path
   const fuzzifiedPath = applyFuzzyRules(zimPath);
 
+  // escape '.' and '..' path segments so they are not resolved as navigation by the
+  // reader once this ZIM path is turned into a URI
+  const escapedPath = escapeDotSegments(fuzzifiedPath);
+
   // Reencode everything but '/' (we decode it afterwards for simplicity)
   const finalUrl =
     prefix +
-    encodeURIComponent(fuzzifiedPath)
+    encodeURIComponent(escapedPath)
       .replaceAll('%2F', '/')
       .replaceAll('%3D', '=')
       .replaceAll('%2C', ',');
@@ -310,6 +328,7 @@ export function getWombatInfo(
 
 export default {
   applyFuzzyRules: applyFuzzyRules,
+  escapeDotSegments: escapeDotSegments,
   urlRewriteFunction: urlRewriteFunction,
   getWombatInfo: getWombatInfo,
 };
