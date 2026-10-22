@@ -1,4 +1,5 @@
 import pathlib
+import zipfile
 
 import pytest
 import requests
@@ -240,3 +241,67 @@ def undecodable_byte_stream() -> bytes:
         b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
         b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
     )
+
+
+@pytest.fixture(scope="session")
+def epub_file(tmpdir_factory: pytest.TempdirFactory) -> pathlib.Path:
+    """Minimal EPUB 3 with title/author metadata and two chapters"""
+    dst = pathlib.Path(tmpdir_factory.mktemp("data") / "minimal.epub")
+    # a missing image and a CSS selector MuPDF does not support, as found in
+    # real-world ePubs, make MuPDF warn without affecting the text
+    chapter = (
+        '<?xml version="1.0" encoding="utf-8"?>'
+        '<html xmlns="http://www.w3.org/1999/xhtml"><head><title>{title}</title>'
+        '<style>img[src*="wiki"] {{ border: 0 }}</style>'
+        "</head><body><h1>{title}</h1><p>{text}</p>"
+        '<img src="images/missing.png" alt=""/></body></html>'
+    )
+    with zipfile.ZipFile(dst, "w") as epub:
+        # mimetype must be the first entry, uncompressed
+        epub.writestr("mimetype", "application/epub+zip", zipfile.ZIP_STORED)
+        epub.writestr(
+            "META-INF/container.xml",
+            '<?xml version="1.0"?>'
+            '<container version="1.0" '
+            'xmlns="urn:oasis:names:tc:opendocument:xmlns:container">'
+            '<rootfiles><rootfile full-path="OEBPS/content.opf" '
+            'media-type="application/oebps-package+xml"/></rootfiles></container>',
+        )
+        epub.writestr(
+            "OEBPS/content.opf",
+            '<?xml version="1.0" encoding="utf-8"?>'
+            '<package xmlns="http://www.idpf.org/2007/opf" version="3.0" '
+            'unique-identifier="id">'
+            '<metadata xmlns:dc="http://purl.org/dc/elements/1.1/">'
+            '<dc:identifier id="id">urn:uuid:7c2b1a52-1d4e-4b0e-9c55-3f7e1d2a9b10'
+            "</dc:identifier>"
+            "<dc:title>Lighthouse Almanac</dc:title>"
+            "<dc:creator>Ada Quillfeather</dc:creator>"
+            "<dc:language>en</dc:language>"
+            '<meta property="dcterms:modified">2026-01-01T00:00:00Z</meta>'
+            "</metadata><manifest>"
+            '<item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" '
+            'properties="nav"/>'
+            '<item id="c1" href="c1.xhtml" media-type="application/xhtml+xml"/>'
+            '<item id="c2" href="c2.xhtml" media-type="application/xhtml+xml"/>'
+            '</manifest><spine><itemref idref="c1"/><itemref idref="c2"/></spine>'
+            "</package>",
+        )
+        epub.writestr(
+            "OEBPS/nav.xhtml",
+            '<?xml version="1.0" encoding="utf-8"?>'
+            '<html xmlns="http://www.w3.org/1999/xhtml" '
+            'xmlns:epub="http://www.idpf.org/2007/ops"><head><title>Contents</title>'
+            '</head><body><nav epub:type="toc"><ol>'
+            '<li><a href="c1.xhtml">Storm</a></li>'
+            '<li><a href="c2.xhtml">Harbour</a></li></ol></nav></body></html>',
+        )
+        epub.writestr(
+            "OEBPS/c1.xhtml",
+            chapter.format(title="Storm", text="The keeper trimmed the wick."),
+        )
+        epub.writestr(
+            "OEBPS/c2.xhtml",
+            chapter.format(title="Harbour", text="Gulls circled the breakwater."),
+        )
+    return dst

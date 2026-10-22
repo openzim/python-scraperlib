@@ -2,19 +2,24 @@ import concurrent.futures
 import io
 import pathlib
 import re
+from collections.abc import Iterator
 from typing import ClassVar
-from unittest.mock import Mock
+from unittest.mock import MagicMock, Mock
 
 import pytest
 import requests
 import requests.structures
-from yt_dlp.utils import DownloadError
+from yt_dlp.utils import DownloadError as YtDlpDownloadError
 
-from zimscraperlib.constants import DEFAULT_WEB_REQUESTS_TIMEOUT
+from zimscraperlib.constants import DEFAULT_USER_AGENT, DEFAULT_WEB_REQUESTS_TIMEOUT
 from zimscraperlib.download import (
     BestMp4,
     BestWebm,
+    DownloadError,
     YoutubeDownloader,
+    _format_size,  # pyright: ignore[reportPrivateUsage]
+    has_user_agent_header,
+    is_wikimedia_upload_url,
     save_large_file,
     stream_file,
 )
@@ -112,6 +117,98 @@ def test_first_block_download_custom_session(mocker: Mock, valid_http_url: str):
         stream=True,
         proxies=None,
         headers=None,
+        timeout=DEFAULT_WEB_REQUESTS_TIMEOUT,
+    )
+    requests.Session.assert_not_called()  # pyright: ignore[reportAttributeAccessIssue, reportUnknownMemberType]
+
+
+@pytest.mark.parametrize(
+    "url,expected",
+    [
+        ("https://upload.wikimedia.org/wikipedia/commons/4/4a/Commons-logo.svg", True),
+        ("http://upload.wikimedia.org/wikipedia/commons/a/b.png", True),
+        ("https://UPLOAD.WIKIMEDIA.ORG/wikipedia/commons/a/b.png", True),
+        ("https://commons.wikimedia.org/wiki/File:Commons-logo.svg", False),
+        ("https://wikimedia.org/", False),
+        ("https://example.com/favicon.ico", False),
+        ("not-an-url", False),
+    ],
+)
+def test_is_wikimedia_upload_url(url: str, *, expected: bool):
+    assert is_wikimedia_upload_url(url) is expected
+
+
+@pytest.mark.parametrize(
+    "headers,expected",
+    [
+        (None, False),
+        ({}, False),
+        ({"Accept": "image/png"}, False),
+        ({"User-Agent": "zimscraperlib-test"}, True),
+        ({"user-agent": "zimscraperlib-test"}, True),
+    ],
+)
+def test_has_user_agent_header(headers: dict[str, str] | None, *, expected: bool):
+    assert has_user_agent_header(headers) is expected
+
+
+@pytest.mark.parametrize(
+    "headers",
+    [None, {}, {"Accept": "image/png"}],
+)
+def test_wikimedia_upload_default_user_agent(
+    mocker: Mock, headers: dict[str, str] | None
+):
+    url = "https://upload.wikimedia.org/wikipedia/commons/4/4a/Commons-logo.svg"
+    byte_stream = io.BytesIO()
+    custom_session = mocker.Mock(spec=requests.Session)
+
+    expected_response = requests.Response()
+    expected_response.status_code = 200
+    expected_response.raw = io.BytesIO(b"Whatever\n")
+    custom_session.get.return_value = expected_response
+
+    mocker.patch("requests.Session")
+    stream_file(
+        url=url,
+        byte_stream=byte_stream,
+        headers=headers,
+        only_first_block=True,
+        session=custom_session,
+    )
+    custom_session.get.assert_called_once_with(
+        url,
+        stream=True,
+        proxies=None,
+        headers={**(headers or {}), "User-Agent": DEFAULT_USER_AGENT},
+        timeout=DEFAULT_WEB_REQUESTS_TIMEOUT,
+    )
+    requests.Session.assert_not_called()  # pyright: ignore[reportAttributeAccessIssue, reportUnknownMemberType]
+
+
+def test_wikimedia_upload_custom_user_agent(mocker: Mock):
+    url = "https://upload.wikimedia.org/wikipedia/commons/4/4a/Commons-logo.svg"
+    byte_stream = io.BytesIO()
+    custom_session = mocker.Mock(spec=requests.Session)
+
+    expected_response = requests.Response()
+    expected_response.status_code = 200
+    expected_response.raw = io.BytesIO(b"Whatever\n")
+    custom_session.get.return_value = expected_response
+
+    mocker.patch("requests.Session")
+    stream_file(
+        url=url,
+        byte_stream=byte_stream,
+        headers={"User-Agent": "myscraper/1.0 (me@example.org)"},
+        only_first_block=True,
+        session=custom_session,
+    )
+    custom_session.get.assert_called_once_with(
+        url,
+        stream=True,
+        proxies=None,
+        headers={"User-Agent": "myscraper/1.0 (me@example.org)"},
         timeout=DEFAULT_WEB_REQUESTS_TIMEOUT,
     )
     requests.Session.assert_not_called()  # pyright: ignore[reportAttributeAccessIssue, reportUnknownMemberType]
@@ -217,6 +314,249 @@ def test_large_download_https_custom_ua(tmp_path: pathlib.Path, valid_https_url:
     assert_downloaded_file(valid_https_url, dest_file)
 
 
+class FakeResponse:
+    """Minimal stand-in for requests.Response, usable as a context manager."""
+
+    def __init__(
+        self,
+        status_code: int,
+        chunks: list[bytes] | None = None,
+        raise_while_streaming: Exception | None = None,
+        headers: dict[str, str] | None = None,
+    ) -> None:
+        self.status_code = status_code
+        self._chunks = chunks or []
+        self._raise_while_streaming = raise_while_streaming
+        self.headers = headers or {}
+
+    def __enter__(self) -> FakeResponse:
+        return self
+
+    def __exit__(self, *_args: object) -> None:
+        return None
+
+    def raise_for_status(self) -> None:
+        if self.status_code >= 400:
+            response = requests.Response()
+            response.status_code = self.status_code
+            raise requests.HTTPError(response=response)
+
+    def iter_content(self, _chunk_size: int) -> Iterator[bytes]:
+        yield from self._chunks
+        if self._raise_while_streaming:
+            raise self._raise_while_streaming
+
+
+def test_save_large_file_single_attempt(
+    tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A clean download writes all chunks in one attempt, without a Range header."""
+    get_mock = MagicMock(return_value=FakeResponse(200, [b"hello ", b"", b"world"]))
+    monkeypatch.setattr(requests.Session, "get", get_mock)
+
+    fpath = tmp_path / "out.zim"
+    save_large_file("https://example.com/file.zim", fpath, user_agent="some-agent")
+
+    assert fpath.read_bytes() == b"hello world"
+    _args, kwargs = get_mock.call_args
+    assert kwargs["headers"] == {"User-Agent": "some-agent"}
+    assert "Range" not in kwargs["headers"]
+
+
+def test_save_large_file_without_user_agent(
+    tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    get_mock = MagicMock(return_value=FakeResponse(200, [b"data"]))
+    monkeypatch.setattr(requests.Session, "get", get_mock)
+
+    fpath = tmp_path / "out.zim"
+    save_large_file("https://example.com/file.zim", fpath)
+
+    _args, kwargs = get_mock.call_args
+    assert "User-Agent" not in kwargs["headers"]
+
+
+def test_save_large_file_resumes_after_connection_error(
+    tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A dropped connection resumes with a Range header for the missing bytes."""
+    responses = [
+        FakeResponse(
+            200,
+            [b"hello "],
+            raise_while_streaming=requests.ConnectionError("dropped"),
+        ),
+        FakeResponse(206, [b"world"]),
+    ]
+    get_mock = MagicMock(side_effect=responses)
+    monkeypatch.setattr(requests.Session, "get", get_mock)
+    monkeypatch.setattr("zimscraperlib.download.time.sleep", MagicMock())
+
+    fpath = tmp_path / "out.zim"
+    save_large_file("https://example.com/file.zim", fpath)
+
+    assert fpath.read_bytes() == b"hello world"
+    assert get_mock.call_count == 2
+    assert get_mock.call_args_list[1].kwargs["headers"]["Range"] == "bytes=6-"
+
+
+def test_save_large_file_retries_on_retryable_http_status(
+    tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    get_mock = MagicMock(side_effect=[FakeResponse(503), FakeResponse(200, [b"ok"])])
+    monkeypatch.setattr(requests.Session, "get", get_mock)
+    monkeypatch.setattr("zimscraperlib.download.time.sleep", MagicMock())
+
+    fpath = tmp_path / "out.zim"
+    save_large_file("https://example.com/file.zim", fpath)
+
+    assert fpath.read_bytes() == b"ok"
+    assert get_mock.call_count == 2
+
+
+def test_save_large_file_restarts_when_server_ignores_range(
+    tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """If the server replies 200 (not 206) to a Range request, start over."""
+    fpath = tmp_path / "out.zim"
+    fpath.with_name("out.zim.part").write_bytes(b"stale-partial-data")
+
+    get_mock = MagicMock(return_value=FakeResponse(200, [b"fresh"]))
+    monkeypatch.setattr(requests.Session, "get", get_mock)
+
+    save_large_file("https://example.com/file.zim", fpath)
+
+    assert fpath.read_bytes() == b"fresh"
+    assert not fpath.with_name("out.zim.part").exists()
+    assert get_mock.call_args.kwargs["headers"]["Range"] == "bytes=18-"
+
+
+def test_save_large_file_does_not_retry_non_retryable_http_status(
+    tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    get_mock = MagicMock(return_value=FakeResponse(404))
+    monkeypatch.setattr(requests.Session, "get", get_mock)
+
+    fpath = tmp_path / "out.zim"
+    with pytest.raises(DownloadError):
+        save_large_file("https://example.com/file.zim", fpath)
+
+    assert get_mock.call_count == 1
+
+
+def test_save_large_file_gives_up_after_consecutive_failures_without_progress(
+    tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    get_mock = MagicMock(
+        side_effect=requests.ConnectionError("always fails before any byte")
+    )
+    monkeypatch.setattr(requests.Session, "get", get_mock)
+    monkeypatch.setattr("zimscraperlib.download.time.sleep", MagicMock())
+
+    fpath = tmp_path / "out.zim"
+    with pytest.raises(DownloadError):
+        save_large_file("https://example.com/file.zim", fpath, retries=2)
+
+    assert get_mock.call_count == 3
+
+
+def test_save_large_file_keeps_retrying_as_long_as_progress_is_made(
+    tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Every attempt but the last writes a byte before failing; progress keeps
+    resetting the failure counter, so more than `retries` attempts in a row are
+    allowed as long as each one makes progress."""
+    failing_responses = [
+        FakeResponse(
+            200 if index == 0 else 206,
+            [b"x"],
+            raise_while_streaming=requests.ConnectionError("dropped"),
+        )
+        for index in range(4)
+    ]
+    get_mock = MagicMock(side_effect=[*failing_responses, FakeResponse(206, [b"x"])])
+    monkeypatch.setattr(requests.Session, "get", get_mock)
+    monkeypatch.setattr("zimscraperlib.download.time.sleep", MagicMock())
+
+    fpath = tmp_path / "out.zim"
+    save_large_file("https://example.com/file.zim", fpath, retries=2)
+
+    assert fpath.read_bytes() == b"xxxxx"
+    assert get_mock.call_count == 5
+
+
+def test_save_large_file_leaves_no_part_file_on_success(
+    tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(
+        requests.Session, "get", MagicMock(return_value=FakeResponse(200, [b"data"]))
+    )
+
+    fpath = tmp_path / "out.zim"
+    save_large_file("https://example.com/file.zim", fpath)
+
+    assert fpath.read_bytes() == b"data"
+    assert not fpath.with_name("out.zim.part").exists()
+
+
+def test_save_large_file_reports_progress_with_total_size(
+    tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Progress is reported once the interval elapses, with the total size known."""
+    monkeypatch.setattr("zimscraperlib.download._DOWNLOAD_PROGRESS_INTERVAL", 0)
+    monkeypatch.setattr(
+        requests.Session,
+        "get",
+        MagicMock(
+            return_value=FakeResponse(
+                200,
+                [b"hello ", b"world"],
+                headers={"Content-Length": "11"},
+            )
+        ),
+    )
+    progress: list[tuple[int, int | None]] = []
+
+    fpath = tmp_path / "out.zim"
+    save_large_file(
+        "https://example.com/file.zim",
+        fpath,
+        on_progress=lambda downloaded, total: progress.append((downloaded, total)),
+    )
+
+    assert fpath.read_bytes() == b"hello world"
+    assert progress == [(6, 11), (11, 11)]
+
+
+def test_save_large_file_reports_progress_without_total_size(
+    tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Without a Content-Length header, progress is reported with an unknown total."""
+    monkeypatch.setattr("zimscraperlib.download._DOWNLOAD_PROGRESS_INTERVAL", 0)
+    monkeypatch.setattr(
+        requests.Session, "get", MagicMock(return_value=FakeResponse(200, [b"data"]))
+    )
+
+    fpath = tmp_path / "out.zim"
+    save_large_file("https://example.com/file.zim", fpath)
+
+    assert fpath.read_bytes() == b"data"
+
+
+@pytest.mark.parametrize(
+    "num_bytes,expected",
+    [
+        (0, "0 B"),
+        (500, "500 B"),
+        (1536, "1.5 KiB"),
+        (1024 * 1024, "1.0 MiB"),
+        (1024**4, "1.0 TiB"),
+    ],
+)
+def test_format_size(num_bytes: int, expected: str) -> None:
+    assert _format_size(num_bytes) == expected
+
+
 @pytest.mark.slow
 @pytest.mark.parametrize(
     "url,video_id",
@@ -259,7 +599,7 @@ def test_youtube_download_nowait(tmp_path: pathlib.Path):
 @pytest.mark.slow
 def test_youtube_download_error():
     yt_downloader = YoutubeDownloader(threads=1)
-    with pytest.raises(DownloadError, match=re.escape("is not a valid URL")):
+    with pytest.raises(YtDlpDownloadError, match=re.escape("is not a valid URL")):
         yt_downloader.download("11", BestMp4.get_options())
     yt_downloader.shutdown()
 

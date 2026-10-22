@@ -7,10 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Index ePub documents for full-text search, with a new `get_epub_index_data` helper and automatic indexing of ePub items, like PDFs already are (#333)
+- Send a Wikimedia-compliant default `User-Agent` in `stream_file` when downloading from `upload.wikimedia.org` (#214)
+- Add fuzzy rule to rewrite URLs of lesbases.anct.gouv.fr (#334)
+- Report progress from `save_large_file` through a new `on_progress` callback and periodic logging, and stream the download to a `.part` file that is only moved into place once complete (#348)
+
 ### Fixed
 
+- Rewrite `save_large_file` to stream and resume the download itself instead of running `wget` once, whose `-t` counter is a budget for the whole download: a flaky connection now keeps resuming and the retry budget only counts attempts that make no progress, so long downloads are no longer abandoned mid-way (#348)
 - Carry a script's top-level `const`, `let` and `class` declarations across the wombat block, so other scripts on the page can still see them (#329)
 - Keep a rewritten `<script>`'s original `src` in `__wb_orig_src`, so wombat can return it from `getAttribute("src")` and bundlers that identify chunks by it (Next.js/Turbopack, Vite) still work (openzim/warc2zim#473)
+- Keep URL-encoded `#` characters of the path or querystring when rewriting document URIs, instead of dropping everything after them (#341)
+- Find the language of an HTML page in a `content-language` `<meta>` that is not the first `<meta>` of the page (#356)
+- Rewrite the `poster` attribute (e.g. of `<video>`) when rewriting HTML, like `src` and `href` (#339)
+- Do not collapse consecutive slashes `//` into a single `/` when normalizing URLs into ZIM paths, in both Python and JS rewriting (#340)
+- `Creator.finish()` no longer silently discards errors raised by libzim while finalizing the ZIM, so a failure during finalization is no longer reported as a successful run (openzim/warc2zim#462)
 
 ## [5.4.1] - 2026-07-31
 

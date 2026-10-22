@@ -37,8 +37,9 @@ def find_language_in(content: str | BinaryIO | TextIO, mime_type: str) -> str:
     soup = BeautifulSoup(content, "lxml")
     for nodename, keylist in mapping.items():
         for key in keylist:
-            node = soup.find(nodename)
-            if node:
+            # all nodes, not only the first: the content-language <meta> is
+            # often not the first one (e.g. after <meta charset>)
+            for node in soup.find_all(nodename):
                 if not isinstance(
                     node,
                     element.Tag,  # pyright:ignore[reportUnnecessaryIsInstance]

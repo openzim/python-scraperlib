@@ -42,7 +42,6 @@ literally in it.
 
 import re
 from dataclasses import dataclass
-from pathlib import PurePosixPath
 from typing import ClassVar
 from urllib.parse import quote, unquote, urljoin, urlsplit
 
@@ -312,24 +311,28 @@ class ArticleUrlRewriter:
         URI.
 
         """
-        item_parts = urlsplit(item_path.value)
+        # a ZIM path is never URL-encoded, so a `#` in it is a literal character
+        # (e.g. coming from a `%23` in original URL) and not a fragment delimiter
+        item_parts = urlsplit(item_path.value, allow_fragments=False)
 
         # item_path is both path + querystring, both will be url-encoded in the document
         # so that readers consider them as a whole and properly pass them to libzim
         item_url = item_parts.path
         if item_parts.query:
             item_url += "?" + item_parts.query
-        relative_path = str(
-            PurePosixPath(item_url).relative_to(
-                (
-                    PurePosixPath(self.article_path.value)
-                    if self.article_path.value.endswith("/")
-                    else PurePosixPath(self.article_path.value).parent
-                ),
-                walk_up=True,
-            )
+        # drop `.` segments of the article path, as PurePosixPath used to do
+        article_path = "/".join(
+            part for part in self.article_path.value.split("/") if part != "."
         )
-        # relative_to removes a potential last '/' in the path, we add it back
+        article_dir = (
+            article_path.removesuffix("/")
+            if article_path.endswith("/")
+            else article_path.rpartition("/")[0]
+        )
+        relative_path = ArticleUrlRewriter._relative_path(
+            item_url.removesuffix("/"), article_dir
+        )
+        # the last '/' of the path has been removed above, we add it back
         if item_path.value.endswith("/"):
             relative_path += "/"
 
@@ -337,6 +340,30 @@ class ArticleUrlRewriter:
             f"{quote(relative_path, safe='/=,')}"
             f"{'#' + item_fragment if item_fragment else ''}"
         )
+
+    @classmethod
+    def _relative_path(cls, path: str, start: str) -> str:
+        """Relative path from directory `start` to `path`, walking up if needed
+
+        Unlike `PurePosixPath.relative_to`, empty segments are kept, so that
+        consecutive slashes in a ZIM path survive in the relative path.
+        """
+        path_parts = [part for part in path.split("/") if part != "."]
+        start_parts = (
+            [part for part in start.split("/") if part != "."] if start else []
+        )
+        common = 0
+        for path_part, start_part in zip(path_parts, start_parts, strict=False):
+            if path_part != start_part:
+                break
+            common += 1
+        parts = [".."] * (len(start_parts) - common) + path_parts[common:]
+        relative_path = "/".join(parts) or "."
+        # a leading empty segment would make the link absolute (`/b`) or
+        # scheme-relative (`//b`); `./` keeps it relative to the current directory
+        if relative_path.startswith("/"):
+            relative_path = "./" + relative_path
+        return relative_path
 
     @classmethod
     def apply_additional_rules(cls, uri: HttpUrl | str) -> str:
@@ -427,17 +454,10 @@ class ArticleUrlRewriter:
         else:
             query = ""
 
+        # consecutive slashes are kept as they are: `a//b` and `a/b` are different URLs
+        # which may serve different content
         fuzzified_url = ArticleUrlRewriter.apply_additional_rules(
-            f"{hostname}{ArticleUrlRewriter._remove_subsequent_slashes(path)}{ArticleUrlRewriter._remove_subsequent_slashes(query)}"
+            f"{hostname}{path}{query}"
         )
 
         return ZimPath(fuzzified_url)
-
-    @classmethod
-    def _remove_subsequent_slashes(cls, value: str) -> str:
-        """Remove all successive occurence of a slash `/` in a given string
-
-        E.g `val//ue` or `val///ue` or `val////ue` (and so on) are transformed into
-        `value`
-        """
-        return re.sub(r"//+", "/", value)
