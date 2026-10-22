@@ -7,6 +7,7 @@ from zimscraperlib.rewriting.url_rewriting import (
     HttpUrl,
     RewriteResult,
     ZimPath,
+    _remove_dot_segments,  # pyright: ignore[reportPrivateUsage]
 )
 
 
@@ -681,6 +682,19 @@ class TestArticleUrlRewriter:
             == expected_rewrite_result
         )
 
+    def test_relative_url_query_only_reference(self):
+        """A query-only reference keeps the article's path but its own query"""
+        rewriter = ArticleUrlRewriter(
+            article_url=HttpUrl("https://example.com/index.html?old=1")
+        )
+        assert rewriter(
+            "?page=2", base_href=None, rewrite_all_url=True
+        ) == RewriteResult(
+            "https://example.com/index.html?page=2",
+            "index.html%3Fpage=2",
+            ZimPath("example.com/index.html?page=2"),
+        )
+
     @pytest.mark.parametrize(
         "article_url, original_content_url, expected_rewritten_url",
         [
@@ -1301,21 +1315,5 @@ def _resolve_relative_reference(base_url: str, reference: str) -> str:
     and path of the resolved URL, i.e. the form of a ZIM path.
     """
     base = urlsplit(base_url)
-    path = base.path.rpartition("/")[0] + "/" + reference.partition("#")[0]
-    output: list[str] = []
-    while path:
-        if path.startswith(("../", "./")):
-            path = path.partition("/")[2]
-        elif path.startswith("/./") or path == "/.":
-            path = "/" + path[3:]
-        elif path.startswith("/../") or path == "/..":
-            path = "/" + path[4:]
-            if output:
-                output.pop()
-        elif path in (".", ".."):
-            path = ""
-        else:
-            end = path.find("/", 1)
-            segment, path = (path, "") if end == -1 else (path[:end], path[end:])
-            output.append(segment)
-    return f"{base.netloc}{''.join(output)}"
+    merged_path = base.path.rpartition("/")[0] + "/" + reference.partition("#")[0]
+    return f"{base.netloc}{_remove_dot_segments(merged_path)}"

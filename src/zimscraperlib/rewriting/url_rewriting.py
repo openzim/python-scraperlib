@@ -48,7 +48,6 @@ from urllib.parse import (
     unquote,
     urlsplit,
     urlunsplit,
-    uses_netloc,
     uses_relative,
 )
 
@@ -76,22 +75,17 @@ def _remove_dot_segments(path: str) -> str:
     Unlike a naive implementation based on splitting the path on '/', this keeps
     empty segments (i.e. consecutive slashes), since those are part of the path.
 
-    `path` is expected to always start with a '/'.
+    `path` must always start with a '/' (which the only caller, `_urljoin`,
+    guarantees).
     """
     output: list[str] = []
     while path:
-        if path.startswith("../"):
-            path = path[3:]
-        elif path.startswith("./"):
-            path = path[2:]
-        elif path.startswith("/./") or path == "/.":
+        if path.startswith("/./") or path == "/.":
             path = "/" + path[3:]
         elif path.startswith("/../") or path == "/..":
             path = "/" + path[4:]
             if output:
                 output.pop()
-        elif path in (".", ".."):
-            path = ""
         else:
             end = path.find("/", 1)
             segment, path = (path, "") if end == -1 else (path[:end], path[end:])
@@ -105,9 +99,9 @@ def _urljoin(base: str, url: str | None) -> str:
     Unlike `urllib.parse.urljoin`, empty path segments (i.e. consecutive slashes)
     are not collapsed while merging a relative-path reference onto the base URL's
     path, matching how browsers resolve such references (RFC 3986 section 5.3).
+
+    `base` must always be a non-empty absolute URL.
     """
-    if not base:
-        return url or ""
     if not url:
         return base
 
@@ -117,10 +111,9 @@ def _urljoin(base: str, url: str | None) -> str:
     if scheme != bscheme or scheme not in uses_relative:
         return url
 
-    if scheme in uses_netloc:
-        if netloc:
-            return urlunsplit((scheme, netloc, path, query, fragment))
-        netloc = bnetloc
+    if netloc:
+        return urlunsplit((scheme, netloc, path, query, fragment))
+    netloc = bnetloc
 
     if not path:
         path = bpath
