@@ -376,6 +376,96 @@ def test_save_large_file_without_user_agent(
     assert "User-Agent" not in kwargs["headers"]
 
 
+def test_save_large_file_default_user_agent_for_wikimedia(
+    tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    get_mock = MagicMock(return_value=FakeResponse(200, [b"data"]))
+    monkeypatch.setattr(requests.Session, "get", get_mock)
+
+    fpath = tmp_path / "out.zim"
+    save_large_file(
+        "https://upload.wikimedia.org/wikipedia/commons/4/4a/Commons-logo.svg",
+        fpath,
+    )
+
+    _args, kwargs = get_mock.call_args
+    assert kwargs["headers"]["User-Agent"] == DEFAULT_USER_AGENT
+
+
+def test_save_large_file_accepts_arbitrary_headers(
+    tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    get_mock = MagicMock(return_value=FakeResponse(200, [b"data"]))
+    monkeypatch.setattr(requests.Session, "get", get_mock)
+
+    fpath = tmp_path / "out.zim"
+    save_large_file(
+        "https://example.com/file.zim", fpath, headers={"Accept": "image/png"}
+    )
+
+    _args, kwargs = get_mock.call_args
+    assert kwargs["headers"]["Accept"] == "image/png"
+    assert "User-Agent" not in kwargs["headers"]
+
+
+def test_save_large_file_user_agent_overrides_header(
+    tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    get_mock = MagicMock(return_value=FakeResponse(200, [b"data"]))
+    monkeypatch.setattr(requests.Session, "get", get_mock)
+
+    fpath = tmp_path / "out.zim"
+    save_large_file(
+        "https://example.com/file.zim",
+        fpath,
+        user_agent="custom-agent",
+        headers={"user-agent": "header-agent", "Accept": "image/png"},
+    )
+
+    _args, kwargs = get_mock.call_args
+    assert kwargs["headers"] == {
+        "Accept": "image/png",
+        "User-Agent": "custom-agent",
+    }
+
+
+def test_save_large_file_keeps_header_user_agent_for_wikimedia(
+    tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    get_mock = MagicMock(return_value=FakeResponse(200, [b"data"]))
+    monkeypatch.setattr(requests.Session, "get", get_mock)
+
+    fpath = tmp_path / "out.zim"
+    save_large_file(
+        "https://upload.wikimedia.org/wikipedia/commons/4/4a/Commons-logo.svg",
+        fpath,
+        headers={"User-Agent": "header-agent"},
+    )
+
+    _args, kwargs = get_mock.call_args
+    assert kwargs["headers"]["User-Agent"] == "header-agent"
+
+
+def test_save_large_file_default_user_agent_for_wikimedia_with_other_headers(
+    tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    get_mock = MagicMock(return_value=FakeResponse(200, [b"data"]))
+    monkeypatch.setattr(requests.Session, "get", get_mock)
+
+    fpath = tmp_path / "out.zim"
+    save_large_file(
+        "https://upload.wikimedia.org/wikipedia/commons/4/4a/Commons-logo.svg",
+        fpath,
+        headers={"Accept": "image/png"},
+    )
+
+    _args, kwargs = get_mock.call_args
+    assert kwargs["headers"] == {
+        "Accept": "image/png",
+        "User-Agent": DEFAULT_USER_AGENT,
+    }
+
+
 def test_save_large_file_resumes_after_connection_error(
     tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
