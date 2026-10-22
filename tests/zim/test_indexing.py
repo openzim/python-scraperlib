@@ -9,7 +9,9 @@ from zimscraperlib.zim import Archive, Creator, indexing
 from zimscraperlib.zim.indexing import (
     IndexData,
     get_epub_index_data,
+    get_epub_title,
     get_pdf_index_data,
+    get_pdf_title,
 )
 from zimscraperlib.zim.items import StaticItem
 
@@ -322,6 +324,30 @@ def test_get_pdf_index_data(
     assert index_data.get_keywords() == ""
 
 
+@pytest.mark.parametrize(
+    "pdf_no, expected_title",
+    [
+        (1, "Microsoft Word - Placeholder Documentation.docx - c8clark"),
+        (
+            2,
+            "Military Dermatology (Redacted) - Office of the Surgeon General - 1994",
+        ),
+    ],
+)
+def test_get_pdf_title(
+    *,
+    pdf_no: int,
+    expected_title: str,
+    encrypted_pdf_file: pathlib.Path,
+    big_pdf_file: pathlib.Path,
+):
+    """get_pdf_title returns the same title as get_pdf_index_data, cheaper"""
+    assert (
+        get_pdf_title(filepath=encrypted_pdf_file if pdf_no == 1 else big_pdf_file)
+        == expected_title
+    )
+
+
 def test_indexing_item_pdf_custom_title(
     tmp_path: pathlib.Path, encrypted_pdf_file: pathlib.Path
 ):
@@ -390,6 +416,21 @@ def test_get_epub_index_data(
     assert "The keeper trimmed the wick." in index_data.get_content()
     assert "Gulls circled the breakwater." in index_data.get_content()
     assert index_data.has_indexdata()
+    # MuPDF does not know EPUB 3 but reads it fine, this must not be reported
+    warning.assert_not_called()
+
+
+@pytest.mark.parametrize("source", ["content", "fileobj", "filepath"])
+def test_get_epub_title(source: str, epub_file: pathlib.Path, mocker: MockerFixture):
+    """get_epub_title returns the same title as get_epub_index_data, cheaper"""
+    warning = mocker.patch.object(indexing.logger, "warning")
+    if source == "content":
+        title = get_epub_title(content=epub_file.read_bytes())
+    elif source == "fileobj":
+        title = get_epub_title(fileobj=io.BytesIO(epub_file.read_bytes()))
+    else:
+        title = get_epub_title(filepath=epub_file)
+    assert title == "Lighthouse Almanac - Ada Quillfeather"
     # MuPDF does not know EPUB 3 but reads it fine, this must not be reported
     warning.assert_not_called()
 
