@@ -78,6 +78,9 @@ def _remove_dot_segments(path: str) -> str:
     `path` must always start with a '/' (which the only caller, `_urljoin`,
     guarantees).
     """
+    if not path.startswith("/"):
+        raise AssertionError("path must start with '/'")
+
     output: list[str] = []
     while path:
         if path.startswith("/./") or path == "/.":
@@ -102,6 +105,8 @@ def _urljoin(base: str, url: str | None) -> str:
 
     `base` must always be a non-empty absolute URL.
     """
+    if not base:
+        raise AssertionError("base must be a non-empty absolute URL")
     if not url:
         return base
 

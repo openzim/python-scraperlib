@@ -8,6 +8,7 @@ from zimscraperlib.rewriting.url_rewriting import (
     RewriteResult,
     ZimPath,
     _remove_dot_segments,  # pyright: ignore[reportPrivateUsage]
+    _urljoin,  # pyright: ignore[reportPrivateUsage]
 )
 
 
@@ -1306,6 +1307,16 @@ class TestZimPath:
     def test_zim_path_str(self):
         assert str(ZimPath("content/index.html")) == "ZimPath(content/index.html)"
         assert f"{ZimPath('content/index.html')}" == "ZimPath(content/index.html)"
+
+
+def test_urljoin_rejects_empty_base():
+    with pytest.raises(AssertionError, match="base must be a non-empty absolute URL"):
+        _urljoin("", "foo.html")
+
+
+def test_remove_dot_segments_rejects_path_without_leading_slash():
+    with pytest.raises(AssertionError, match="path must start with '/'"):
+        _remove_dot_segments("foo/bar")
 
 
 def _resolve_relative_reference(base_url: str, reference: str) -> str:
