@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Send a Wikimedia-compliant default `User-Agent` in `stream_file` when downloading from `upload.wikimedia.org` (#214)
 - Add fuzzy rule to rewrite URLs of lesbases.anct.gouv.fr (#334)
 - Report progress from `save_large_file` through a new `on_progress` callback and periodic logging, and stream the download to a `.part` file that is only moved into place once complete (#348)
+- New `get_pdf_title` and `get_epub_title` helpers to get a document's title from its own metadata without extracting its full text content, cheaper than `get_pdf_index_data`/`get_epub_index_data` when only the title is needed (openzim/warc2zim#462)
 
 ### Changed
 
