@@ -23,6 +23,16 @@ Entries are stored in the ZIM file using their decoded fully decoded path:
   . This is valid : "foo/part/file?question=Is there any + here?"
   . This is NOT valid : "foo/part/file?question%3DIs%20there%20any%20%2B%20here%3F"
 
+A ZIM path must never contain a `.` or `..` path segment: per RFC 3986 these
+"dot-segments" are resolved away by any URI consumer (including the reader turning a
+relative link back into an absolute one), so a literal `.` or `..` coming from the
+original URL (typically folded into the path from a querystring, see below) would
+either disappear or be misinterpreted as a navigation instruction instead of being
+kept as a literal entry name. Such segments are therefore escaped by prefixing them
+with a `_`, e.g. path `a/../b` becomes `a/_../b`. This only applies to segments that
+are exactly `.` or `..`; look-alikes such as `a/foo../b` or `a/..foo/b` are left
+untouched since they are not dot-segments.
+
 On top of that, fuzzy rules are applied on the ZIM path:
 For instance a path "https://www.youtube.com/youtubei/v1/foo/baz/things?key=value
 &other_key=other_value&videoId=xxxx&yet_another_key=yet_another_value"
@@ -438,6 +448,22 @@ class ArticleUrlRewriter:
         return relative_path
 
     @classmethod
+    def escape_dot_segments(cls, path: str) -> str:
+        """Escape '.' and '..' path segments so they are not resolved as navigation
+
+        Per RFC 3986, a `.` or `..` path segment is a dot-segment which any URI
+        consumer removes/resolves while normalizing a reference. A ZIM path must
+        keep such a segment as a literal entry name instead, so it is prefixed with
+        a `_`, which is not itself special in a ZIM path.
+
+        Segments which only look like a dot-segment (e.g. `foo..`, `..foo`, `...`)
+        are not dot-segments and are left untouched.
+        """
+        return "/".join(
+            f"_{part}" if part in (".", "..") else part for part in path.split("/")
+        )
+
+    @classmethod
     def apply_additional_rules(cls, uri: HttpUrl | str) -> str:
         """Apply additional rules on a URL or relative path
 
@@ -532,4 +558,4 @@ class ArticleUrlRewriter:
             f"{hostname}{path}{query}"
         )
 
-        return ZimPath(fuzzified_url)
+        return ZimPath(ArticleUrlRewriter.escape_dot_segments(fuzzified_url))

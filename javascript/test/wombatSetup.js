@@ -8,6 +8,29 @@ test.beforeEach((t) => {
   t.context.originalScheme = 'https';
 });
 
+test('escapeDotSegmentsDot', (t) => {
+  t.is(utils.escapeDotSegments('a/./b'), 'a/_./b');
+});
+
+test('escapeDotSegmentsDotDot', (t) => {
+  t.is(utils.escapeDotSegments('a/../b'), 'a/_../b');
+});
+
+test('escapeDotSegmentsTrailingDotDot', (t) => {
+  t.is(utils.escapeDotSegments('a/..'), 'a/_..');
+});
+
+test('escapeDotSegmentsConsecutive', (t) => {
+  t.is(utils.escapeDotSegments('a/../../b'), 'a/_../_../b');
+});
+
+test('escapeDotSegmentsLookAlikesUntouched', (t) => {
+  t.is(
+    utils.escapeDotSegments('a/.foo/foo../..foo/.../b'),
+    'a/.foo/foo../..foo/.../b',
+  );
+});
+
 test('nominalWbInfo', (t) => {
   const path = 'path1/resource1.js';
   const originalUrl =

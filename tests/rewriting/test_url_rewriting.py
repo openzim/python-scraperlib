@@ -113,12 +113,50 @@ class TestNormalize:
                     "Solidarité-Numérique_1@300x.png"
                 ),
             ),
+            # `.` and `..` dot-segments are escaped with a leading `_`, wherever
+            # they appear (including a querystring folded into the path), since they
+            # would otherwise be resolved away as RFC 3986 navigation instructions
+            (
+                "https://example.com/abc/de?f=12/../34",
+                "example.com/abc/de?f=12/_../34",
+            ),
+            ("https://example.com/a/./b", "example.com/a/_./b"),
+            ("https://example.com/a/..", "example.com/a/_.."),
+            ("https://example.com/a/.", "example.com/a/_."),
+            ("https://example.com/a/../../b", "example.com/a/_../_../b"),
+            # look-alikes are not dot-segments and must be left untouched
+            ("https://example.com/.foo", "example.com/.foo"),
+            ("https://example.com/foo../bar", "example.com/foo../bar"),
+            ("https://example.com/..foo/bar", "example.com/..foo/bar"),
+            ("https://example.com/...", "example.com/..."),
         ],
     )
     def test_normalize(self, url: str, zim_path: str):
         assert (
             ArticleUrlRewriter.normalize(HttpUrl(url)).value == ZimPath(zim_path).value
         )
+
+
+class TestEscapeDotSegments:
+    @pytest.mark.parametrize(
+        "path,expected",
+        [
+            ("a/../b", "a/_../b"),
+            ("a/./b", "a/_./b"),
+            ("a/..", "a/_.."),
+            ("a/.", "a/_."),
+            ("a/../../b", "a/_../_../b"),
+            (".", "_."),
+            ("..", "_.."),
+            ("", ""),
+            ("a/.foo/b", "a/.foo/b"),
+            ("a/foo../b", "a/foo../b"),
+            ("a/..foo/b", "a/..foo/b"),
+            ("a/.../b", "a/.../b"),
+        ],
+    )
+    def test_escape_dot_segments(self, path: str, expected: str):
+        assert ArticleUrlRewriter.escape_dot_segments(path) == expected
 
 
 _empty_zimpath_set: set[ZimPath] = set()
@@ -719,6 +757,18 @@ class TestArticleUrlRewriter:
                 None,
             ),
             ("https://example.com/x//y/page.html", "https://example.com/a.html", None),
+            # a `..` dot-segment folded into the path (e.g. from a querystring) must
+            # not be resolved as navigation when the link is followed back
+            (
+                "https://kiwix.org/common/sub/page.html",
+                "https://kiwix.org/common/sub/xtree.html?css=../../prg",
+                "xtree.html%3Fcss=../_../prg",
+            ),
+            (
+                "https://example.com/index.html",
+                "https://example.com/a/../b",
+                "a/_../b",
+            ),
         ],
     )
     def test_relative_url_round_trip(

@@ -498,6 +498,25 @@ test('contentWithSimpleQueryString', (t) => {
   );
 });
 
+test('contentWithQueryStringDotDotSegment', (t) => {
+  // a `..` dot-segment folded into the path from a querystring must be escaped so
+  // it is not resolved as navigation once this ZIM path is turned into a URI
+  t.is(
+    urlRewriteFunction(
+      t.context.currentUrl,
+      t.context.originalHost,
+      t.context.originalScheme,
+      t.context.originalUrl,
+      t.context.prefix,
+      'https://www.example.com/javascript/content.txt?css=../../prg',
+      undefined,
+      undefined,
+      undefined,
+    ),
+    'http://library.kiwix.org/content/myzim_yyyy-mm/www.example.com/javascript/content.txt%3Fcss=../_../prg',
+  );
+});
+
 test('contentWithSimplePathWithEqualAndComma', (t) => {
   t.is(
     urlRewriteFunction(
