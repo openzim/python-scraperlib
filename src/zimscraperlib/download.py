@@ -171,6 +171,7 @@ def save_large_file(
     retries: int = 5,
     user_agent: str | None = None,
     on_progress: Callable[[int, int | None], None] | None = None,
+    headers: dict[str, str] | None = None,
 ) -> None:
     """Download a binary file from its URL, streaming it with resume support.
 
@@ -189,18 +190,26 @@ def save_large_file(
         url: URL of the file to download
         fpath: path where the downloaded file is written
         retries: number of consecutive attempts without progress tolerated
-        user_agent: User-Agent header to send with the requests
+        user_agent: User-Agent header to send with the requests, ignored if a
+        User-Agent is already set in `headers`
         on_progress: optional callback called with the bytes downloaded so far and
         the total size, when known
+        headers: additional headers to send with the requests. When downloading from
+        `upload.wikimedia.org` and no User-Agent is provided, a Wikimedia-compliant
+        default one is sent
     """
-    headers: dict[str, str] = {"User-Agent": user_agent} if user_agent else {}
+    base_headers: dict[str, str] = dict(headers or {})
+    if user_agent and not has_user_agent_header(base_headers):
+        base_headers["User-Agent"] = user_agent
+    if is_wikimedia_upload_url(url) and not has_user_agent_header(base_headers):
+        base_headers["User-Agent"] = DEFAULT_USER_AGENT
     attempts_without_progress = 0
     tmp_fpath = fpath.with_name(fpath.name + ".part")
 
     with requests.Session() as session:
         while True:
             resume_from = tmp_fpath.stat().st_size if tmp_fpath.exists() else 0
-            request_headers = dict(headers)
+            request_headers = dict(base_headers)
             if resume_from:
                 request_headers["Range"] = f"bytes={resume_from}-"
             bytes_written = 0
