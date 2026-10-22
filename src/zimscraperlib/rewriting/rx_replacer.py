@@ -153,7 +153,8 @@ class RxRewriter:
         if isinstance(text, bytes):
             text = text.decode()
 
-        assert self.compiled_rule is not None  # noqa
+        if self.compiled_rule is None:
+            raise AssertionError("compiled_rule must be set before calling rewrite()")
         return self.compiled_rule.sub(
             partial(self._replace_match, opts=opts, text=text), text
         )

@@ -7,6 +7,8 @@ from zimscraperlib.rewriting.url_rewriting import (
     HttpUrl,
     RewriteResult,
     ZimPath,
+    _remove_dot_segments,  # pyright: ignore[reportPrivateUsage]
+    _urljoin,  # pyright: ignore[reportPrivateUsage]
 )
 
 
@@ -648,6 +650,24 @@ class TestArticleUrlRewriter:
                     ZimPath("example.com/a.html"),
                 ),
             ),
+            (
+                "https://example.com/x//y/page.html",
+                "other.html",
+                RewriteResult(
+                    "https://example.com/x//y/other.html",
+                    "other.html",
+                    ZimPath("example.com/x//y/other.html"),
+                ),
+            ),
+            (
+                "https://example.com/x//y/page.html",
+                "../z.html",
+                RewriteResult(
+                    "https://example.com/x//z.html",
+                    "../z.html",
+                    ZimPath("example.com/x//z.html"),
+                ),
+            ),
         ],
     )
     def test_relative_url_keeps_consecutive_slashes(
@@ -661,6 +681,19 @@ class TestArticleUrlRewriter:
         assert (
             rewriter(original_content_url, base_href=None, rewrite_all_url=True)
             == expected_rewrite_result
+        )
+
+    def test_relative_url_query_only_reference(self):
+        """A query-only reference keeps the article's path but its own query"""
+        rewriter = ArticleUrlRewriter(
+            article_url=HttpUrl("https://example.com/index.html?old=1")
+        )
+        assert rewriter(
+            "?page=2", base_href=None, rewrite_all_url=True
+        ) == RewriteResult(
+            "https://example.com/index.html?page=2",
+            "index.html%3Fpage=2",
+            ZimPath("example.com/index.html?page=2"),
         )
 
     @pytest.mark.parametrize(
@@ -1075,6 +1108,17 @@ class TestArticleUrlRewriter:
                 ),
                 id="base_on_absolute_url",
             ),
+            pytest.param(
+                "foo.html",
+                "kiwix.org/a/a//bar/foo.html",
+                "../a//bar/",
+                RewriteResult(
+                    "https://kiwix.org/a/a//bar/foo.html",
+                    "../a//bar/foo.html",
+                    ZimPath("kiwix.org/a/a//bar/foo.html"),
+                ),
+                id="base_with_consecutive_slashes",
+            ),
         ],
     )
     def test_base_href(
@@ -1265,6 +1309,16 @@ class TestZimPath:
         assert f"{ZimPath('content/index.html')}" == "ZimPath(content/index.html)"
 
 
+def test_urljoin_rejects_empty_base():
+    with pytest.raises(AssertionError, match="base must be a non-empty absolute URL"):
+        _urljoin("", "foo.html")
+
+
+def test_remove_dot_segments_rejects_path_without_leading_slash():
+    with pytest.raises(AssertionError, match="path must start with '/'"):
+        _remove_dot_segments("foo/bar")
+
+
 def _resolve_relative_reference(base_url: str, reference: str) -> str:
     """Resolve a relative-path reference as browsers do (RFC 3986 section 5.2)
 
@@ -1272,21 +1326,5 @@ def _resolve_relative_reference(base_url: str, reference: str) -> str:
     and path of the resolved URL, i.e. the form of a ZIM path.
     """
     base = urlsplit(base_url)
-    path = base.path.rpartition("/")[0] + "/" + reference.partition("#")[0]
-    output: list[str] = []
-    while path:
-        if path.startswith(("../", "./")):
-            path = path.partition("/")[2]
-        elif path.startswith("/./") or path == "/.":
-            path = "/" + path[3:]
-        elif path.startswith("/../") or path == "/..":
-            path = "/" + path[4:]
-            if output:
-                output.pop()
-        elif path in (".", ".."):
-            path = ""
-        else:
-            end = path.find("/", 1)
-            segment, path = (path, "") if end == -1 else (path[:end], path[end:])
-            output.append(segment)
-    return f"{base.netloc}{''.join(output)}"
+    merged_path = base.path.rpartition("/")[0] + "/" + reference.partition("#")[0]
+    return f"{base.netloc}{_remove_dot_segments(merged_path)}"

@@ -105,3 +105,11 @@ def test_rx_rewriter_no_rules():
         ]
     )
     assert rewriter.rewrite("pre<replaced>post") == "pre<re123ced>post"
+
+
+def test_rx_rewriter_without_compiled_rule_raises():
+    rewriter = RxRewriter()
+    with pytest.raises(
+        AssertionError, match="compiled_rule must be set before calling rewrite"
+    ):
+        rewriter.rewrite("pre<replaced>post")

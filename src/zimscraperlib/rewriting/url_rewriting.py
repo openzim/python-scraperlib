@@ -43,7 +43,13 @@ literally in it.
 import re
 from dataclasses import dataclass
 from typing import ClassVar
-from urllib.parse import quote, unquote, urljoin, urlsplit
+from urllib.parse import (
+    quote,
+    unquote,
+    urlsplit,
+    urlunsplit,
+    uses_relative,
+)
 
 import idna
 
@@ -61,6 +67,72 @@ COMPILED_FUZZY_RULES = [
     AdditionalRule(match=re.compile(rule["pattern"]), replace=rule["replace"])
     for rule in FUZZY_RULES
 ]
+
+
+def _remove_dot_segments(path: str) -> str:
+    """Remove '.' and '..' segments from a path, per RFC 3986 section 5.2.4
+
+    Unlike a naive implementation based on splitting the path on '/', this keeps
+    empty segments (i.e. consecutive slashes), since those are part of the path.
+
+    `path` must always start with a '/' (which the only caller, `_urljoin`,
+    guarantees).
+    """
+    if not path.startswith("/"):
+        raise AssertionError("path must start with '/'")
+
+    output: list[str] = []
+    while path:
+        if path.startswith("/./") or path == "/.":
+            path = "/" + path[3:]
+        elif path.startswith("/../") or path == "/..":
+            path = "/" + path[4:]
+            if output:
+                output.pop()
+        else:
+            end = path.find("/", 1)
+            segment, path = (path, "") if end == -1 else (path[:end], path[end:])
+            output.append(segment)
+    return "".join(output)
+
+
+def _urljoin(base: str, url: str | None) -> str:
+    """Join a base URL and a possibly relative URL, like `urllib.parse.urljoin`
+
+    Unlike `urllib.parse.urljoin`, empty path segments (i.e. consecutive slashes)
+    are not collapsed while merging a relative-path reference onto the base URL's
+    path, matching how browsers resolve such references (RFC 3986 section 5.3).
+
+    `base` must always be a non-empty absolute URL.
+    """
+    if not base:
+        raise AssertionError("base must be a non-empty absolute URL")
+    if not url:
+        return base
+
+    bscheme, bnetloc, bpath, bquery, _bfragment = urlsplit(base)
+    scheme, netloc, path, query, fragment = urlsplit(url, bscheme)
+
+    if scheme != bscheme or scheme not in uses_relative:
+        return url
+
+    if netloc:
+        return urlunsplit((scheme, netloc, path, query, fragment))
+    netloc = bnetloc
+
+    if not path:
+        path = bpath
+        if not query:
+            query = bquery
+        return urlunsplit((scheme, netloc, path, query, fragment))
+
+    merged_path = (
+        path if path.startswith("/") else bpath.rpartition("/")[0] + "/" + path
+    )
+
+    return urlunsplit(
+        (scheme, netloc, _remove_dot_segments(merged_path), query, fragment)
+    )
 
 
 class HttpUrl:
@@ -193,8 +265,8 @@ class ArticleUrlRewriter:
     def get_item_path(self, item_url: str, base_href: str | None) -> ZimPath:
         """Utility to transform an item URL into a ZimPath"""
 
-        item_absolute_url = urljoin(
-            urljoin(self.article_url.value, base_href), item_url
+        item_absolute_url = _urljoin(
+            _urljoin(self.article_url.value, base_href), item_url
         )
         return ArticleUrlRewriter.normalize(HttpUrl(item_absolute_url))
 
@@ -213,8 +285,8 @@ class ArticleUrlRewriter:
         try:
             item_url = item_url.strip()
 
-            item_absolute_url = urljoin(
-                urljoin(self.article_url.value, base_href), item_url
+            item_absolute_url = _urljoin(
+                _urljoin(self.article_url.value, base_href), item_url
             )
 
             # Make case of standalone fragments more straightforward
