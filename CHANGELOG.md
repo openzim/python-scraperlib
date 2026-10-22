@@ -19,6 +19,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Upgrade to wombat 3.11.0 (#338)
 
+### Removed
+
+- **BREAKING** Remove deprecated `convert` parameter from `optimize_image` (use `dst_format` instead) (#292)
+
 ### Fixed
 
 - Rewrite `save_large_file` to stream and resume the download itself instead of running `wget` once, whose `-t` counter is a budget for the whole download: a flaky connection now keeps resuming and the retry budget only counts attempts that make no progress, so long downloads are no longer abandoned mid-way (#348)
