@@ -431,7 +431,8 @@ def test_rewrite_attributes():
         ),
         pytest.param(
             '<video poster="/img/poster.jpg" src="/video.mp4"></video>',
-            '<video poster="../img/poster.jpg" src="../video.mp4"></video>',
+            '<video poster="../img/poster.jpg" src="../video.mp4" '
+            '__wb_orig_src="/video.mp4"></video>',
             id="alongside_src",
         ),
         pytest.param(
