@@ -684,3 +684,73 @@ def test_get_options_override_outtmpl_other_vars(
             assert overriden[key] == value
         else:
             assert overriden[key] == custom_outtmpl
+
+
+WIKIMEDIA_FILE_URL = "https://upload.wikimedia.org/a/b/file.zim"
+
+
+def test_save_large_file_wikimedia_default_user_agent(
+    tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    get_mock = MagicMock(return_value=FakeResponse(200, [b"data"]))
+    monkeypatch.setattr(requests.Session, "get", get_mock)
+
+    save_large_file(WIKIMEDIA_FILE_URL, tmp_path / "out.zim")
+
+    _args, kwargs = get_mock.call_args
+    assert kwargs["headers"] == {"User-Agent": DEFAULT_USER_AGENT}
+
+
+@pytest.mark.parametrize("ua_key", ["User-Agent", "user-agent"])
+def test_save_large_file_wikimedia_custom_user_agent_header_kept(
+    tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch, ua_key: str
+) -> None:
+    get_mock = MagicMock(return_value=FakeResponse(200, [b"data"]))
+    monkeypatch.setattr(requests.Session, "get", get_mock)
+
+    save_large_file(
+        WIKIMEDIA_FILE_URL, tmp_path / "out.zim", headers={ua_key: "mine/1.0"}
+    )
+
+    _args, kwargs = get_mock.call_args
+    assert kwargs["headers"] == {ua_key: "mine/1.0"}
+
+
+def test_save_large_file_wikimedia_user_agent_argument_kept(
+    tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    get_mock = MagicMock(return_value=FakeResponse(200, [b"data"]))
+    monkeypatch.setattr(requests.Session, "get", get_mock)
+
+    save_large_file(WIKIMEDIA_FILE_URL, tmp_path / "out.zim", user_agent="mine/1.0")
+
+    _args, kwargs = get_mock.call_args
+    assert kwargs["headers"] == {"User-Agent": "mine/1.0"}
+
+
+def test_save_large_file_extra_headers_merged(
+    tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    get_mock = MagicMock(return_value=FakeResponse(200, [b"data"]))
+    monkeypatch.setattr(requests.Session, "get", get_mock)
+    extra = {"X-Test": "1"}
+
+    save_large_file(WIKIMEDIA_FILE_URL, tmp_path / "out.zim", headers=extra)
+
+    _args, kwargs = get_mock.call_args
+    assert kwargs["headers"] == {"X-Test": "1", "User-Agent": DEFAULT_USER_AGENT}
+    assert extra == {"X-Test": "1"}  # caller's dict is not modified
+
+
+def test_save_large_file_other_host_no_default_user_agent(
+    tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    get_mock = MagicMock(return_value=FakeResponse(200, [b"data"]))
+    monkeypatch.setattr(requests.Session, "get", get_mock)
+
+    save_large_file(
+        "https://example.com/file.zim", tmp_path / "out.zim", headers={"X-Test": "1"}
+    )
+
+    _args, kwargs = get_mock.call_args
+    assert kwargs["headers"] == {"X-Test": "1"}
