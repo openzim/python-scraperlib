@@ -165,12 +165,13 @@ def _log_download_progress(url: str, downloaded: int, total_size: int | None) ->
         logger.info(f"Downloaded {_format_size(downloaded)} of {url}")
 
 
-def save_large_file(
+def save_large_file(  # noqa: PLR0917
     url: str,
     fpath: pathlib.Path,
     retries: int = 5,
     user_agent: str | None = None,
     on_progress: Callable[[int, int | None], None] | None = None,
+    headers: dict[str, str] | None = None,
 ) -> None:
     """Download a binary file from its URL, streaming it with resume support.
 
@@ -189,18 +190,20 @@ def save_large_file(
         url: URL of the file to download
         fpath: path where the downloaded file is written
         retries: number of consecutive attempts without progress tolerated
-        user_agent: User-Agent header to send with the requests
+        user_agent: User-Agent header to send with the requests, takes precedence
+        over a User-Agent entry in `headers`
         on_progress: optional callback called with the bytes downloaded so far and
         the total size, when known
+        headers: additional HTTP headers to send with the requests
     """
-    headers: dict[str, str] = {"User-Agent": user_agent} if user_agent else {}
+    base_headers = _build_request_headers(url, user_agent, headers)
     attempts_without_progress = 0
     tmp_fpath = fpath.with_name(fpath.name + ".part")
 
     with requests.Session() as session:
         while True:
             resume_from = tmp_fpath.stat().st_size if tmp_fpath.exists() else 0
-            request_headers = dict(headers)
+            request_headers = dict(base_headers)
             if resume_from:
                 request_headers["Range"] = f"bytes={resume_from}-"
             bytes_written = 0
@@ -305,6 +308,25 @@ def is_wikimedia_upload_url(url: str) -> bool:
 def has_user_agent_header(headers: dict[str, str] | None) -> bool:
     """Whether a User-Agent header is already set, whatever its casing"""
     return any(key.lower() == "user-agent" for key in (headers or {}))
+
+
+def _build_request_headers(
+    url: str,
+    user_agent: str | None,
+    headers: dict[str, str] | None,
+) -> dict[str, str]:
+    """Merge explicit headers with user_agent and the Wikimedia default User-Agent"""
+    request_headers: dict[str, str] = dict(headers or {})
+    if user_agent:
+        request_headers = {
+            name: value
+            for name, value in request_headers.items()
+            if name.lower() != "user-agent"
+        }
+        request_headers["User-Agent"] = user_agent
+    if is_wikimedia_upload_url(url) and not has_user_agent_header(request_headers):
+        request_headers["User-Agent"] = DEFAULT_USER_AGENT
+    return request_headers
 
 
 def stream_file(  # noqa: PLR0917
