@@ -24,7 +24,9 @@ dependencies = [
   # promise is that they will never (or always) break the API, and the API is very
   # limited and we use only a very small subset of it.
   "regex>=2020.7.14",
-  "pymupdf>=1.24.0,<3.0",
+  # pymupdf-lite is the official build of pymupdf without its layout engine, and
+  # without the heavy dependencies (onnxruntime, numpy, ...) it brings since 2.0
+  "pymupdf-lite>=2.0,<3.0",
   "CairoSVG>=2.2.0,<3.0",
   "beartype>=0.19,<0.24",
   # youtube-dl should be updated as frequently as possible
