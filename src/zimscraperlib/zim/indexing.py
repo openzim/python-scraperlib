@@ -4,12 +4,7 @@ import io
 import pathlib
 
 import libzim.writer  # pyright: ignore[reportMissingModuleSource]
-
-try:
-    import pymupdf  # pyright: ignore[reportMissingTypeStubs]
-except ImportError:  # pragma: no cover
-    # pymupdf main module was named fitz before 1.24.3
-    import fitz as pymupdf  # pyright: ignore[reportMissingTypeStubs]
+import pymupdf  # pyright: ignore[reportMissingTypeStubs]
 
 from zimscraperlib import logger
 

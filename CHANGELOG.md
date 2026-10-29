@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Depend on `pymupdf-lite` instead of `pymupdf`: same `pymupdf` module, without pymupdf 2.0 layout engine and the heavy dependencies (onnxruntime, numpy, ...) it pulled into every scraper; a scraper also depending on the full `pymupdf` must keep both at the same version (#372)
+
 ## [5.5.0] - 2026-10-29
 
 ### Added
