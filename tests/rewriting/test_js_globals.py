@@ -91,9 +91,9 @@ def test_every_kind_of_function_travels(js_rewriter: JsRewriter, declaration: st
     assert "var f = self.___WB_hoist_f; delete self.___WB_hoist_f;" in out
 
 
-def test_a_nameless_function_is_left_alone(js_rewriter: JsRewriter):
-    # Not valid at the top level, but the parser tolerates it: there is no name
-    # to carry, and the script must not get a broken carrier for it.
+def test_a_function_expression_is_left_alone(js_rewriter: JsRewriter):
+    # Only a declaration binds a name in the script's scope; a nameless
+    # `function () {}` is an expression, so there is nothing to carry.
     out = js_rewriter.rewrite("function() { return 1; }")
     assert "___WB_hoist_" not in out
     assert "function() { return 1; }" in out

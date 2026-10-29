@@ -118,11 +118,11 @@ def parse_top_level(text: str) -> TopLevel | None:
                 "generator_function_declaration",
             ):
                 # `async function` is a function_declaration too, and
-                # `async function*` a generator one. A nameless one is only a
-                # parse error the parser tolerated: there is nothing to carry.
-                if name := node_text(node.child_by_field_name("name"), source):
-                    kind = "class" if node.type == "class_declaration" else "function"
-                    declarations.append(Declaration(name, kind, node.start_byte))
+                # `async function*` a generator one. A declaration always has a
+                # name: a nameless `function () {}` parses as an expression.
+                name = node_text(node.child_by_field_name("name"), source)
+                kind = "class" if node.type == "class_declaration" else "function"
+                declarations.append(Declaration(name, kind, node.start_byte))
             elif not has_document_write and _is_document_write(node, source):
                 has_document_write = True
         return TopLevel(
