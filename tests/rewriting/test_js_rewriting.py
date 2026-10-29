@@ -236,14 +236,16 @@ class WrappedTestContent(ContentForTests):
         ),
         WrappedTestContent(input_="window.x = 5", expected="window.x = 5"),
         # A script's own top-level declarations survive the block (#329):
-        # `let` is declared before it and assigned inside, `const` and `class`
-        # are handed out through a carrier and re-declared after it.
+        # `let` is declared before it and assigned inside, `const`, `class` and
+        # `function` are hoisted out through a carrier and re-declared after it.
         WrappedTestContent(
             input_="""
             class A {}
             const B = 5;
             let C = 4;
             var D = 3;
+            function E() {}
+            async function* F() {}
 
             location = "http://example.com/2" """,
             expected="""
@@ -251,15 +253,20 @@ class WrappedTestContent(ContentForTests):
             const B = 5;
              C = 4;
             var D = 3;
+            function E() {}
+            async function* F() {}
 
             location = ((self.__WB_check_loc && """
             "self.__WB_check_loc(location, [])) || {}).maybeHref "
             """= "http://example.com/2" """
-            "\n;self.___WB_const_A = A;\nself.___WB_const_B = B;\n",
+            "\n;self.___WB_hoist_A = A;\nself.___WB_hoist_B = B;\n"
+            "self.___WB_hoist_E = E;\nself.___WB_hoist_F = F;\n",
             before="let C;\n",
             after=(
-                "\nconst A = self.___WB_const_A; delete self.___WB_const_A;\n"
-                "const B = self.___WB_const_B; delete self.___WB_const_B;\n"
+                "\nlet A = self.___WB_hoist_A; delete self.___WB_hoist_A;\n"
+                "const B = self.___WB_hoist_B; delete self.___WB_hoist_B;\n"
+                "var E = self.___WB_hoist_E; delete self.___WB_hoist_E;\n"
+                "var F = self.___WB_hoist_F; delete self.___WB_hoist_F;\n"
             ),
         ),
         # Ensure these *don't* get rewritten
