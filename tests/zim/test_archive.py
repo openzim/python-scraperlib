@@ -64,16 +64,20 @@ def test_search_no_fti(small_zim_file: pathlib.Path):
 def test_search(real_zim_file: pathlib.Path):
     with Archive(real_zim_file) as zim:
         assert zim.get_search_results_count("test") > 0
-        assert "A/Diesel_emissions_scandal" in list(zim.get_search_results("test"))
+        results = list(zim.get_search_results("test"))
+        assert "A/Diesel_emissions_scandal" in [result.path for result in results]
+        result = next(r for r in results if r.path == "A/Diesel_emissions_scandal")
+        assert result.title
+        assert result.archive.filename == zim.filename
 
 
 @pytest.mark.slow
 def test_search_end_index(real_zim_file: pathlib.Path):
     with Archive(real_zim_file) as zim:
         assert list(zim.get_search_results("test", end=0)) == []
-        assert "A/Diesel_emissions_scandal" in list(
-            zim.get_search_results("test", end=1)
-        )
+        assert "A/Diesel_emissions_scandal" in [
+            result.path for result in zim.get_search_results("test", end=1)
+        ]
 
 
 def test_counters(small_zim_file: pathlib.Path):

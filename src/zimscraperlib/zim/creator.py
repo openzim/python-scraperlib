@@ -245,7 +245,11 @@ class Creator(libzim.writer.Creator):
 
         for metadata in self._metadata.values():
             if isinstance(metadata, IllustrationBasedMetadata):
-                self.add_illustration(metadata.illustration_size, metadata.libzim_value)
+                self.add_illustration(
+                    metadata.libzim_value,
+                    width=metadata.illustration_size,
+                    height=metadata.illustration_size,
+                )
             else:
                 self.add_metadata(metadata)
         self._metadata.clear()
