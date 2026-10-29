@@ -5,7 +5,7 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) (as of version 1.5.0).
 
-## [Unreleased]
+## [5.5.0] - 2026-10-29
 
 ### Added
 
@@ -14,25 +14,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `save_large_file` accepts arbitrary HTTP headers and sends the default Wikimedia-compliant `User-Agent` for `upload.wikimedia.org`, like `stream_file` (#360)
 - Add fuzzy rule to rewrite URLs of lesbases.anct.gouv.fr (#334)
 - Report progress from `save_large_file` through a new `on_progress` callback and periodic logging, and stream the download to a `.part` file that is only moved into place once complete (#348)
-- New `get_pdf_title` and `get_epub_title` helpers to get a document's title from its own metadata without extracting its full text content, cheaper than `get_pdf_index_data`/`get_epub_index_data` when only the title is needed (openzim/warc2zim#462)
+- New `get_pdf_title` and `get_epub_title` helpers to get a document's title from its own metadata without extracting its full text content, cheaper than `get_pdf_index_data`/`get_epub_index_data` when only the title is needed (openzim/warc2zim#462, #359)
 
 ### Changed
 
 - Upgrade to wombat 3.11.0 (#338)
-- Upgrade Python dependencies, allowing pymupdf 2, pillow 13, beartype 0.23, urllib3 2.8 and xxhash 4, and Node.JS dependencies
+- Upgrade Python dependencies, allowing pymupdf 2, pillow 13, beartype 0.23, urllib3 2.8 and xxhash 4, and Node.JS dependencies (#366, #369)
 
 ### Fixed
 
 - Rewrite `save_large_file` to stream and resume the download itself instead of running `wget` once, whose `-t` counter is a budget for the whole download: a flaky connection now keeps resuming and the retry budget only counts attempts that make no progress, so long downloads are no longer abandoned mid-way (#348)
-- Carry a script's top-level `const`, `let`, `class` and `function` declarations across the wombat block, so other scripts on the page can still see them, re-declaring classes with `let` so they can be reassigned (#329, webrecorder/wabac.js#380)
-- Keep a rewritten `<script>`'s original `src` in `__wb_orig_src`, so wombat can return it from `getAttribute("src")` and bundlers that identify chunks by it (Next.js/Turbopack, Vite) still work (openzim/warc2zim#473)
+- Carry a script's top-level `const`, `let`, `class` and `function` declarations across the wombat block, so other scripts on the page can still see them, re-declaring classes with `let` so they can be reassigned (#329, #370, webrecorder/wabac.js#380)
+- Keep a rewritten `<script>`'s original `src` in `__wb_orig_src`, so wombat can return it from `getAttribute("src")` and bundlers that identify chunks by it (Next.js/Turbopack, Vite) still work (openzim/warc2zim#473, #337)
 - Keep the original of every rewritten `src`, `href` and `xlink:href` in `__wb_orig_<attr>`, not just a script's `src`, so wombat can return it instead of a broken URL (openzim/warc2zim#413, #338)
 - Keep URL-encoded `#` characters of the path or querystring when rewriting document URIs, instead of dropping everything after them (#341)
 - Find the language of an HTML page in a `content-language` `<meta>` that is not the first `<meta>` of the page (#356)
 - Rewrite the `poster` attribute (e.g. of `<video>`) when rewriting HTML, like `src` and `href` (#339)
 - Do not collapse consecutive slashes `//` into a single `/` when normalizing URLs into ZIM paths, in both Python and JS rewriting (#340)
 - Resolve relative links against a page URL containing consecutive slashes `//` the way browsers do, instead of collapsing them like `urllib.parse.urljoin` does (#346)
-- `Creator.finish()` no longer silently discards errors raised by libzim while finalizing the ZIM, so a failure during finalization is no longer reported as a successful run (openzim/warc2zim#462)
+- `Creator.finish()` no longer silently discards errors raised by libzim while finalizing the ZIM, so a failure during finalization is no longer reported as a successful run (openzim/warc2zim#462, #354)
 - Escape `.` and `..` path segments (e.g. folded into the path from a querystring) with a leading `_` when normalizing URLs into ZIM paths, so they are kept as literal entry names instead of being resolved away as navigation, in both Python and JS rewriting (#321)
 
 ## [5.4.1] - 2026-07-31
