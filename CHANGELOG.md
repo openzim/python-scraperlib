@@ -24,7 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Rewrite `save_large_file` to stream and resume the download itself instead of running `wget` once, whose `-t` counter is a budget for the whole download: a flaky connection now keeps resuming and the retry budget only counts attempts that make no progress, so long downloads are no longer abandoned mid-way (#348)
-- Carry a script's top-level `const`, `let` and `class` declarations across the wombat block, so other scripts on the page can still see them (#329)
+- Carry a script's top-level `const`, `let`, `class` and `function` declarations across the wombat block, so other scripts on the page can still see them, re-declaring classes with `let` so they can be reassigned (#329, webrecorder/wabac.js#380)
 - Keep a rewritten `<script>`'s original `src` in `__wb_orig_src`, so wombat can return it from `getAttribute("src")` and bundlers that identify chunks by it (Next.js/Turbopack, Vite) still work (openzim/warc2zim#473)
 - Keep the original of every rewritten `src`, `href` and `xlink:href` in `__wb_orig_<attr>`, not just a script's `src`, so wombat can return it instead of a broken URL (openzim/warc2zim#413, #338)
 - Keep URL-encoded `#` characters of the path or querystring when rewriting document URIs, instead of dropping everything after them (#341)

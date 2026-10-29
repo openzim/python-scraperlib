@@ -13,8 +13,8 @@ it appropriately
 ZIM at `_zim_static/__wb_module_decl.js`
 
 This code is based on https://github.com/webrecorder/wabac.js/blob/main/src/rewrite/jsrewriter.ts
-Last backport of upstream changes is from wabac.js commit:
-Jul 30, 2026 - 0564e36993f4044f17119e71dd7b2892512ee59c
+Last backport of upstream changes is from wabac.js commit (release 2.27.4):
+Oct 22, 2026 - f62b924492339cf2ee069f51319ab6603f63500d
 """
 
 import re
@@ -359,19 +359,22 @@ class JsRewriter(RxRewriter):
     def _wrap(self, new_text: str, overrides: list[str]) -> str:
         """Put the script inside the wombat block, and put its globals back.
 
-        The block is a scope, so `const`, `let` and `class` declared at the top
-        level of the script stop being reachable from any other script on the
-        page — which is how a page that declares its data in one <script> and
-        reads it from another comes out broken but silent (#329).
+        The block is a scope, so `const`, `let`, `class` and `function`
+        declared at the top level of the script stop being reachable from any
+        other script on the page — which is how a page that declares its data in
+        one <script> and reads it from another comes out broken but silent
+        (#329, webrecorder/wabac.js#379).
 
         So the declarations are carried across the block boundary, exactly as
         wabac.js does it:
 
           * `let x` is declared before the block and the keyword removed
             inside it, so the assignment inside writes the outer binding
-          * `const x` and `class X` cannot be split that way, so their value
-            is handed out through `self.___WB_const_x` and re-declared as a
-            const after the block, and the carrier deleted
+          * `const x`, `class X` and `function f` cannot be split that way, so
+            their value is hoisted out through `self.___WB_hoist_x` and
+            re-declared after the block, and the carrier deleted: a const as a
+            `const`, a class as a `let` (its binding can be reassigned) and a
+            function as a `var` (as a function on the global scope is)
           * a name that shadows one of the wombat globals is left alone, and
             that global is dropped from the wrapper instead
           * a top-level `document.write()` gets its `document.close()`
@@ -387,7 +390,8 @@ class JsRewriter(RxRewriter):
 
         parsed = parse_top_level(new_text) if new_text else None
         if parsed is not None:
-            names: list[tuple[str, str]] = []
+            # (name, kind it is re-declared with, hoisted through a carrier)
+            names: list[tuple[str, str, bool]] = []
             exclude_overrides: set[str] = set()
             let_offsets: list[int] = []
             last_start = -1
@@ -395,13 +399,17 @@ class JsRewriter(RxRewriter):
                 if decl.name in overrides:
                     exclude_overrides.add(decl.name)
                     continue
-                if decl.kind == "class":
-                    names.append((decl.name, "const"))
-                elif decl.kind in ("const", "let"):
-                    names.append((decl.name, decl.kind))
-                    if decl.kind == "let" and last_start != decl.start:
+                if decl.kind == "const":
+                    names.append((decl.name, "const", True))
+                elif decl.kind == "let":
+                    names.append((decl.name, "let", False))
+                    if last_start != decl.start:
                         let_offsets.insert(0, decl.start)
                         last_start = decl.start
+                elif decl.kind == "class":
+                    names.append((decl.name, "let", True))
+                elif decl.kind == "function":
+                    names.append((decl.name, "var", True))
 
             if exclude_overrides:
                 first_buff = self._init_local_declaration(
@@ -417,9 +425,9 @@ class JsRewriter(RxRewriter):
                 data = data[:offset] + data[offset + len("let") :]
             new_text = data.decode("utf-8", errors="replace")
 
-            for name, kind in names:
-                if kind == "const":
-                    varname = f"self.___WB_const_{name}"
+            for name, kind, hoist in names:
+                if hoist:
+                    varname = f"self.___WB_hoist_{name}"
                     in_scope_globals += f"{varname} = {name};\n"
                     post_scope_globals += (
                         f"{kind} {name} = {varname}; delete {varname};\n"

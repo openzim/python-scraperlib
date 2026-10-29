@@ -5,9 +5,9 @@
 # scraperlib we are not really fuzzy matching (searching the best entry among existing
 # ones) but just rewriting to proper path.
 #
-# This file is in sync with content at commit
-# https://github.com/webrecorder/wabac.js/commit/067214314f86249ecc7610bf8ac14b7f54c5f285
-# from Apr 29, 2026
+# This file is in sync with content at commit (release 2.27.4)
+# https://github.com/webrecorder/wabac.js/commit/f62b924492339cf2ee069f51319ab6603f63500d
+# from Oct 22, 2026
 #
 # This file should be updated at every release of scraperlib
 #

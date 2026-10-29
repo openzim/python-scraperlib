@@ -3,15 +3,16 @@
 `js.py` wraps a script in a block so wombat can shadow `window`, `document`
 and friends. A block is a scope, so every top-level `const`, `let` and `class`
 in the script becomes block-scoped too, and stops being visible to any other
-script on the page. wabac.js solves this by parsing the script and hoisting
+script on the page; so, in practice, does a top-level `function`
+(webrecorder/wabac.js#379). wabac.js solves this by parsing the script and hoisting
 those names back out; this module is the parsing half of that, kept behind one
 function so the choice of parser is one import to change.
 
 Only the top level matters. Nothing nested can leak a global, so this never
 walks into a function body, and it answers three questions:
 
-  * which `const`, `let`, `var` and `class` names the script declares at the
-    top level, and of what kind
+  * which `const`, `let`, `var`, `class` and `function` names the script
+    declares at the top level, and of what kind
   * where each declaration starts, so a `let` keyword can be removed
   * whether the script calls `document.write()` at the top level
 
@@ -40,7 +41,7 @@ class Declaration:
     """One name a script declares at its top level."""
 
     name: str
-    kind: str  # "const" | "let" | "var" | "class"
+    kind: str  # "const" | "let" | "var" | "class" | "function"
     start: int  # byte offset of the statement that declares it
 
 
@@ -111,11 +112,17 @@ def parse_top_level(text: str) -> TopLevel | None:
             elif node.type == "variable_declaration":
                 for name in _identifiers(node, source):
                     declarations.append(Declaration(name, "var", node.start_byte))
-            elif node.type == "class_declaration":
-                name_node = node.child_by_field_name("name")
-                declarations.append(
-                    Declaration(node_text(name_node, source), "class", node.start_byte)
-                )
+            elif node.type in (
+                "class_declaration",
+                "function_declaration",
+                "generator_function_declaration",
+            ):
+                # `async function` is a function_declaration too, and
+                # `async function*` a generator one. A declaration always has a
+                # name: a nameless `function () {}` parses as an expression.
+                name = node_text(node.child_by_field_name("name"), source)
+                kind = "class" if node.type == "class_declaration" else "function"
+                declarations.append(Declaration(name, kind, node.start_byte))
             elif not has_document_write and _is_document_write(node, source):
                 has_document_write = True
         return TopLevel(
