@@ -1,5 +1,5 @@
 import base64
-import datetime
+import datetime as dt
 import io
 from abc import ABC, abstractmethod
 from collections.abc import Iterable
@@ -318,20 +318,18 @@ class TextListBasedMetadata(MetadataBase[list[str]]):
         return self.get_encoded(self.join_list_with.join(self.value))
 
 
-class DateBasedMetadata(MetadataBase[datetime.date]):
+class DateBasedMetadata(MetadataBase[dt.date]):
     """Expects a Date (date | datetime) input. Will be UTF-8 encoded as YYYY-MM-DD"""
 
-    value: datetime.date
+    value: dt.date
     require_utf8_encoding = True
 
-    def __init__(
-        self, value: datetime.date | datetime.datetime, name: str | None = None
-    ) -> None:
+    def __init__(self, value: dt.date | dt.datetime, name: str | None = None) -> None:
         super().__init__(value=value, name=name)
 
     # native type is date
-    def get_cleaned_value(self, value: datetime.date) -> datetime.date:
-        if isinstance(value, datetime.datetime):
+    def get_cleaned_value(self, value: dt.date) -> dt.date:
+        if isinstance(value, dt.datetime):
             value = value.date()
         return value
 
@@ -532,7 +530,7 @@ DEFAULT_DEV_ZIM_METADATA = StandardMetadataList(
     Title=TitleMetadata("Test Title"),
     Creator=CreatorMetadata("Test Creator"),
     Publisher=PublisherMetadata("Test Publisher"),
-    Date=DateMetadata(datetime.date(2023, 1, 1)),
+    Date=DateMetadata(dt.date(2023, 1, 1)),
     Description=DescriptionMetadata("Test Description"),
     Language=LanguageMetadata("fra"),
     # blank 48x48 transparent PNG

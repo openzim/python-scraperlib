@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Upgrade to wombat 3.11.0 (#338)
+- Upgrade Python dependencies, allowing pymupdf 2, pillow 13, beartype 0.23, urllib3 2.8 and xxhash 4, and Node.JS dependencies
 
 ### Fixed
 
