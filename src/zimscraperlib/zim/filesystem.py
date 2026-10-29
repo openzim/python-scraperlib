@@ -23,7 +23,7 @@ collection (on exit mostly).
 Meaning you should exit right after an exception in your code (during zim creation)
 Use workaround_nocancel=False to disable the workaround."""
 
-import datetime
+import datetime as dt
 import pathlib
 import re
 import tempfile
@@ -123,7 +123,7 @@ def make_zim_file(
     illustration: str,
     title: str,
     description: str,
-    date: datetime.date | None = None,
+    date: dt.date | None = None,
     language: str = "eng",
     creator: str = "-",
     publisher: str = "-",
@@ -174,7 +174,7 @@ def make_zim_file(
             Name=metadata.NameMetadata(name),
             Title=metadata.TitleMetadata(title),
             Description=metadata.DescriptionMetadata(description),
-            Date=metadata.DateMetadata(date or datetime.date.today()),  # noqa: DTZ011
+            Date=metadata.DateMetadata(date or dt.date.today()),  # noqa: DTZ011
             Language=metadata.LanguageMetadata(language),
             Creator=metadata.CreatorMetadata(creator),
             Publisher=metadata.PublisherMetadata(publisher),

@@ -12,10 +12,10 @@ jobs:
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version-file: pyproject.toml
           architecture: x64
@@ -46,7 +46,7 @@ jobs:
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Restore rules artifact
         uses: actions/download-artifact@v8
@@ -57,7 +57,7 @@ jobs:
         run: sudo apt update && sudo apt install ffmpeg gifsicle
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version-file: pyproject.toml
           architecture: x64
@@ -71,7 +71,7 @@ jobs:
         run: inv coverage --args "--runslow --runinstalled -vvv"
 
       - name: Upload coverage report to codecov
-        uses: codecov/codecov-action@v6
+        uses: codecov/codecov-action@v7
         with:
           fail_ci_if_error: true
           token: ${{ secrets.CODECOV_TOKEN }}
@@ -87,7 +87,7 @@ jobs:
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Restore rules artifact
         uses: actions/download-artifact@v8
@@ -95,7 +95,7 @@ jobs:
           name: rules
 
       - name: Setup Node.JS
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           node-version-file: 'javascript/package.json'
 
@@ -128,10 +128,10 @@ jobs:
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version-file: pyproject.toml
           architecture: x64

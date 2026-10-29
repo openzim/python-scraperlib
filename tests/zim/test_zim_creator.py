@@ -1,4 +1,4 @@
-import datetime
+import datetime as dt
 import io
 import logging
 import pathlib
@@ -713,7 +713,7 @@ def test_start_logs_metadata_log_contents(
             Title=TitleMetadata("English Wikipedia"),
             Creator=CreatorMetadata("English speaking Wikipedia contributors"),
             Publisher=PublisherMetadata("Wikipedia user Foobar"),
-            Date=DateMetadata(datetime.date(2009, 11, 21)),
+            Date=DateMetadata(dt.date(2009, 11, 21)),
             Description=DescriptionMetadata(
                 "All articles (without images) from the english Wikipedia"
             ),
@@ -839,7 +839,7 @@ def test_config_metadata(
             Title=TitleMetadata("English Wikipedia"),
             Creator=CreatorMetadata("English speaking Wikipedia contributors"),
             Publisher=PublisherMetadata("Wikipedia user Foobar"),
-            Date=DateMetadata(datetime.date(2009, 11, 21)),
+            Date=DateMetadata(dt.date(2009, 11, 21)),
             Description=DescriptionMetadata(
                 "All articles (without images) from the english Wikipedia"
             ),

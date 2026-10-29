@@ -1,6 +1,6 @@
 import base64
 import dataclasses
-import datetime
+import datetime as dt
 import io
 import pathlib
 import re
@@ -185,19 +185,15 @@ def test_validate_too_long_longdescription_check_disabled(
 
 
 def test_validate_date_datetime_date():
-    assert metadata.DateMetadata(datetime.date(2024, 12, 11))
+    assert metadata.DateMetadata(dt.date(2024, 12, 11))
 
 
 def test_validate_date_datetime_datetime():
-    assert metadata.DateMetadata(
-        datetime.datetime(2024, 12, 11, 0, 0, 0, tzinfo=datetime.UTC)
-    )
+    assert metadata.DateMetadata(dt.datetime(2024, 12, 11, 0, 0, 0, tzinfo=dt.UTC))
 
 
 def test_validate_date_invalid_datee():
-    assert metadata.DateMetadata(
-        datetime.datetime(9, 12, 11, 0, 0, 0, tzinfo=datetime.UTC)
-    )
+    assert metadata.DateMetadata(dt.datetime(9, 12, 11, 0, 0, 0, tzinfo=dt.UTC))
 
 
 @pytest.mark.parametrize("value", [("9999-99-99"), ("2023/02/29"), ("1969-13-31")])
@@ -432,7 +428,7 @@ def test_libzim_bytes_value(metadata_init: MetadataInitConfig, png_image: pathli
             assert metadata_init.a_type(png_data).libzim_value == png_data
         elif metadata_init.a_type == metadata.DateMetadata:
             assert (
-                metadata_init.a_type(datetime.date(2023, 12, 11)).libzim_value
+                metadata_init.a_type(dt.date(2023, 12, 11)).libzim_value
                 == b"2023-12-11"
             )
         elif metadata_init.a_type == metadata.LanguageMetadata:
@@ -488,7 +484,7 @@ def test_std_metadata_values():
         metadata.TitleMetadata("Test Title"),
         metadata.CreatorMetadata("Test Creator"),
         metadata.PublisherMetadata("Test Publisher"),
-        metadata.DateMetadata(datetime.date(2023, 1, 1)),
+        metadata.DateMetadata(dt.date(2023, 1, 1)),
         metadata.DescriptionMetadata("Test Description"),
         metadata.LanguageMetadata("fra"),
         # blank 48x48 transparent PNG

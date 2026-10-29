@@ -24,16 +24,16 @@ dependencies = [
   # promise is that they will never (or always) break the API, and the API is very
   # limited and we use only a very small subset of it.
   "regex>=2020.7.14",
-  "pymupdf>=1.24.0,<2.0",
+  "pymupdf>=1.24.0,<3.0",
   "CairoSVG>=2.2.0,<3.0",
-  "beartype>=0.19,<0.23",
+  "beartype>=0.19,<0.24",
   # youtube-dl should be updated as frequently as possible
   "yt-dlp",
-  "pillow>=7.0.0,<13.0",
-  "urllib3>=1.26.5,<2.8.0",
+  "pillow>=7.0.0,<14.0",
+  "urllib3>=1.26.5,<2.9.0",
   "piexif==1.1.3", # this dep is a nightmare in terms of release management, better pinned just like in optimize-images anyway
   "idna>=2.5,<4.0",
-  "xxhash>=2.0,<4.0",
+  "xxhash>=2.0,<5.0",
   # Parsing JavaScript well enough to know which names a script declares at its
   # top level (see rewriting/js_ast.py). tree-sitter rather than a pure-Python
   # parser because the input is whatever the live web served: esprima is ES2017
@@ -65,29 +65,29 @@ scripts = [
 
 ]
 qa = [
-  "ruff==0.16.0",
-  "pyright==1.1.411",
-  "pytest==9.1.1",
+  "ruff==0.17.3",
+  "pyright==1.1.414",
+  "pytest==9.2.0",
 ]
 test = [
-  "pytest==9.1.1",
-  "pytest-mock==3.15.1",
-  "coverage==7.15.2",
+  "pytest==9.2.0",
+  "pytest-mock==3.17.0",
+  "coverage==7.17.0",
 ]
 docs = [
-  "ruff==0.16.0",
+  "ruff==0.17.3",
   "mkdocs==1.6.1",
   "mkdocs-include-markdown-plugin==7.3.0",
-  "mkdocs-material==9.7.7",
-  "mkdocstrings[python]==1.0.6",
-  "pymdown-extensions==11.0.1",
+  "mkdocs-material==9.8.0",
+  "mkdocstrings[python]==1.0.8",
+  "pymdown-extensions==12.3",
   "mkdocs-gen-files==0.6.1",
   "mkdocs-literate-nav==0.6.3",
-  "pygments==2.19.2", # See https://github.com/pygments/pygments/issues/3076
+  "pygments==2.21.0"
 ]
 dev = [
-  "ipython==9.15.0",
-  "pre-commit==4.6.0",
+  "ipython==9.17.1",
+  "pre-commit==4.7.0",
   "zimscraperlib[scripts]",
   "zimscraperlib[qa]",
   "zimscraperlib[test]",
@@ -286,7 +286,7 @@ exclude_lines = [
 
 [tool.pyright]
 include = ["contrib", "src", "tests", "tasks.py"]
-exclude = [".env/**", ".venv/**"]
+exclude = [".env/**", ".venv/**", ".hatch/**", "site/**"]
 extraPaths = ["src"]
 pythonVersion = "3.14"
 typeCheckingMode="strict"
