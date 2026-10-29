@@ -69,7 +69,7 @@ class Deduplicator:
             if existing_item := self.added_items.get(digest):
                 self.creator.add_alias(
                     path,
-                    targetPath=existing_item,
+                    target_path=existing_item,
                     title=title or path,
                     hints={Hint.FRONT_ARTICLE: True} if kwargs.get("is_front") else {},
                 )

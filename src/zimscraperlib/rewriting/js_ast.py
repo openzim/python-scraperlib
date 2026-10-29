@@ -100,7 +100,11 @@ def parse_top_level(text: str) -> TopLevel | None:
     here may throw into a scrape."""
     try:
         source = text.encode("utf-8")
-        root = _PARSER.parse(source).root_node
+        # tree-sitter's stub types `source` as collections.abc.ByteString, which
+        # typeshed no longer has since Python 3.14
+        root = _PARSER.parse(  # pyright: ignore[reportUnknownMemberType]
+            source
+        ).root_node
         declarations: list[Declaration] = []
         has_document_write = False
         for node in root.named_children:

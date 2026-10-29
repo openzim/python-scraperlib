@@ -6,12 +6,15 @@ version: 2
 build:
   os: ubuntu-24.04
   tools:
+    # Python 3.15 is not available yet on Read the Docs: this one is only used to
+    # bootstrap uv, which installs the Python 3.15 hatch then runs the build on
     python: '3.14'
 
   # custom commands to run mkdocs build within hatch, as suggested by maintainer in
   # https://github.com/readthedocs/readthedocs.org/issues/10706
   commands:
-    - pip install hatch
-    - hatch run docs:build
+    - pip install hatch uv
+    - uv python install 3.15
+    - HATCH_PYTHON="$(uv python find 3.15)" hatch run docs:build
     - mkdir --parents $READTHEDOCS_OUTPUT
     - mv site $READTHEDOCS_OUTPUT/html

@@ -57,10 +57,6 @@ class Archive(libzim.reader.Archive):
         """Decoded value of a text metadata"""
         return super().get_metadata(name).decode("UTF-8")
 
-    def get_entry_by_id(self, id_: int) -> libzim.reader.Entry:
-        """Entry from its Id in ZIM"""
-        return self._get_entry_by_id(id_)
-
     def get_item(self, path: str) -> libzim.reader.Item:
         """Item from a path"""
         return self.get_entry_by_path(path).get_item()
@@ -75,31 +71,31 @@ class Archive(libzim.reader.Archive):
         """paths iterator over suggestion matches for query"""
         suggestion = libzim.suggestion.SuggestionSearcher(self).suggest(query)
         if end is None:
-            end = suggestion.getEstimatedMatches()
-        return suggestion.getResults(start, end)
+            end = suggestion.get_estimated_matches()
+        return suggestion.get_results(start, end)
 
     def get_suggestions_count(self, query: str) -> int:
         """Estimated number of suggestion matches for query"""
         suggestion = libzim.suggestion.SuggestionSearcher(self).suggest(query)
-        return suggestion.getEstimatedMatches()
+        return suggestion.get_estimated_matches()
 
     def get_search_results(
         self, query: str, start: int = 0, end: int | None = None
-    ) -> Iterable[str]:
-        """paths iterator over search results for query"""
+    ) -> Iterable[libzim.search.SearchResult]:
+        """SearchResult iterator over search results for query"""
         search = libzim.search.Searcher(self).search(
             libzim.search.Query().set_query(query)
         )
         if end is None:
-            end = search.getEstimatedMatches()
-        return search.getResults(start, end)
+            end = search.get_estimated_matches()
+        return search.get_results(start, end)
 
     def get_search_results_count(self, query: str) -> int:
         """Estimated number of search results for query"""
         search = libzim.search.Searcher(self).search(
             libzim.search.Query().set_query(query)
         )
-        return search.getEstimatedMatches()
+        return search.get_estimated_matches()
 
     @property
     def counters(self) -> CounterMap:

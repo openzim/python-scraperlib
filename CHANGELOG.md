@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Breaking**: support only Python 3.15 (#374)
+- **Breaking**: require libzim 4, whose API changes reach `Creator` since it subclasses libzim's: camelCase arguments renamed (`config_nbworkers(nb_workers=)`, `set_mainpath(main_path=)`, `add_redirection(target_path=)`, `add_alias(target_path=)`), `add_illustration(content, width, height=None, scale=1.0)` signature (#374)
+- **Breaking**: `Archive.get_search_results` yields libzim 4 `SearchResult` objects (with `path`, `title`, `snippet` and `archive`) instead of entry paths (#374)
+
+### Fixed
+
+- Depend on `pymupdf-lite` instead of `pymupdf`: same `pymupdf` module, without pymupdf 2.0 layout engine and the heavy dependencies (onnxruntime, numpy, ...) it pulled into every scraper; a scraper also depending on the full `pymupdf` must keep both at the same version (#372)
+
 ## [5.5.0] - 2026-10-29
 
 ### Added
