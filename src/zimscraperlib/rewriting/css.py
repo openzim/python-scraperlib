@@ -10,6 +10,8 @@ fallback to simple regex rewriting or we prefer to drop the offending rule.
 """
 
 import re
+import string
+import unicodedata
 from collections.abc import Iterable, Sequence
 from functools import partial
 from typing import Any
@@ -28,6 +30,42 @@ from tinycss2.serializer import (  # pyright: ignore[reportMissingTypeStubs]
 from zimscraperlib import logger
 from zimscraperlib.rewriting.rx_replacer import RxRewriter, TransformationRule
 from zimscraperlib.rewriting.url_rewriting import ArticleUrlRewriter
+
+_HEX = set(string.hexdigits)
+_WS = set(" \t\n\r\f")
+
+
+def _escape_string_value(value: str) -> str:
+    """Serialize a CSS string value while preserving non-printable characters."""
+    out: list[str] = []
+    for idx, char in enumerate(value):
+        if char == '"':
+            out.append('\\"')
+        elif char == "\\":
+            out.append("\\\\")
+        elif char == "\n":
+            out.append("\\A ")
+        elif char == "\r":
+            out.append("\\D ")
+        elif char == "\f":
+            out.append("\\C ")
+        elif unicodedata.category(char) in ("Cc", "Co", "Cs", "Cn"):
+            out.append(f"\\{ord(char):x}")
+            nxt = value[idx + 1 : idx + 2]
+            if nxt and (nxt in _HEX or nxt in _WS):
+                out.append(" ")
+        else:
+            out.append(char)
+    return "".join(out)
+
+
+def _is_terminated_string(token: ast.StringToken) -> bool:
+    """Check whether a StringToken has a valid (unescaped) closing quote."""
+    rep = token.representation
+    if len(rep) <= 1 or rep[-1] != rep[0]:
+        return False
+    num_backslashes = len(rep[:-1]) - len(rep[:-1].rstrip("\\"))
+    return num_backslashes % 2 == 0
 
 
 class FallbackRegexCssRewriter(RxRewriter):
@@ -211,6 +249,9 @@ class CssRewriter:
             self._process_list(
                 node.value  # pyright: ignore[reportUnknownMemberType, reportUnknownArgumentType]
             )
+        elif isinstance(node, ast.StringToken):
+            if _is_terminated_string(node):
+                node.representation = f'"{_escape_string_value(node.value)}"'
         elif isinstance(node, ast.URLToken):
             new_url = self.url_rewriter(
                 node.value,  # pyright: ignore[reportUnknownMemberType, reportUnknownArgumentType]

@@ -216,3 +216,67 @@ p, input {
         ).rewrite(content)
         == expected
     )
+
+
+@pytest.mark.parametrize(
+    "css",
+    [
+        r'.test { content="\e123" }',
+        r'.test { content: "\e123" }',
+        r'.test::before { content: "\f101" }',
+        r'.test::before { content: "\e123\e124" }',
+        r'.test::before { content: "a\"b\\c" }',
+        r'.test { content: "\A " }',
+        r'.test { content: "\D " }',
+        r'.test { content: "\C " }',
+        r'.test { content: "\e123a" }',
+        r'.test { content: "a\\" }',
+        '"',
+    ],
+)
+def test_escaped_chars_are_kept(css: str):
+    rewriter = CssRewriter(
+        ArticleUrlRewriter(article_url=HttpUrl("http://kiwix.org/")),
+        base_href=None,
+    )
+    assert rewriter.rewrite(css) == css
+
+
+@pytest.mark.parametrize(
+    "css, expected",
+    [
+        (r'.test { content: "\e123 a" }', r'.test { content: "\e123 a" }'),
+        (r'.test { content: "\e123 x" }', r'.test { content: "\e123x" }'),
+        (r'.test { content: "\e123  x" }', r'.test { content: "\e123  x" }'),
+    ],
+)
+def test_escaped_chars_separator(css: str, expected: str):
+    rewriter = CssRewriter(
+        ArticleUrlRewriter(article_url=HttpUrl("http://kiwix.org/")),
+        base_href=None,
+    )
+    assert rewriter.rewrite(css) == expected
+
+
+def test_escaped_chars_and_url_rewriting():
+    rewriter = CssRewriter(
+        ArticleUrlRewriter(article_url=HttpUrl("http://kiwix.org/")),
+        base_href=None,
+    )
+    assert (
+        rewriter.rewrite(
+            r'.a { content: "\e123"; background: url(http://exemple.com/img.png) }'
+        )
+        == r'.a { content: "\e123"; background: url(../exemple.com/img.png) }'
+    )
+
+
+def test_unterminated_string_ending_in_escaped_quote():
+    rewriter = CssRewriter(
+        ArticleUrlRewriter(article_url=HttpUrl("http://kiwix.org/")),
+        base_href=None,
+    )
+    assert (
+        rewriter.rewrite(r'.test { content: "unterminated\" }')
+        == r'.test { content: "unterminated\" }}'
+    )
