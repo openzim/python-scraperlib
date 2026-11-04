@@ -14,11 +14,13 @@ Sister subclass StaticItem (inheriting from it) with:
 - content stored on object
 - can be used to store a filepath and content read from it (not stored)"""
 
+import atexit
 import io
 import logging
 import pathlib
 import re
 import weakref
+from contextlib import suppress
 from types import TracebackType
 
 import libzim.writer  # pyright: ignore[reportMissingModuleSource]
@@ -85,18 +87,14 @@ def mimetype_for(
 class Creator(libzim.writer.Creator):
     """libzim.writer.Creator subclass
 
-    Note: due to the lack of a cancel() method in the libzim itself, it is not possible
-    to stop a zim creation process. Should an error occur in your code, a Zim file
-    with up-to-that-moment content will be created at destination.
+    Note: libzim has no cancel() method, so a ZIM creation cannot be stopped.
+    When an error occurs while adding an item, this class prevents the creation
+    from completing and discards the ZIM: the output file is removed as soon as
+    the creator is finished, garbage-collected or the interpreter exits.
+    Since libzim can only stop its worker threads by running its finalization,
+    this cleanup takes as long as finishing the creation would.
 
-    To prevent this (creating an unwanted ZIM file) from happening,
-    a workaround is in place. It prevents the libzim from finishing its process.
-    While it results in no ZIM file being created, it also results in
-    the zim temp folder to be left on disk and very frequently leads to
-    a segmentation fault at garbage collection (on exit mostly).
-
-    Meaning you should exit right after an exception in your code (during zim creation)
-    Use workaround_nocancel=False to disable the workaround.
+    Use workaround_nocancel=False to let libzim finish the ZIM despite the error.
 
     By default, all metadata are validated for compliance with openZIM specification and
     conventions. Set metdata.APPLY_RECOMMENDATIONS to False to disable this validation
@@ -118,6 +116,7 @@ class Creator(libzim.writer.Creator):
         self.__indexing_value: bool = False
         self.can_finish = True
         self._finish_called = False
+        self._creation_started = False
 
         self.set_mainpath(main_path)
 
@@ -128,6 +127,7 @@ class Creator(libzim.writer.Creator):
 
         self.workaround_nocancel = workaround_nocancel
         self.ignore_duplicates = ignore_duplicates
+        _live_creators.add(self)
 
     def config_indexing(
         self,
@@ -242,6 +242,7 @@ class Creator(libzim.writer.Creator):
             logger.debug(f"Metadata: Tags has been set with '{ftindex_tag}'")
 
         super().__enter__()
+        self._creation_started = True
 
         for metadata in self._metadata.values():
             if isinstance(metadata, IllustrationBasedMetadata):
@@ -434,7 +435,7 @@ class Creator(libzim.writer.Creator):
                     raise exc
         except Exception:
             if self.workaround_nocancel:
-                self.can_finish = False  # pragma: no cover
+                self.can_finish = False
             raise
 
     def add_redirect(
@@ -464,7 +465,7 @@ class Creator(libzim.writer.Creator):
                     raise exc
         except Exception:
             if self.workaround_nocancel:
-                self.can_finish = False  # pragma: no cover
+                self.can_finish = False
             raise
 
     def finish(
@@ -474,14 +475,41 @@ class Creator(libzim.writer.Creator):
         ___: TracebackType | None = None,
     ):
         """Triggers finalization of ZIM creation and create final ZIM file."""
-        if not getattr(self, "can_finish", False):
-            return
-        # finishing an already-finished creator makes libzim raise a RuntimeError;
-        # make this a no-op instead of calling into libzim again
         if getattr(self, "_finish_called", False):
             return
         self._finish_called = True
-        super().__exit__(None, None, None)
+        _live_creators.discard(self)
+        if getattr(self, "can_finish", False):
+            super().__exit__(None, None, None)
+            return
+        self._drain_and_discard()
+
+    def _abandon(self) -> None:
+        if getattr(self, "_finish_called", False):
+            return
+        self._finish_called = True
+        _live_creators.discard(self)
+        self._drain_and_discard()
+
+    def _drain_and_discard(self) -> None:
+        if not getattr(self, "_creation_started", False):
+            return
+        try:
+            with suppress(RuntimeError):
+                super().__exit__(None, None, None)
+        finally:
+            if self.filename.is_file():
+                self.filename.unlink(missing_ok=True)
+
+    def __del__(self) -> None:
+        with suppress(Exception):
+            self._abandon()
+
+    @staticmethod
+    def _abandon_live_creators() -> None:
+        for creator in list(_live_creators):
+            with suppress(Exception):
+                creator._abandon()
 
     def __enter__(self):
         self.start()
@@ -494,3 +522,9 @@ class Creator(libzim.writer.Creator):
         exc_tb: TracebackType | None = None,
     ):
         self.finish(exc_type, exc_val, exc_tb)
+
+
+_live_creators: weakref.WeakSet[Creator] = weakref.WeakSet()
+
+
+atexit.register(Creator._abandon_live_creators)  # pyright: ignore[reportPrivateUsage]

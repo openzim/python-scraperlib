@@ -1,4 +1,5 @@
 import datetime as dt
+import gc
 import io
 import logging
 import pathlib
@@ -7,6 +8,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import textwrap
 import time
 from types import NoneType
 from typing import Any, NamedTuple
@@ -16,6 +18,7 @@ import libzim.writer  # pyright: ignore[reportMissingModuleSource]
 import pytest
 from libzim.writer import Compression  # pyright: ignore[reportMissingModuleSource]
 
+import zimscraperlib.zim.creator as creator_module
 from zimscraperlib.constants import UTF8
 from zimscraperlib.download import save_large_file, stream_file
 from zimscraperlib.filesystem import delete_callback
@@ -667,6 +670,92 @@ def test_ignore_duplicates(tmp_path: pathlib.Path):
         creator.add_item_for(path="A", content="A2")
         creator.add_redirect(path="B", target_path="A")
         creator.add_redirect(path="B", target_path="C")
+
+
+def test_duplicate_error_discards_zim(tmp_path: pathlib.Path):
+    fpath = tmp_path / "test.zim"
+    with Creator(fpath, "").config_dev_metadata() as creator:
+        creator.add_item_for(path="A", content="A")
+        with pytest.raises(RuntimeError, match="existing dirent's title"):
+            creator.add_item_for(path="A", content="A2")
+    assert not fpath.exists()
+
+
+def test_garbage_collected_creation_discards_zim(tmp_path: pathlib.Path):
+    fpath = tmp_path / "test.zim"
+    creator = Creator(fpath, "").config_dev_metadata()
+    creator.start()
+    creator.add_item_for(path="A", content="A")
+    del creator
+    gc.collect()
+    assert not fpath.exists()
+
+
+def test_duplicate_on_filled_cluster_terminates(tmp_path: pathlib.Path):
+    script = tmp_path / "repro.py"
+    fpath = tmp_path / "tests.zim"
+    script.write_text(
+        textwrap.dedent(
+            """
+            import sys
+            from pathlib import Path
+
+            from zimscraperlib.zim import Creator, metadata
+
+            creator = Creator(
+                Path(sys.argv[1]), "index.html"
+            ).config_metadata(std_metadata=metadata.DEFAULT_DEV_ZIM_METADATA)
+            creator.start()
+            creator.add_item_for(
+                "index.html", "Main Page", content="Main", is_front=True
+            )
+            for i in range(10):
+                creator.add_item_for(f"content{i}", content="P" * 1000000)
+            creator.add_item_for("conflict", content="Foo")
+            creator.add_item_for("conflict", content="Bar")
+            """
+        )
+    )
+    result = subprocess.run(
+        [sys.executable, str(script), str(fpath)],
+        capture_output=True,
+        timeout=60,
+        check=False,
+    )
+    assert result.returncode != 0
+    assert b"existing dirent's title" in result.stderr
+    assert not fpath.exists()
+
+
+def test_atexit_sweep_discards_unfinished_creation(tmp_path: pathlib.Path):
+    fpath = tmp_path / "test.zim"
+    live_creators = creator_module._live_creators  # pyright: ignore[reportPrivateUsage]
+    creator = Creator(fpath, "").config_dev_metadata()
+    creator.start()
+    creator.add_item_for(path="A", content="A")
+    with pytest.raises(RuntimeError, match="existing dirent's title"):
+        creator.add_item_for(path="A", content="A2")
+    # neither finish() nor garbage collection ran: the creation is still live
+    assert creator in live_creators
+
+    Creator._abandon_live_creators()  # pyright: ignore[reportPrivateUsage]
+
+    assert not fpath.exists()
+    assert creator not in live_creators
+
+
+def test_without_workaround_keeps_zim_on_duplicate(tmp_path: pathlib.Path):
+    fpath = tmp_path / "test.zim"
+    with Creator(
+        fpath, "welcome", workaround_nocancel=False
+    ).config_dev_metadata() as creator:
+        creator.add_item_for(path="welcome", content="first")
+        with pytest.raises(RuntimeError, match="existing dirent's title"):
+            creator.add_item_for(path="welcome", content="second")
+        with pytest.raises(RuntimeError, match="existing dirent's title"):
+            creator.add_redirect(path="welcome", target_path="other")
+    reader = Archive(fpath)
+    assert bytes(reader.get_item("welcome").content) == b"first"
 
 
 def test_without_metadata(tmp_path: pathlib.Path):
