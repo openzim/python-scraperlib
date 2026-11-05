@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Patch vendored `wombat.js` so `fetch()` converts POST to GET like `XMLHttpRequest` already does, fixing YouTube embedded player video playback (#379, webrecorder/wombat#242)
+- Stop a `zim.Creator` abandoned before finishing (e.g. after an item path duplication) from hanging forever at garbage collection or interpreter exit: its libzim worker threads are now drained with the GIL released and the partially written ZIM is removed (#300)
 
 ## [5.5.1] - 2026-10-30
 
