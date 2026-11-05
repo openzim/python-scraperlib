@@ -8,6 +8,13 @@ execute_after=[
 action="get_file"
 source="https://cdn.jsdelivr.net/npm/@webrecorder/wombat@3.11.0/dist/wombat.js"
 target_file="wombat.js"
+# wombat.js's fetch() override does not convert POST to GET the way its XHR
+# override does, breaking replay of anything fetched via a POST fetch() call
+# (e.g. YouTube's embedded player). A fix has been proposed upstream
+# (webrecorder/wombat); patch our vendored copy in the meantime.
+execute_after=[
+    "cd ../../../../ && python rules/patch_wombat.py",
+]
 
 # wombatSetup.js is supposed to be built locally from files in javascript folder.
 # Should someone install from Github repo directly, the configuration below ensures that

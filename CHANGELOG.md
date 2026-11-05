@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Patch vendored `wombat.js` so `fetch()` converts POST to GET like `XMLHttpRequest` already does, fixing YouTube embedded player video playback (#379, webrecorder/wombat#242)
+
 ## [5.5.1] - 2026-10-30
 
 ### Fixed
