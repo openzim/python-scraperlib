@@ -5,6 +5,39 @@ import URI from 'uri-js';
 const VERSION = '[VI]version {version}, built on {date}[/VI]';
 console.info(`Running wombat-setup ${VERSION}`);
 
+// `crypto.randomUUID()` is restricted to secure contexts (HTTPS, or `localhost`), but
+// ZIM content is commonly served over plain HTTP on a non-localhost host (LAN, offline
+// hotspot, ...), where a page depending on it would otherwise throw instead of running.
+// `crypto.getRandomValues()` has no such restriction, so polyfill `randomUUID` on top
+// of it, producing a standard RFC 4122 v4 UUID, whenever it is missing.
+export function randomUUIDFromBytes(bytes) {
+  bytes[6] = (bytes[6] & 0x0f) | 0x40; // version 4
+  bytes[8] = (bytes[8] & 0x3f) | 0x80; // variant 10
+  const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join(
+    '',
+  );
+  return (
+    hex.slice(0, 8) +
+    '-' +
+    hex.slice(8, 12) +
+    '-' +
+    hex.slice(12, 16) +
+    '-' +
+    hex.slice(16, 20) +
+    '-' +
+    hex.slice(20)
+  );
+}
+
+if (
+  typeof crypto !== 'undefined' &&
+  typeof crypto.getRandomValues === 'function' &&
+  typeof crypto.randomUUID !== 'function'
+) {
+  crypto.randomUUID = () =>
+    randomUUIDFromBytes(crypto.getRandomValues(new Uint8Array(16)));
+}
+
 export function applyFuzzyRules(path) {
   // Apply fuzzy rules to simplify the ZIM path. First matching rule is applied and
   // result is immediately returned
@@ -335,4 +368,5 @@ export default {
   escapeDotSegments: escapeDotSegments,
   urlRewriteFunction: urlRewriteFunction,
   getWombatInfo: getWombatInfo,
+  randomUUIDFromBytes: randomUUIDFromBytes,
 };
