@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `VideoWebmMedium` preset: VP9 at 240k with the height capped at 720, a middle ground between `VideoWebmLow` and `VideoWebmHigh` (#271)
+
+### Changed
+
+- `VideoMp4High` now encodes at CRF 28 instead of 20, which regularly produced a file larger than its input, and adds `-movflags +faststart` (#271)
+- All Webm presets (`VideoWebmLow`, `VideoWebmMedium`, `VideoWebmHigh`) now use `-row-mt 1` for faster VP9 encoding (#271)
+- Bumped `VideoWebmLow` to v4 and `VideoWebmHigh` to v3 following the `-row-mt` addition (#271)
+
 ### Fixed
 
 - Fix JS rewriting of `this.<prop>` so it reliably detects a leading newline (and prepends the needed `;`) regardless of the amount of whitespace, and no longer wrongly rewrites `this` when preceded by `.`/`$` and several spaces (#381)
