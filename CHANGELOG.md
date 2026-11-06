@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Keep escaped Unicode characters in CSS strings instead of turning them into literal characters when rewriting (#377)
 - Patch vendored `wombat.js` so element properties (`img.src`, `script.src`, `link.href`, `a.href` and its derived `.pathname`/`.search`/..., `Attr.value`) return and forget a server-side-rewriter-recorded original the same way `getAttribute` already does (#386, webrecorder/wombat#240)
 - Polyfill `crypto.randomUUID()` (via `crypto.getRandomValues()`) when missing, so pages depending on it still work when a ZIM is served over plain HTTP on a non-`localhost` host, where browsers restrict `randomUUID` to secure contexts (#391)
+- Polyfill `crypto.subtle.digest()` (SHA-1 and SHA-256) when missing, for the same plain-HTTP-non-`localhost` reason as the `crypto.randomUUID()` polyfill above; unlike `randomUUID`, code depending on it tends to fail silently rather than throw (#393)
 
 ## [5.5.2] - 2026-11-06
 
