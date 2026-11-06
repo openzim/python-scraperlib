@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Keep escaped Unicode characters in CSS strings instead of turning them into literal characters when rewriting (#377)
 - Patch vendored `wombat.js` so element properties (`img.src`, `script.src`, `link.href`, `a.href` and its derived `.pathname`/`.search`/..., `Attr.value`) return and forget a server-side-rewriter-recorded original the same way `getAttribute` already does (#386, webrecorder/wombat#240)
 - Detect `export const`/`let`/`var`/`function`/`async function`/`*` as module code (`EXPORT_RX` only recognized `export {...}`, `export default` and `export class`), fixing JS rewriting wrongly injecting a non-module `let arguments;` wrapper into ES modules using these common export forms, which is a syntax error in strict/module code (#387)
+- Add a host-gated `SITE_JS_PATCHES` mechanism to `JsRewriter`, and use it to force the `permalink` attribute on developer.mozilla.org's `<interactive-example>` widget's inner `<mdn-play-runner>` (which `<mdn-live-sample-result>` elsewhere on the same page already always sets), so it uses the same deterministic, content-derived id instead of a fresh `crypto.randomUUID()` that can never match a WARC capture (#394)
 
 ## [5.5.2] - 2026-11-06
 
