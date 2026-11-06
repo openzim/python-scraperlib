@@ -33,7 +33,7 @@ class VideoWebmLow(Config):
     128k target video bitrate but stay within quality boundaries.
     48k audio bitrate"""
 
-    VERSION = 3
+    VERSION = 4
 
     ext = "webm"
     mimetype = f"{preset_type}/webm"
@@ -47,10 +47,41 @@ class VideoWebmLow(Config):
         "-quality": "good",  # codec preset
         "-speed": "4",  # Encoding speed (compromise between quality and encoding time)
         "-vf": "scale='480:trunc(ow/a/2)*2'",  # frame size
+        "-row-mt": "1",
         "-codec:a": "libvorbis",  # audio codec
         "-b:a": "48k",  # target audio bitrate
         "-ar": "44100",  # audio sampling rate
         "-ac": "2",  # force stereo
+    }
+
+
+class VideoWebmMedium(Config):
+    """Medium Quality webm video
+
+    720:h format, height capped at 720 and width adjusted to keep aspect
+    ratio, so smaller videos are not upscaled
+    240k target video bitrate but stay within quality boundaries.
+    48k audio bitrate"""
+
+    VERSION = 1
+
+    ext = "webm"
+    mimetype = f"{preset_type}/webm"
+
+    options: ClassVar[dict[str, str | None]] = {
+        "-codec:v": "libvpx-vp9",
+        "-b:v": "240k",
+        "-qmin": "32",
+        "-qmax": "58",
+        "-g": "240",
+        "-quality": "good",
+        "-speed": "3",
+        "-vf": "scale='-2:min(720,ih)':force_original_aspect_ratio=increase",
+        "-row-mt": "1",
+        "-codec:a": "libvorbis",
+        "-b:a": "48k",
+        "-ar": "44100",
+        "-ac": "2",
     }
 
 
@@ -88,7 +119,7 @@ class VideoWebmHigh(Config):
 
     25 constant quality"""
 
-    VERSION = 2
+    VERSION = 3
 
     ext = "webm"
     mimetype = f"{preset_type}/webm"
@@ -101,6 +132,7 @@ class VideoWebmHigh(Config):
         "-g": "240",  # Number of frames allowed between keyframes
         "-quality": "good",  # codec preset
         "-speed": "1",  # Encoding speed (compromise between quality and encoding time)
+        "-row-mt": "1",
         "-codec:a": "libvorbis",  # audio codec
         "-b:a": "48k",  # target audio bitrate
         "-ar": "44100",  # audio sampling rate
@@ -109,11 +141,11 @@ class VideoWebmHigh(Config):
 
 
 class VideoMp4High(Config):
-    """Low Quality mp4 video
+    """High Quality mp4 video
 
-    20 constant quality"""
+    28 constant quality"""
 
-    VERSION = 1
+    VERSION = 2
 
     ext = "mp4"
     mimetype = f"{preset_type}/mp4"
@@ -121,5 +153,6 @@ class VideoMp4High(Config):
     options: ClassVar[dict[str, str | None]] = {
         "-codec:v": "h264",  # video codec
         "-codec:a": "aac",  # audio codec
-        "-crf": "20",  # constant quality, lower value gives better qual and larger size
+        "-crf": "28",  # constant quality, lower value gives better qual and larger size
+        "-movflags": "+faststart",
     }
