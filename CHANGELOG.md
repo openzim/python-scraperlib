@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Fix JS rewriting of `this.<prop>` so it reliably detects a leading newline (and prepends the needed `;`) regardless of the amount of whitespace, and no longer wrongly rewrites `this` when preceded by `.`/`$` and several spaces (#381)
+
 ## [5.5.2] - 2026-11-06
 
 ### Fixed
