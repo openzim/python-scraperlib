@@ -398,6 +398,18 @@ def test_preset_voice_mp3_low():
             {"codecs": ["vp9", "vorbis"], "duration": 2},
         ),
         (
+            "video.mp4",
+            "video.webm",
+            VideoWebmMedium().to_ffmpeg_args(),
+            {"codecs": ["vp9", "vorbis"], "duration": 2},
+        ),
+        (
+            "video.mkv",
+            "video.mp4",
+            VideoMp4High().to_ffmpeg_args(),
+            {"codecs": ["h264", "aac"], "duration": 2},
+        ),
+        (
             "video.webm",
             "video.mkv",
             [
