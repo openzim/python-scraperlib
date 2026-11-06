@@ -187,11 +187,15 @@ export function urlRewriteFunction(
       : decodeURIComponent(absolute_url_parts.path);
 
   // And the decoded query, only exception is that + sign must resolve to ' ' to avoid
-  // confusion (our convention, just like in Python)
+  // confusion (our convention, just like in Python). The `+` -> ' ' substitution must
+  // happen on the still-encoded query string, before decoding percent-escapes,
+  // otherwise a value containing a literal `+` correctly percent-encoded as `%2B`
+  // would get wrongly turned into a space once decodeURIComponent turns it back into
+  // a raw `+` (same order as the Python implementation).
   const decoded_query =
     !absolute_url_parts.query || absolute_url_parts.query.length === 0
       ? ''
-      : '?' + decodeURIComponent(absolute_url_parts.query).replaceAll('+', ' ');
+      : '?' + decodeURIComponent(absolute_url_parts.query.replaceAll('+', ' '));
 
   // combine all decoded parts to get the ZIM path
   // (consecutive slashes are kept, just like in Python)
