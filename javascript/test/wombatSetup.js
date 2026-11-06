@@ -31,6 +31,28 @@ test('escapeDotSegmentsLookAlikesUntouched', (t) => {
   );
 });
 
+test('randomUUIDFromBytesFormat', (t) => {
+  const bytes = new Uint8Array([
+    0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0, 0x11, 0x22, 0x33, 0x44,
+    0x55, 0x66, 0x77, 0x88,
+  ]);
+  // byte 6's high nibble is forced to 4 (version) and byte 8's two top bits
+  // to 10 (variant), per RFC 4122, regardless of the input
+  t.is(
+    utils.randomUUIDFromBytes(bytes),
+    '12345678-9abc-4ef0-9122-334455667788',
+  );
+});
+
+test('randomUUIDFromBytesIsRfc4122Compliant', (t) => {
+  const bytes = new Uint8Array(16);
+  for (let i = 0; i < 16; i++) bytes[i] = 0xff;
+  t.regex(
+    utils.randomUUIDFromBytes(bytes),
+    /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
+  );
+});
+
 test('nominalWbInfo', (t) => {
   const path = 'path1/resource1.js';
   const originalUrl =

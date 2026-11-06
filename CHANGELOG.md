@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Patch vendored `wombat.js` so `location.href`/`.search`/`.pathname` (and the rest of the `Location` getters) prefer `wb_info.url` over re-deriving a value via `extractOriginalURL`, fixing their value for any archived page whose captured URL has a query string (#382, webrecorder/wombat#244)
 - Keep escaped Unicode characters in CSS strings instead of turning them into literal characters when rewriting (#377)
 - Patch vendored `wombat.js` so element properties (`img.src`, `script.src`, `link.href`, `a.href` and its derived `.pathname`/`.search`/..., `Attr.value`) return and forget a server-side-rewriter-recorded original the same way `getAttribute` already does (#386, webrecorder/wombat#240)
+- Polyfill `crypto.randomUUID()` (via `crypto.getRandomValues()`) when missing, so pages depending on it still work when a ZIM is served over plain HTTP on a non-`localhost` host, where browsers restrict `randomUUID` to secure contexts (#391)
 
 ## [5.5.2] - 2026-11-06
 
