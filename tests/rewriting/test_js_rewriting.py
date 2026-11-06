@@ -370,6 +370,69 @@ export { a };
 export { a };
 """,
         ),
+        # export const/let/var/function/async function/* are also module markers
+        # (#387 - EXPORT_RX used to only recognize `export {...}`, `export default`
+        # and `export class`)
+        ImportTestContent(
+            input_="""a = this.location
+
+export const b = 1;
+""",
+            expected="""a = _____WB$wombat$check$this$function_____(this).location
+
+export const b = 1;
+""",
+        ),
+        ImportTestContent(
+            input_="""a = this.location
+
+export let b = 1;
+""",
+            expected="""a = _____WB$wombat$check$this$function_____(this).location
+
+export let b = 1;
+""",
+        ),
+        ImportTestContent(
+            input_="""a = this.location
+
+export var b = 1;
+""",
+            expected="""a = _____WB$wombat$check$this$function_____(this).location
+
+export var b = 1;
+""",
+        ),
+        ImportTestContent(
+            input_="""a = this.location
+
+export function b() {}
+""",
+            expected="""a = _____WB$wombat$check$this$function_____(this).location
+
+export function b() {}
+""",
+        ),
+        ImportTestContent(
+            input_="""a = this.location
+
+export async function b() {}
+""",
+            expected="""a = _____WB$wombat$check$this$function_____(this).location
+
+export async function b() {}
+""",
+        ),
+        ImportTestContent(
+            input_="""a = this.location
+
+export * from "./other.js";
+""",
+            expected="""a = _____WB$wombat$check$this$function_____(this).location
+
+export * from "./other.js";
+""",
+        ),
         # rewrite import same line
         ImportTestContent(
             input_='import{A, B} from "https://example.com/";'

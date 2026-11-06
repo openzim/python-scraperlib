@@ -38,7 +38,17 @@ IMPORT_RX = re.compile(
     r"""^\s*?import\s*?[{"'*]""",
 )
 EXPORT_RX = re.compile(
-    r"""\s*?export\s*?({([\s\w,$\n]+?)}[\s;]*|default|class)\s+""", re.MULTILINE
+    r"""\s*?export\s*?("""
+    r"""{([\s\w,$\n]+?)}[\s;]*"""
+    r"""|default"""
+    r"""|\*"""
+    r"""|class"""
+    r"""|const"""
+    r"""|let"""
+    r"""|var"""
+    r"""|(?:async\s+)?function"""
+    r""")\s+""",
+    re.MULTILINE,
 )
 IMPORT_EXPORT_MATCH_RX = re.compile(
     r"""(^|;)\s*?(?:im|ex)port(?:['"\s]*(?:[\w*${}\s,]+from\s*)?['"\s]?['"\s])(?:.*?)['"\s]""",
