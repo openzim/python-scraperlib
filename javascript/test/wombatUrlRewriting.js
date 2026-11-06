@@ -517,6 +517,46 @@ test('contentWithQueryStringDotDotSegment', (t) => {
   );
 });
 
+test('contentWithQueryValueRawPlusSign', (t) => {
+  // a raw (unencoded) `+` in a query string means a space, by convention
+  t.is(
+    urlRewriteFunction(
+      t.context.currentUrl,
+      t.context.originalHost,
+      t.context.originalScheme,
+      t.context.originalUrl,
+      t.context.prefix,
+      'https://www.example.com/javascript/content.txt?query=val+ue',
+      undefined,
+      undefined,
+      undefined,
+    ),
+    'http://library.kiwix.org/content/myzim_yyyy-mm/www.example.com/javascript/content.txt%3Fquery=val%20ue',
+  );
+});
+
+test('contentWithQueryValueEncodedPlusSign', (t) => {
+  // a percent-encoded `%2B` in a query string means a literal `+`, and must not be
+  // confused with a raw `+` (which means a space, see test above). The `+` -> ' '
+  // substitution must happen on the still-encoded query string, before decoding
+  // percent-escapes, otherwise this would wrongly turn into a space once
+  // decodeURIComponent turns `%2B` back into a raw `+`.
+  t.is(
+    urlRewriteFunction(
+      t.context.currentUrl,
+      t.context.originalHost,
+      t.context.originalScheme,
+      t.context.originalUrl,
+      t.context.prefix,
+      'https://www.example.com/javascript/content.txt?query=val%2Bue',
+      undefined,
+      undefined,
+      undefined,
+    ),
+    'http://library.kiwix.org/content/myzim_yyyy-mm/www.example.com/javascript/content.txt%3Fquery=val%2Bue',
+  );
+});
+
 test('contentWithSimplePathWithEqualAndComma', (t) => {
   t.is(
     urlRewriteFunction(
