@@ -56,7 +56,9 @@ def test_this_js_rewrite(
     params=[
         "aaa.this.window=red",
         "aaa. this.window=red",
+        "aaa.   this.window=red",
         "aaa$this.window=red",
+        "aaa$   this.window=red",
         "a = this.color;",
         "return this.color",
         'func(Function("return this.color"));',
@@ -79,12 +81,16 @@ def test_this_no_js_rewrite(
     )
 
 
-# This test probably has to be fixed but spec is blurry
-# See https://github.com/openzim/warc2zim/issues/410
-def test_this_js_rewrite_newline(simple_js_rewriter: JsRewriter):
+@pytest.mark.parametrize(
+    "spaces",
+    [0, 1, 2, 3, 4],
+)
+def test_this_js_rewrite_newline(simple_js_rewriter: JsRewriter, spaces: int):
+    padding = " " * spaces
     assert (
-        simple_js_rewriter.rewrite("aaa\n  this.window=red")
-        == "aaa\n  ;_____WB$wombat$check$this$function_____(this).window=red"
+        simple_js_rewriter.rewrite(f"aaa\n{padding}this.window=red")
+        == f"aaa\n{padding};_____WB$wombat$check$this$function_____(this)"
+        ".window=red"
     )
 
 
