@@ -1,30 +1,18 @@
-"""Patch the vendored wombat.js so fetch() converts POST (and other non-GET)
-requests to GET, the same way its XMLHttpRequest override already does.
+"""Patch the vendored wombat.js with local, interim fixes for issues that
+have been reported upstream (webrecorder/wombat) but are not fixed there
+yet:
 
-Without this, wombat.js's `window.fetch` override only rewrites the request
-URL: it leaves method and body untouched. Any page that calls `fetch()` with
-a POST (rather than XMLHttpRequest) therefore has that POST sent, as-is,
-to a server that only replays GET-converted content baked into the ZIM at
-scrape time, and 404s. This is exactly how YouTube's embedded player fetches
-its InnerTube player-config (`/youtubei/v1/player`): the request 404s, the
-player's JSON.parse() of the error page throws, and video playback breaks
-right after the user clicks Play.
-
-A fix for this has been proposed upstream (webrecorder/wombat), but it uses
-wombat's own full postToGetUrl() conversion, which flattens the request body
-into the query string. That does not match how our own scrape-time tooling
-(warc2zim) currently names a POST-converted ZIM entry: just
-`<original-url>&__wb_method=<METHOD>`, with the body dropped entirely (this
-can be verified directly on a built ZIM, e.g. for the `youtubei/v1/player`,
-`youtubei/v1/next` and WAA `GenerateIT` entries). So, until that upstream fix
-ships *and* our own scrape-time POST naming is made to match it, this patch
-intentionally uses the simpler, body-dropping convention instead, to stay
-consistent with how ZIMs are actually built today.
+- fetch() converting POST (and other non-GET) requests to GET, the same
+  way its XMLHttpRequest override already does (webrecorder/wombat#242).
+- Location getters (`location.href`/`.pathname`/`.search`/...) preferring
+  `wb_info.url` over re-deriving a value via `extractOriginalURL`
+  (webrecorder/wombat#245).
 
 This script is invoked via `execute_after` on the wombat.js `get_file` action
 in openzim.toml, right after wombat.js is downloaded, so it runs on every
-build. It is idempotent: a wombat.js that is already patched (e.g. because
-`get_file` skipped re-downloading it) is left untouched.
+build. Each patch below is applied and checked independently, and is
+idempotent: a wombat.js that is already patched (e.g. because `get_file`
+skipped re-downloading it) is left untouched.
 """
 
 import logging
@@ -43,6 +31,28 @@ if not wombat_js.exists():
     raise SystemExit(0)
 
 # --- fetch() override ---------------------------------------------------
+#
+# Without this, wombat.js's `window.fetch` override only rewrites the
+# request URL: it leaves method and body untouched. Any page that calls
+# `fetch()` with a POST (rather than XMLHttpRequest) therefore has that
+# POST sent, as-is, to a server that only replays GET-converted content
+# baked into the ZIM at scrape time, and 404s. This is exactly how
+# YouTube's embedded player fetches its InnerTube player-config
+# (`/youtubei/v1/player`): the request 404s, the player's JSON.parse() of
+# the error page throws, and video playback breaks right after the user
+# clicks Play.
+#
+# A fix for this has been proposed upstream (webrecorder/wombat), but it
+# uses wombat's own full postToGetUrl() conversion, which flattens the
+# request body into the query string. That does not match how our own
+# scrape-time tooling (warc2zim) currently names a POST-converted ZIM
+# entry: just `<original-url>&__wb_method=<METHOD>`, with the body dropped
+# entirely (this can be verified directly on a built ZIM, e.g. for the
+# `youtubei/v1/player`, `youtubei/v1/next` and WAA `GenerateIT` entries).
+# So, until that upstream fix ships *and* our own scrape-time POST naming
+# is made to match it, this patch intentionally uses the simpler,
+# body-dropping convention instead, to stay consistent with how ZIMs are
+# actually built today.
 #
 # Only the plain `fetch(url, {method, body})` call form is patched here:
 # that is the one that reaches this code with a still-pristine, unrewritten
@@ -132,21 +142,85 @@ REQUEST_PATCHED = (
     'this.overridePropExtract(this.$wbwindow.Request.prototype,"referrer")}'
 )
 
+# --- WombatLocation constructor: record the initial served href -------
+#
+# `t` is `orig_loc` (the real Location being wrapped) and `e` is the
+# Wombat instance. The minifier folded the statements that precede the
+# constructor's `for (var prop in orig_loc)` loop into that loop's
+# iterable expression via the comma operator, so the insertion point
+# (recording the served href this WombatLocation was created with) has to
+# be added as one more term of that same comma expression.
+LOC_CTOR_ORIGINAL = (
+    "e.initLocOverride(this,this.orig_setter,this.orig_getter),"
+    "e.setLoc(this,t.href),t)this.hasOwnProperty(r)"
+)
+
+LOC_CTOR_PATCHED = (
+    "e.initLocOverride(this,this.orig_setter,this.orig_getter),"
+    "e.setLoc(this,t.href),this._wb_initial_href=t.href,t)this.hasOwnProperty(r)"
+)
+
+# --- Location getters: prefer wb_info.url -------------------------------
+#
+# `location.href`/`.pathname`/`.search`/... (and the equivalent anchor/area
+# element properties, which share this same function) always re-derive
+# their value from the real served href via `extractOriginalURL`, which can
+# only reverse rewrites wombat itself performed. Our own urlRewriteFunction
+# (javascript/src/wombatSetup.js) has to flatten a URL's path+query into one
+# ZIM path string, escaping '?'/'&' into literal '%3F'/'%26' so they survive
+# as path characters -- extractOriginalURL cannot reverse that, even though
+# the real, correctly-delimited original URL is already available as
+# `wb_info.url`.
+#
+# `this.wombat` is only set on a WombatLocation (not on an anchor/area
+# element), so this only kicks in for `location.*`, and only as long as the
+# served href hasn't changed since `_wb_initial_href` was recorded above
+# (i.e. no client-side navigation happened since): a `history.pushState()`/
+# `location.href = ...`/etc. still falls back to extractOriginalURL exactly
+# as before, since wb_info.url has nothing to say about those.
+GETLOC_ORIGINAL = (
+    "b.prototype.makeGetLocProp=function(t,e){var r=this;return function(){"
+    "if(this._no_rewrite)return e.call(this,t);"
+    '"maybeHref"===t&&(t="href");'
+    'var i=e.call(this,"href");'
+    'return"href"===t?r.extractOriginalURL(i):"ancestorOrigins"===t?[]:'
+    '(this._orig_href!==i&&r.setLoc(this,i),this["_"+t])'
+    "}}"
+)
+
+GETLOC_PATCHED = (
+    "b.prototype.makeGetLocProp=function(t,e){var r=this;return function(){"
+    "if(this._no_rewrite)return e.call(this,t);"
+    '"maybeHref"===t&&(t="href");'
+    'var i=e.call(this,"href"),'
+    "k=this.wombat&&r.wb_info&&r.wb_info.url&&i===this._wb_initial_href;"
+    "return k&&(i=r.wb_info.url),"
+    '"href"===t?k?i:r.extractOriginalURL(i):"ancestorOrigins"===t?[]:'
+    '(this._orig_href!==i&&r.setLoc(this,i),this["_"+t])'
+    "}}"
+)
+
 content = wombat_js.read_text(encoding="utf-8")
 
-already_patched = FETCH_PATCHED in content and REQUEST_PATCHED in content
-needs_patching = FETCH_ORIGINAL in content and REQUEST_ORIGINAL in content
+patches = [
+    ("fetch()/Request() POST-to-GET conversion", FETCH_ORIGINAL, FETCH_PATCHED),
+    ("fetch()/Request() POST-to-GET conversion", REQUEST_ORIGINAL, REQUEST_PATCHED),
+    ("Location getters preferring wb_info.url", LOC_CTOR_ORIGINAL, LOC_CTOR_PATCHED),
+    ("Location getters preferring wb_info.url", GETLOC_ORIGINAL, GETLOC_PATCHED),
+]
 
-if already_patched:
-    logging.info("wombat.js is already patched, skipping")
-elif needs_patching:
-    content = content.replace(FETCH_ORIGINAL, FETCH_PATCHED)
-    content = content.replace(REQUEST_ORIGINAL, REQUEST_PATCHED)
-    wombat_js.write_text(content, encoding="utf-8")
-    logging.info("wombat.js patched successfully")
-else:
-    raise SystemExit(
-        "wombat.js does not match the expected (patched or unpatched) fetch()/"
-        "Request() override code -- the vendored wombat.js version likely "
-        "changed, this patch needs to be re-derived against the new source"
-    )
+for name, original, patched in patches:
+    if patched in content:
+        logging.info("%s: already patched, skipping", name)
+    elif original in content:
+        content = content.replace(original, patched)
+        logging.info("%s: patched successfully", name)
+    else:
+        raise SystemExit(
+            f"{name}: wombat.js does not match the expected (patched or "
+            "unpatched) code -- the vendored wombat.js version likely "
+            "changed, this patch needs to be re-derived against the new "
+            "source"
+        )
+
+wombat_js.write_text(content, encoding="utf-8")

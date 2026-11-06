@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Fix JS rewriting of `this.<prop>` so it reliably detects a leading newline (and prepends the needed `;`) regardless of the amount of whitespace, and no longer wrongly rewrites `this` when preceded by `.`/`$` and several spaces (#381)
+- Patch vendored `wombat.js` so `location.href`/`.search`/`.pathname` (and the rest of the `Location` getters) prefer `wb_info.url` over re-deriving a value via `extractOriginalURL`, fixing their value for any archived page whose captured URL has a query string (#382, webrecorder/wombat#244)
 
 ## [5.5.2] - 2026-11-06
 
