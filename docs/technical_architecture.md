@@ -47,6 +47,15 @@ Below is an example case of the rewrite operation on an image URL found in an HT
 - Image rewritten URL: `../../../ex%C3%A9mple.com/a/resource/image.png%3Ffoo=bar`
 - Image ZIM Path: `exémple.com/a/resource/image.png?foo=bar`
 
+`ArticleUrlRewriter.set_zim_path_prefix("zimreplay")` is an opt-in variant of this scheme:
+
+- every ZIM path gains the prefix, e.g. `kiwix.org/a/article/document.html` becomes `zimreplay/kiwix.org/a/article/document.html`. Scrapers have to store their entries under those prefixed paths.
+- a rewritten URI walks all the way up to the ZIM root and comes back down through the prefix, instead of stopping as soon as it can: the image above is then addressed as `../../../../zimreplay/ex%C3%A9mple.com/a/resource/image.png%3Ffoo=bar`.
+
+The point is that a rewritten URI then always contains the prefix as a literal segment, while an original URI found in the document cannot. A replay reader (wombat) can hence tell the two apart and recover the ZIM path from a rewritten URI alone, without relying on the `__wb_orig_*` attributes recorded at scrape time for the cases where it cannot.
+
+The prefix is disabled by default, and its validation is deliberately strict (one unencoded URI path segment, made of `a-z`, `0-9`, `.`, `-`, `_`) because it is the string readers have to match.
+
 ## JS Rewriting
 
 JS Rewriting is a bit special because rules to apply are different wether we are using "classic" Javascript or "module" Javascript.

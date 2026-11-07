@@ -365,6 +365,23 @@ def test_rewrite(rewrite_url: ContentForTests):
     )
 
 
+def test_rewrite_with_zim_path_prefix(monkeypatch: pytest.MonkeyPatch):
+    """A prefixed URI is recognizable as rewritten, original still recorded"""
+    monkeypatch.setattr(ArticleUrlRewriter, "zim_path_prefix", "zimreplay")
+    assert HtmlRewriter(
+        ArticleUrlRewriter(
+            article_url=HttpUrl("http://kiwix.org/another/path/page.html"),
+            existing_zim_paths={ZimPath("zimreplay/exemple.com/a/long/path")},
+        ),
+        None,
+        None,
+        None,
+    ).rewrite('<a href="http://exemple.com/a/long/path">A link</a>').content == (
+        '<a href="../../../../zimreplay/exemple.com/a/long/path"'
+        ' __wb_orig_href="http://exemple.com/a/long/path">A link</a>'
+    )
+
+
 def test_extract_title():
     content = """<html>
       <head>

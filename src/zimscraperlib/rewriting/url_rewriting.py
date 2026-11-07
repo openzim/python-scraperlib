@@ -48,6 +48,16 @@ url-decode and find corresponding ZIM entry. Only '/', '=' and ',' are considere
 and not url-encoded. '=' and ',' are kept unencoded because some sites (e.g. YouTube)
 embed scripts that parse their own script URL and expect these characters to appear
 literally in it.
+
+A replay reader looking at a rewritten URI cannot tell it from an original relative one
+(`./page2.html` in `page1.html` is both a valid original link and a valid rewritten
+link), which is why the original value of every rewritten URL attribute has to be
+recorded separately. Setting `ArticleUrlRewriter.zim_path_prefix` removes that
+ambiguity: every ZIM path is then stored under that prefix and every rewritten URI
+walks all the way up to the ZIM root before coming back down through it, so a rewritten
+URI always contains the prefix as a literal path segment
+(`../../../zimreplay/example.com/page2.html`) while an original one cannot. It is off by
+default, which keeps the historical "as-up-as-needed" URIs and unprefixed entry paths.
 """
 
 import re
@@ -77,6 +87,8 @@ COMPILED_FUZZY_RULES = [
     AdditionalRule(match=re.compile(rule["pattern"]), replace=rule["replace"])
     for rule in FUZZY_RULES
 ]
+
+ZIM_PATH_PREFIX_RX = re.compile(r"[a-zA-Z0-9._-]+")
 
 
 def _remove_dot_segments(path: str) -> str:
@@ -246,6 +258,31 @@ class ArticleUrlRewriter:
     """
 
     additional_rules: ClassVar[list[AdditionalRule]] = COMPILED_FUZZY_RULES
+    zim_path_prefix: ClassVar[str | None] = None
+
+    @classmethod
+    def set_zim_path_prefix(cls, zim_path_prefix: str | None) -> None:
+        """Store every ZIM path under `zim_path_prefix` and root-anchor URIs on it
+
+        Both halves of the behaviour are set together: entry paths gain the prefix, and
+        rewritten URIs are made to walk up to it, which is what makes a rewritten URI
+        recognizable. Passing None (or an empty string) restores the default unprefixed
+        entry paths and "as-up-as-needed" URIs.
+
+        The prefix must be one URI path segment of `a-z`, `0-9`, `.`, `-` or `_`, kept
+        unencoded in the rewritten URI because it is the literal string a replay reader
+        matches on: a `:` would be parsed as a scheme, a `/` would make it several
+        segments, and anything else would be percent-encoded by `quote`.
+        """
+        if not zim_path_prefix:
+            cls.zim_path_prefix = None
+            return
+        if not ZIM_PATH_PREFIX_RX.fullmatch(zim_path_prefix) or zim_path_prefix in (
+            ".",
+            "..",
+        ):
+            raise ValueError(f"Invalid ZIM path prefix: {zim_path_prefix!r}")
+        cls.zim_path_prefix = zim_path_prefix
 
     def __init__(
         self,
@@ -411,8 +448,14 @@ class ArticleUrlRewriter:
             if article_path.endswith("/")
             else article_path.rpartition("/")[0]
         )
-        relative_path = ArticleUrlRewriter._relative_path(
-            item_url.removesuffix("/"), article_dir
+        walk_up_from = "" if self.zim_path_prefix else article_dir
+        ups_to_zim_root = (
+            "../" * len([part for part in article_dir.split("/") if part != "."])
+            if self.zim_path_prefix
+            else ""
+        )
+        relative_path = ups_to_zim_root + ArticleUrlRewriter._relative_path(
+            item_url.removesuffix("/"), walk_up_from
         )
         # the last '/' of the path has been removed above, we add it back
         if item_path.value.endswith("/"):
@@ -558,4 +601,8 @@ class ArticleUrlRewriter:
             f"{hostname}{path}{query}"
         )
 
-        return ZimPath(ArticleUrlRewriter.escape_dot_segments(fuzzified_url))
+        zim_path = ArticleUrlRewriter.escape_dot_segments(fuzzified_url)
+
+        return ZimPath(
+            f"{cls.zim_path_prefix}/{zim_path}" if cls.zim_path_prefix else zim_path
+        )

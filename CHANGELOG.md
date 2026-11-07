@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `ArticleUrlRewriter.set_zim_path_prefix()`: an opt-in ZIM path prefix which stores every ZIM path under it and makes rewritten URIs walk up to it instead of stopping at the closest common directory. A rewritten URI then always contains the prefix as a literal segment, so a replay reader can tell a rewritten URL from an original one (and recover its ZIM path) without relying on the `__wb_orig_*` attributes recorded at scrape time. Disabled by default, keeping the current unprefixed entry paths and "as-up-as-needed" URIs (#396)
+
 ### Fixed
 
 - Fix JS rewriting of `this.<prop>` so it reliably detects a leading newline (and prepends the needed `;`) regardless of the amount of whitespace, and no longer wrongly rewrites `this` when preceded by `.`/`$` and several spaces (#381)

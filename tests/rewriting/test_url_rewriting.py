@@ -1188,6 +1188,191 @@ class TestArticleUrlRewriter:
         )
 
 
+class TestZimPathPrefix:
+    """`zim_path_prefix` makes a rewritten URI recognizable as such (#396)"""
+
+    PREFIX = "zimreplay"
+
+    def test_disabled_by_default(self):
+        assert ArticleUrlRewriter.zim_path_prefix is None
+        rewriter = ArticleUrlRewriter(
+            article_url=HttpUrl("https://example.com/d/p.html")
+        )
+        assert rewriter("p2.html", None).zim_path == ZimPath("example.com/d/p2.html")
+        assert rewriter("p2.html", None).rewriten_url == "p2.html"
+
+    def test_prefix_makes_a_sibling_link_recognizable(
+        self, monkeypatch: pytest.MonkeyPatch
+    ):
+        """The same link, without and with the prefix
+
+        A rewritten `./p2.html` is textually indistinguishable from an original
+        relative link, which is what forces the original to be recorded separately.
+        Walking up to the prefix instead makes the rewritten URI carry a marker no
+        original URI can have.
+        """
+        article_url = HttpUrl("https://example.com/d/p.html")
+        assert (
+            ArticleUrlRewriter(article_url=article_url)("./p2.html", None).rewriten_url
+            == "p2.html"
+        )
+        monkeypatch.setattr(ArticleUrlRewriter, "zim_path_prefix", self.PREFIX)
+        rewritten = ArticleUrlRewriter(article_url=article_url)(
+            "./p2.html", None
+        ).rewriten_url
+        assert rewritten == "../../../zimreplay/example.com/d/p2.html"
+        assert self.PREFIX in rewritten
+        assert self.PREFIX not in "./p2.html"
+
+    @pytest.mark.parametrize(
+        "url,zim_path",
+        [
+            ("https://example.com", "zimreplay/example.com/"),
+            ("http://example.com/resource", "zimreplay/example.com/resource"),
+            ("http://example.com/a/b?foo=bar", "zimreplay/example.com/a/b?foo=bar"),
+            ("http://example.com/a/../b", "zimreplay/example.com/a/_../b"),
+            (
+                "https://www.youtube.com/youtubei/v1/foo?videoId=x&other=y",
+                "zimreplay/youtube.fuzzy.replayweb.page/youtubei/v1/foo?videoId=x",
+            ),
+        ],
+    )
+    def test_normalize_adds_prefix(
+        self, monkeypatch: pytest.MonkeyPatch, url: str, zim_path: str
+    ):
+        monkeypatch.setattr(ArticleUrlRewriter, "zim_path_prefix", self.PREFIX)
+        assert ArticleUrlRewriter.normalize(HttpUrl(url)) == ZimPath(zim_path)
+
+    @pytest.mark.parametrize(
+        "article_url,original_content_url,expected_rewritten_url",
+        [
+            pytest.param(
+                "https://example.com/dir/page1.html",
+                "./page2.html",
+                "../../../zimreplay/example.com/dir/page2.html",
+                id="sibling_document_shows_the_whole_path",
+            ),
+            (
+                "https://example.com/dir/page1.html",
+                "https://other.org/a/b.css",
+                "../../../zimreplay/other.org/a/b.css",
+            ),
+            pytest.param(
+                "https://example.com/dir/",
+                "index.html",
+                "../../../zimreplay/example.com/dir/index.html",
+                id="directory_document",
+            ),
+            pytest.param(
+                "https://example.com/dir/page.html",
+                "https://example.com/dir/page.html?foo=a b#frag",
+                "../../../zimreplay/example.com/dir/page.html%3Ffoo=a%20b#frag",
+                id="querystring_and_fragment_keep_their_place",
+            ),
+            pytest.param(
+                "https://example.com/index.html",
+                "//cdn.example.com/logo.png",
+                "../../zimreplay/cdn.example.com/logo.png",
+                id="article_at_host_root_walks_up_one_segment_less",
+            ),
+            pytest.param(
+                "https://example.com/x//y/page.html",
+                "https://example.com/x//y/z.html",
+                "../../../../../zimreplay/example.com/x//y/z.html",
+                id="empty_segments_count_as_directories_to_walk_up_from",
+            ),
+            pytest.param(
+                "https://example.com/dir/page1.html",
+                "#anchor",
+                "#anchor",
+                id="fragment_only_reference_is_not_rewritten",
+            ),
+            pytest.param(
+                "https://example.com/dir/page1.html",
+                "mailto:a@b.com",
+                "mailto:a@b.com",
+                id="other_scheme_is_not_rewritten",
+            ),
+        ],
+    )
+    def test_rewritten_url(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        article_url: str,
+        original_content_url: str,
+        expected_rewritten_url: str,
+    ):
+        monkeypatch.setattr(ArticleUrlRewriter, "zim_path_prefix", self.PREFIX)
+        rewriter = ArticleUrlRewriter(article_url=HttpUrl(article_url))
+        assert (
+            rewriter(
+                original_content_url, base_href=None, rewrite_all_url=True
+            ).rewriten_url
+            == expected_rewritten_url
+        )
+
+    @pytest.mark.parametrize(
+        "article_url,original_content_url",
+        [
+            ("https://example.com/dir/page1.html", "./page2.html"),
+            ("https://example.com/dir/page1.html", "../other/x.png"),
+            ("https://example.com/dir/", "index.html"),
+            ("https://example.com/x//y/page.html", "https://example.com/x//y/z.html"),
+            ("https://example.com/a/b/c/d/e.html", "https://other.org/f?g=h//i"),
+        ],
+    )
+    def test_prefix_uri_resolves_back_to_zim_path(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        article_url: str,
+        original_content_url: str,
+    ):
+        """Walking up to the prefix must not change which entry is addressed"""
+        monkeypatch.setattr(ArticleUrlRewriter, "zim_path_prefix", self.PREFIX)
+        rewriter = ArticleUrlRewriter(article_url=HttpUrl(article_url))
+        result = rewriter(original_content_url, base_href=None, rewrite_all_url=True)
+        assert result.zim_path is not None
+        assert (
+            _resolve_from_zim_root(rewriter.article_path.value, result.rewriten_url)
+            == result.zim_path.value
+        )
+
+    @pytest.mark.parametrize(
+        "invalid_prefix",
+        ["a/b", "with space", "co:lon", "p%C3%A9fix", ".", "..", "%2F"],
+    )
+    def test_set_zim_path_prefix_rejects_invalid(
+        self, monkeypatch: pytest.MonkeyPatch, invalid_prefix: str
+    ):
+        monkeypatch.setattr(ArticleUrlRewriter, "zim_path_prefix", None)
+        with pytest.raises(ValueError, match="Invalid ZIM path prefix"):
+            ArticleUrlRewriter.set_zim_path_prefix(invalid_prefix)
+        assert ArticleUrlRewriter.zim_path_prefix is None
+
+    @pytest.mark.parametrize(
+        "valid_prefix", ["z", "zim-replay", "zim_replay", "zim.replay"]
+    )
+    def test_set_zim_path_prefix_accepts_valid(
+        self, monkeypatch: pytest.MonkeyPatch, valid_prefix: str
+    ):
+        monkeypatch.setattr(ArticleUrlRewriter, "zim_path_prefix", None)
+        ArticleUrlRewriter.set_zim_path_prefix(valid_prefix)
+        assert ArticleUrlRewriter.zim_path_prefix == valid_prefix
+        assert ArticleUrlRewriter.normalize(
+            HttpUrl("https://example.com/a")
+        ).value.startswith(f"{valid_prefix}/example.com/a")
+
+    def test_set_zim_path_prefix_disables(self, monkeypatch: pytest.MonkeyPatch):
+        monkeypatch.setattr(ArticleUrlRewriter, "zim_path_prefix", self.PREFIX)
+        for falsy in (None, ""):
+            ArticleUrlRewriter.set_zim_path_prefix(falsy)
+            assert ArticleUrlRewriter.zim_path_prefix is None
+            assert (
+                ArticleUrlRewriter.normalize(HttpUrl("https://example.com/a")).value
+                == "example.com/a"
+            )
+
+
 class CustomRewriter(ArticleUrlRewriter):
     """Sample class using the rewriting result to process items to download
 
@@ -1378,3 +1563,15 @@ def _resolve_relative_reference(base_url: str, reference: str) -> str:
     base = urlsplit(base_url)
     merged_path = base.path.rpartition("/")[0] + "/" + reference.partition("#")[0]
     return f"{base.netloc}{_remove_dot_segments(merged_path)}"
+
+
+def _resolve_from_zim_root(article_zim_path: str, reference: str) -> str:
+    """Resolve a document URI against the ZIM path of its document, as a reader does
+
+    A ZIM has no host, so the ZIM root is served behind a dummy one to reuse the
+    resolution rules.
+    """
+    resolved = _resolve_relative_reference(
+        f"https://zimroot.example.test/{article_zim_path}", reference
+    )
+    return unquote(resolved).removeprefix("zimroot.example.test/")
