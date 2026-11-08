@@ -641,3 +641,67 @@ def test_js_rewrite_nested_module_detected(js_src: str, expected_js_module_path:
 
     assert len(js_modules) == 1
     assert js_modules[0].value == expected_js_module_path
+
+
+# Marker string present in the test fixtures below, matching the one real
+# chunk this patch targets (customElements.define("interactive-example"...).
+MDN_MARKER = 'customElements.define("interactive-example",X)'
+
+
+def _rewrite_as(url: str, text: str) -> str:
+    return JsRewriter(
+        url_rewriter=ArticleUrlRewriter(article_url=HttpUrl(url)),
+        base_href=None,
+        notify_js_module=None,
+    ).rewrite(text)
+
+
+def test_mdn_permalink_patch_applies_on_mdn_host():
+    text = f'{MDN_MARKER};x=<mdn-play-runner foo="bar"></mdn-play-runner>;'
+    result = _rewrite_as("https://developer.mozilla.org/static/client/x.js", text)
+    assert "<mdn-play-runner permalink foo=" in result
+
+
+def test_mdn_permalink_patch_does_not_apply_on_other_hosts():
+    # Same content, same marker, different host: must NOT be patched. This is
+    # the whole point of gating SITE_JS_PATCHES by exact hostname.
+    text = f'{MDN_MARKER};x=<mdn-play-runner foo="bar"></mdn-play-runner>;'
+    result = _rewrite_as("https://example.com/static/client/x.js", text)
+    assert "permalink" not in result
+    assert result == text
+
+
+def test_mdn_permalink_patch_does_not_apply_on_lookalike_hosts():
+    # Hostname match must be exact, not a substring/prefix/suffix match, so a
+    # completely unrelated host that merely contains "developer.mozilla.org"
+    # as a substring is never affected.
+    text = f'{MDN_MARKER};x=<mdn-play-runner foo="bar"></mdn-play-runner>;'
+    for url in [
+        "https://developer.mozilla.org.evil.example/static/client/x.js",
+        "https://notdeveloper.mozilla.org/static/client/x.js",
+        "https://developer.mozilla.org.example.com/static/client/x.js",
+    ]:
+        result = _rewrite_as(url, text)
+        assert "permalink" not in result, url
+
+
+def test_mdn_permalink_patch_requires_marker():
+    # Right host, but the file doesn't define <interactive-example> (e.g.
+    # this is <mdn-live-sample-result>'s own chunk, which already always
+    # sets `permalink` itself): the patch must not touch unrelated chunks
+    # that merely happen to also mention <mdn-play-runner>.
+    text = 'x=<mdn-play-runner foo="bar"></mdn-play-runner>;'
+    result = _rewrite_as("https://developer.mozilla.org/static/client/x.js", text)
+    assert result == text
+
+
+def test_mdn_permalink_patch_does_not_touch_closing_tag_or_css_selector():
+    text = (
+        f"{MDN_MARKER};"
+        '<mdn-play-runner foo="bar"></mdn-play-runner>'
+        ".template-console mdn-play-runner{display:none}"
+    )
+    result = _rewrite_as("https://developer.mozilla.org/static/client/x.js", text)
+    assert result.count("permalink") == 1
+    assert "</mdn-play-runner permalink>" not in result
+    assert "mdn-play-runner{display:none}" in result

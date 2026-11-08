@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Detect `export const`/`let`/`var`/`function`/`async function`/`*` as module code (`EXPORT_RX` only recognized `export {...}`, `export default` and `export class`), fixing JS rewriting wrongly injecting a non-module `let arguments;` wrapper into ES modules using these common export forms, which is a syntax error in strict/module code (#387)
 - Fix JS URL rewriter confusing a percent-encoded `%2B` with a raw `+` in query strings (#389)
 - Patch vendored `wombat.js` so `retrieveWBOSRCAsURL` (the helper behind the above element-property fix) resolves a recorded original against the frame's true original URL (`wb_info.url`) instead of its replay-time `ownerDocument`, fixing it returning/using a URL under the wrong host for a page whose own URL was changed by a fuzzy rule (e.g. YouTube embeds), which broke playback (#398)
+- Add a host-gated `SITE_JS_PATCHES` mechanism to `JsRewriter`, fixing MDN's `<interactive-example>` widget missing a deterministic `permalink` attribute (#394)
 
 ## [5.5.2] - 2026-11-06
 

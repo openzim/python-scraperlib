@@ -20,6 +20,7 @@ Oct 22, 2026 - f62b924492339cf2ee069f51319ab6603f63500d
 import re
 from collections.abc import Callable, Iterable
 from typing import Any, Literal
+from urllib.parse import urlsplit
 
 from zimscraperlib.rewriting.js_ast import parse_top_level
 from zimscraperlib.rewriting.rx_replacer import (
@@ -267,6 +268,52 @@ def create_js_rules() -> list[TransformationRule]:
 
 REWRITE_JS_RULES = create_js_rules()
 
+# Site-specific content patches: narrow, deliberately host-gated fixes for a
+# particular known-broken behavior on a given site, applied to the raw JS
+# text before any other rewriting. Keyed by exact hostname (the host of the
+# article URL currently being rewritten, i.e. this JS file's own URL) so a
+# patch can never affect any other site's content, even if its marker
+# string were to appear there by coincidence.
+#
+# Each entry is (marker, pattern, replacement): `marker` is a cheap
+# substring check, tested before the regex runs, so that a visit to this
+# host only pays for a `str.find` on the (vast majority of) its files that
+# don't match and don't need the patch at all.
+SiteJsPatch = tuple[str, re.Pattern[str], str]
+
+SITE_JS_PATCHES: dict[str, list[SiteJsPatch]] = {
+    "developer.mozilla.org": [
+        # developer.mozilla.org's top "Try it" widget (<interactive-example>)
+        # renders its inner <mdn-play-runner> without the `permalink`
+        # attribute, so that component falls back to crypto.randomUUID() for
+        # a session-random id instead of the content-derived hash
+        # <mdn-live-sample-result> uses elsewhere on the same page (whose own
+        # template already always sets `permalink`). A fresh random id can
+        # never match anything captured in a WARC, so the widget fails to
+        # load on replay. The *initial*, pre-edit code is just as
+        # content-stable as the other live-sample widgets that already work;
+        # only the id source (hash vs crypto.randomUUID()) differs. Forcing
+        # `permalink` here makes it use that same deterministic,
+        # content-derived id (live editing by a reader still won't resolve
+        # beyond that initial state, same as it already wouldn't without this
+        # patch -- no regression, since that's the same inherent limitation
+        # as any other dynamically-generated URL).
+        (
+            'customElements.define("interactive-example"',
+            re.compile(r"<mdn-play-runner(\s)"),
+            r"<mdn-play-runner permalink\1",
+        ),
+    ],
+}
+
+
+def apply_site_js_patches(text: str, host: str) -> str:
+    """Apply any narrow, host-gated content patches registered for `host`."""
+    for marker, pattern, replacement in SITE_JS_PATCHES.get(host, []):
+        if marker in text:
+            text = pattern.sub(replacement, text)
+    return text
+
 
 class JsRewriter(RxRewriter):
     """
@@ -285,6 +332,7 @@ class JsRewriter(RxRewriter):
         self.url_rewriter = url_rewriter
         self.notify_js_module = notify_js_module
         self.base_href = base_href
+        self.host = urlsplit(url_rewriter.article_url.value).hostname or ""
 
     def _init_local_declaration(self, local_decls: Iterable[str]) -> str:
         """
@@ -340,6 +388,8 @@ class JsRewriter(RxRewriter):
         """
         if isinstance(text, bytes):
             text = text.decode()
+
+        text = apply_site_js_patches(text, self.host)
 
         opts = opts or {}
 
