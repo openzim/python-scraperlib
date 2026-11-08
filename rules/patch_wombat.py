@@ -216,7 +216,15 @@ GETLOC_PATCHED = (
 # Location getters above, cannot reverse our own urlRewriteFunction's
 # path+query flattening. `retrieveWBOSRCAsURL` is a new helper, resolving a
 # recorded original the way the browser resolves these properties (as an
-# absolute URL), reusing wombat's own `resolveRelUrl`.
+# absolute URL).
+#
+# The recorded original is a literal snapshot of the attribute as it stood
+# in the source HTML, so it must be resolved against that source document's
+# *true* URL (`wb_info.url`) -- not `ownerDocument`'s replay-time one, which
+# can diverge from it, e.g. a page served under a fuzzy-rule-normalized
+# path (openzim/python-scraperlib#398). Passing a `{baseURI: wb_info.url}`
+# stand-in into wombat's own `resolveRelUrl` reuses its existing fallback chain
+# (current/top document baseURI) for the rare case `wb_info.url` isn't set.
 #
 # Each property's setter is also patched to forget the recorded original
 # (via `removeWBOSRC`) when the property is assigned, same as `setAttribute`
@@ -241,7 +249,8 @@ RETRIEVE_WBOSRC_PATCHED = (
     "wb_getAttribute.call(t,i):t.getAttribute(i);return null==o?void 0:o}},"
     "b.prototype.retrieveWBOSRCAsURL=function(t,e){if(!t||1!==t.nodeType||"
     "!t.hasAttribute(e))return;var r=this.retrieveWBOSRC(t,e);if(!r)"
-    "return;try{return this.resolveRelUrl(r,t.ownerDocument)}catch(i){"
+    "return;try{return this.resolveRelUrl(r,{baseURI:this.wb_info&&"
+    "this.wb_info.url})}catch(i){"
     "return}}"
 )
 
