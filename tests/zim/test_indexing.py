@@ -119,8 +119,8 @@ def test_indexing_item_is_front(tmp_path: pathlib.Path, png_image: pathlib.Path)
     assert reader.get_search_results_count("food") == 0
 
 
-@pytest.mark.skip  # see https://github.com/openzim/python-scraperlib/issues/258
 def test_indexing_item_not_front(tmp_path: pathlib.Path, png_image: pathlib.Path):
+    """Create a ZIM with a non-front item with custom title and content for indexing"""
     fpath = tmp_path / "test.zim"
     main_path = "welcome"
     with Creator(fpath, main_path).config_dev_metadata() as creator:
@@ -139,19 +139,71 @@ def test_indexing_item_not_front(tmp_path: pathlib.Path, png_image: pathlib.Path
     assert fpath.exists()
 
     reader = Archive(fpath)
-    # "brain" works as a suggestion but "food" doesn't work because since no front
-    # article is present in the zim file, libzim doesn't create a title xapian index.
-    # so, when searching suggestion, libzim is fallback to a binary search on the title
-    # and return only article starting by the query.
-    # see https://github.com/openzim/libzim/issues/902#issuecomment-2223050129
-    assert "welcome" in list(reader.get_suggestions("brain"))
+    # libzim 3.13 yields no suggestions for a non-front item.
+    # This test documents libzim's current behaviour.
+    assert "welcome" not in list(reader.get_suggestions("brain"))
     assert "welcome" not in list(reader.get_suggestions("food"))
     assert "welcome" not in list(reader.get_suggestions("screen"))
     assert "welcome" not in list(reader.get_suggestions("car"))
-    assert reader.get_search_results_count("screen") >= 1
-    assert reader.get_search_results_count("car") >= 1
+    assert reader.get_search_results_count("screen") == 1
+    assert reader.get_search_results_count("car") == 1
     assert reader.get_search_results_count("brain") == 0
     assert reader.get_search_results_count("food") == 0
+
+
+def test_indexing_html_not_front_custom(tmp_path: pathlib.Path):
+    """A non-front HTML item has custom indexing data"""
+    fpath = tmp_path / "test.zim"
+    main_path = "welcome"
+    with Creator(fpath, main_path).config_dev_metadata() as creator:
+        creator.add_item(
+            StaticItem(
+                content="<html><body>car</body></html>",
+                path="welcome",
+                title="brain food",
+                mimetype="text/html",
+                index_data=IndexData(title="screen", content="car"),
+                hints={libzim.writer.Hint.FRONT_ARTICLE: False},
+            )
+        )
+    assert fpath.exists()
+
+    reader = Archive(fpath)
+    assert "welcome" not in list(reader.get_suggestions("brain"))
+    assert "welcome" not in list(reader.get_suggestions("food"))
+    assert "welcome" not in list(reader.get_suggestions("screen"))
+    assert "welcome" not in list(reader.get_suggestions("car"))
+    assert reader.get_search_results_count("screen") == 1
+    assert reader.get_search_results_count("car") == 1
+    assert reader.get_search_results_count("brain") == 0
+    assert reader.get_search_results_count("food") == 0
+
+
+def test_indexing_html_not_front_with_libzim(tmp_path: pathlib.Path):
+    """A non-front HTML item is automatically indexed by libzim"""
+    fpath = tmp_path / "test.zim"
+    main_path = "welcome"
+    with Creator(fpath, main_path).config_dev_metadata() as creator:
+        creator.add_item(
+            StaticItem(
+                content="<html><title>screen</title><body>car</body></html>",
+                path="welcome",
+                title="brain food",
+                mimetype="text/html",
+                hints={libzim.writer.Hint.FRONT_ARTICLE: False},
+            )
+        )
+    assert fpath.exists()
+
+    reader = Archive(fpath)
+    assert "welcome" not in list(reader.get_suggestions("brain"))
+    assert "welcome" not in list(reader.get_suggestions("food"))
+    assert "welcome" not in list(reader.get_suggestions("screen"))
+    assert "welcome" not in list(reader.get_suggestions("car"))
+    assert reader.get_search_results_count("brain") == 1
+    assert reader.get_search_results_count("food") == 1
+    assert reader.get_search_results_count("car") == 1
+    assert reader.get_search_results_count("screen") == 0
 
 
 def _assert_pdf_zim(fpath: pathlib.Path):
