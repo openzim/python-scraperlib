@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix JS URL rewriter confusing a percent-encoded `%2B` with a raw `+` in query strings (#389)
 - Patch vendored `wombat.js` so `retrieveWBOSRCAsURL` (the helper behind the above element-property fix) resolves a recorded original against the frame's true original URL (`wb_info.url`) instead of its replay-time `ownerDocument`, fixing it returning/using a URL under the wrong host for a page whose own URL was changed by a fuzzy rule (e.g. YouTube embeds), which broke playback (#398)
 - Add a host-gated `SITE_JS_PATCHES` mechanism to `JsRewriter`, fixing MDN's `<interactive-example>` widget missing a deterministic `permalink` attribute (#394)
+- Fix `HtmlRewriter` title extraction so it reassembles the whole text of a `<title>` containing character references (`&amp;`, `&#039;`, `&#x27;`, …), which were truncated at the first one, and the ZIM entry titles built from it (#401)
 
 ## [5.5.2] - 2026-11-06
 

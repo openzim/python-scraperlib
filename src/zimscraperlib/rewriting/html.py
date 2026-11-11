@@ -18,7 +18,7 @@ import re
 from collections.abc import Callable
 from dataclasses import dataclass
 from functools import cache
-from html import escape
+from html import escape, unescape
 from html.parser import HTMLParser
 from inspect import Signature, signature
 from typing import Any, NamedTuple
@@ -194,6 +194,7 @@ class HtmlRewriter(HTMLParser):
         super().__init__(convert_charrefs=False)
         self.url_rewriter = url_rewriter
         self.title = None
+        self.title_chunks: list[str] = []
         self.output = None
         # This works only for tag without children.
         # But as we use it to get the title, we are ok
@@ -275,6 +276,8 @@ class HtmlRewriter(HTMLParser):
 
     def handle_endtag(self, tag: str):
         """Overwrite handle_endtag from HTMLParser"""
+        if tag == "title":
+            self._save_title()
         self.html_rewrite_context = None
         if tag == "head" and self.post_head_insert:
             self.send(self.post_head_insert)
@@ -287,8 +290,7 @@ class HtmlRewriter(HTMLParser):
 
     def handle_data(self, data: str):
         """Overwrite handle_data from HTMLParser"""
-        if self.html_rewrite_context == "title" and self.title is None:
-            self.title = data.strip()
+        self._collect_title_data(data)
         if (
             data.strip()
             and (
@@ -308,10 +310,12 @@ class HtmlRewriter(HTMLParser):
 
     def handle_entityref(self, name: str):
         """Overwrite handle_entityref from HTMLParser"""
+        self._collect_title_data(unescape(f"&{name};"))
         self.send(f"&{name};")
 
     def handle_charref(self, name: str):
         """Overwrite handle_charref from HTMLParser"""
+        self._collect_title_data(unescape(f"&#{name};"))
         self.send(f"&#{name};")
 
     def handle_comment(self, data: str):
@@ -329,6 +333,33 @@ class HtmlRewriter(HTMLParser):
     def unknown_decl(self, data: str):
         """Overwrite unknown_decl from HTMLParser"""
         self.handle_decl(data)  # pragma: no cover
+
+    def close(self):
+        """Overwrite close from HTMLParser
+
+        Also saves a title whose closing tag is missing from the document.
+        """
+        super().close()
+        self._save_title()
+
+    def _collect_title_data(self, data: str) -> None:
+        """Collect one piece of the text of the title currently being read
+
+        The parser is fed with character reference conversion disabled, so the text of a
+        title containing one or more of them is handed over in several pieces.
+        """
+        if self.html_rewrite_context == "title" and self.title is None:
+            self.title_chunks.append(data)
+
+    def _save_title(self) -> None:
+        """Keep the whole text of the first title which has some
+
+        A title element without text leaves the title unset, so that a later title,
+        typically the one of an inline SVG, still gets used.
+        """
+        if self.title is not None or not self.title_chunks:
+            return
+        self.title = "".join(self.title_chunks).strip()
 
 
 DropAttributeCallable = Callable[..., bool]

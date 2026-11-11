@@ -9,6 +9,7 @@ from zimscraperlib.rewriting.html import (
     AttrsList,
     HtmlRewriter,
     HTMLRewritingRules,
+    RewritenHtml,
     extract_base_href,
     format_attr,
     get_attr_value_from,
@@ -389,6 +390,68 @@ def test_extract_title():
         .title
         == "Page title"
     )
+
+
+def rewritten_html(content: str) -> RewritenHtml:
+    return HtmlRewriter(
+        ArticleUrlRewriter(article_url=HttpUrl("http://kiwix.org/")),
+        None,
+        None,
+        None,
+    ).rewrite(content)
+
+
+@pytest.mark.parametrize(
+    "content,expected_title",
+    [
+        ("<html><head><title>Tom &amp; Jerry</title></head></html>", "Tom & Jerry"),
+        (
+            "<html><head><title>D&eacute;j&agrave; Vu &amp; More</title></head></html>",
+            "Déjà Vu & More",
+        ),
+        (
+            "<html><head><title>L&#039;Illustre Maurin</title></head></html>",
+            "L'Illustre Maurin",
+        ),
+        (
+            "<html><head><title>L&#x27;Illustre Maurin</title></head></html>",
+            "L'Illustre Maurin",
+        ),
+        (
+            "<html><head><title>Nice &amp; clean &#38; fresh</title></head></html>",
+            "Nice & clean & fresh",
+        ),
+        ("<html><head><title>Rock & Roll</title></head></html>", "Rock & Roll"),
+        (
+            "<html><head><title>  spaced &amp; out  </title></head></html>",
+            "spaced & out",
+        ),
+        (
+            (
+                "<html><head><title>Tom &amp; Jerry</title></head>"
+                "<body><title>Second &amp; only</title></body></html>"
+            ),
+            "Tom & Jerry",
+        ),
+        (
+            (
+                "<html><head><title></title></head>"
+                "<body><svg><title>SVG &amp; only</title></svg></body></html>"
+            ),
+            "SVG & only",
+        ),
+        ("<html><head><title>Unclosed &amp; still", "Unclosed & still"),
+    ],
+)
+def test_extract_title_with_char_refs(content: str, expected_title: str):
+    assert rewritten_html(content).title == expected_title
+
+
+def test_extract_title_keeps_char_refs_in_content():
+    content = "<html><head><title>Tom &amp; Jerry &eacute; 2026</title></head></html>"
+    rewritten = rewritten_html(content)
+    assert rewritten.title == "Tom & Jerry é 2026"
+    assert rewritten.content == content
 
 
 def test_rewrite_attributes():
