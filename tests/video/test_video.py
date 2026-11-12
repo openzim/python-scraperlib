@@ -13,6 +13,7 @@ from zimscraperlib.video.presets import (
     VideoMp4Low,
     VideoWebmHigh,
     VideoWebmLow,
+    VideoWebmMedium,
     VoiceMp3Low,
 )
 
@@ -178,9 +179,9 @@ def test_preset_has_mime_and_ext():
 
 def test_preset_video_webm_low():
     config = VideoWebmLow()
-    assert config.VERSION == 3
+    assert config.VERSION == 4
     args = config.to_ffmpeg_args()
-    assert len(args) == 26
+    assert len(args) == 28
     options_map = [
         ("codec:v", "libvpx-vp9"),
         ("codec:a", "libvorbis"),
@@ -191,6 +192,7 @@ def test_preset_video_webm_low():
         ("qmin", "30"),
         ("qmax", "40"),
         ("vf", "scale='480:trunc(ow/a/2)*2'"),
+        ("row-mt", "1"),
         ("g", "240"),
         ("speed", "4"),
         ("ac", "2"),
@@ -210,11 +212,49 @@ def test_preset_video_webm_low():
     assert idx != -1 and args[idx + 1] == "25"
 
 
+def test_preset_video_webm_medium():
+    config = VideoWebmMedium()
+    assert config.VERSION == 1
+    args = config.to_ffmpeg_args()
+    assert len(args) == 28
+    options_map = [
+        ("codec:v", "libvpx-vp9"),
+        ("codec:a", "libvorbis"),
+        ("b:v", "240k"),
+        ("ar", "44100"),
+        ("b:a", "48k"),
+        ("quality", "good"),
+        ("qmin", "32"),
+        ("qmax", "58"),
+        (
+            "vf",
+            "scale='-2:min(720,ih)':force_original_aspect_ratio=increase",
+        ),
+        ("row-mt", "1"),
+        ("g", "240"),
+        ("speed", "3"),
+        ("ac", "2"),
+    ]
+    for option, val in options_map:
+        idx = args.index(f"-{option}")
+        assert idx != -1
+        assert args[idx + 1] == val
+
+    # test updating values
+    config = VideoWebmMedium(**{"-speed": "4"})
+    config["-b:v"] = "300k"
+    args = config.to_ffmpeg_args()
+    idx = args.index("-speed")
+    assert idx != -1 and args[idx + 1] == "4"
+    idx = args.index("-b:v")
+    assert idx != -1 and args[idx + 1] == "300k"
+
+
 def test_preset_video_webm_high():
     config = VideoWebmHigh()
-    assert config.VERSION == 2
+    assert config.VERSION == 3
     args = config.to_ffmpeg_args()
-    assert len(args) == 24
+    assert len(args) == 26
     options_map = [
         ("codec:v", "libvpx-vp9"),
         ("codec:a", "libvorbis"),
@@ -224,6 +264,7 @@ def test_preset_video_webm_high():
         ("quality", "good"),
         ("qmin", "26"),
         ("qmax", "54"),
+        ("row-mt", "1"),
         ("g", "240"),
         ("speed", "1"),
         ("ac", "2"),
@@ -279,13 +320,14 @@ def test_preset_video_mp4_low():
 
 def test_preset_video_mp4_high():
     config = VideoMp4High()
-    assert config.VERSION == 1
+    assert config.VERSION == 2
     args = config.to_ffmpeg_args()
-    assert len(args) == 8
+    assert len(args) == 10
     options_map = [
         ("codec:v", "h264"),
         ("codec:a", "aac"),
-        ("crf", "20"),
+        ("crf", "28"),
+        ("movflags", "+faststart"),
     ]
     for option, val in options_map:
         idx = args.index(f"-{option}")
@@ -354,6 +396,18 @@ def test_preset_voice_mp3_low():
             "video.webm",
             VideoWebmLow().to_ffmpeg_args(),
             {"codecs": ["vp9", "vorbis"], "duration": 2},
+        ),
+        (
+            "video.mp4",
+            "video.webm",
+            VideoWebmMedium().to_ffmpeg_args(),
+            {"codecs": ["vp9", "vorbis"], "duration": 2},
+        ),
+        (
+            "video.mkv",
+            "video.mp4",
+            VideoMp4High().to_ffmpeg_args(),
+            {"codecs": ["h264", "aac"], "duration": 2},
         ),
         (
             "video.webm",
