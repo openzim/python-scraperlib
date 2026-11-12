@@ -18,6 +18,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Patch vendored `wombat.js` so `retrieveWBOSRCAsURL` (the helper behind the above element-property fix) resolves a recorded original against the frame's true original URL (`wb_info.url`) instead of its replay-time `ownerDocument`, fixing it returning/using a URL under the wrong host for a page whose own URL was changed by a fuzzy rule (e.g. YouTube embeds), which broke playback (#398)
 - Add a host-gated `SITE_JS_PATCHES` mechanism to `JsRewriter`, fixing MDN's `<interactive-example>` widget missing a deterministic `permalink` attribute (#394)
 
+### Changed
+
+- Re-enable `test_indexing_item_not_front` and test libzim's current indexing behavior for non-front items, including non-front `text/html` ones (#400)
+
 ## [5.5.2] - 2026-11-06
 
 ### Fixed
