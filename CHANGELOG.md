@@ -17,6 +17,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - All Webm presets (`VideoWebmLow`, `VideoWebmMedium`, `VideoWebmHigh`) now use `-row-mt 1` for faster VP9 encoding (#271)
 - Bumped `VideoWebmLow` to v4 and `VideoWebmHigh` to v3 following the `-row-mt` addition (#271)
 
+### Removed
+
+- **BREAKING** Remove deprecated `convert` parameter from `optimize_image` (use `dst_format` instead) (#292)
+
 ### Fixed
 
 - Fix JS rewriting of `this.<prop>` so it reliably detects a leading newline (and prepends the needed `;`) regardless of the amount of whitespace, and no longer wrongly rewrites `this` when preceded by `.`/`$` and several spaces (#381)

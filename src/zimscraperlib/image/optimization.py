@@ -23,7 +23,6 @@ import os
 import pathlib
 import subprocess
 import tempfile
-import warnings
 from dataclasses import dataclass
 
 import piexif  # pyright: ignore[reportMissingTypeStubs]
@@ -407,7 +406,6 @@ def optimize_image(
     *,
     dst_format: str | None = None,
     delete_src: bool = False,
-    convert: bool | str = False,
 ) -> pathlib.Path | io.BytesIO:
     """Optimize image, automatically selecting correct optimizer
 
@@ -415,22 +413,7 @@ def optimize_image(
         dst_format: format of the destination image,
             required when dst is io.BytesIO.
         delete_src: whether to remove src file upon success (boolean)
-            values: True | False
-        convert: will be deprecated in scraperlib 6, use dst_format instead.
-            values: False: don't convert
-                    True: convert to format implied by dst suffix
-                    str: convert to the specified format"""
-
-    if convert is not False:
-        warnings.warn(
-            "The 'convert' param is deprecated and will be removed in scraperlib 6."
-            "Use 'dst_format' parameter instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-
-        if isinstance(convert, str):
-            dst_format = convert
+            values: True | False"""
 
     if options is None:
         options = OptimizeOptions.of()

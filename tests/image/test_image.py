@@ -633,24 +633,22 @@ def test_optimize_image_delete_src_not_applicable_for_bytes():
         optimize_image(src, dst, dst_format="png", delete_src=True)
 
 
-def test_optimize_image_deprecated_convert_str(png_image: pathlib.Path):
+def test_optimize_image_convert_format_bytesio(png_image: pathlib.Path):
     src = png_image
     dst = io.BytesIO()
-    with pytest.warns(DeprecationWarning, match="The 'convert' param is deprecated"):
-        optimize_image(src, dst, convert="jpg")
+    optimize_image(src, dst, dst_format="jpg")
 
     dst.seek(0)
     assert Image.open(dst).format == "JPEG"
 
 
-def test_optimize_image_deprecated_convert_true(
+def test_optimize_image_convert_format_path(
     png_image: pathlib.Path, tmp_path: pathlib.Path
 ):
     src = png_image
     dst = tmp_path / "out.jpg"
 
-    with pytest.warns(DeprecationWarning, match="The 'convert' param is deprecated"):
-        optimize_image(src, dst, convert=True)
+    optimize_image(src, dst)
 
     assert dst.exists()
     assert Image.open(dst).format == "JPEG"
