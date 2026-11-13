@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `VideoMp4High` now encodes at CRF 28 instead of 20, which regularly produced a file larger than its input, and adds `-movflags +faststart` (#271)
 - All Webm presets (`VideoWebmLow`, `VideoWebmMedium`, `VideoWebmHigh`) now use `-row-mt 1` for faster VP9 encoding (#271)
 - Bumped `VideoWebmLow` to v4 and `VideoWebmHigh` to v3 following the `-row-mt` addition (#271)
+- `import zimscraperlib.zim` no longer imports yt-dlp, beautifulsoup4 or lxml, and `import zimscraperlib.inputs` no longer imports yt-dlp: `stream_file`, `get_retry_adapter` and `find_title_in_file` are now imported where they are used (#244)
 
 ### Fixed
 

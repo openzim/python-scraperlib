@@ -13,8 +13,6 @@ from collections.abc import Generator
 import libzim.writer  # pyright: ignore[reportMissingModuleSource]
 import requests
 
-from zimscraperlib.download import get_retry_adapter, stream_file
-
 
 class FileProvider(libzim.writer.FileProvider):
     def __init__(
@@ -67,6 +65,8 @@ class URLProvider(libzim.writer.ContentProvider):
     Useful for non-indexed content for which feed() is called only once"""
 
     def __init__(self, url: str, size: int | None = None, ref: object | None = None):
+        from zimscraperlib.download import get_retry_adapter
+
         super().__init__()
         self.url = url
         self.size = size if size is not None else self.get_size_of(url)
@@ -79,6 +79,8 @@ class URLProvider(libzim.writer.ContentProvider):
 
     @staticmethod
     def get_size_of(url: str) -> int | None:
+        from zimscraperlib.download import stream_file
+
         _, headers = stream_file(url, byte_stream=io.BytesIO(), only_first_block=True)
         try:
             return int(headers["Content-Length"])

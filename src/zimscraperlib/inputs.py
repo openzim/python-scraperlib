@@ -11,7 +11,6 @@ from zimscraperlib.constants import (
 from zimscraperlib.constants import (
     MAXIMUM_LONG_DESCRIPTION_METADATA_LENGTH as MAX_LONG_DESC_LENGTH,
 )
-from zimscraperlib.download import stream_file
 
 
 def handle_user_provided_file(
@@ -41,6 +40,8 @@ def handle_user_provided_file(
         )
 
     if str(source).startswith("http"):
+        from zimscraperlib.download import stream_file
+
         logger.debug(f"download {source} -> {dest}")
         headers = {"User-Agent": user_agent} if user_agent else None
         stream_file(url=str(source), fpath=dest, headers=headers)
