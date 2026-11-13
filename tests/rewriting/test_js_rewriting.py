@@ -31,6 +31,8 @@ def simple_js_rewriter(
         "'a||this||that",
         "(a,b,Q.contains(i[t], this))",
         "a = this.location.href; exports.Foo = Foo; /* export className */",
+        "this.window=red",
+        "aaa$   this.window=red",
     ]
 )
 def rewrite_this_js_content(request: pytest.FixtureRequest):
@@ -57,8 +59,9 @@ def test_this_js_rewrite(
         "aaa.this.window=red",
         "aaa. this.window=red",
         "aaa.   this.window=red",
+        "aaa.\nthis.window=red",
+        "aaa.\n   this.window=red",
         "aaa$this.window=red",
-        "aaa$   this.window=red",
         "a = this.color;",
         "return this.color",
         'func(Function("return this.color"));',
@@ -82,14 +85,23 @@ def test_this_no_js_rewrite(
 
 
 @pytest.mark.parametrize(
+    "prefix",
+    ["aaa", "aaa$"],
+)
+@pytest.mark.parametrize(
     "spaces",
     [0, 1, 2, 3, 4],
 )
-def test_this_js_rewrite_newline(simple_js_rewriter: JsRewriter, spaces: int):
+def test_this_js_rewrite_newline(
+    simple_js_rewriter: JsRewriter, prefix: str, spaces: int
+):
+    # a "$" right before "this" only blocks the rewrite when directly adjacent (no
+    # whitespace in between), so it does not block it here since a newline (and
+    # possibly spaces) is always inserted between "$" and "this"
     padding = " " * spaces
     assert (
-        simple_js_rewriter.rewrite(f"aaa\n{padding}this.window=red")
-        == f"aaa\n{padding};_____WB$wombat$check$this$function_____(this)"
+        simple_js_rewriter.rewrite(f"{prefix}\n{padding}this.window=red")
+        == f"{prefix}\n{padding};_____WB$wombat$check$this$function_____(this)"
         ".window=red"
     )
 
@@ -562,7 +574,6 @@ def test_import_rewrite_force_not_module(simple_js_rewriter: JsRewriter):
         "this.  $location = http://example.com/",
         "this. _location = http://example.com/",
         "this. alocation = http://example.com/",
-        "this.location = http://example.com/",
         ",eval(a)",
         "this.$eval(a)",
         "x = $eval; x(a);",
