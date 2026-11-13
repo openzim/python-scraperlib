@@ -134,36 +134,38 @@ def replace_this_prop() -> TransformationAction:
     """
     Create a rewrite_function replacing "this" by `this_rw`.
 
-    Replacement happens only if "this" is not a property of an object, i.e. if there
-    is a previous token, and it is not "." or "$", once whitespace (including
-    newlines) in between is skipped over. The previous token is looked up in the
-    full original string rather than just the match, because another rule earlier
-    in `create_js_rules` may already have consumed (as part of an unrelated match)
-    whatever directly preceded that whitespace, e.g. the "=" in
-    `const location = this.location` is consumed by the `let/const location =`
-    passthrough rule.
+    Replacement happens unless "this" is a property of an object, i.e. unless it is
+    directly preceded by "$" (no whitespace in between), or preceded by "." (any
+    amount of whitespace, including newlines, in between). The start of the script
+    counts as neither, so a leading `this.<prop>` is rewritten.
 
-    If that skipped whitespace contains a newline, a semi-colon is also prepended.
-    This guards against a JavaScript Automatic Semicolon Insertion (ASI) pitfall:
-    `this_rw` starts with an identifier immediately followed by `(`, so if it
-    starts a new line right after a statement with no trailing `;`, JS would
-    otherwise parse it as a call of whatever the previous statement evaluated to
-    (e.g. `a = 5\nthis.x = 1` would silently become `a = 5(this.x = 1)`).
+    The previous token is looked up in the full original string rather than just the
+    match, because another rule earlier in `create_js_rules` may already have
+    consumed (as part of an unrelated match) whatever directly preceded that
+    whitespace, e.g. the "=" in `const location = this.location` is consumed by the
+    `let/const location =` passthrough rule.
+
+    If there is a newline in the whitespace immediately preceding "this", a
+    semi-colon is also prepended. This guards against a JavaScript Automatic
+    Semicolon Insertion (ASI) pitfall: `this_rw` starts with an identifier
+    immediately followed by `(`, so if it starts a new line right after a statement
+    with no trailing `;`, JS would otherwise parse it as a call of whatever the
+    previous statement evaluated to (e.g. `a = 5\nthis.x = 1` would silently become
+    `a = 5(this.x = 1)`).
     """
 
     def f(m_object: re.Match[str], _opts: dict[str, Any] | None) -> str:
         full_string = m_object.string
         pos = m_object.start() - 1
-        has_newline = False
-        while pos >= 0 and full_string[pos].isspace():
-            has_newline = has_newline or full_string[pos] == "\n"
-            pos -= 1
-        if pos < 0 or full_string[pos] in ".$":
-            # No real previous token (start of script) is treated like "." or "$":
-            # kept as-is, consistent with this rule never firing on the very first
-            # token of a script.
-            return m_object[0]
-        if has_newline:
+        ws_start = pos
+        while ws_start >= 0 and full_string[ws_start].isspace():
+            ws_start -= 1
+        if ws_start >= 0:
+            prev_char = full_string[ws_start]
+            is_adjacent = ws_start == pos
+            if prev_char == "." or (prev_char == "$" and is_adjacent):
+                return m_object[0]
+        if "\n" in full_string[ws_start + 1 : pos + 1]:
             return m_object[0].replace("this", ";" + this_rw)
         return m_object[0].replace("this", this_rw)
 
