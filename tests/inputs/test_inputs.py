@@ -3,7 +3,7 @@ from typing import Any
 
 import pytest
 
-import zimscraperlib
+import zimscraperlib.download
 from zimscraperlib.constants import CONTACT
 from zimscraperlib.constants import NAME as PROJECT_NAME
 from zimscraperlib.inputs import (
@@ -96,7 +96,7 @@ def test_remote_default_user_agent(
         assert user_agent.endswith(f"({CONTACT})")
 
     monkeypatch.setattr(
-        zimscraperlib.inputs,  # pyright: ignore[reportAttributeAccessIssue, reportUnknownMemberType, reportUnknownArgumentType]
+        zimscraperlib.download,  # pyright: ignore[reportAttributeAccessIssue, reportUnknownMemberType, reportUnknownArgumentType]
         "stream_file",
         mock_stream_file,
         raising=True,
@@ -115,7 +115,7 @@ def test_remote_provided_user_agent(
         assert user_agent == valid_user_agent
 
     monkeypatch.setattr(
-        zimscraperlib.inputs,  # pyright: ignore[reportAttributeAccessIssue, reportUnknownMemberType, reportUnknownArgumentType]
+        zimscraperlib.download,  # pyright: ignore[reportAttributeAccessIssue, reportUnknownMemberType, reportUnknownArgumentType]
         "stream_file",
         mock_stream_file,
         raising=True,
@@ -130,7 +130,7 @@ def test_remote_provided_none_user_agent(
         assert kwargs.get("headers") is None
 
     monkeypatch.setattr(
-        zimscraperlib.inputs,  # pyright: ignore[reportAttributeAccessIssue, reportUnknownMemberType, reportUnknownArgumentType]
+        zimscraperlib.download,  # pyright: ignore[reportAttributeAccessIssue, reportUnknownMemberType, reportUnknownArgumentType]
         "stream_file",
         mock_stream_file,
         raising=True,

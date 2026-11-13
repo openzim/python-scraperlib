@@ -10,7 +10,6 @@ from typing import Any
 
 import libzim.writer  # pyright: ignore[reportMissingModuleSource]
 
-from zimscraperlib.download import stream_file
 from zimscraperlib.filesystem import get_content_mimetype, get_file_mimetype
 from zimscraperlib.zim.indexing import (
     IndexData,
@@ -230,6 +229,8 @@ class URLItem(StaticItem):
         on_disk: bool,
     ):
         """Download URL to a temp file and return its tempfile and size"""
+        from zimscraperlib.download import stream_file
+
         fpath = stream = None
         if on_disk:
             suffix = pathlib.Path(re.sub(r"^/", "", url.path)).suffix
@@ -254,6 +255,8 @@ class URLItem(StaticItem):
         use_disk: bool | None = None,
         **kwargs: Any,
     ):
+        from zimscraperlib.download import stream_file
+
         if use_disk is not None:
             kwargs["use_disk"] = use_disk
         super().__init__(

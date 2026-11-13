@@ -31,7 +31,6 @@ from collections.abc import Sequence
 
 from zimscraperlib import logger
 from zimscraperlib.filesystem import get_file_mimetype
-from zimscraperlib.html import find_title_in_file
 from zimscraperlib.types import get_mime_for_name
 from zimscraperlib.zim import metadata
 from zimscraperlib.zim.creator import Creator
@@ -59,6 +58,8 @@ class FileItem(StaticItem):
         return str(self.filepath.relative_to(self.root))
 
     def get_title(self) -> str:
+        from zimscraperlib.html import find_title_in_file
+
         return find_title_in_file(self.filepath, self.mimetype)
 
 

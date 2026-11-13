@@ -234,6 +234,9 @@ ignore = [
   "S603",
   # Ignore complexity
   "C901", "PLR0911", "PLR0912", "PLR0913", "PLR0915",
+  # Modules of optional dependencies are imported where they are used so that
+  # importing a family does not load another family's dependencies
+  "PLC0415",
   # To be fixed once more recent Python versions are available
   "UP006", "UP007"
 ]
