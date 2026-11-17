@@ -33,6 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Polyfill `crypto.subtle.digest()` (SHA-1/SHA-256) when missing in a non-secure context (#393)
 - `ArticleUrlRewriter.normalize()` no longer decodes a percent-encoded `/` (`%2F`) in the path into a literal `/`, fixing a content collision between e.g. `/foo%2Fbar` (one segment, containing a literal `/`) and `/foo/bar` (two segments), which used to normalize to the same ZIM path (#396)
 - `ArticleUrlRewriter.escape_dot_segments()` now also escapes a literal `_.`/`_..` (and further escaped forms like `__.`/`__..`) segment with one more leading `_`, fixing a content collision with the escaped form of an actual `.`/`..` dot-segment, which used to normalize to the same ZIM path (#396)
+- `ArticleUrlRewriter.normalize()` now prefixes every ZIM path with a constant `replay://` marker, and `wombatSetup.js`'s `urlRewriteFunction`/`head_insert.html` do the same, fixing wombat.js computing an empty or single-`/` replay prefix ("`wb_rel_prefix`") for a ZIM served with no extra "collection" path segment (e.g. a bare `kiwix.app/<path>`), which corrupted any `innerHTML`/`outerHTML` read on the page by deleting arbitrary `/text/` spans, and caused related, quieter bugs in `rewriteUrl`/`rewriteCookie` (#396, openzim/zimit#589)
 
 ### Changed
 

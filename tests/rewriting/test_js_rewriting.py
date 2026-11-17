@@ -4,6 +4,7 @@ import pytest
 
 from zimscraperlib.rewriting.js import JsRewriter
 from zimscraperlib.rewriting.url_rewriting import (
+    REPLAY_MARKER,
     ArticleUrlRewriter,
     HttpUrl,
     ZimPath,
@@ -651,7 +652,7 @@ def test_js_rewrite_nested_module_detected(js_src: str, expected_js_module_path:
     ).rewrite(f'import * from "{js_src}"', opts={"isModule": True})
 
     assert len(js_modules) == 1
-    assert js_modules[0].value == expected_js_module_path
+    assert js_modules[0].value == REPLAY_MARKER + expected_js_module_path
 
 
 # Marker string present in the test fixtures below, matching the one real

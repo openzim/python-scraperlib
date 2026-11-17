@@ -30,6 +30,18 @@ Entries are stored in the ZIM file using their decoded fully decoded path:
   . This is valid : "foo/part/file?question=Is there any + here?"
   . This is NOT valid : "foo/part/file?question%3DIs%20there%20any%20%2B%20here%3F"
 
+Every ZIM path produced by `normalize` is prefixed with the constant `REPLAY_MARKER`
+(`"replay://"`), e.g. "example.com/foo" becomes "replay://example.com/foo". wombat.js
+computes its own replay-prefix ("wb_rel_prefix") by subtracting the serving origin from
+the full URL of the page being served; when a ZIM is served with no extra "collection"
+path segment (e.g. a bare `kiwix.app/<path>`), that subtraction used to leave an empty
+or single-`/` prefix, which degenerates a regex used by wombat.js's `innerHTML`/
+`outerHTML` getters into matching (and deleting) any `/text/` span anywhere in the page
+(reported as openzim/zimit#589). The marker guarantees that prefix can never again be
+empty or trivial, by construction. A `ZimPath` may also be built directly from an
+unmarked value (see `ZimPath.check_validity`), so the marker is never assumed when
+reading a `ZimPath` back, only ever added by `normalize` itself.
+
 A ZIM path must never contain a `.` or `..` path segment: per RFC 3986 these
 "dot-segments" are resolved away by any URI consumer (including the reader turning a
 relative link back into an absolute one), so a literal `.` or `..` coming from the
@@ -90,6 +102,14 @@ COMPILED_FUZZY_RULES = [
     for rule in FUZZY_RULES
 ]
 
+# A constant marker prepended to every ZIM path by `normalize()`. It gives wombat.js a
+# non-empty, non-degenerate path segment to compute its own replay-prefix detection
+# from (see `ArticleUrlRewriter.normalize` for the full rationale), fixing a case where
+# a ZIM served with no extra "collection" path segment (e.g. bare `kiwix.app/<path>`)
+# made wombat.js's `wb_rel_prefix` degenerate to `''`/`'/'`, corrupting any
+# `innerHTML`/`outerHTML` read on the page (webrecorder/wombat, reported as
+# openzim/zimit#589).
+REPLAY_MARKER = "replay://"
 
 _ENCODED_SLASH_RX = re.compile(r"%2f", re.IGNORECASE)
 
@@ -225,6 +245,10 @@ class ZimPath:
     """A utility class representing a ZIM path, usefull to pass this data around
 
     Includes a basic validation, ensuring that path does start with scheme, hostname,...
+
+    A value produced by `ArticleUrlRewriter.normalize` is prefixed with `REPLAY_MARKER`,
+    but a `ZimPath` may also be built directly from an unmarked value (e.g. a static
+    asset path not derived from an HTTP URL), so `check_validity` accepts both.
     """
 
     def __init__(self, value: str) -> None:
@@ -249,7 +273,7 @@ class ZimPath:
 
     @classmethod
     def check_validity(cls, value: str) -> None:
-        parts = urlsplit(value)
+        parts = urlsplit(value.removeprefix(REPLAY_MARKER))
 
         if parts.scheme:
             raise ValueError(f"Unexpected scheme in value: {value} {parts.scheme}")
@@ -427,9 +451,17 @@ class ArticleUrlRewriter:
         URI.
 
         """
+        # strip the replay marker (if any) before parsing: urlsplit would otherwise
+        # misparse e.g. "replay://example.com/foo" as having an actual scheme
+        # ("replay") and hostname ("example.com"). Both item_path and article_path are
+        # stripped independently and consistently, so the marker (when present on
+        # both, as it normally is) simply cancels out as a shared leading segment and
+        # never needs to be reintroduced into the computed relative path.
+        unmarked_item_value = item_path.value.removeprefix(REPLAY_MARKER)
+
         # a ZIM path is never URL-encoded, so a `#` in it is a literal character
         # (e.g. coming from a `%23` in original URL) and not a fragment delimiter
-        item_parts = urlsplit(item_path.value, allow_fragments=False)
+        item_parts = urlsplit(unmarked_item_value, allow_fragments=False)
 
         # item_path is both path + querystring, both will be url-encoded in the document
         # so that readers consider them as a whole and properly pass them to libzim
@@ -438,7 +470,9 @@ class ArticleUrlRewriter:
             item_url += "?" + item_parts.query
         # drop `.` segments of the article path, as PurePosixPath used to do
         article_path = "/".join(
-            part for part in self.article_path.value.split("/") if part != "."
+            part
+            for part in self.article_path.value.removeprefix(REPLAY_MARKER).split("/")
+            if part != "."
         )
         article_dir = (
             article_path.removesuffix("/")
@@ -554,7 +588,7 @@ class ArticleUrlRewriter:
         to transform some URLs into replay URLs and drop some useless stuff.
 
         Returned value is a ZIM path, without any puny/url encoding applied, ready to be
-        passed to python-libzim for UTF-8 encoding.
+        passed to python-libzim for UTF-8 encoding, prefixed with `REPLAY_MARKER`.
         """
 
         url_parts = urlsplit(url.value)
@@ -606,4 +640,6 @@ class ArticleUrlRewriter:
             f"{hostname}{path}{query}"
         )
 
-        return ZimPath(ArticleUrlRewriter.escape_dot_segments(fuzzified_url))
+        return ZimPath(
+            REPLAY_MARKER + ArticleUrlRewriter.escape_dot_segments(fuzzified_url)
+        )
