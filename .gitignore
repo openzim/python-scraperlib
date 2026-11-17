@@ -266,3 +266,4 @@ src/zimscraperlib/rewriting/statics/wombatSetup.js
 
 # wombat.js is installed from online source
 src/zimscraperlib/rewriting/statics/wombat.js
+.python-version
