@@ -214,6 +214,22 @@ if (typeof crypto !== 'undefined' && typeof crypto.subtle === 'undefined') {
   crypto.subtle = { digest: digestPolyfill };
 }
 
+// A constant marker prepended to every ZIM path by urlRewriteFunction, mirroring
+// Python's `REPLAY_MARKER` in `zimscraperlib.rewriting.url_rewriting`. It gives
+// wombat.js a non-empty, non-degenerate path segment to compute its own
+// replay-prefix detection from, fixing a case where a ZIM served with no extra
+// "collection" path segment (e.g. bare `kiwix.app/<path>`) made wombat.js's
+// `wb_rel_prefix` degenerate to `''`/`'/'`, corrupting any `innerHTML`/`outerHTML`
+// read on the page (webrecorder/wombat, reported as openzim/zimit#589).
+// `-` was chosen because it is never percent-encoded by `encodeURIComponent`
+// (unlike e.g. `:`, which some servers percent-encode in a redirect's `Location`
+// header, defeating the marker's purpose) and a hostname can never start with
+// one, but a bare `-` alone would not be enough: wombat's regex is
+// `wb_rel_prefix + '[^/]+/'`, and without the trailing `/` the resulting
+// `/-[^/]+/` is still common enough in ordinary text (e.g. `/-1/`, `/-webkit-x/`)
+// to misfire the same way.
+export const REPLAY_MARKER = '-/';
+
 export function applyFuzzyRules(path) {
   // Apply fuzzy rules to simplify the ZIM path. First matching rule is applied and
   // result is immediately returned
@@ -239,6 +255,21 @@ export function escapeDotSegments(path) {
     .split('/')
     .map((part) => (part === '.' || part === '..' ? '_' + part : part))
     .join('/');
+}
+
+export function isAlreadyPrefixed(url, prefix) {
+  // Checking for REPLAY_MARKER right after our own serving prefix (rather than
+  // anywhere in url) anchors the check to something unique to this deployment,
+  // so it cannot coincidentally match genuine, unrelated content that happens to
+  // contain REPLAY_MARKER as a substring (e.g. a real site with a URL segment
+  // literally named "replay"). Any url shaped this way is unambiguously an
+  // already-rewritten, fully-prefixed absolute URL (e.g. one read back from
+  // `img.src` and reassigned elsewhere). A statically-rewritten *relative* link
+  // never matches here, since the marker is a shared prefix between the current
+  // document and the link's target, and so is absent from the relative
+  // reference computed between them (see `hasAlreadyBeenRewritten` for that
+  // case instead).
+  return url.startsWith(prefix + REPLAY_MARKER);
 }
 
 export function hasAlreadyBeenRewritten(
@@ -302,6 +333,15 @@ export function urlRewriteFunction(
   // Transform URL which might be an object (detected on Chromium browsers at least)
   url = String(url);
 
+  // Detect if url is already a fully-prefixed, already-rewritten absolute URL and
+  // return as-is in such a case. This must run before any other processing below:
+  // in particular, the prefix-unwrapping a few lines down would otherwise mangle
+  // such a URL (e.g. one read back from `img.src` and reassigned elsewhere) by
+  // re-adding a scheme in front of its embedded REPLAY_MARKER.
+  if (isAlreadyPrefixed(url, prefix)) {
+    return url;
+  }
+
   // Special stuff which is not really a URI but exists in the wild
   if (['#', '{', '*'].includes(url.substring(0, 1))) return url;
 
@@ -336,46 +376,14 @@ export function urlRewriteFunction(
   // present ; current URL does not allow to do it easily
   const original_absolute_url = URI.resolve(orig_url, url);
 
-  // Detect if url has probably already been rewritten and return as-is in such a case
+  // Detect if url has probably already been rewritten and return as-is in such a
+  // case. Unlike isAlreadyPrefixed above, this specifically catches an
+  // already-rewritten *relative* link (e.g. a cross-host link produced by
+  // get_document_uri()): such a link never contains REPLAY_MARKER, since the
+  // marker is a shared prefix between the current document and the link's target
+  // and so cancels out of the relative reference computed between them.
   if (hasAlreadyBeenRewritten(original_absolute_url, orig_url, uri, url)) {
     return url;
-  }
-
-  // Detect (with a heuristic) that the path is most probably already rewritten and
-  // must be kept as-is. We just need to detect relative links (all statically rewritten
-  // links are relative) and contains a path including the hostname (which cannot be
-  // joined with the orig_url since if it includes the hostname, it means it is in
-  // another hostname than orig_url and will hence go one level too high in the path
-  // hierarchy, hence working only on ZIM paths / relative links).
-  // The heurisitic is:
-  // - the link must be relative and start by going at least one level up
-  // - the first non relative part of the path (i.e. not . or ..) looks like a hostname
-  // (i.e. it contains a dot)
-  // - the relative link, when merged with orig_url, is going exactly one "path level"
-  // too high in the hierarchy
-  if (typeof uri.scheme == 'undefined' && url.startsWith('../')) {
-    const urlParts = url.split('/');
-    const original_absolute_url1 = URI.resolve(
-      orig_url,
-      urlParts.slice(1).join('/'),
-    );
-    const original_absolute_url2 = URI.resolve(
-      orig_url,
-      urlParts.slice(2).join('/'),
-    );
-    // detect that relative link is going exactly one "path level" too high
-    if (
-      original_absolute_url1 == original_absolute_url &&
-      original_absolute_url2 != original_absolute_url
-    ) {
-      const firstNonRelativePart = urlParts.find((urlPart) => urlPart !== '..');
-      // detect that first non relative part of the path looks like a hostname
-      if (firstNonRelativePart.indexOf('.') > -1) {
-        // if all 3 conditions are true, then we do not rewrite the link at all,
-        // otherwise we continue with normal rewritting
-        return url;
-      }
-    }
   }
 
   // We now have to transform this absolute URI into a normalized ZIM path entry
@@ -420,7 +428,7 @@ export function urlRewriteFunction(
   // Reencode everything but '/' (we decode it afterwards for simplicity)
   const finalUrl =
     prefix +
-    encodeURIComponent(escapedPath)
+    encodeURIComponent(REPLAY_MARKER + escapedPath)
       .replaceAll('%2F', '/')
       .replaceAll('%3D', '=')
       .replaceAll('%2C', ',');

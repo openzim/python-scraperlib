@@ -16,6 +16,7 @@ from zimscraperlib.rewriting.html import (
 )
 from zimscraperlib.rewriting.js import JsRewriter
 from zimscraperlib.rewriting.url_rewriting import (
+    REPLAY_MARKER,
     ArticleUrlRewriter,
     HttpUrl,
     ZimPath,
@@ -353,7 +354,7 @@ def test_rewrite(rewrite_url: ContentForTests):
         HtmlRewriter(
             ArticleUrlRewriter(
                 article_url=HttpUrl(f"http://{rewrite_url.article_url}"),
-                existing_zim_paths={ZimPath("exemple.com/a/long/path")},
+                existing_zim_paths={ZimPath(REPLAY_MARKER + "exemple.com/a/long/path")},
             ),
             None,
             None,
@@ -379,7 +380,7 @@ def test_extract_title():
         HtmlRewriter(
             ArticleUrlRewriter(
                 article_url=HttpUrl("http://example.com"),
-                existing_zim_paths={ZimPath("exemple.com/a/long/path")},
+                existing_zim_paths={ZimPath(REPLAY_MARKER + "exemple.com/a/long/path")},
             ),
             None,
             None,
@@ -395,7 +396,7 @@ def test_rewrite_attributes():
     rewriter = HtmlRewriter(
         ArticleUrlRewriter(
             article_url=HttpUrl("http://kiwix.org/"),
-            existing_zim_paths={ZimPath("kiwix.org/foo")},
+            existing_zim_paths={ZimPath(REPLAY_MARKER + "kiwix.org/foo")},
         ),
         None,
         None,
@@ -542,7 +543,7 @@ def test_js_module_detected_script(js_src: str, expected_js_module_path: str):
     ).rewrite(f'<script type="module" src="{js_src}"></script>')
 
     assert len(js_modules) == 1
-    assert js_modules[0].value == expected_js_module_path
+    assert js_modules[0].value == REPLAY_MARKER + expected_js_module_path
 
 
 @pytest.mark.parametrize(
@@ -577,7 +578,7 @@ def test_js_module_detected_module_preload(js_src: str, expected_js_module_path:
     ).rewrite(f'<link rel="modulepreload" src="{js_src}"></script>')
 
     assert len(js_modules) == 1
-    assert js_modules[0].value == expected_js_module_path
+    assert js_modules[0].value == REPLAY_MARKER + expected_js_module_path
 
 
 @pytest.mark.parametrize(
@@ -628,7 +629,10 @@ def test_js_module_base_href_src():
     )
 
     assert len(js_modules) == 1
-    assert js_modules[0].value == "kiwix.org/my_other_folder/my-module-script.js"
+    assert (
+        js_modules[0].value
+        == REPLAY_MARKER + "kiwix.org/my_other_folder/my-module-script.js"
+    )
 
 
 def test_js_module_base_href_inline():
@@ -654,7 +658,10 @@ def test_js_module_base_href_inline():
     )
 
     assert len(js_modules) == 1
-    assert js_modules[0].value == "kiwix.org/my_other_folder/my-module-script.js"
+    assert (
+        js_modules[0].value
+        == REPLAY_MARKER + "kiwix.org/my_other_folder/my-module-script.js"
+    )
 
 
 @pytest.mark.parametrize(
@@ -795,11 +802,11 @@ def test_rewrite_base_href(rewrite_base_href_content: ContentForTests):
             ArticleUrlRewriter(
                 article_url=HttpUrl(f"http://{rewrite_base_href_content.article_url}"),
                 existing_zim_paths={
-                    ZimPath("kiwix.org/foo.html"),
-                    ZimPath("kiwix.org/foo.js"),
-                    ZimPath("kiwix.org/foo.css"),
-                    ZimPath("kiwix.org/foo.png"),
-                    ZimPath("kiwix.org/favicon.png"),
+                    ZimPath(REPLAY_MARKER + "kiwix.org/foo.html"),
+                    ZimPath(REPLAY_MARKER + "kiwix.org/foo.js"),
+                    ZimPath(REPLAY_MARKER + "kiwix.org/foo.css"),
+                    ZimPath(REPLAY_MARKER + "kiwix.org/foo.png"),
+                    ZimPath(REPLAY_MARKER + "kiwix.org/favicon.png"),
                 },
             ),
             None,
@@ -919,11 +926,11 @@ def test_rewrite_onxxx_event(rewrite_onxxx_content: ContentForTests):
             ArticleUrlRewriter(
                 article_url=HttpUrl(f"http://{rewrite_onxxx_content.article_url}"),
                 existing_zim_paths={
-                    ZimPath("kiwix.org/foo.html"),
-                    ZimPath("kiwix.org/foo.js"),
-                    ZimPath("kiwix.org/foo.css"),
-                    ZimPath("kiwix.org/foo.png"),
-                    ZimPath("kiwix.org/favicon.png"),
+                    ZimPath(REPLAY_MARKER + "kiwix.org/foo.html"),
+                    ZimPath(REPLAY_MARKER + "kiwix.org/foo.js"),
+                    ZimPath(REPLAY_MARKER + "kiwix.org/foo.css"),
+                    ZimPath(REPLAY_MARKER + "kiwix.org/foo.png"),
+                    ZimPath(REPLAY_MARKER + "kiwix.org/favicon.png"),
                 },
             ),
             None,
@@ -1016,7 +1023,7 @@ def test_rewrite_meta_http_equiv_redirect_full(
                 article_url=HttpUrl(
                     f"http://{rewrite_meta_http_equiv_redirect_full_content.article_url}"
                 ),
-                existing_zim_paths={ZimPath("kiwix.org/somepage")},
+                existing_zim_paths={ZimPath(REPLAY_MARKER + "kiwix.org/somepage")},
             ),
             None,
             None,

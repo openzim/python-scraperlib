@@ -46,7 +46,7 @@ test('simpleContentCompleteUrl', (t) => {
       undefined,
       undefined,
     ),
-    'http://library.kiwix.org/content/myzim_yyyy-mm/www.example.com/javascript/content.txt',
+    'http://library.kiwix.org/content/myzim_yyyy-mm/-/www.example.com/javascript/content.txt',
   );
 });
 
@@ -63,7 +63,7 @@ test('simpleContentFullUrl', (t) => {
       undefined,
       undefined,
     ),
-    'http://library.kiwix.org/content/myzim_yyyy-mm/www.example.com/javascript/content.txt',
+    'http://library.kiwix.org/content/myzim_yyyy-mm/-/www.example.com/javascript/content.txt',
   );
 });
 
@@ -80,7 +80,7 @@ test('simpleContentNoScheme', (t) => {
       undefined,
       undefined,
     ),
-    'http://library.kiwix.org/content/myzim_yyyy-mm/www.example.com/javascript/content.txt',
+    'http://library.kiwix.org/content/myzim_yyyy-mm/-/www.example.com/javascript/content.txt',
   );
 });
 
@@ -97,7 +97,7 @@ test('consecutiveSlashesAreKept', (t) => {
       undefined,
       undefined,
     ),
-    'http://library.kiwix.org/content/myzim_yyyy-mm/www.example.com/a///b',
+    'http://library.kiwix.org/content/myzim_yyyy-mm/-/www.example.com/a///b',
   );
 });
 
@@ -120,7 +120,7 @@ test('relativeLinkOnPageWithConsecutiveSlashesKeepsThem', (t) => {
       undefined,
       undefined,
     ),
-    t.context.prefix + 'www.example.com/path1//other.html',
+    t.context.prefix + '-/www.example.com/path1//other.html',
   );
 });
 
@@ -137,7 +137,7 @@ test('simpleContentEmptyPath', (t) => {
       undefined,
       undefined,
     ),
-    'http://library.kiwix.org/content/myzim_yyyy-mm/www.example.com/',
+    'http://library.kiwix.org/content/myzim_yyyy-mm/-/www.example.com/',
   );
 });
 
@@ -154,7 +154,7 @@ test('simpleContentNoPath', (t) => {
       undefined,
       undefined,
     ),
-    'http://library.kiwix.org/content/myzim_yyyy-mm/www.example.com/',
+    'http://library.kiwix.org/content/myzim_yyyy-mm/-/www.example.com/',
   );
 });
 
@@ -171,7 +171,7 @@ test('contentWithSpecialCharsNotEncoded', (t) => {
       undefined,
       undefined,
     ),
-    'http://library.kiwix.org/content/myzim_yyyy-mm/www.example.com/javascript/cont%C3%A9nt.txt',
+    'http://library.kiwix.org/content/myzim_yyyy-mm/-/www.example.com/javascript/cont%C3%A9nt.txt',
   );
 });
 
@@ -188,7 +188,7 @@ test('contentWithUTF8CharsNotEncoded', (t) => {
       undefined,
       undefined,
     ),
-    'http://library.kiwix.org/content/myzim_yyyy-mm/www.example.com/javascript/cont%F0%9F%8E%81nt.txt',
+    'http://library.kiwix.org/content/myzim_yyyy-mm/-/www.example.com/javascript/cont%F0%9F%8E%81nt.txt',
   );
 });
 
@@ -205,7 +205,7 @@ test('contentWithSpecialCharsEncoded', (t) => {
       undefined,
       undefined,
     ),
-    'http://library.kiwix.org/content/myzim_yyyy-mm/www.example.com/javascript/cont%C3%A9nt.txt',
+    'http://library.kiwix.org/content/myzim_yyyy-mm/-/www.example.com/javascript/cont%C3%A9nt.txt',
   );
 });
 
@@ -222,7 +222,7 @@ test('contentWithSpaceNotEncoded', (t) => {
       undefined,
       undefined,
     ),
-    'http://library.kiwix.org/content/myzim_yyyy-mm/www.example.com/javascript/cont%20nt.txt',
+    'http://library.kiwix.org/content/myzim_yyyy-mm/-/www.example.com/javascript/cont%20nt.txt',
   );
 });
 
@@ -239,7 +239,7 @@ test('contentWithPlusNotEncoded', (t) => {
       undefined,
       undefined,
     ),
-    'http://library.kiwix.org/content/myzim_yyyy-mm/www.example.com/javascript/cont%2Bnt.txt',
+    'http://library.kiwix.org/content/myzim_yyyy-mm/-/www.example.com/javascript/cont%2Bnt.txt',
   );
 });
 
@@ -256,7 +256,7 @@ test('contentWithTilde', (t) => {
       undefined,
       undefined,
     ),
-    'http://library.kiwix.org/content/myzim_yyyy-mm/www.example.com/javascript/cont~nt.txt',
+    'http://library.kiwix.org/content/myzim_yyyy-mm/-/www.example.com/javascript/cont~nt.txt',
   );
 });
 
@@ -273,7 +273,7 @@ test('contentWithHyphen', (t) => {
       undefined,
       undefined,
     ),
-    'http://library.kiwix.org/content/myzim_yyyy-mm/www.example.com/javascript/cont-nt.txt',
+    'http://library.kiwix.org/content/myzim_yyyy-mm/-/www.example.com/javascript/cont-nt.txt',
   );
 });
 
@@ -290,7 +290,7 @@ test('contentWithUnderscore', (t) => {
       undefined,
       undefined,
     ),
-    'http://library.kiwix.org/content/myzim_yyyy-mm/www.example.com/javascript/cont_nt.txt',
+    'http://library.kiwix.org/content/myzim_yyyy-mm/-/www.example.com/javascript/cont_nt.txt',
   );
 });
 
@@ -307,7 +307,7 @@ test('contentWithEncodedTilde', (t) => {
       undefined,
       undefined,
     ),
-    'http://library.kiwix.org/content/myzim_yyyy-mm/www.example.com/javascript/cont~nt.txt',
+    'http://library.kiwix.org/content/myzim_yyyy-mm/-/www.example.com/javascript/cont~nt.txt',
   );
 });
 
@@ -324,7 +324,7 @@ test('contentWithEncodedApostrophe', (t) => {
       undefined,
       undefined,
     ),
-    "http://library.kiwix.org/content/myzim_yyyy-mm/www.example.com/javascript/cont'nt.txt",
+    "http://library.kiwix.org/content/myzim_yyyy-mm/-/www.example.com/javascript/cont'nt.txt",
   );
 });
 
@@ -341,7 +341,7 @@ test('contentWithEncodedExclamationMark', (t) => {
       undefined,
       undefined,
     ),
-    'http://library.kiwix.org/content/myzim_yyyy-mm/www.example.com/javascript/cont!nt.txt',
+    'http://library.kiwix.org/content/myzim_yyyy-mm/-/www.example.com/javascript/cont!nt.txt',
   );
 });
 
@@ -358,7 +358,7 @@ test('contentWithEncodedQuestionMark', (t) => {
       undefined,
       undefined,
     ),
-    'http://library.kiwix.org/content/myzim_yyyy-mm/www.example.com/javascript/cont%3Fnt.txt',
+    'http://library.kiwix.org/content/myzim_yyyy-mm/-/www.example.com/javascript/cont%3Fnt.txt',
   );
 });
 
@@ -375,7 +375,7 @@ test('contentWithEncodedQuestionMarkAndQueryParam', (t) => {
       undefined,
       undefined,
     ),
-    'http://library.kiwix.org/content/myzim_yyyy-mm/www.example.com/javascript/cont%3Fnt.txt%3Fquery=value',
+    'http://library.kiwix.org/content/myzim_yyyy-mm/-/www.example.com/javascript/cont%3Fnt.txt%3Fquery=value',
   );
 });
 
@@ -392,7 +392,7 @@ test('contentWithEncodedStar', (t) => {
       undefined,
       undefined,
     ),
-    'http://library.kiwix.org/content/myzim_yyyy-mm/www.example.com/javascript/cont*nt.txt',
+    'http://library.kiwix.org/content/myzim_yyyy-mm/-/www.example.com/javascript/cont*nt.txt',
   );
 });
 
@@ -409,7 +409,7 @@ test('contentWithEncodedParentheses', (t) => {
       undefined,
       undefined,
     ),
-    'http://library.kiwix.org/content/myzim_yyyy-mm/www.example.com/javascript/cont()nt.txt',
+    'http://library.kiwix.org/content/myzim_yyyy-mm/-/www.example.com/javascript/cont()nt.txt',
   );
 });
 
@@ -426,7 +426,7 @@ test('contentWithEncodedHyphen1', (t) => {
       undefined,
       undefined,
     ),
-    'http://library.kiwix.org/content/myzim_yyyy-mm/www.example.com/javascript/cont-nt.txt',
+    'http://library.kiwix.org/content/myzim_yyyy-mm/-/www.example.com/javascript/cont-nt.txt',
   );
 });
 
@@ -443,7 +443,7 @@ test('contentWithEncodedHyphen2', (t) => {
       undefined,
       undefined,
     ),
-    'http://library.kiwix.org/content/myzim_yyyy-mm/www.example.com/javascript/co%25nt-nt.txt',
+    'http://library.kiwix.org/content/myzim_yyyy-mm/-/www.example.com/javascript/co%25nt-nt.txt',
   );
 });
 
@@ -460,7 +460,7 @@ test('contentWithEncodedUnderscore', (t) => {
       undefined,
       undefined,
     ),
-    'http://library.kiwix.org/content/myzim_yyyy-mm/www.example.com/javascript/cont_nt.txt',
+    'http://library.kiwix.org/content/myzim_yyyy-mm/-/www.example.com/javascript/cont_nt.txt',
   );
 });
 
@@ -477,7 +477,7 @@ test('contentWithEncodedPeriod', (t) => {
       undefined,
       undefined,
     ),
-    'http://library.kiwix.org/content/myzim_yyyy-mm/www.example.com/javascript/content.txt',
+    'http://library.kiwix.org/content/myzim_yyyy-mm/-/www.example.com/javascript/content.txt',
   );
 });
 
@@ -494,7 +494,7 @@ test('contentWithSimpleQueryString', (t) => {
       undefined,
       undefined,
     ),
-    'http://library.kiwix.org/content/myzim_yyyy-mm/www.example.com/javascript/content.txt%3Fquery=value',
+    'http://library.kiwix.org/content/myzim_yyyy-mm/-/www.example.com/javascript/content.txt%3Fquery=value',
   );
 });
 
@@ -513,7 +513,7 @@ test('contentWithQueryStringDotDotSegment', (t) => {
       undefined,
       undefined,
     ),
-    'http://library.kiwix.org/content/myzim_yyyy-mm/www.example.com/javascript/content.txt%3Fcss=../_../prg',
+    'http://library.kiwix.org/content/myzim_yyyy-mm/-/www.example.com/javascript/content.txt%3Fcss=../_../prg',
   );
 });
 
@@ -531,7 +531,7 @@ test('contentWithQueryValueRawPlusSign', (t) => {
       undefined,
       undefined,
     ),
-    'http://library.kiwix.org/content/myzim_yyyy-mm/www.example.com/javascript/content.txt%3Fquery=val%20ue',
+    'http://library.kiwix.org/content/myzim_yyyy-mm/-/www.example.com/javascript/content.txt%3Fquery=val%20ue',
   );
 });
 
@@ -553,7 +553,7 @@ test('contentWithQueryValueEncodedPlusSign', (t) => {
       undefined,
       undefined,
     ),
-    'http://library.kiwix.org/content/myzim_yyyy-mm/www.example.com/javascript/content.txt%3Fquery=val%2Bue',
+    'http://library.kiwix.org/content/myzim_yyyy-mm/-/www.example.com/javascript/content.txt%3Fquery=val%2Bue',
   );
 });
 
@@ -570,7 +570,7 @@ test('contentWithSimplePathWithEqualAndComma', (t) => {
       undefined,
       undefined,
     ),
-    'http://library.kiwix.org/content/myzim_yyyy-mm/www.example.com/javascript/content.txt/query1=value1,param2=value2',
+    'http://library.kiwix.org/content/myzim_yyyy-mm/-/www.example.com/javascript/content.txt/query1=value1,param2=value2',
   );
 });
 
@@ -587,7 +587,7 @@ test('contentWithQueryValueEqualSign', (t) => {
       undefined,
       undefined,
     ),
-    'http://library.kiwix.org/content/myzim_yyyy-mm/www.example.com/javascript/content.txt%3Fquery=val=eue',
+    'http://library.kiwix.org/content/myzim_yyyy-mm/-/www.example.com/javascript/content.txt%3Fquery=val=eue',
   );
 });
 
@@ -604,7 +604,7 @@ test('contentWithQueryValuePercentSign', (t) => {
       undefined,
       undefined,
     ),
-    'http://library.kiwix.org/content/myzim_yyyy-mm/www.example.com/javascript/content.txt%3Fquery=val%25eue',
+    'http://library.kiwix.org/content/myzim_yyyy-mm/-/www.example.com/javascript/content.txt%3Fquery=val%25eue',
   );
 });
 
@@ -621,7 +621,7 @@ test('contentWithQueryParamPercentSign', (t) => {
       undefined,
       undefined,
     ),
-    'http://library.kiwix.org/content/myzim_yyyy-mm/www.example.com/javascript/content.txt%3Fque%25ry=valeue',
+    'http://library.kiwix.org/content/myzim_yyyy-mm/-/www.example.com/javascript/content.txt%3Fque%25ry=valeue',
   );
 });
 
@@ -638,7 +638,7 @@ test('contentWithQueryParamPlusSign', (t) => {
       undefined,
       undefined,
     ),
-    'http://library.kiwix.org/content/myzim_yyyy-mm/www.example.com/javascript/content.txt%3Fparam=val%20ue',
+    'http://library.kiwix.org/content/myzim_yyyy-mm/-/www.example.com/javascript/content.txt%3Fparam=val%20ue',
   );
 });
 
@@ -655,7 +655,7 @@ test('fqdnWithSpecialCharsEncoded', (t) => {
       undefined,
       undefined,
     ),
-    'http://library.kiwix.org/content/myzim_yyyy-mm/www.%C3%A9xample.com/javascript/content.txt',
+    'http://library.kiwix.org/content/myzim_yyyy-mm/-/www.%C3%A9xample.com/javascript/content.txt',
   );
 });
 
@@ -672,7 +672,7 @@ test('fqdnWithSpecialCharsNotEncoded', (t) => {
       undefined,
       undefined,
     ),
-    'http://library.kiwix.org/content/myzim_yyyy-mm/www.%C3%A9xample.com/javascript/content.txt',
+    'http://library.kiwix.org/content/myzim_yyyy-mm/-/www.%C3%A9xample.com/javascript/content.txt',
   );
 });
 
@@ -689,7 +689,7 @@ test('fqdnWithSpecialCharsEncodedContentWithSpecialCharsEncoded', (t) => {
       undefined,
       undefined,
     ),
-    'http://library.kiwix.org/content/myzim_yyyy-mm/www.%C3%A9xample.com/javascript/cont%C3%A9nt.txt',
+    'http://library.kiwix.org/content/myzim_yyyy-mm/-/www.%C3%A9xample.com/javascript/cont%C3%A9nt.txt',
   );
 });
 
@@ -706,7 +706,7 @@ test('relSimpleContent1', (t) => {
       undefined,
       undefined,
     ),
-    'http://library.kiwix.org/content/myzim_yyyy-mm/www.example.com/javascript/content.txt',
+    'http://library.kiwix.org/content/myzim_yyyy-mm/-/www.example.com/javascript/content.txt',
   );
 });
 
@@ -723,7 +723,7 @@ test('relSimpleContent2', (t) => {
       undefined,
       undefined,
     ),
-    'http://library.kiwix.org/content/myzim_yyyy-mm/www.example.com/path1/javascript/content.txt',
+    'http://library.kiwix.org/content/myzim_yyyy-mm/-/www.example.com/path1/javascript/content.txt',
   );
 });
 
@@ -740,7 +740,7 @@ test('relGoingUperThanHost', (t) => {
       undefined,
       undefined,
     ),
-    'http://library.kiwix.org/content/myzim_yyyy-mm/www.example.com/javascript/content.txt',
+    'http://library.kiwix.org/content/myzim_yyyy-mm/-/www.example.com/javascript/content.txt',
   );
 });
 
@@ -757,7 +757,7 @@ test('relSimpleContent3', (t) => {
       undefined,
       undefined,
     ),
-    'http://library.kiwix.org/content/myzim_yyyy-mm/www.example.com/javascript/content.txt',
+    'http://library.kiwix.org/content/myzim_yyyy-mm/-/www.example.com/javascript/content.txt',
   );
 });
 
@@ -927,7 +927,7 @@ test('youtubeFuzzyNotEncoded', (t) => {
       undefined,
       undefined,
     ),
-    'http://library.kiwix.org/content/myzim_yyyy-mm/www.example.com/path1/youtube.fuzzy.replayweb.page/get_video_info%3Fvideo_id=123ah',
+    'http://library.kiwix.org/content/myzim_yyyy-mm/-/www.example.com/path1/youtube.fuzzy.replayweb.page/get_video_info%3Fvideo_id=123ah',
   );
 });
 
@@ -944,10 +944,15 @@ test('youtubeFuzzyEncoded', (t) => {
       undefined,
       undefined,
     ),
-    'http://library.kiwix.org/content/myzim_yyyy-mm/www.example.com/path1/youtube.fuzzy.replayweb.page/get_video_info%3Fvideo_id=12=3ah',
+    'http://library.kiwix.org/content/myzim_yyyy-mm/-/www.example.com/path1/youtube.fuzzy.replayweb.page/get_video_info%3Fvideo_id=12=3ah',
   );
 });
 
+// this specifically exercises isAlreadyPrefixed: without it, the prefix-unwrapping
+// a few lines into urlRewriteFunction would mangle this fully-prefixed, already
+// REPLAY_MARKER-containing absolute URL by re-adding a scheme in front of the
+// marker (producing e.g. 'http://-/www.example.com/...'), instead of
+// recognizing it as already rewritten and returning it untouched
 test('alreadyRewritenUrlSimple', (t) => {
   t.is(
     urlRewriteFunction(
@@ -956,12 +961,12 @@ test('alreadyRewritenUrlSimple', (t) => {
       t.context.originalScheme,
       t.context.originalUrl,
       t.context.prefix,
-      'http://library.kiwix.org/content/myzim_yyyy-mm/www.example.com/javascript/content.txt',
+      'http://library.kiwix.org/content/myzim_yyyy-mm/-/www.example.com/javascript/content.txt',
       undefined,
       undefined,
       undefined,
     ),
-    'http://library.kiwix.org/content/myzim_yyyy-mm/www.example.com/javascript/content.txt',
+    'http://library.kiwix.org/content/myzim_yyyy-mm/-/www.example.com/javascript/content.txt',
   );
 });
 
@@ -978,7 +983,7 @@ test('alreadyRewritenUrlSpecialCharsNotEncoded', (t) => {
       undefined,
       undefined,
     ),
-    'http://library.kiwix.org/content/myzim_yyyy-mm/www.example.com/javascript/cont%C3%A9nt.txt',
+    'http://library.kiwix.org/content/myzim_yyyy-mm/-/www.example.com/javascript/cont%C3%A9nt.txt',
   );
 });
 
@@ -995,7 +1000,7 @@ test('alreadyRewritenUrlUTF8CharsNotEncoded', (t) => {
       undefined,
       undefined,
     ),
-    'http://library.kiwix.org/content/myzim_yyyy-mm/www.example.com/javascript/cont%F0%9F%8E%81nt.txt',
+    'http://library.kiwix.org/content/myzim_yyyy-mm/-/www.example.com/javascript/cont%F0%9F%8E%81nt.txt',
   );
 });
 
@@ -1012,7 +1017,7 @@ test('simpleContentDomainNameInPath1', (t) => {
       undefined,
       undefined,
     ),
-    'http://library.kiwix.org/content/myzim_yyyy-mm/www.example.com/www.example.com/content.txt',
+    'http://library.kiwix.org/content/myzim_yyyy-mm/-/www.example.com/www.example.com/content.txt',
   );
 });
 
@@ -1029,7 +1034,7 @@ test('simpleContentDomainNameInPath2', (t) => {
       undefined,
       undefined,
     ),
-    'http://library.kiwix.org/content/myzim_yyyy-mm/www.example.com/javascript/www.example.com',
+    'http://library.kiwix.org/content/myzim_yyyy-mm/-/www.example.com/javascript/www.example.com',
   );
 });
 
@@ -1047,7 +1052,7 @@ test('relAlreadyEncoded', (t) => {
       undefined,
       undefined,
     ),
-    'http://library.kiwix.org/content/myzim_yyyy-mm/www.example.com/javascript/content.txt%3Fquery=value',
+    'http://library.kiwix.org/content/myzim_yyyy-mm/-/www.example.com/javascript/content.txt%3Fquery=value',
   );
 });
 
@@ -1152,7 +1157,7 @@ test('relTooUpNotLookingLikeAHostname', (t) => {
       undefined,
       undefined,
     ),
-    'http://library.kiwix.org/content/myzim_yyyy-mm/www.example.com/javascript/content.txt',
+    'http://library.kiwix.org/content/myzim_yyyy-mm/-/www.example.com/javascript/content.txt',
   );
 });
 
@@ -1176,7 +1181,7 @@ test('relTooUpNotLookingLikeAHostnameRootPath', (t) => {
       undefined,
       undefined,
     ),
-    'http://library.kiwix.org/content/myzim_yyyy-mm/www.example.com/javascript/content.txt',
+    'http://library.kiwix.org/content/myzim_yyyy-mm/-/www.example.com/javascript/content.txt',
   );
 });
 
@@ -1200,7 +1205,7 @@ test('relTooUpNotLookingLikeAHostnameEmptyPath', (t) => {
       undefined,
       undefined,
     ),
-    'http://library.kiwix.org/content/myzim_yyyy-mm/www.example.com/javascript/content.txt',
+    'http://library.kiwix.org/content/myzim_yyyy-mm/-/www.example.com/javascript/content.txt',
   );
 });
 
@@ -1220,7 +1225,7 @@ test('relNotReallyAnotherHostAlreadyRewrittenTooUp', (t) => {
       undefined,
       undefined,
     ),
-    'http://library.kiwix.org/content/myzim_yyyy-mm/www.example.com/anotherhost.com/javascript/content.txt',
+    'http://library.kiwix.org/content/myzim_yyyy-mm/-/www.example.com/anotherhost.com/javascript/content.txt',
   );
 });
 
@@ -1241,7 +1246,7 @@ test('relNotReallyAnotherHostAlreadyRewrittenNotUpEnough', (t) => {
       undefined,
       undefined,
     ),
-    'http://library.kiwix.org/content/myzim_yyyy-mm/www.example.com/anotherhost.com/javascript/content.txt',
+    'http://library.kiwix.org/content/myzim_yyyy-mm/-/www.example.com/anotherhost.com/javascript/content.txt',
   );
 });
 
@@ -1258,7 +1263,7 @@ test('doubleSlash1', (t) => {
       undefined,
       undefined,
     ),
-    'http://library.kiwix.org/content/myzim_yyyy-mm/example.com/some/path/http%3A//example.com//some/path',
+    'http://library.kiwix.org/content/myzim_yyyy-mm/-/example.com/some/path/http%3A//example.com//some/path',
   );
 });
 
@@ -1275,7 +1280,7 @@ test('doubleSlash2', (t) => {
       undefined,
       undefined,
     ),
-    'http://library.kiwix.org/content/myzim_yyyy-mm/example.com/some/pa%3Fth/http%3A//example.com//some/path',
+    'http://library.kiwix.org/content/myzim_yyyy-mm/-/example.com/some/pa%3Fth/http%3A//example.com//some/path',
   );
 });
 
@@ -1292,6 +1297,6 @@ test('doubleSlash3', (t) => {
       undefined,
       undefined,
     ),
-    'http://library.kiwix.org/content/myzim_yyyy-mm/example.com/so%3Fme/pa%3Fth/http%3A//example.com//some/path',
+    'http://library.kiwix.org/content/myzim_yyyy-mm/-/example.com/so%3Fme/pa%3Fth/http%3A//example.com//some/path',
   );
 });

@@ -4,6 +4,7 @@ import pytest
 
 from zimscraperlib.rewriting.js import JsRewriter
 from zimscraperlib.rewriting.url_rewriting import (
+    REPLAY_MARKER,
     ArticleUrlRewriter,
     HttpUrl,
     ZimPath,
@@ -343,9 +344,12 @@ class ImportTestContent(ContentForTests):
         self.expected = self.wrap_import(self.expected_str)
 
     @staticmethod
-    # We want to import js stored in zim file as `_zim_static/__wb_module_decl.js` from
-    # `https://exemple.com/some/path/` so path is
-    # `../../../_zim_static/__wb_module_decl.js`
+    # We want to import js stored in zim file as `_zim_static/__wb_module_decl.js`
+    # (an unmarked ZimPath, not derived via normalize()) from the marked article path
+    # for `https://exemple.com/some/path/`, i.e. `-/exemple.com/some/path/` (4
+    # segments once REPLAY_MARKER is counted as one of them, since the two paths
+    # don't share it as a common prefix here), so path is
+    # `../../../../_zim_static/__wb_module_decl.js`
     def wrap_import(text: str) -> str:
         """
         A small wrapper to help us generate the expected content for modules.
@@ -355,7 +359,7 @@ class ImportTestContent(ContentForTests):
         """
         return (
             "import { window, globalThis, self, document, location, top, parent, "
-            'frames, opener } from "../../../_zim_static/__wb_module_decl.js";\n'
+            'frames, opener } from "../../../../_zim_static/__wb_module_decl.js";\n'
             f"{text}"
         )
 
@@ -651,7 +655,7 @@ def test_js_rewrite_nested_module_detected(js_src: str, expected_js_module_path:
     ).rewrite(f'import * from "{js_src}"', opts={"isModule": True})
 
     assert len(js_modules) == 1
-    assert js_modules[0].value == expected_js_module_path
+    assert js_modules[0].value == REPLAY_MARKER + expected_js_module_path
 
 
 # Marker string present in the test fixtures below, matching the one real

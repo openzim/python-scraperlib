@@ -3,6 +3,7 @@ from urllib.parse import unquote, urlsplit
 import pytest
 
 from zimscraperlib.rewriting.url_rewriting import (
+    REPLAY_MARKER,
     ArticleUrlRewriter,
     HttpUrl,
     RewriteResult,
@@ -161,7 +162,8 @@ class TestNormalize:
     )
     def test_normalize(self, url: str, zim_path: str):
         assert (
-            ArticleUrlRewriter.normalize(HttpUrl(url)).value == ZimPath(zim_path).value
+            ArticleUrlRewriter.normalize(HttpUrl(url)).value
+            == ZimPath(REPLAY_MARKER + zim_path).value
         )
 
 
@@ -212,7 +214,7 @@ class TestArticleUrlRewriter:
             ),
             (
                 "bar.html",
-                {ZimPath("kiwix.org/a/article/bar.html")},
+                {ZimPath(REPLAY_MARKER + "kiwix.org/a/article/bar.html")},
             ),
         ],
     )
@@ -225,7 +227,9 @@ class TestArticleUrlRewriter:
         missing_zim_paths: set[ZimPath] = set()
         rewriter = ArticleUrlRewriter(
             article_url=http_article_url,
-            existing_zim_paths={ZimPath("kiwix.org/a/article/foo.html")},
+            existing_zim_paths={
+                ZimPath(REPLAY_MARKER + "kiwix.org/a/article/foo.html")
+            },
             missing_zim_paths=missing_zim_paths,
         )
         rewriter(original_content_url, base_href=None, rewrite_all_url=False)
@@ -241,7 +245,7 @@ class TestArticleUrlRewriter:
                 RewriteResult(
                     "https://kiwix.org/a/article/foo.html",
                     "foo.html",
-                    ZimPath("kiwix.org/a/article/foo.html"),
+                    ZimPath(REPLAY_MARKER + "kiwix.org/a/article/foo.html"),
                 ),
                 ["kiwix.org/a/article/foo.html"],
                 False,
@@ -252,7 +256,7 @@ class TestArticleUrlRewriter:
                 RewriteResult(
                     "https://kiwix.org/a/article/foo.html#anchor1",
                     "foo.html#anchor1",
-                    ZimPath("kiwix.org/a/article/foo.html"),
+                    ZimPath(REPLAY_MARKER + "kiwix.org/a/article/foo.html"),
                 ),
                 ["kiwix.org/a/article/foo.html"],
                 False,
@@ -263,7 +267,7 @@ class TestArticleUrlRewriter:
                 RewriteResult(
                     "https://kiwix.org/a/article/foo.html?foo=bar",
                     "foo.html%3Ffoo=bar",
-                    ZimPath("kiwix.org/a/article/foo.html?foo=bar"),
+                    ZimPath(REPLAY_MARKER + "kiwix.org/a/article/foo.html?foo=bar"),
                 ),
                 ["kiwix.org/a/article/foo.html?foo=bar"],
                 False,
@@ -274,7 +278,7 @@ class TestArticleUrlRewriter:
                 RewriteResult(
                     "https://kiwix.org/a/article/foo.html?foo=b%24ar",
                     "foo.html%3Ffoo=b%24ar",
-                    ZimPath("kiwix.org/a/article/foo.html?foo=b$ar"),
+                    ZimPath(REPLAY_MARKER + "kiwix.org/a/article/foo.html?foo=b$ar"),
                 ),
                 ["kiwix.org/a/article/foo.html?foo=b$ar"],
                 False,
@@ -285,7 +289,7 @@ class TestArticleUrlRewriter:
                 RewriteResult(
                     "https://kiwix.org/a/article/foo.html?foo=b%3Far",
                     "foo.html%3Ffoo=b%3Far",
-                    ZimPath("kiwix.org/a/article/foo.html?foo=b?ar"),
+                    ZimPath(REPLAY_MARKER + "kiwix.org/a/article/foo.html?foo=b?ar"),
                 ),
                 ["kiwix.org/a/article/foo.html?foo=b?ar"],
                 False,
@@ -296,7 +300,7 @@ class TestArticleUrlRewriter:
                 RewriteResult(
                     "https://kiwix.org/a/article/foo%23bar.html",
                     "foo%23bar.html",
-                    ZimPath("kiwix.org/a/article/foo#bar.html"),
+                    ZimPath(REPLAY_MARKER + "kiwix.org/a/article/foo#bar.html"),
                 ),
                 ["kiwix.org/a/article/foo#bar.html"],
                 False,
@@ -307,7 +311,7 @@ class TestArticleUrlRewriter:
                 RewriteResult(
                     "https://kiwix.org/a/article/foo%23bar.html#anchor1",
                     "foo%23bar.html#anchor1",
-                    ZimPath("kiwix.org/a/article/foo#bar.html"),
+                    ZimPath(REPLAY_MARKER + "kiwix.org/a/article/foo#bar.html"),
                 ),
                 ["kiwix.org/a/article/foo#bar.html"],
                 False,
@@ -318,7 +322,7 @@ class TestArticleUrlRewriter:
                 RewriteResult(
                     "https://kiwix.org/a/article/foo.html?foo=b%23ar",
                     "foo.html%3Ffoo=b%23ar",
-                    ZimPath("kiwix.org/a/article/foo.html?foo=b#ar"),
+                    ZimPath(REPLAY_MARKER + "kiwix.org/a/article/foo.html?foo=b#ar"),
                 ),
                 ["kiwix.org/a/article/foo.html?foo=b#ar"],
                 False,
@@ -329,7 +333,7 @@ class TestArticleUrlRewriter:
                 RewriteResult(
                     "https://kiwix.org/a/article/fo%o.html",
                     "fo%25o.html",
-                    ZimPath("kiwix.org/a/article/fo%o.html"),
+                    ZimPath(REPLAY_MARKER + "kiwix.org/a/article/fo%o.html"),
                 ),
                 ["kiwix.org/a/article/fo%o.html"],
                 False,
@@ -341,7 +345,7 @@ class TestArticleUrlRewriter:
                     "https://kiwix.org/a/article/foé.html",
                     "fo%C3%A9.html",  # character is encoded so that URL match RFC 3986
                     ZimPath(
-                        "kiwix.org/a/article/foé.html"
+                        REPLAY_MARKER + "kiwix.org/a/article/foé.html"
                     ),  # but ZIM path is non-encoded
                 ),
                 ["kiwix.org/a/article/foé.html"],
@@ -353,7 +357,7 @@ class TestArticleUrlRewriter:
                 RewriteResult(
                     "https://kiwix.org/a/article/foo.html",
                     "foo.html",
-                    ZimPath("kiwix.org/a/article/foo.html"),
+                    ZimPath(REPLAY_MARKER + "kiwix.org/a/article/foo.html"),
                 ),
                 ["kiwix.org/a/article/foo.html"],
                 False,
@@ -364,7 +368,7 @@ class TestArticleUrlRewriter:
                 RewriteResult(
                     "https://kiwix.org/a/foo.html",
                     "https://kiwix.org/a/foo.html",  # Full URL since not in known URLs
-                    ZimPath("kiwix.org/a/foo.html"),
+                    ZimPath(REPLAY_MARKER + "kiwix.org/a/foo.html"),
                 ),
                 ["kiwix.org/a/article/foo.html"],
                 False,
@@ -375,7 +379,7 @@ class TestArticleUrlRewriter:
                 RewriteResult(
                     "https://kiwix.org/a/foo.html",
                     "../foo.html",  # all URLs rewrite activated
-                    ZimPath("kiwix.org/a/foo.html"),
+                    ZimPath(REPLAY_MARKER + "kiwix.org/a/foo.html"),
                 ),
                 ["kiwix.org/a/article/foo.html"],
                 True,
@@ -386,7 +390,7 @@ class TestArticleUrlRewriter:
                 RewriteResult(
                     "https://kiwix.org/a/foo.html",
                     "../foo.html",
-                    ZimPath("kiwix.org/a/foo.html"),
+                    ZimPath(REPLAY_MARKER + "kiwix.org/a/foo.html"),
                 ),
                 ["kiwix.org/a/foo.html"],
                 False,
@@ -398,7 +402,7 @@ class TestArticleUrlRewriter:
                     "https://kiwix.org/a/bar/foo.html",
                     "https://kiwix.org/a/bar/foo.html",  # Full URL since not in known
                     # URLs
-                    ZimPath("kiwix.org/a/bar/foo.html"),
+                    ZimPath(REPLAY_MARKER + "kiwix.org/a/bar/foo.html"),
                 ),
                 ["kiwix.org/a/article/foo.html"],
                 False,
@@ -409,7 +413,7 @@ class TestArticleUrlRewriter:
                 RewriteResult(
                     "https://kiwix.org/a/bar/foo.html",
                     "../bar/foo.html",  # all URLs rewrite activated
-                    ZimPath("kiwix.org/a/bar/foo.html"),
+                    ZimPath(REPLAY_MARKER + "kiwix.org/a/bar/foo.html"),
                 ),
                 ["kiwix.org/a/article/foo.html"],
                 True,
@@ -420,7 +424,7 @@ class TestArticleUrlRewriter:
                 RewriteResult(
                     "https://kiwix.org/a/bar/foo.html",
                     "../bar/foo.html",
-                    ZimPath("kiwix.org/a/bar/foo.html"),
+                    ZimPath(REPLAY_MARKER + "kiwix.org/a/bar/foo.html"),
                 ),
                 ["kiwix.org/a/bar/foo.html"],
                 False,
@@ -431,7 +435,7 @@ class TestArticleUrlRewriter:
                 RewriteResult(
                     "https://kiwix.org/foo.html",
                     "../../foo.html",
-                    ZimPath("kiwix.org/foo.html"),
+                    ZimPath(REPLAY_MARKER + "kiwix.org/foo.html"),
                 ),
                 ["kiwix.org/foo.html"],
                 False,
@@ -442,7 +446,7 @@ class TestArticleUrlRewriter:
                 RewriteResult(
                     "https://kiwix.org/a/article/foo?param=value",
                     "foo%3Fparam=value",
-                    ZimPath("kiwix.org/a/article/foo?param=value"),
+                    ZimPath(REPLAY_MARKER + "kiwix.org/a/article/foo?param=value"),
                 ),
                 ["kiwix.org/a/article/foo?param=value"],
                 False,
@@ -453,7 +457,7 @@ class TestArticleUrlRewriter:
                 RewriteResult(
                     "https://kiwix.org/a/article/foo?param=value%2F",
                     "foo%3Fparam=value/",
-                    ZimPath("kiwix.org/a/article/foo?param=value/"),
+                    ZimPath(REPLAY_MARKER + "kiwix.org/a/article/foo?param=value/"),
                 ),
                 ["kiwix.org/a/article/foo?param=value/"],
                 False,
@@ -464,7 +468,7 @@ class TestArticleUrlRewriter:
                 RewriteResult(
                     "https://kiwix.org/a/article/foo?param=value%2Fend",
                     "foo%3Fparam=value/end",
-                    ZimPath("kiwix.org/a/article/foo?param=value/end"),
+                    ZimPath(REPLAY_MARKER + "kiwix.org/a/article/foo?param=value/end"),
                 ),
                 ["kiwix.org/a/article/foo?param=value/end"],
                 False,
@@ -478,7 +482,10 @@ class TestArticleUrlRewriter:
                 RewriteResult(
                     "https://kiwix.org/a/article/foo?k=ytembeds.base.en_US,foo.bar",
                     "foo%3Fk=ytembeds.base.en_US,foo.bar",
-                    ZimPath("kiwix.org/a/article/foo?k=ytembeds.base.en_US,foo.bar"),
+                    ZimPath(
+                        REPLAY_MARKER
+                        + "kiwix.org/a/article/foo?k=ytembeds.base.en_US,foo.bar"
+                    ),
                 ),
                 ["kiwix.org/a/article/foo?k=ytembeds.base.en_US,foo.bar"],
                 False,
@@ -489,7 +496,7 @@ class TestArticleUrlRewriter:
                 RewriteResult(
                     "https://kiwix.org/a/article/foo/",
                     "foo/",
-                    ZimPath("kiwix.org/a/article/foo/"),
+                    ZimPath(REPLAY_MARKER + "kiwix.org/a/article/foo/"),
                 ),
                 ["kiwix.org/a/article/foo/"],
                 False,
@@ -500,7 +507,7 @@ class TestArticleUrlRewriter:
                 RewriteResult(
                     "https://kiwix.org/fo o.html",
                     "../../fo%20o.html",
-                    ZimPath("kiwix.org/fo o.html"),
+                    ZimPath(REPLAY_MARKER + "kiwix.org/fo o.html"),
                 ),
                 ["kiwix.org/fo o.html"],
                 False,
@@ -511,7 +518,7 @@ class TestArticleUrlRewriter:
                 RewriteResult(
                     "https://kiwix.org/fo+o.html",
                     "../../fo%2Bo.html",
-                    ZimPath("kiwix.org/fo+o.html"),
+                    ZimPath(REPLAY_MARKER + "kiwix.org/fo+o.html"),
                 ),
                 ["kiwix.org/fo+o.html"],
                 False,
@@ -522,7 +529,7 @@ class TestArticleUrlRewriter:
                 RewriteResult(
                     "https://kiwix.org/fo%2Bo.html",
                     "../../fo%2Bo.html",
-                    ZimPath("kiwix.org/fo+o.html"),
+                    ZimPath(REPLAY_MARKER + "kiwix.org/fo+o.html"),
                 ),
                 ["kiwix.org/fo+o.html"],
                 False,
@@ -533,7 +540,7 @@ class TestArticleUrlRewriter:
                 RewriteResult(
                     "https://kiwix.org/foo.html?param=val+ue",
                     "../../foo.html%3Fparam=val%20ue",
-                    ZimPath("kiwix.org/foo.html?param=val ue"),
+                    ZimPath(REPLAY_MARKER + "kiwix.org/foo.html?param=val ue"),
                 ),
                 ["kiwix.org/foo.html?param=val ue"],
                 False,
@@ -544,7 +551,7 @@ class TestArticleUrlRewriter:
                 RewriteResult(
                     "https://kiwix.org/fo~o.html",
                     "../../fo~o.html",
-                    ZimPath("kiwix.org/fo~o.html"),
+                    ZimPath(REPLAY_MARKER + "kiwix.org/fo~o.html"),
                 ),
                 ["kiwix.org/fo~o.html"],
                 False,
@@ -555,7 +562,7 @@ class TestArticleUrlRewriter:
                 RewriteResult(
                     "https://kiwix.org/fo-o.html",
                     "../../fo-o.html",
-                    ZimPath("kiwix.org/fo-o.html"),
+                    ZimPath(REPLAY_MARKER + "kiwix.org/fo-o.html"),
                 ),
                 ["kiwix.org/fo-o.html"],
                 False,
@@ -566,7 +573,7 @@ class TestArticleUrlRewriter:
                 RewriteResult(
                     "https://kiwix.org/fo_o.html",
                     "../../fo_o.html",
-                    ZimPath("kiwix.org/fo_o.html"),
+                    ZimPath(REPLAY_MARKER + "kiwix.org/fo_o.html"),
                 ),
                 ["kiwix.org/fo_o.html"],
                 False,
@@ -577,7 +584,7 @@ class TestArticleUrlRewriter:
                 RewriteResult(
                     "https://kiwix.org/fo%7Eo.html",
                     "../../fo~o.html",
-                    ZimPath("kiwix.org/fo~o.html"),
+                    ZimPath(REPLAY_MARKER + "kiwix.org/fo~o.html"),
                 ),
                 ["kiwix.org/fo~o.html"],
                 False,
@@ -588,7 +595,7 @@ class TestArticleUrlRewriter:
                 RewriteResult(
                     "https://kiwix.org/fo%2Do.html",
                     "../../fo-o.html",
-                    ZimPath("kiwix.org/fo-o.html"),
+                    ZimPath(REPLAY_MARKER + "kiwix.org/fo-o.html"),
                 ),
                 ["kiwix.org/fo-o.html"],
                 False,
@@ -599,7 +606,7 @@ class TestArticleUrlRewriter:
                 RewriteResult(
                     "https://kiwix.org/fo%5Fo.html",
                     "../../fo_o.html",
-                    ZimPath("kiwix.org/fo_o.html"),
+                    ZimPath(REPLAY_MARKER + "kiwix.org/fo_o.html"),
                 ),
                 ["kiwix.org/fo_o.html"],
                 False,
@@ -610,7 +617,7 @@ class TestArticleUrlRewriter:
                 RewriteResult(
                     "https://kiwix.org/foo%2Ehtml",
                     "../../foo.html",
-                    ZimPath("kiwix.org/foo.html"),
+                    ZimPath(REPLAY_MARKER + "kiwix.org/foo.html"),
                 ),
                 ["kiwix.org/foo.html"],
                 False,
@@ -643,7 +650,7 @@ class TestArticleUrlRewriter:
                 RewriteResult(
                     "https://kiwix.org/a/article/",
                     "./",
-                    ZimPath("kiwix.org/a/article/"),
+                    ZimPath(REPLAY_MARKER + "kiwix.org/a/article/"),
                 ),
                 ["kiwix.org/a/article/"],
                 False,
@@ -662,7 +669,7 @@ class TestArticleUrlRewriter:
         http_article_url = HttpUrl(article_url)
         rewriter = ArticleUrlRewriter(
             article_url=http_article_url,
-            existing_zim_paths={ZimPath(path) for path in know_paths},
+            existing_zim_paths={ZimPath(REPLAY_MARKER + path) for path in know_paths},
         )
         assert (
             rewriter(
@@ -680,7 +687,7 @@ class TestArticleUrlRewriter:
                 RewriteResult(
                     "https://example.com/a///b",
                     "a///b",
-                    ZimPath("example.com/a///b"),
+                    ZimPath(REPLAY_MARKER + "example.com/a///b"),
                 ),
             ),
             (
@@ -689,7 +696,7 @@ class TestArticleUrlRewriter:
                 RewriteResult(
                     "https://example.com/p?q=x//y",
                     "p%3Fq=x//y",
-                    ZimPath("example.com/p?q=x//y"),
+                    ZimPath(REPLAY_MARKER + "example.com/p?q=x//y"),
                 ),
             ),
             (
@@ -698,7 +705,7 @@ class TestArticleUrlRewriter:
                 RewriteResult(
                     "https://example.com/a//b/",
                     "a//b/",
-                    ZimPath("example.com/a//b/"),
+                    ZimPath(REPLAY_MARKER + "example.com/a//b/"),
                 ),
             ),
             (
@@ -707,7 +714,7 @@ class TestArticleUrlRewriter:
                 RewriteResult(
                     "https://example.com/x//y/other.html",
                     "other.html",
-                    ZimPath("example.com/x//y/other.html"),
+                    ZimPath(REPLAY_MARKER + "example.com/x//y/other.html"),
                 ),
             ),
             (
@@ -716,7 +723,7 @@ class TestArticleUrlRewriter:
                 RewriteResult(
                     "https://example.com/x//z.html",
                     "../z.html",
-                    ZimPath("example.com/x//z.html"),
+                    ZimPath(REPLAY_MARKER + "example.com/x//z.html"),
                 ),
             ),
             (
@@ -725,7 +732,7 @@ class TestArticleUrlRewriter:
                 RewriteResult(
                     "https://example.com/a.html",
                     "../../../a.html",
-                    ZimPath("example.com/a.html"),
+                    ZimPath(REPLAY_MARKER + "example.com/a.html"),
                 ),
             ),
             (
@@ -734,7 +741,7 @@ class TestArticleUrlRewriter:
                 RewriteResult(
                     "https://example.com/x//y/other.html",
                     "other.html",
-                    ZimPath("example.com/x//y/other.html"),
+                    ZimPath(REPLAY_MARKER + "example.com/x//y/other.html"),
                 ),
             ),
             (
@@ -743,7 +750,7 @@ class TestArticleUrlRewriter:
                 RewriteResult(
                     "https://example.com/x//z.html",
                     "../z.html",
-                    ZimPath("example.com/x//z.html"),
+                    ZimPath(REPLAY_MARKER + "example.com/x//z.html"),
                 ),
             ),
         ],
@@ -771,7 +778,7 @@ class TestArticleUrlRewriter:
         ) == RewriteResult(
             "https://example.com/index.html?page=2",
             "index.html%3Fpage=2",
-            ZimPath("example.com/index.html?page=2"),
+            ZimPath(REPLAY_MARKER + "example.com/index.html?page=2"),
         )
 
     @pytest.mark.parametrize(
@@ -839,7 +846,7 @@ class TestArticleUrlRewriter:
                 RewriteResult(
                     "https://kiwix.org/foo.html",
                     "../../foo.html",
-                    ZimPath("kiwix.org/foo.html"),
+                    ZimPath(REPLAY_MARKER + "kiwix.org/foo.html"),
                 ),
                 ["kiwix.org/foo.html"],
                 False,
@@ -850,7 +857,7 @@ class TestArticleUrlRewriter:
                 RewriteResult(
                     "https://kiwix.org/bar.html",
                     "https://kiwix.org/bar.html",  # Full URL since not in known URLs
-                    ZimPath("kiwix.org/bar.html"),
+                    ZimPath(REPLAY_MARKER + "kiwix.org/bar.html"),
                 ),
                 ["kiwix.org/foo.html"],
                 False,
@@ -861,7 +868,7 @@ class TestArticleUrlRewriter:
                 RewriteResult(
                     "https://kiwix.org/bar.html",
                     "../../bar.html",  # all URLs rewrite activated
-                    ZimPath("kiwix.org/bar.html"),
+                    ZimPath(REPLAY_MARKER + "kiwix.org/bar.html"),
                 ),
                 ["kiwix.org/foo.html"],
                 True,
@@ -880,7 +887,7 @@ class TestArticleUrlRewriter:
         http_article_url = HttpUrl(article_url)
         rewriter = ArticleUrlRewriter(
             article_url=http_article_url,
-            existing_zim_paths={ZimPath(path) for path in know_paths},
+            existing_zim_paths={ZimPath(REPLAY_MARKER + path) for path in know_paths},
         )
         assert (
             rewriter(
@@ -899,7 +906,7 @@ class TestArticleUrlRewriter:
                 RewriteResult(
                     "https://kiwix.org/foo.html",
                     "../../foo.html",
-                    ZimPath("kiwix.org/foo.html"),
+                    ZimPath(REPLAY_MARKER + "kiwix.org/foo.html"),
                 ),
                 ["kiwix.org/foo.html"],
                 False,
@@ -910,7 +917,7 @@ class TestArticleUrlRewriter:
                 RewriteResult(
                     "https://kiwix.org/bar.html",
                     "https://kiwix.org/bar.html",  # Full URL since not in known URLs
-                    ZimPath("kiwix.org/bar.html"),
+                    ZimPath(REPLAY_MARKER + "kiwix.org/bar.html"),
                 ),
                 ["kiwix.org/foo.html"],
                 False,
@@ -921,7 +928,7 @@ class TestArticleUrlRewriter:
                 RewriteResult(
                     "https://kiwix.org/bar.html",
                     "../../bar.html",  # all URLs rewrite activated
-                    ZimPath("kiwix.org/bar.html"),
+                    ZimPath(REPLAY_MARKER + "kiwix.org/bar.html"),
                 ),
                 ["kiwix.org/foo.html"],
                 True,
@@ -932,7 +939,7 @@ class TestArticleUrlRewriter:
                 RewriteResult(
                     "https://acme.com/foo.html",
                     "../../../acme.com/foo.html",
-                    ZimPath("acme.com/foo.html"),
+                    ZimPath(REPLAY_MARKER + "acme.com/foo.html"),
                 ),
                 ["acme.com/foo.html"],
                 False,
@@ -943,7 +950,7 @@ class TestArticleUrlRewriter:
                 RewriteResult(
                     "http://acme.com/bar.html",
                     "http://acme.com/bar.html",  # Full URL since not in known URLs
-                    ZimPath("acme.com/bar.html"),
+                    ZimPath(REPLAY_MARKER + "acme.com/bar.html"),
                 ),
                 ["kiwix.org/foo.html"],
                 False,
@@ -954,7 +961,7 @@ class TestArticleUrlRewriter:
                 RewriteResult(
                     "https://acme.com/bar.html",
                     "../../../acme.com/bar.html",  # all URLs rewrite activated
-                    ZimPath("acme.com/bar.html"),
+                    ZimPath(REPLAY_MARKER + "acme.com/bar.html"),
                 ),
                 ["kiwix.org/foo.html"],
                 True,
@@ -965,7 +972,7 @@ class TestArticleUrlRewriter:
                 RewriteResult(
                     "https://xn--exmple-cva.com/a/article/document.html",
                     "../../../ex%C3%A9mple.com/a/article/document.html",
-                    ZimPath("exémple.com/a/article/document.html"),
+                    ZimPath(REPLAY_MARKER + "exémple.com/a/article/document.html"),
                 ),
                 ["exémple.com/a/article/document.html"],
                 False,
@@ -976,7 +983,7 @@ class TestArticleUrlRewriter:
                 RewriteResult(
                     "https://exémple.com/a/article/document.html",
                     "../../../ex%C3%A9mple.com/a/article/document.html",
-                    ZimPath("exémple.com/a/article/document.html"),
+                    ZimPath(REPLAY_MARKER + "exémple.com/a/article/document.html"),
                 ),
                 ["exémple.com/a/article/document.html"],
                 False,
@@ -995,7 +1002,7 @@ class TestArticleUrlRewriter:
         http_article_url = HttpUrl(article_url)
         rewriter = ArticleUrlRewriter(
             article_url=http_article_url,
-            existing_zim_paths={ZimPath(path) for path in know_paths},
+            existing_zim_paths={ZimPath(REPLAY_MARKER + path) for path in know_paths},
         )
         assert (
             rewriter(
@@ -1014,7 +1021,7 @@ class TestArticleUrlRewriter:
                 RewriteResult(
                     "https://foo.org/a/article/document.html",
                     "../../../foo.org/a/article/document.html",
-                    ZimPath("foo.org/a/article/document.html"),
+                    ZimPath(REPLAY_MARKER + "foo.org/a/article/document.html"),
                 ),
                 ["foo.org/a/article/document.html"],
                 False,
@@ -1026,7 +1033,7 @@ class TestArticleUrlRewriter:
                 RewriteResult(
                     "http://foo.org/a/article/document.html",
                     "../../../foo.org/a/article/document.html",
-                    ZimPath("foo.org/a/article/document.html"),
+                    ZimPath(REPLAY_MARKER + "foo.org/a/article/document.html"),
                 ),
                 ["foo.org/a/article/document.html"],
                 False,
@@ -1038,7 +1045,7 @@ class TestArticleUrlRewriter:
                 RewriteResult(
                     "https://foo.org/a/article/document.html",
                     "../../../foo.org/a/article/document.html",
-                    ZimPath("foo.org/a/article/document.html"),
+                    ZimPath(REPLAY_MARKER + "foo.org/a/article/document.html"),
                 ),
                 ["foo.org/a/article/document.html"],
                 False,
@@ -1050,7 +1057,7 @@ class TestArticleUrlRewriter:
                 RewriteResult(
                     "https://user:password@foo.org:8080/a/article/document.html",
                     "../../../foo.org/a/article/document.html",
-                    ZimPath("foo.org/a/article/document.html"),
+                    ZimPath(REPLAY_MARKER + "foo.org/a/article/document.html"),
                 ),
                 ["foo.org/a/article/document.html"],
                 False,
@@ -1062,7 +1069,7 @@ class TestArticleUrlRewriter:
                 RewriteResult(
                     "https://foo.org/a/article/document.html",
                     "https://foo.org/a/article/document.html",
-                    ZimPath("foo.org/a/article/document.html"),
+                    ZimPath(REPLAY_MARKER + "foo.org/a/article/document.html"),
                 ),
                 ["kiwix.org/a/article/foo/"],
                 False,
@@ -1074,7 +1081,7 @@ class TestArticleUrlRewriter:
                 RewriteResult(
                     "https://foo.org/a/article/document.html",
                     "../../../foo.org/a/article/document.html",
-                    ZimPath("foo.org/a/article/document.html"),
+                    ZimPath(REPLAY_MARKER + "foo.org/a/article/document.html"),
                 ),
                 ["kiwix.org/a/article/foo/"],
                 True,
@@ -1086,7 +1093,7 @@ class TestArticleUrlRewriter:
                 RewriteResult(
                     "https://xn--exmple-cva.com/a/article/document.html",
                     "../../../ex%C3%A9mple.com/a/article/document.html",
-                    ZimPath("exémple.com/a/article/document.html"),
+                    ZimPath(REPLAY_MARKER + "exémple.com/a/article/document.html"),
                 ),
                 ["exémple.com/a/article/document.html"],
                 False,
@@ -1099,7 +1106,7 @@ class TestArticleUrlRewriter:
                 RewriteResult(
                     "https://exémple.com/a/article/document.html",
                     "../../../ex%C3%A9mple.com/a/article/document.html",
-                    ZimPath("exémple.com/a/article/document.html"),
+                    ZimPath(REPLAY_MARKER + "exémple.com/a/article/document.html"),
                 ),
                 ["exémple.com/a/article/document.html"],
                 False,
@@ -1119,7 +1126,7 @@ class TestArticleUrlRewriter:
         http_article_url = HttpUrl(article_url)
         rewriter = ArticleUrlRewriter(
             article_url=http_article_url,
-            existing_zim_paths={ZimPath(path) for path in know_paths},
+            existing_zim_paths={ZimPath(REPLAY_MARKER + path) for path in know_paths},
         )
         assert (
             rewriter(
@@ -1161,7 +1168,7 @@ class TestArticleUrlRewriter:
                 RewriteResult(
                     "https://kiwix.org/a/article/foo.html",
                     "foo.html",
-                    ZimPath("kiwix.org/a/article/foo.html"),
+                    ZimPath(REPLAY_MARKER + "kiwix.org/a/article/foo.html"),
                 ),
                 id="no_base",
             ),
@@ -1172,7 +1179,7 @@ class TestArticleUrlRewriter:
                 RewriteResult(
                     "https://kiwix.org/a/foo.html",
                     "../foo.html",
-                    ZimPath("kiwix.org/a/foo.html"),
+                    ZimPath(REPLAY_MARKER + "kiwix.org/a/foo.html"),
                 ),
                 id="parent_base",
             ),
@@ -1183,7 +1190,7 @@ class TestArticleUrlRewriter:
                 RewriteResult(
                     "https://kiwix.org/a/bar/foo.html",
                     "../bar/foo.html",
-                    ZimPath("kiwix.org/a/bar/foo.html"),
+                    ZimPath(REPLAY_MARKER + "kiwix.org/a/bar/foo.html"),
                 ),
                 id="base_in_another_folder",
             ),
@@ -1194,7 +1201,7 @@ class TestArticleUrlRewriter:
                 RewriteResult(
                     "https://www.example.com/foo.html",
                     "../../../www.example.com/foo.html",
-                    ZimPath("www.example.com/foo.html"),
+                    ZimPath(REPLAY_MARKER + "www.example.com/foo.html"),
                 ),
                 id="base_on_absolute_url",
             ),
@@ -1205,7 +1212,7 @@ class TestArticleUrlRewriter:
                 RewriteResult(
                     "https://kiwix.org/a/a//bar/foo.html",
                     "../a//bar/foo.html",
-                    ZimPath("kiwix.org/a/a//bar/foo.html"),
+                    ZimPath(REPLAY_MARKER + "kiwix.org/a/a//bar/foo.html"),
                 ),
                 id="base_with_consecutive_slashes",
             ),
@@ -1220,12 +1227,53 @@ class TestArticleUrlRewriter:
     ):
         rewriter = ArticleUrlRewriter(
             article_url=HttpUrl("https://kiwix.org/a/article/document.html"),
-            existing_zim_paths={ZimPath(know_path)},
+            existing_zim_paths={ZimPath(REPLAY_MARKER + know_path)},
         )
         assert (
             rewriter(original_content_url, base_href=base_href, rewrite_all_url=False)
             == expected_rewriten_result
         )
+
+    @pytest.mark.parametrize(
+        "article_path, item_path, expected_uri",
+        [
+            # both marked (the normal case, as produced by normalize()): the marker
+            # is a shared leading segment between the two paths, canceling out on
+            # its own in the relative-path computation and never appearing in the
+            # computed href, the same way e.g. a shared hostname segment would
+            (
+                ZimPath(REPLAY_MARKER + "kiwix.org/a/article/document.html"),
+                ZimPath(REPLAY_MARKER + "kiwix.org/a/article/foo.html"),
+                "foo.html",
+            ),
+            # article_path unmarked (e.g. a static asset path built directly, like
+            # `_zim_static/__wb_module_decl.js`), item_path marked: there is no
+            # shared prefix to cancel out against the (always unmarked)
+            # `_zim_static/` article_path, so the marker shows up in the computed
+            # href, same as any other non-shared leading segment would
+            (
+                ZimPath("_zim_static/"),
+                ZimPath(REPLAY_MARKER + "kiwix.org/a/article/foo.html"),
+                "../" + REPLAY_MARKER + "kiwix.org/a/article/foo.html",
+            ),
+            # the reverse: article_path marked, item_path unmarked; one more level
+            # than if article_path were unmarked too, since the marker segment
+            # itself must now be walked up through as well
+            (
+                ZimPath(REPLAY_MARKER + "kiwix.org/a/article/document.html"),
+                ZimPath("_zim_static/wombat.js"),
+                "../../../../_zim_static/wombat.js",
+            ),
+        ],
+    )
+    def test_get_document_uri_marker_mismatch(
+        self, article_path: ZimPath, item_path: ZimPath, expected_uri: str
+    ):
+        rewriter = ArticleUrlRewriter(
+            article_url=HttpUrl("https://kiwix.org/a/article/document.html"),
+            article_path=article_path,
+        )
+        assert rewriter.get_document_uri(item_path, "") == expected_uri
 
 
 class CustomRewriter(ArticleUrlRewriter):
@@ -1271,8 +1319,8 @@ class TestCustomRewriter:
         rewriter = CustomRewriter(
             article_url=HttpUrl("https://kiwix.org/a/article/document.html"),
             existing_zim_paths={
-                ZimPath("kiwix.org/a/article/foo.html"),
-                ZimPath("kiwix.org/a/article/bar.html"),
+                ZimPath(REPLAY_MARKER + "kiwix.org/a/article/foo.html"),
+                ZimPath(REPLAY_MARKER + "kiwix.org/a/article/bar.html"),
             },
         )
         rewriter("foo.html#anchor1", base_href=None, rewrite_all_url=False)
@@ -1280,11 +1328,11 @@ class TestCustomRewriter:
         rewriter("bar.html", base_href=None, rewrite_all_url=False)
         rewriter("missing.html", base_href=None, rewrite_all_url=False)
         assert rewriter.items_to_download == {
-            ZimPath("kiwix.org/a/article/foo.html"): {
+            ZimPath(REPLAY_MARKER + "kiwix.org/a/article/foo.html"): {
                 HttpUrl("https://kiwix.org/a/article/foo.html#anchor1"),
                 HttpUrl("https://kiwix.org/a/article/foo.html#anchor2"),
             },
-            ZimPath("kiwix.org/a/article/bar.html"): {
+            ZimPath(REPLAY_MARKER + "kiwix.org/a/article/bar.html"): {
                 HttpUrl("https://kiwix.org/a/article/bar.html")
             },
         }
@@ -1336,6 +1384,15 @@ class TestZimPath:
         [
             ("content/index.html"),
             ("index.html"),
+            # a value prefixed with REPLAY_MARKER (as produced by `normalize`) is
+            # just as valid as an unmarked one
+            (REPLAY_MARKER + "content/index.html"),
+            (REPLAY_MARKER + "index.html"),
+            # REPLAY_MARKER's `-` (not a valid scheme's first character) followed
+            # immediately by `/` makes it structurally impossible for urlsplit to
+            # detect a scheme or netloc in anything that follows the marker, so
+            # even a value that would otherwise be rejected is accepted once marked
+            (REPLAY_MARKER + "https://bob@acme.com"),
         ],
     )
     def test_good_zim_path(self, path: str):
@@ -1429,8 +1486,9 @@ def _resolve_relative_reference(base_url: str, reference: str) -> str:
     """Resolve a relative-path reference as browsers do (RFC 3986 section 5.2)
 
     Unlike `urllib.parse.urljoin`, empty path segments are kept. Returns the host
-    and path of the resolved URL, i.e. the form of a ZIM path.
+    and path of the resolved URL, i.e. the form of a ZIM path (including its
+    `REPLAY_MARKER` prefix).
     """
     base = urlsplit(base_url)
     merged_path = base.path.rpartition("/")[0] + "/" + reference.partition("#")[0]
-    return f"{base.netloc}{_remove_dot_segments(merged_path)}"
+    return f"{REPLAY_MARKER}{base.netloc}{_remove_dot_segments(merged_path)}"
