@@ -1,4 +1,4 @@
-import { fuzzyRules } from './fuzzyRules.js';
+import { fuzzyRules, defuzzyRules } from './fuzzyRules.js';
 import URI from 'uri-js';
 
 // Will be updated by rollup-plugin-version-injector
@@ -228,6 +228,14 @@ if (typeof crypto !== 'undefined' && typeof crypto.subtle === 'undefined') {
 // `wb_rel_prefix + '[^/]+/'`, and without the trailing `/` the resulting
 // `/-[^/]+/` is still common enough in ordinary text (e.g. `/-1/`, `/-webkit-x/`)
 // to misfire the same way.
+//
+// `prefix` (computed by head_insert.html, passed into `getWombatInfo` below)
+// already ends with this marker -- deliberately, so that wombat.js's own
+// `wb_rel_prefix` (derived from `wb_info.prefix`) is itself non-degenerate --
+// so `urlRewriteFunction`'s own output and `isAlreadyPrefixed` build/check a
+// rewritten URL as `prefix + escapedPath` (no second marker added), and
+// `static_prefix` (whose own real path never carries the marker) has to strip
+// it back off first.
 export const REPLAY_MARKER = '-/';
 
 export function applyFuzzyRules(path) {
@@ -257,19 +265,133 @@ export function escapeDotSegments(path) {
     .join('/');
 }
 
+export function unescapeDotSegments(path) {
+  // Reverse of escapeDotSegments: unescape a leading '_' added to a dot-segment.
+  return path
+    .split('/')
+    .map((part) => (part === '_.' || part === '_..' ? part.slice(1) : part))
+    .join('/');
+}
+
+export function defuzzify(path) {
+  // Best-effort reverse of applyFuzzyRules: first matching unrule is applied and
+  // its result is immediately returned. Not guaranteed to recover the real
+  // original value: some fuzzy rules permanently discard information (e.g. the
+  // real hostname/subdomain or extra query keys), in which case this only
+  // rebuilds a plausible, representative value.
+  for (const rule of defuzzyRules) {
+    const new_path = path.replace(new RegExp(rule.match), rule.replace);
+    if (new_path != path) {
+      return new_path;
+    }
+  }
+  return path;
+}
+
+// encodeURI already escapes a literal '%' (to '%25'), which is what we want: a
+// literal '%' coming from an originally percent-encoded '%25' round-trips back
+// correctly instead of staying an ambiguous, not-really-percent-encoded '%'.
+// For a query string only, a literal '+' surviving encodeURI (which leaves it
+// as-is) is escaped afterwards (to '%2B'), since '+' means a literal space in
+// a query string (see urlRewriteFunction/denormalize) -- done *after*
+// encodeURI, not before, so the '%' it would introduce isn't itself
+// re-escaped by encodeURI.
+function escapeForURI(part, { isQuery } = {}) {
+  const escaped = encodeURI(part);
+  return isQuery ? escaped.replaceAll('+', '%2B') : escaped;
+}
+
+export function denormalize(zimPath) {
+  // Best-effort reverse of the host+path+query flattening done in
+  // urlRewriteFunction (see there for the forward direction this mirrors).
+  // Scheme is always reconstructed as 'https' (dropped on the way in, by
+  // normalize()/urlRewriteFunction, and never recoverable). Not guaranteed to
+  // recover the exact original URL, see defuzzify().
+  const value = defuzzify(unescapeDotSegments(zimPath));
+
+  // host is always followed by a '/' starting the path, since normalize()/
+  // urlRewriteFunction always ensure the path is non-empty (defaulting to '/')
+  const slashIndex = value.indexOf('/');
+  let host = value.substring(0, slashIndex);
+  const rest = value.substring(slashIndex);
+
+  // query, if any, starts at the first literal '?' normalize()/
+  // urlRewriteFunction inserted; ambiguous only if the path itself legitimately
+  // contains a literal '?' (a valid, if rare, ZIM path shape), same best-effort
+  // caveat as fuzzy-rule lossiness
+  const queryIndex = rest.indexOf('?');
+  const pathPart = queryIndex === -1 ? rest : rest.substring(0, queryIndex);
+  const queryPart = queryIndex === -1 ? null : rest.substring(queryIndex + 1);
+
+  // an already-percent-encoded '/' (literal '%2F') is passed through as-is: it
+  // is already valid percent-encoding (an encoded slash within one segment),
+  // while every other '/' is a real path separator and must stay unescaped
+  const quotedPath = pathPart
+    .split('%2F')
+    .map((part) => escapeForURI(part))
+    .join('%2F');
+  const quotedQuery =
+    queryPart === null
+      ? ''
+      : '?' + escapeForURI(queryPart, { isQuery: true }).replaceAll('%20', '+');
+
+  if (!/^[\x00-\x7f]*$/.test(host)) {
+    const serializedHost = URI.serialize(
+      { scheme: 'http', host: host },
+      { iri: false },
+    );
+    host = serializedHost.substring(7, serializedHost.length - 1);
+  }
+
+  return `https://${host}${quotedPath}${quotedQuery}`;
+}
+
+export function extractOriginalURLFunction(escapedPath) {
+  // Called from the local wombat.js `extractOriginalURL` hook (see
+  // rules/patch_wombat.py), only once wombat has confirmed the value being
+  // extracted starts with its own wb_abs_prefix/wb_rel_prefix and has already
+  // stripped that off. Unlike isAlreadyPrefixed/urlRewriteFunction's own
+  // notion of "prefix" (which never includes REPLAY_MARKER on its own, see
+  // REPLAY_MARKER's docstring), wb_abs_prefix/wb_rel_prefix are derived from
+  // the *same* `wb_info.prefix` that already carries REPLAY_MARKER -- so that
+  // marker has *already* been consumed as part of stripping the prefix by
+  // the time this is called, and `escapedPath` here is the escaped ZIM path
+  // with no REPLAY_MARKER of its own.
+  //
+  // `escapedPath` is still the served, percent-encoded text (only '/', '='
+  // and ',' are literal, see urlRewriteFunction's own encodeURIComponent
+  // chain) -- decode it once to get back the raw, dot-segment-escaped,
+  // fuzzified ZIM path `denormalize` expects (the same shape Python's
+  // `denormalize` takes a `ZimPath.value` as). A literal `%2F` representing
+  // an originally-escaped slash survived encoding as `%252F`, so this single
+  // decode correctly yields back `%2F`, not a bare slash.
+  //
+  // Wrapped in try/catch: the caller only knows the value started with our
+  // own prefix, not that what follows is actually a well-formed, normalize()
+  // -produced ZIM path; returning `undefined` on failure falls back to
+  // wombat.js's own default (pywb-oriented) heuristic instead of throwing.
+  try {
+    return denormalize(decodeURIComponent(escapedPath));
+  } catch {
+    return undefined;
+  }
+}
+
 export function isAlreadyPrefixed(url, prefix) {
-  // Checking for REPLAY_MARKER right after our own serving prefix (rather than
-  // anywhere in url) anchors the check to something unique to this deployment,
-  // so it cannot coincidentally match genuine, unrelated content that happens to
-  // contain REPLAY_MARKER as a substring (e.g. a real site with a URL segment
-  // literally named "replay"). Any url shaped this way is unambiguously an
-  // already-rewritten, fully-prefixed absolute URL (e.g. one read back from
-  // `img.src` and reassigned elsewhere). A statically-rewritten *relative* link
-  // never matches here, since the marker is a shared prefix between the current
-  // document and the link's target, and so is absent from the relative
-  // reference computed between them (see `hasAlreadyBeenRewritten` for that
-  // case instead).
-  return url.startsWith(prefix + REPLAY_MARKER);
+  // `prefix` (as computed by head_insert.html, fed into getWombatInfo) already
+  // ends with REPLAY_MARKER -- that is deliberate, it is what keeps wombat.js's
+  // own wb_rel_prefix non-degenerate (see REPLAY_MARKER's own docstring) -- so
+  // checking for `prefix` alone (not `prefix + REPLAY_MARKER`) is what anchors
+  // this to something unique to this deployment: it cannot coincidentally match
+  // genuine, unrelated content, since a real site's URL can never contain our
+  // own host-and-serving-path prefix as a literal substring. Any url starting
+  // with it is unambiguously an already-rewritten, fully-prefixed absolute URL
+  // (e.g. one read back from `img.src` and reassigned elsewhere). A
+  // statically-rewritten *relative* link never matches here, since the marker
+  // is a shared prefix between the current document and the link's target, and
+  // so is absent from the relative reference computed between them (see
+  // `hasAlreadyBeenRewritten` for that case instead).
+  return url.startsWith(prefix);
 }
 
 export function hasAlreadyBeenRewritten(
@@ -353,10 +475,14 @@ export function urlRewriteFunction(
   )
     return url;
 
-  // If url starts with prefix, we need to remove this prefix before applying usual
-  // rewrite rules
-  if (url.startsWith(prefix)) {
-    url = uri.scheme + '://' + url.substring(prefix.length);
+  // A url starting with our own root prefix but missing REPLAY_MARKER right
+  // after it (so not caught by isAlreadyPrefixed above) is not a genuinely
+  // original URL: unwrap our own root prefix from the front of it so it gets
+  // re-resolved and properly (re-)rewritten with the marker, instead of being
+  // mistaken for a real external host+path starting with "library.kiwix.org".
+  const prefixRoot = prefix.slice(0, -REPLAY_MARKER.length);
+  if (url.startsWith(prefixRoot)) {
+    url = uri.scheme + '://' + url.substring(prefixRoot.length);
   }
 
   // This is a hack to detect improper URL encoding ; proper detection should be
@@ -425,10 +551,16 @@ export function urlRewriteFunction(
   // reader once this ZIM path is turned into a URI
   const escapedPath = escapeDotSegments(fuzzifiedPath);
 
-  // Reencode everything but '/' (we decode it afterwards for simplicity)
+  // Reencode everything but '/' (we decode it afterwards for simplicity).
+  // `prefix` already ends with REPLAY_MARKER (see isAlreadyPrefixed's comment),
+  // so it is not added again here -- doing so would double it, producing a
+  // path with no matching ZIM entry (e.g. for a URL rewritten fresh at runtime,
+  // such as a dynamic `import()` specifier or a `location` assignment, neither
+  // of which goes through the server-side HTML/CSS/JS rewriter where this
+  // can't happen).
   const finalUrl =
     prefix +
-    encodeURIComponent(REPLAY_MARKER + escapedPath)
+    encodeURIComponent(escapedPath)
       .replaceAll('%2F', '/')
       .replaceAll('%3D', '=')
       .replaceAll('%2C', ',');
@@ -482,6 +614,16 @@ export function getWombatInfo(
         doc,
       ),
 
+    // Local wombat.js patch (rules/patch_wombat.py): hooked into
+    // extractOriginalURL() as a fallback, called once wombat has already
+    // stripped its own abs/rel replay prefix off the value. Returning
+    // `undefined` signals "not ours", letting wombat.js fall back to its own
+    // default (pywb-oriented) heuristic -- unlike rewrite_function above, this
+    // is not an unconditional override, since extractOriginalURL legitimately
+    // sees many non-ZIM-path inputs.
+    extract_original_url_function: (strippedUrl) =>
+      extractOriginalURLFunction(strippedUrl),
+
     // Seems to be used only to send message to. We don't care ?
     top_url: current_url,
 
@@ -516,7 +658,9 @@ export function getWombatInfo(
     // This is the prefix on which we have stored our static files (needed by wombat).
     // Must not conflict with other url served.
     // Will be used by wombat to not rewrite back the url
-    static_prefix: prefix + '_zim_static/',
+    // Static files are not normalize()'d, so (unlike `prefix` itself) their own
+    // path never carries REPLAY_MARKER -- strip it back off here.
+    static_prefix: prefix.slice(0, -REPLAY_MARKER.length) + '_zim_static/',
 
     wombat_ts: '',
 
@@ -550,6 +694,10 @@ export function getWombatInfo(
 export default {
   applyFuzzyRules: applyFuzzyRules,
   escapeDotSegments: escapeDotSegments,
+  unescapeDotSegments: unescapeDotSegments,
+  defuzzify: defuzzify,
+  denormalize: denormalize,
+  extractOriginalURLFunction: extractOriginalURLFunction,
   urlRewriteFunction: urlRewriteFunction,
   getWombatInfo: getWombatInfo,
   randomUUIDFromBytes: randomUUIDFromBytes,

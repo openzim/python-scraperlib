@@ -1,9 +1,12 @@
 import test from 'ava';
 
-import { urlRewriteFunction } from '../src/wombatSetup.js';
+import { urlRewriteFunction, REPLAY_MARKER } from '../src/wombatSetup.js';
 
 test.beforeEach((t) => {
-  t.context.prefix = 'http://library.kiwix.org/content/myzim_yyyy-mm/';
+  // `prefix` already carries REPLAY_MARKER, same as head_insert.html computes
+  // it (see REPLAY_MARKER's own docstring in wombatSetup.js for why).
+  t.context.prefix =
+    'http://library.kiwix.org/content/myzim_yyyy-mm/' + REPLAY_MARKER;
   t.context.originalHost = 'www.example.com';
   t.context.originalScheme = 'https';
   t.context.documentPath = '/path1/resource1.html';
@@ -120,7 +123,7 @@ test('relativeLinkOnPageWithConsecutiveSlashesKeepsThem', (t) => {
       undefined,
       undefined,
     ),
-    t.context.prefix + '-/www.example.com/path1//other.html',
+    t.context.prefix + 'www.example.com/path1//other.html',
   );
 });
 

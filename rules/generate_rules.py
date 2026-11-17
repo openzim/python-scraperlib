@@ -23,6 +23,10 @@ for rule in FUZZY_RULES:
         raise SystemExit("Fuzzy rule is missing a name")
     if "tests" not in rule or len(rule["tests"]) == 0:
         raise SystemExit("Fuzzy rule is missing test cases")
+    if "unreplace_pattern" not in rule or "unreplace" not in rule:
+        raise SystemExit(
+            f"Fuzzy rule {rule['name']} is missing unreplace_pattern/unreplace"
+        )
 
 
 PY2JS_RULE_RX = re.compile(r"\\(\d)", re.ASCII)
@@ -37,6 +41,14 @@ js_code_template = """// THIS IS AN AUTOMATICALLY GENERATED FILE, DO NOT MODIFY 
 
 export const fuzzyRules = [
 {% for rule in FUZZY_RULES %}  {
+    match: '{{ rule['match'] }}',
+    replace: '{{ rule['replace'] }}',
+  },
+{% endfor %}
+];
+
+export const defuzzyRules = [
+{% for rule in DEFUZZY_RULES %}  {
     match: '{{ rule['match'] }}',
     replace: '{{ rule['replace'] }}',
   },
@@ -58,7 +70,14 @@ else:
                     "replace": PY2JS_RULE_RX.sub(r"$\1", rule["replace"]),
                 }
                 for rule in FUZZY_RULES
-            ]
+            ],
+            DEFUZZY_RULES=[
+                {
+                    "match": rule["unreplace_pattern"].replace("\\", "\\\\"),
+                    "replace": PY2JS_RULE_RX.sub(r"$\1", rule["unreplace"]),
+                }
+                for rule in FUZZY_RULES
+            ],
         )
     )
     logging.info("JS rules generation completed successfully")
@@ -69,7 +88,7 @@ js_test_template = """// THIS IS AN AUTOMATICALLY GENERATED FILE, DO NOT MODIFY 
 
 import test from 'ava';
 
-import { applyFuzzyRules } from '../src/wombatSetup.js';
+import { applyFuzzyRules, defuzzify } from '../src/wombatSetup.js';
 
 {% for rule in FUZZY_RULES %}
 {% for test in rule['tests'] %}
@@ -81,6 +100,16 @@ test('fuzzyrules_{{rule['name']}}_{{loop.index}}', (t) => {
     '{{test['raw_url'] if test['unchanged'] else test['fuzzified_url']}}',
   );
 });
+{% if not test['unchanged'] %}
+test('defuzzyrules_{{rule['name']}}_{{loop.index}}', (t) => {
+  t.is(
+    defuzzify(
+      '{{test['fuzzified_url']}}',
+    ),
+    '{{test['defuzzified_url']}}',
+  );
+});
+{% endif %}
 {% endfor %}
 {% endfor %}
 """
@@ -113,6 +142,14 @@ FUZZY_RULES = [
 {% for rule in FUZZY_RULES %}  {
     "pattern": r"{{ rule['pattern'] }}",
     "replace": r"{{ rule['replace'] }}",
+  },
+{% endfor %}
+]
+
+DEFUZZY_RULES = [
+{% for rule in FUZZY_RULES %}  {
+    "pattern": r"{{ rule['unreplace_pattern'] }}",
+    "replace": r"{{ rule['unreplace'] }}",
   },
 {% endfor %}
 ]
@@ -164,6 +201,31 @@ def test_fuzzyrules_{{ rule['name'] }}({{ rule['name'] }}_case: ContentForTests)
     assert (
         ArticleUrlRewriter.apply_additional_rules({{ rule['name'] }}_case.input_str)
         == {{ rule['name'] }}_case.expected_str
+    )
+
+
+@pytest.fixture(
+    params=[
+{% for test in rule['tests'] %}
+{% if not test['unchanged'] %}
+        ContentForTests(
+            "{{ test['fuzzified_url'] }}",
+            "{{ test['defuzzified_url'] }}",
+        ),
+{% endif %}
+{% endfor %}
+    ]
+)
+def {{ rule['name'] }}_defuzzy_case(request: pytest.FixtureRequest):
+    yield request.param
+
+
+def test_defuzzyrules_{{ rule['name'] }}(
+    {{ rule['name'] }}_defuzzy_case: ContentForTests,
+):
+    assert (
+        ArticleUrlRewriter.defuzzify({{ rule['name'] }}_defuzzy_case.input_str)
+        == {{ rule['name'] }}_defuzzy_case.expected_str
     )
 {% endfor %}
 

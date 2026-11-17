@@ -201,6 +201,122 @@ class TestEscapeDotSegments:
         assert ArticleUrlRewriter.escape_dot_segments(path) == expected
 
 
+class TestUnescapeDotSegments:
+    @pytest.mark.parametrize(
+        "path,expected",
+        [
+            ("a/_../b", "a/../b"),
+            ("a/_./b", "a/./b"),
+            ("a/_..", "a/.."),
+            ("a/_.", "a/."),
+            ("a/_../_../b", "a/../../b"),
+            ("_.", "."),
+            ("_..", ".."),
+            ("", ""),
+            ("a/.foo/b", "a/.foo/b"),
+            ("a/foo../b", "a/foo../b"),
+            ("a/..foo/b", "a/..foo/b"),
+            ("a/.../b", "a/.../b"),
+            # the escaping ladder unwinds one level at a time
+            ("a/__./b", "a/_./b"),
+            ("a/__../b", "a/_../b"),
+            ("a/___./b", "a/__./b"),
+            ("a/___../b", "a/__../b"),
+            ("__.", "_."),
+            ("__..", "_.."),
+            ("a/_.../b", "a/_.../b"),
+        ],
+    )
+    def test_unescape_dot_segments(self, path: str, expected: str):
+        assert ArticleUrlRewriter.unescape_dot_segments(path) == expected
+
+    @pytest.mark.parametrize(
+        "path",
+        [
+            "a/../b",
+            "a/./b",
+            "a/..",
+            "a/.",
+            ".",
+            "..",
+            "",
+            "a/.foo/b",
+            "a/foo../b",
+            "a/..foo/b",
+            "a/.../b",
+            "a/_./b",
+            "a/_../b",
+            "a/__./b",
+            "a/__../b",
+        ],
+    )
+    def test_escape_unescape_dot_segments_roundtrip(self, path: str):
+        assert (
+            ArticleUrlRewriter.unescape_dot_segments(
+                ArticleUrlRewriter.escape_dot_segments(path)
+            )
+            == path
+        )
+
+
+class TestDenormalize:
+    @pytest.mark.parametrize(
+        "url",
+        [
+            "https://example.com/",
+            "https://example.com/resource",
+            "https://example.com/resource/folder/sub.txt",
+            "https://example.com/resource/folder/sub?foo=bar",
+            "https://example.com/a/../b",
+            "https://example.com/a/_./b",
+            "https://example.com/foo%2Fbar",
+            "https://example.com/r%C3%A9sum%C3%A9%2Fr%C3%A9sum%C3%A9",
+            "https://example.com/?foo=ba+r",
+            "https://xn--exmple-cva.com/resource",
+        ],
+    )
+    def test_denormalize_roundtrip(self, url: str):
+        # scheme is always normalized to https on the way back, and dropped port/
+        # auth are never present in these cases, so a plain round-trip is expected
+        assert (
+            ArticleUrlRewriter.denormalize(
+                ArticleUrlRewriter.normalize(HttpUrl(url))
+            ).value
+            == url
+        )
+
+    @pytest.mark.parametrize(
+        "url,expected",
+        [
+            # scheme is always reconstructed as https, port is always dropped
+            ("http://example.com:8080/resource", "https://example.com/resource"),
+            # fuzzy-matched values can only be reconstructed to a plausible,
+            # representative value, not byte-identical to the real original
+            (
+                "http://foobargooglevideo.com/videoplayback?id=1576&key=value",
+                "https://googlevideo.com/videoplayback?id=1576",
+            ),
+            # a query value's original `+`/`%20` (both decode to space) can't be
+            # told apart once normalized; `+` is always used when reconstructing
+            (
+                "https://example.com/foo?q=a+b%20c%2Bd",
+                "https://example.com/foo?q=a+b+c%2Bd",
+            ),
+        ],
+    )
+    def test_denormalize_lossy(self, url: str, expected: str):
+        assert (
+            ArticleUrlRewriter.denormalize(
+                ArticleUrlRewriter.normalize(HttpUrl(url))
+            ).value
+            == expected
+        )
+
+    def test_denormalize_requires_marker(self):
+        with pytest.raises(ValueError, match="unmarked ZIM path"):
+            ArticleUrlRewriter.denormalize(ZimPath("_zim_static/wombat.js"))
+
+
 _empty_zimpath_set: set[ZimPath] = set()
 
 

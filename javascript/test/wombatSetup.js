@@ -1,7 +1,7 @@
 import test from 'ava';
 import nodeCrypto from 'node:crypto';
 
-import utils from '../src/wombatSetup.js';
+import utils, { REPLAY_MARKER } from '../src/wombatSetup.js';
 
 function textBytes(s) {
   return new TextEncoder().encode(s);
@@ -16,7 +16,10 @@ function toHex(bytes) {
 }
 
 test.beforeEach((t) => {
-  t.context.prefix = 'http://library.kiwix.org/content/myzim_yyyy-mm/';
+  // `prefix` already carries REPLAY_MARKER, same as head_insert.html computes
+  // it (see REPLAY_MARKER's own docstring in wombatSetup.js for why).
+  t.context.prefix =
+    'http://library.kiwix.org/content/myzim_yyyy-mm/' + REPLAY_MARKER;
   t.context.originalHost = 'www.example.com';
   t.context.originalScheme = 'https';
 });
@@ -164,7 +167,11 @@ test('nominalWbInfo', (t) => {
   t.is(wmInfo.prefix, t.context.prefix);
   t.is(wmInfo.proxy_magic, '');
   t.is(wmInfo.request_ts, '');
-  t.is(wmInfo.static_prefix, t.context.prefix + '_zim_static/');
+  // static_prefix never carries REPLAY_MARKER (static assets aren't normalize()'d)
+  t.is(
+    wmInfo.static_prefix,
+    t.context.prefix.slice(0, -REPLAY_MARKER.length) + '_zim_static/',
+  );
   t.is(wmInfo.target_frame, '___wb_replay_top_frame');
   t.is(wmInfo.timestamp, '');
   t.is(wmInfo.top_url, t.context.prefix + path);
