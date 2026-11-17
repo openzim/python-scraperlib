@@ -167,11 +167,21 @@ REQUEST_PATCHED = (
 # *getters* only (webrecorder/wombat#244), which this supersedes.
 #
 # `e` is computed just above as the length of whatever abs/rel replay prefix
-# was stripped off the front of `i` (the value being extracted); passing
-# `i.substr(e)` hands our hook the value with that prefix already removed, so
-# it only has to check for (and strip) REPLAY_MARKER itself. Returning
-# `undefined` from the hook (e.g. the value isn't one of ours) falls through
-# to the unmodified heuristic below, unlike `rewrite_function`'s unconditional
+# was stripped off the front of `i` (the value being extracted). The hook is
+# only called when `i` genuinely started with one of those two prefixes (the
+# same condition `e`'s own ternary just tested) -- the ternary's other two
+# branches (`wb_rel_prefix?1:0`) mean "`i` did not match either prefix at
+# all", in which case `i.substr(e)` would be a meaningless 0/1-character
+# chop of an unrelated value, not one of our ZIM paths.
+#
+# `wb_abs_prefix`/`wb_rel_prefix` are themselves derived from `wb_info.prefix`
+# (our `prefix`, which already carries REPLAY_MARKER, see REPLAY_MARKER's own
+# docstring in wombatSetup.js), so by the time `i.substr(e)` is computed, that
+# marker has *already* been consumed as part of the stripped prefix -- the
+# hook therefore receives a plain escaped ZIM path, with no REPLAY_MARKER of
+# its own to check for. Returning `undefined` from the hook (e.g. `i.substr(e)`
+# doesn't decode into a well-formed ZIM path after all) falls through to the
+# unmodified heuristic below, unlike `rewrite_function`'s unconditional
 # override: `extractOriginalURL` legitimately sees many non-ZIM-path inputs.
 EXTRACT_ORIGINAL_URL_ORIGINAL = (
     "e=this.startsWith(i,this.wb_abs_prefix)?this.wb_abs_prefix.length:this."
@@ -182,7 +192,9 @@ EXTRACT_ORIGINAL_URL_ORIGINAL = (
 EXTRACT_ORIGINAL_URL_PATCHED = (
     "e=this.startsWith(i,this.wb_abs_prefix)?this.wb_abs_prefix.length:this."
     "wb_rel_prefix&&this.startsWith(i,this.wb_rel_prefix)?this.wb_rel_prefix."
-    "length:this.wb_rel_prefix?1:0;if(this.wb_info.extract_original_url_function){"
+    "length:this.wb_rel_prefix?1:0;if(this.wb_info.extract_original_url_function&&"
+    "(this.startsWith(i,this.wb_abs_prefix)||this.wb_rel_prefix&&this.startsWith("
+    "i,this.wb_rel_prefix))){"
     "var c=this.wb_info.extract_original_url_function(i.substr(e));"
     'if(c!==undefined)return c}var o=i.indexOf("/http",e);'
 )

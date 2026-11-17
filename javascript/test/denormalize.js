@@ -6,6 +6,7 @@ import {
   unescapeDotSegments,
   denormalize,
   extractOriginalURLFunction,
+  urlRewriteFunction,
 } from '../src/wombatSetup.js';
 
 test('unescapeDotSegments', (t) => {
@@ -57,13 +58,53 @@ test('denormalizeLossy', (t) => {
   );
 });
 
-test('extractOriginalURLFunctionMarked', (t) => {
+test('extractOriginalURLFunction', (t) => {
+  // `escapedPath` here is the value *after* wombat.js's extractOriginalURL
+  // hook has already stripped its own wb_abs_prefix/wb_rel_prefix off --
+  // which, since those are derived from `wb_info.prefix` (itself already
+  // carrying REPLAY_MARKER), has already consumed the marker too: no
+  // REPLAY_MARKER of its own survives in `escapedPath` (see
+  // extractOriginalURLFunctionRealisticRoundtrip for the full, real path
+  // through urlRewriteFunction's own percent-encoding).
   t.is(
-    extractOriginalURLFunction(REPLAY_MARKER + 'example.com/foo/bar?a=1'),
+    extractOriginalURLFunction('example.com/foo/bar?a=1'),
     'https://example.com/foo/bar?a=1',
   );
 });
 
-test('extractOriginalURLFunctionUnmarkedFallsBackToUndefined', (t) => {
-  t.is(extractOriginalURLFunction('_zim_static/wombat.js'), undefined);
+test('extractOriginalURLFunctionFallsBackToUndefinedOnBadInput', (t) => {
+  // A lone '%' is not valid percent-encoding; decodeURIComponent throws,
+  // and the hook must fall back to `undefined` (letting wombat.js's own
+  // default heuristic take over) instead of propagating the exception.
+  t.is(extractOriginalURLFunction('example.com/100%'), undefined);
+});
+
+test('extractOriginalURLFunctionRealisticRoundtrip', (t) => {
+  // Exercises the real path: urlRewriteFunction's served, percent-encoded
+  // output (only '/', '=' and ',' literal, see its own encodeURIComponent
+  // chain), stripped of the serving prefix exactly like the wombat.js
+  // extractOriginalURL hook does (`i.substr(e)`, which consumes
+  // REPLAY_MARKER along with the rest of the prefix), must decode back
+  // through extractOriginalURLFunction to the original URL -- in
+  // particular, a character folded into the path and then percent-escaped
+  // for serving (here the '?' in a query value containing a raw,
+  // un-encoded URL, as docs.python.org-style pages do, see
+  // openzim/warc2zim#471) must come back as a literal, not stay escaped.
+  const prefix =
+    'http://library.kiwix.org/content/myzim_yyyy-mm/' + REPLAY_MARKER;
+  const originalUrl =
+    'https://example.com/improve-page.html?pageurl=https:/other.example/foo';
+  const rewritten = urlRewriteFunction(
+    prefix + 'example.com/index.html',
+    'example.com',
+    'https',
+    'https://example.com/index.html',
+    prefix,
+    originalUrl,
+    undefined,
+    undefined,
+    undefined,
+  );
+  t.true(rewritten.startsWith(prefix));
+  t.is(extractOriginalURLFunction(rewritten.slice(prefix.length)), originalUrl);
 });
