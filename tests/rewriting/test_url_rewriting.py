@@ -1237,32 +1237,32 @@ class TestArticleUrlRewriter:
     @pytest.mark.parametrize(
         "article_path, item_path, expected_uri",
         [
-            # both marked (the normal case, as produced by normalize()): the marker is
-            # stripped from both sides before computing the relative path, so it is a
-            # shared leading segment and never appears in the computed href
+            # both marked (the normal case, as produced by normalize()): the marker
+            # is a shared leading segment between the two paths, canceling out on
+            # its own in the relative-path computation and never appearing in the
+            # computed href, the same way e.g. a shared hostname segment would
             (
                 ZimPath(REPLAY_MARKER + "kiwix.org/a/article/document.html"),
                 ZimPath(REPLAY_MARKER + "kiwix.org/a/article/foo.html"),
                 "foo.html",
             ),
             # article_path unmarked (e.g. a static asset path built directly, like
-            # `_zim_static/__wb_module_decl.js`), item_path marked: the marker is
-            # still stripped from item_path, so it never leaks into the output, but
-            # there is no shared prefix left to cancel out against the (always
-            # unmarked) `_zim_static/` article_path, same as before REPLAY_MARKER
-            # existed
+            # `_zim_static/__wb_module_decl.js`), item_path marked: there is no
+            # shared prefix to cancel out against the (always unmarked)
+            # `_zim_static/` article_path, so the marker shows up in the computed
+            # href, same as any other non-shared leading segment would
             (
                 ZimPath("_zim_static/"),
                 ZimPath(REPLAY_MARKER + "kiwix.org/a/article/foo.html"),
-                "../kiwix.org/a/article/foo.html",
+                "../" + REPLAY_MARKER + "kiwix.org/a/article/foo.html",
             ),
-            # the reverse: article_path marked, item_path unmarked; same result as
-            # today since the marker is only ever a shared prefix when both sides
-            # have it
+            # the reverse: article_path marked, item_path unmarked; one more level
+            # than if article_path were unmarked too, since the marker segment
+            # itself must now be walked up through as well
             (
                 ZimPath(REPLAY_MARKER + "kiwix.org/a/article/document.html"),
                 ZimPath("_zim_static/wombat.js"),
-                "../../../_zim_static/wombat.js",
+                "../../../../_zim_static/wombat.js",
             ),
         ],
     )
@@ -1388,6 +1388,11 @@ class TestZimPath:
             # just as valid as an unmarked one
             (REPLAY_MARKER + "content/index.html"),
             (REPLAY_MARKER + "index.html"),
+            # REPLAY_MARKER's `-` (not a valid scheme's first character) followed
+            # immediately by `/` makes it structurally impossible for urlsplit to
+            # detect a scheme or netloc in anything that follows the marker, so
+            # even a value that would otherwise be rejected is accepted once marked
+            (REPLAY_MARKER + "https://bob@acme.com"),
         ],
     )
     def test_good_zim_path(self, path: str):
@@ -1401,8 +1406,6 @@ class TestZimPath:
             ("mailto:bob@acme.com"),
             ("tel:+41.34.34"),
             ("mailto:https://bob@acme.com"),
-            # the REPLAY_MARKER prefix doesn't hide a genuinely bad scheme behind it
-            (REPLAY_MARKER + "https://bob@acme.com"),
         ],
     )
     def test_bad_zim_path_scheme(self, path: str):

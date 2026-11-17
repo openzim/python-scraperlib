@@ -221,7 +221,14 @@ if (typeof crypto !== 'undefined' && typeof crypto.subtle === 'undefined') {
 // "collection" path segment (e.g. bare `kiwix.app/<path>`) made wombat.js's
 // `wb_rel_prefix` degenerate to `''`/`'/'`, corrupting any `innerHTML`/`outerHTML`
 // read on the page (webrecorder/wombat, reported as openzim/zimit#589).
-export const REPLAY_MARKER = 'replay://';
+// `-` was chosen because it is never percent-encoded by `encodeURIComponent`
+// (unlike e.g. `:`, which some servers percent-encode in a redirect's `Location`
+// header, defeating the marker's purpose) and a hostname can never start with
+// one, but a bare `-` alone would not be enough: wombat's regex is
+// `wb_rel_prefix + '[^/]+/'`, and without the trailing `/` the resulting
+// `/-[^/]+/` is still common enough in ordinary text (e.g. `/-1/`, `/-webkit-x/`)
+// to misfire the same way.
+export const REPLAY_MARKER = '-/';
 
 export function applyFuzzyRules(path) {
   // Apply fuzzy rules to simplify the ZIM path. First matching rule is applied and
@@ -250,17 +257,19 @@ export function escapeDotSegments(path) {
     .join('/');
 }
 
-export function isAlreadyPrefixed(url) {
-  // REPLAY_MARKER is a constant marker we prepend to every ZIM path (see
-  // urlRewriteFunction below), so any URL containing it is unambiguously an
+export function isAlreadyPrefixed(url, prefix) {
+  // Checking for REPLAY_MARKER right after our own serving prefix (rather than
+  // anywhere in url) anchors the check to something unique to this deployment,
+  // so it cannot coincidentally match genuine, unrelated content that happens to
+  // contain REPLAY_MARKER as a substring (e.g. a real site with a URL segment
+  // literally named "replay"). Any url shaped this way is unambiguously an
   // already-rewritten, fully-prefixed absolute URL (e.g. one read back from
-  // `img.src` and reassigned elsewhere): original web content cannot
-  // coincidentally produce it. A statically-rewritten *relative* link never
-  // contains it, since the marker is a shared prefix between the current
+  // `img.src` and reassigned elsewhere). A statically-rewritten *relative* link
+  // never matches here, since the marker is a shared prefix between the current
   // document and the link's target, and so is absent from the relative
   // reference computed between them (see `hasAlreadyBeenRewritten` for that
   // case instead).
-  return url.includes(REPLAY_MARKER);
+  return url.startsWith(prefix + REPLAY_MARKER);
 }
 
 export function hasAlreadyBeenRewritten(
@@ -329,7 +338,7 @@ export function urlRewriteFunction(
   // in particular, the prefix-unwrapping a few lines down would otherwise mangle
   // such a URL (e.g. one read back from `img.src` and reassigned elsewhere) by
   // re-adding a scheme in front of its embedded REPLAY_MARKER.
-  if (isAlreadyPrefixed(url)) {
+  if (isAlreadyPrefixed(url, prefix)) {
     return url;
   }
 
@@ -422,8 +431,7 @@ export function urlRewriteFunction(
     encodeURIComponent(REPLAY_MARKER + escapedPath)
       .replaceAll('%2F', '/')
       .replaceAll('%3D', '=')
-      .replaceAll('%2C', ',')
-      .replaceAll('%3A', ':');
+      .replaceAll('%2C', ',');
 
   console.debug(
     'urlRewriten:\n\t- current_url: ' +
