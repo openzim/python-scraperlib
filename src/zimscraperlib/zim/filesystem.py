@@ -58,7 +58,7 @@ class FileItem(StaticItem):
         return str(self.filepath.relative_to(self.root))
 
     def get_title(self) -> str:
-        from zimscraperlib.html import find_title_in_file
+        from zimscraperlib.html import find_title_in_file  # noqa: PLC0415
 
         return find_title_in_file(self.filepath, self.mimetype)
 

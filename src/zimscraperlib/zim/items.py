@@ -229,7 +229,7 @@ class URLItem(StaticItem):
         on_disk: bool,
     ):
         """Download URL to a temp file and return its tempfile and size"""
-        from zimscraperlib.download import stream_file
+        from zimscraperlib.download import stream_file  # noqa: PLC0415
 
         fpath = stream = None
         if on_disk:
@@ -255,7 +255,7 @@ class URLItem(StaticItem):
         use_disk: bool | None = None,
         **kwargs: Any,
     ):
-        from zimscraperlib.download import stream_file
+        from zimscraperlib.download import stream_file  # noqa: PLC0415
 
         if use_disk is not None:
             kwargs["use_disk"] = use_disk

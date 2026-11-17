@@ -65,7 +65,7 @@ class URLProvider(libzim.writer.ContentProvider):
     Useful for non-indexed content for which feed() is called only once"""
 
     def __init__(self, url: str, size: int | None = None, ref: object | None = None):
-        from zimscraperlib.download import get_retry_adapter
+        from zimscraperlib.download import get_retry_adapter  # noqa: PLC0415
 
         super().__init__()
         self.url = url
@@ -79,7 +79,7 @@ class URLProvider(libzim.writer.ContentProvider):
 
     @staticmethod
     def get_size_of(url: str) -> int | None:
-        from zimscraperlib.download import stream_file
+        from zimscraperlib.download import stream_file  # noqa: PLC0415
 
         _, headers = stream_file(url, byte_stream=io.BytesIO(), only_first_block=True)
         try:

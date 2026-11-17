@@ -40,7 +40,7 @@ def handle_user_provided_file(
         )
 
     if str(source).startswith("http"):
-        from zimscraperlib.download import stream_file
+        from zimscraperlib.download import stream_file  # noqa: PLC0415
 
         logger.debug(f"download {source} -> {dest}")
         headers = {"User-Agent": user_agent} if user_agent else None
