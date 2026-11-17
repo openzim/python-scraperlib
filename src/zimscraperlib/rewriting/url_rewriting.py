@@ -13,6 +13,13 @@ Entries are stored in the ZIM file using their decoded fully decoded path:
   might be absorbed by a web server, ...
   . This is valid : "foo/part with space/bar?key=value"
   . This is NOT valid : "foo/part%20with%20space/bar%3Fkey%3Dvalue"
+- the one exception is a percent-encoded `/` (`%2F`) in the path: it is kept encoded
+  (as `%2F`, uppercase) instead of being decoded to a literal `/`, because decoding it
+  would make it indistinguishable from an actual path separator. Without this
+  exception, two genuinely different resources would normalize to the same ZIM path:
+  "/foo%2Fbar" (one segment, containing a literal `/`) and "/foo/bar" (two segments)
+  are both valid ZIM paths on their own, but they must stay distinct, as
+  "foo%2Fbar" and "foo/bar" respectively, instead of both becoming "foo/bar"
 - even having multiple ? in a ZIM path is valid
   . This is valid :
     "foo/part/file with ? and +?who=Chip&Dale&question=It there any + here?"
@@ -30,8 +37,13 @@ original URL (typically folded into the path from a querystring, see below) woul
 either disappear or be misinterpreted as a navigation instruction instead of being
 kept as a literal entry name. Such segments are therefore escaped by prefixing them
 with a `_`, e.g. path `a/../b` becomes `a/_../b`. This only applies to segments that
-are exactly `.` or `..`; look-alikes such as `a/foo../b` or `a/..foo/b` are left
-untouched since they are not dot-segments.
+are exactly zero or more `_` followed by exactly `.` or `..`; look-alikes such as
+`a/foo../b` or `a/..foo/b` are left untouched since they are not dot-segments. A
+segment that is already of this escaped form in the original URL (e.g. a literal `_.`
+or `_..` segment) is escaped the same way, with one more leading `_`, so it never
+collides with the escaped form of an actual dot-segment: `.` becomes `_.`, a literal
+`_.` becomes `__.`, a literal `__.` becomes `___.`, and so on (the same ladder applies
+to `..`: `_..` becomes `__..`, a literal `__..` becomes `___..`, and so on).
 
 On top of that, fuzzy rules are applied on the ZIM path:
 For instance a path "https://www.youtube.com/youtubei/v1/foo/baz/things?key=value
@@ -77,6 +89,28 @@ COMPILED_FUZZY_RULES = [
     AdditionalRule(match=re.compile(rule["pattern"]), replace=rule["replace"])
     for rule in FUZZY_RULES
 ]
+
+
+_ENCODED_SLASH_RX = re.compile(r"%2f", re.IGNORECASE)
+
+
+def _unquote_path(path: str) -> str:
+    """Unquote a path, keeping a percent-encoded '/' (`%2F`) encoded
+
+    Unlike a plain `unquote(path)`, an encoded `/` is left encoded (normalized to
+    uppercase `%2F`) instead of being decoded to a literal `/`, so that it stays
+    distinguishable from an actual path separator: decoding it would otherwise
+    collide two genuinely different resources into the same ZIM path, e.g.
+    "/foo%2Fbar" (one segment, containing a literal `/`) and "/foo/bar" (two
+    segments) would otherwise both become "foo/bar".
+
+    The path is split on the still-encoded `%2F` occurrences first, and each piece
+    is unquoted independently, rather than decoding everything except `%2F` in a
+    single pass. `%2F` being a fixed-width, ASCII-only percent-triplet, splitting on
+    it this way can never cut into a different, multi-byte percent-encoded
+    sequence, so each piece is always a complete, independently decodable run.
+    """
+    return "%2F".join(unquote(part) for part in _ENCODED_SLASH_RX.split(path))
 
 
 def _remove_dot_segments(path: str) -> str:
@@ -447,6 +481,11 @@ class ArticleUrlRewriter:
             relative_path = "./" + relative_path
         return relative_path
 
+    #: A segment which is a run of zero or more `_` followed by exactly one or two
+    #: `.`: either an actual dot-segment (no leading `_`) or a previous application
+    #: of this same escaping (one or more leading `_`).
+    _DOT_SEGMENT_RX: ClassVar[re.Pattern[str]] = re.compile(r"^_*\.{1,2}$")
+
     @classmethod
     def escape_dot_segments(cls, path: str) -> str:
         """Escape '.' and '..' path segments so they are not resolved as navigation
@@ -456,11 +495,18 @@ class ArticleUrlRewriter:
         keep such a segment as a literal entry name instead, so it is prefixed with
         a `_`, which is not itself special in a ZIM path.
 
+        A segment which is already of this escaped form in the original URL (e.g. a
+        literal `_.` or `_..` segment) is escaped the same way, with one more
+        leading `_` (e.g. `_.` becomes `__.`, and a further literal `__.` would
+        become `___.`), so that it never collides with the escaped form of an
+        actual dot-segment.
+
         Segments which only look like a dot-segment (e.g. `foo..`, `..foo`, `...`)
         are not dot-segments and are left untouched.
         """
         return "/".join(
-            f"_{part}" if part in (".", "..") else part for part in path.split("/")
+            f"_{part}" if cls._DOT_SEGMENT_RX.match(part) else part
+            for part in path.split("/")
         )
 
     @classmethod
@@ -501,7 +547,8 @@ class ArticleUrlRewriter:
         path is not encoded at all, as required by the ZIM specification.
 
         Decoding is done differently for the hostname (decoded with puny encoding) and
-        the path and querystring (both decoded with url decoding).
+        the path and querystring (both decoded with url decoding), except for an
+        encoded '/' (%2F) in the path which is kept encoded, see `_unquote_path`.
 
         The final transformation is the application of fuzzy rules (sourced from wabac)
         to transform some URLs into replay URLs and drop some useless stuff.
@@ -528,8 +575,9 @@ class ArticleUrlRewriter:
 
         if path:
             # unquote the path so that it is stored unencoded in the ZIM as required by
-            # ZIM specification
-            path = unquote(path)
+            # ZIM specification, except for an encoded '/' (%2F) which is kept encoded,
+            # see `_unquote_path`
+            path = _unquote_path(path)
         else:
             # if path is empty, we need a "/" to remove ambiguities, e.g.
             # https://example.com and https://example.com/ must all lead to the same ZIM

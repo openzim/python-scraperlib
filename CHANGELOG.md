@@ -30,6 +30,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add a host-gated `SITE_JS_PATCHES` mechanism to `JsRewriter`, fixing MDN's `<interactive-example>` widget missing a deterministic `permalink` attribute (#394)
 - Polyfill `crypto.randomUUID()` when missing in a non-secure context (plain HTTP, non-`localhost`) (#391)
 - Polyfill `crypto.subtle.digest()` (SHA-1/SHA-256) when missing in a non-secure context (#393)
+- `ArticleUrlRewriter.normalize()` no longer decodes a percent-encoded `/` (`%2F`) in the path into a literal `/`, fixing a content collision between e.g. `/foo%2Fbar` (one segment, containing a literal `/`) and `/foo/bar` (two segments), which used to normalize to the same ZIM path (#396)
+- `ArticleUrlRewriter.escape_dot_segments()` now also escapes a literal `_.`/`_..` (and further escaped forms like `__.`/`__..`) segment with one more leading `_`, fixing a content collision with the escaped form of an actual `.`/`..` dot-segment, which used to normalize to the same ZIM path (#396)
 
 ### Changed
 

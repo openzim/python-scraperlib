@@ -8,6 +8,7 @@ from zimscraperlib.rewriting.url_rewriting import (
     RewriteResult,
     ZimPath,
     _remove_dot_segments,  # pyright: ignore[reportPrivateUsage]
+    _unquote_path,  # pyright: ignore[reportPrivateUsage]
     _urljoin,  # pyright: ignore[reportPrivateUsage]
 )
 
@@ -129,6 +130,33 @@ class TestNormalize:
             ("https://example.com/foo../bar", "example.com/foo../bar"),
             ("https://example.com/..foo/bar", "example.com/..foo/bar"),
             ("https://example.com/...", "example.com/..."),
+            # a literal `_.`/`_..` segment is escaped the same way, with one more
+            # leading `_`, so it never collides with the escaped form of an actual
+            # dot-segment
+            ("https://example.com/a/_./b", "example.com/a/__./b"),
+            ("https://example.com/a/_../b", "example.com/a/__../b"),
+            ("https://example.com/a/__./b", "example.com/a/___./b"),
+            # an encoded `/` (%2F) in the path is kept encoded (and normalized to
+            # uppercase) instead of being decoded to a literal `/`, so it stays
+            # distinguishable from an actual path separator
+            (
+                "http://example.com/foo%2Fbar",
+                "example.com/foo%2Fbar",
+            ),
+            (
+                "http://example.com/foo%2fbar",
+                "example.com/foo%2Fbar",
+            ),
+            (
+                "http://example.com/foo/bar",
+                "example.com/foo/bar",
+            ),
+            # other percent-encoded characters around an encoded `/`, including
+            # multi-byte UTF-8 sequences, are still properly decoded
+            (
+                "http://example.com/r%C3%A9sum%C3%A9%2Fr%C3%A9sum%C3%A9",
+                "example.com/résumé%2Frésumé",
+            ),
         ],
     )
     def test_normalize(self, url: str, zim_path: str):
@@ -153,6 +181,18 @@ class TestEscapeDotSegments:
             ("a/foo../b", "a/foo../b"),
             ("a/..foo/b", "a/..foo/b"),
             ("a/.../b", "a/.../b"),
+            # a literal `_.`/`_..` segment (i.e. already of the escaped form) is
+            # escaped the same way, with one more leading `_`, forming a ladder that
+            # never collides across levels
+            ("a/_./b", "a/__./b"),
+            ("a/_../b", "a/__../b"),
+            ("a/__./b", "a/___./b"),
+            ("a/__../b", "a/___../b"),
+            ("_.", "__."),
+            ("_..", "__.."),
+            # three dots is not a dot-segment and is never escaped, so a literal
+            # `_...` segment is never produced by this escaping and stays untouched
+            ("a/_.../b", "a/_.../b"),
         ],
     )
     def test_escape_dot_segments(self, path: str, expected: str):
@@ -1367,6 +1407,22 @@ def test_urljoin_rejects_empty_base():
 def test_remove_dot_segments_rejects_path_without_leading_slash():
     with pytest.raises(AssertionError, match="path must start with '/'"):
         _remove_dot_segments("foo/bar")
+
+
+@pytest.mark.parametrize(
+    "path,expected",
+    [
+        ("/foo/bar", "/foo/bar"),
+        ("/foo%2Fbar", "/foo%2Fbar"),
+        ("/foo%2fbar", "/foo%2Fbar"),  # normalized to uppercase
+        ("/foo%2F%2Fbar", "/foo%2F%2Fbar"),
+        ("/r%C3%A9sum%C3%A9%2Fr%C3%A9sum%C3%A9", "/résumé%2Frésumé"),
+        ("/%24%2F%24", "/$%2F$"),
+        ("", ""),
+    ],
+)
+def test_unquote_path(path: str, expected: str):
+    assert _unquote_path(path) == expected
 
 
 def _resolve_relative_reference(base_url: str, reference: str) -> str:
