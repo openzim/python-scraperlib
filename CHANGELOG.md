@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - `VideoWebmMedium` preset: VP9 at 240k with the height capped at 720, a middle ground between `VideoWebmLow` and `VideoWebmHigh` (#271)
+- `ArticleUrlRewriter.denormalize`/`defuzzify` (and their JS ports in `wombatSetup.js`), the best-effort reverse of `normalize`/the fuzzy rules, reconstructing a plausible (not guaranteed exact) original URL from a ZIM path (#396)
+- Patch vendored `wombat.js` so `extractOriginalURL` defers to a new `wb_info.extract_original_url_function` hook (the same way `rewriteUrl` already defers to `wb_info.rewrite_function`), letting it call `denormalize`/`defuzzify` for cases its own pywb-oriented heuristic can never handle: CSS `url()` reads, `document.referrer`, dynamically created elements, and `location.replace()`/`.assign()`/`updateLocation` (#396)
 
 ### Changed
 
@@ -28,6 +30,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Detect `export const`/`let`/`var`/`function`/`async function`/`*` as module code (`EXPORT_RX` only recognized `export {...}`, `export default` and `export class`), fixing JS rewriting wrongly injecting a non-module `let arguments;` wrapper into ES modules using these common export forms, which is a syntax error in strict/module code (#387)
 - Fix JS URL rewriter confusing a percent-encoded `%2B` with a raw `+` in query strings (#389)
 - Patch vendored `wombat.js` so `retrieveWBOSRCAsURL` (the helper behind the above element-property fix) resolves a recorded original against the frame's true original URL (`wb_info.url`) instead of its replay-time `ownerDocument`, fixing it returning/using a URL under the wrong host for a page whose own URL was changed by a fuzzy rule (e.g. YouTube embeds), which broke playback (#398)
+
+### Removed
+
+- Patch vendored `wombat.js` so `location.href`/`.search`/`.pathname` prefer `wb_info.url` over `extractOriginalURL` (#382, webrecorder/wombat#244): superseded by the new, more general `extract_original_url_function` hook above, which also covers `location.replace()`/`.assign()`/`updateLocation`, CSS, referrer and dynamic elements that the narrower patch never did (#396)
 - Add a host-gated `SITE_JS_PATCHES` mechanism to `JsRewriter`, fixing MDN's `<interactive-example>` widget missing a deterministic `permalink` attribute (#394)
 - Polyfill `crypto.randomUUID()` when missing in a non-secure context (plain HTTP, non-`localhost`) (#391)
 - Polyfill `crypto.subtle.digest()` (SHA-1/SHA-256) when missing in a non-secure context (#393)

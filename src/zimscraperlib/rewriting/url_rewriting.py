@@ -78,6 +78,12 @@ url-decode and find corresponding ZIM entry. Only '/', '=' and ',' are considere
 and not url-encoded. '=' and ',' are kept unencoded because some sites (e.g. YouTube)
 embed scripts that parse their own script URL and expect these characters to appear
 literally in it.
+
+`ArticleUrlRewriter.denormalize` is the best-effort reverse of `normalize`
+(reconstructing a plausible, not guaranteed exact, original URL from a ZIM path),
+used by wombat.js's `extractOriginalURL` hook for cases (CSS `url()` reads,
+`document.referrer`, dynamically created elements, ...) where no server-side-recorded
+original value is available to fall back on.
 """
 
 import re
@@ -94,7 +100,7 @@ from urllib.parse import (
 import idna
 
 from zimscraperlib import logger
-from zimscraperlib.rewriting.rules import FUZZY_RULES
+from zimscraperlib.rewriting.rules import DEFUZZY_RULES, FUZZY_RULES
 
 
 @dataclass
@@ -106,6 +112,11 @@ class AdditionalRule:
 COMPILED_FUZZY_RULES = [
     AdditionalRule(match=re.compile(rule["pattern"]), replace=rule["replace"])
     for rule in FUZZY_RULES
+]
+
+COMPILED_DEFUZZY_RULES = [
+    AdditionalRule(match=re.compile(rule["pattern"]), replace=rule["replace"])
+    for rule in DEFUZZY_RULES
 ]
 
 # A constant marker prepended to every ZIM path by `normalize()`. It gives wombat.js a
@@ -139,6 +150,19 @@ def _unquote_path(path: str) -> str:
     sequence, so each piece is always a complete, independently decodable run.
     """
     return "%2F".join(unquote(part) for part in _ENCODED_SLASH_RX.split(path))
+
+
+def _requote_path(path: str) -> str:
+    """Requote a decoded ZIM path, keeping a literal '%2F' run unescaped
+
+    Inverse of `_unquote_path`: splits on the still-literal, uppercase `%2F` runs
+    `_unquote_path` leaves behind (representing an originally-percent-encoded `/`
+    within a single path segment) and `quote`s everything else, so that a literal
+    `%2F` run is passed through as-is (it is already valid percent-encoding, meaning
+    an encoded slash) while any other character `_unquote_path` decoded (including a
+    literal `%` coming from an original `%25`) is correctly re-escaped.
+    """
+    return "%2F".join(quote(part, safe="/") for part in path.split("%2F"))
 
 
 def _remove_dot_segments(path: str) -> str:
@@ -312,6 +336,7 @@ class ArticleUrlRewriter:
     """
 
     additional_rules: ClassVar[list[AdditionalRule]] = COMPILED_FUZZY_RULES
+    additional_unrules: ClassVar[list[AdditionalRule]] = COMPILED_DEFUZZY_RULES
 
     def __init__(
         self,
@@ -549,6 +574,21 @@ class ArticleUrlRewriter:
         )
 
     @classmethod
+    def unescape_dot_segments(cls, path: str) -> str:
+        """Reverse `escape_dot_segments`: unescape a leading `_` added to a segment
+
+        A segment matching `^_+\\.{1,2}$` (one or more leading `_`, an actual
+        dot-segment never appears since `escape_dot_segments` always adds at least
+        one `_`) has exactly one leading `_` stripped, e.g. `_.` becomes `.`, and
+        `__.` (an escaped, already-once-escaped, literal `_.` segment) becomes `_.`.
+        Segments which don't match this shape are left untouched.
+        """
+        return "/".join(
+            part[1:] if re.match(r"^_+\.{1,2}$", part) else part
+            for part in path.split("/")
+        )
+
+    @classmethod
     def apply_additional_rules(cls, uri: HttpUrl | str) -> str:
         """Apply additional rules on a URL or relative path
 
@@ -559,6 +599,23 @@ class ArticleUrlRewriter:
         """
         value = uri.value if isinstance(uri, HttpUrl) else uri
         for rule in cls.additional_rules:
+            if match := rule.match.match(value):
+                return match.expand(rule.replace)
+        return value
+
+    @classmethod
+    def defuzzify(cls, value: str) -> str:
+        """Best-effort reverse of `apply_additional_rules`
+
+        First matching `unreplace_pattern` (see `rules/rules.yaml`) is applied and
+        its `unreplace` expansion is returned. This is not guaranteed to recover the
+        real original value: some fuzzy rules permanently discard information (e.g.
+        the real hostname/subdomain or extra query keys), in which case `unreplace`
+        only rebuilds a plausible, representative value.
+
+        If no additional unrule is matching, the input is returned as-is.
+        """
+        for rule in cls.additional_unrules:
             if match := rule.match.match(value):
                 return match.expand(rule.replace)
         return value
@@ -648,3 +705,47 @@ class ArticleUrlRewriter:
         return ZimPath(
             REPLAY_MARKER + ArticleUrlRewriter.escape_dot_segments(fuzzified_url)
         )
+
+    @classmethod
+    def denormalize(cls, path: ZimPath) -> HttpUrl:
+        """Best-effort reverse of `normalize`: reconstruct a plausible original URL
+
+        This is not guaranteed to recover the exact original URL: fuzzy rules are
+        lossy by construction (e.g. `defuzzify` can only rebuild a representative
+        hostname/subdomain, and some discarded query keys are gone for good), and
+        the scheme is always reconstructed as `https` (the scheme is dropped by
+        `normalize` and never recoverable). Port is also always dropped (same
+        reason).
+
+        Raises ValueError if `path` was never produced by `normalize` (i.e. its
+        value does not start with `REPLAY_MARKER`), since such a path has no
+        original URL to reconstruct (e.g. a static asset path like
+        `_zim_static/wombat.js`).
+        """
+        if not path.value.startswith(REPLAY_MARKER):
+            raise ValueError(f"Cannot denormalize an unmarked ZIM path: {path.value}")
+
+        value = path.value.removeprefix(REPLAY_MARKER)
+        value = ArticleUrlRewriter.unescape_dot_segments(value)
+        value = ArticleUrlRewriter.defuzzify(value)
+
+        # host is always followed by a '/' starting the path, since `normalize`
+        # always ensures the path is non-empty (defaulting to '/')
+        host, _, rest = value.partition("/")
+        rest = "/" + rest
+
+        # query, if any, starts at the first literal '?' `normalize` inserted;
+        # ambiguous only if the path itself legitimately contains a literal '?'
+        # (a valid, if rare, ZIM path shape, see module docstring), same best-effort
+        # caveat as fuzzy-rule lossiness
+        path_part, sep, query_part = rest.partition("?")
+
+        quoted_path = _requote_path(path_part)
+        quoted_query = (
+            f"?{quote(query_part, safe='=&').replace('%20', '+')}" if sep else ""
+        )
+
+        if not host.isascii():
+            host = idna.encode(host).decode()
+
+        return HttpUrl(f"https://{host}{quoted_path}{quoted_query}")

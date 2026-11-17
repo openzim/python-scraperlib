@@ -4,14 +4,21 @@ yet:
 
 - fetch() converting POST (and other non-GET) requests to GET, the same
   way its XMLHttpRequest override already does (webrecorder/wombat#242).
-- Location getters (`location.href`/`.pathname`/`.search`/...) preferring
-  `wb_info.url` over re-deriving a value via `extractOriginalURL`
-  (webrecorder/wombat#245).
 - Element properties (`img.src`, `script.src`, `link.href`, `a.href` and
   its derived `.pathname`/`.search`/..., `Attr.value`) not returning a
   server-side-rewriter-recorded original the same way `getAttribute`
   already does, and not forgetting that recorded original once the
   property is assigned (webrecorder/wombat#240).
+- `extractOriginalURL()` deferring to a new `wb_info.extract_original_url_function`
+  hook, the same way `rewriteUrl()` already defers to `wb_info.rewrite_function`,
+  so our own `denormalize()`/`defuzzify()` (zimscraperlib.rewriting.url_rewriting,
+  javascript/src/wombatSetup.js) get a chance at reconstructing a plausible
+  original URL for cases `extractOriginalURL`'s own pywb-oriented heuristic can
+  never handle (our rewriting scheme doesn't embed an absolute URL the way pywb's
+  does) -- CSS `url()` reads, `document.referrer`, dynamically created elements,
+  and (unlike the narrower Location-getter patch this supersedes, previously here
+  for openzim/python-scraperlib#382, webrecorder/wombat#244) `location.replace()`/
+  `.assign()`/`updateLocation` (openzim/python-scraperlib#396).
 
 This script is invoked via `execute_after` on the wombat.js `get_file` action
 in openzim.toml, right after wombat.js is downloaded, so it runs on every
@@ -147,62 +154,37 @@ REQUEST_PATCHED = (
     'this.overridePropExtract(this.$wbwindow.Request.prototype,"referrer")}'
 )
 
-# --- WombatLocation constructor: record the initial served href -------
+# --- extractOriginalURL(): defer to a wb_info.extract_original_url_function hook
 #
-# `t` is `orig_loc` (the real Location being wrapped) and `e` is the
-# Wombat instance. The minifier folded the statements that precede the
-# constructor's `for (var prop in orig_loc)` loop into that loop's
-# iterable expression via the comma operator, so the insertion point
-# (recording the served href this WombatLocation was created with) has to
-# be added as one more term of that same comma expression.
-LOC_CTOR_ORIGINAL = (
-    "e.initLocOverride(this,this.orig_setter,this.orig_getter),"
-    "e.setLoc(this,t.href),t)this.hasOwnProperty(r)"
+# `extractOriginalURL` tries to recover the real original URL from a value
+# wombat.js itself rewrote, but its heuristic only knows how to reverse a
+# pywb-style rewrite (an absolute URL embedded after a timestamp-like
+# segment) -- it cannot reverse our own urlRewriteFunction, which flattens a
+# URL's host+path+query into one ZIM path string instead. This previously
+# left several read paths (CSS `url()`, `document.referrer`, dynamically
+# created elements, `location.replace()`/`updateLocation`) unable to recover
+# anything useful; a narrower patch here used to special-case the `Location`
+# *getters* only (webrecorder/wombat#244), which this supersedes.
+#
+# `e` is computed just above as the length of whatever abs/rel replay prefix
+# was stripped off the front of `i` (the value being extracted); passing
+# `i.substr(e)` hands our hook the value with that prefix already removed, so
+# it only has to check for (and strip) REPLAY_MARKER itself. Returning
+# `undefined` from the hook (e.g. the value isn't one of ours) falls through
+# to the unmodified heuristic below, unlike `rewrite_function`'s unconditional
+# override: `extractOriginalURL` legitimately sees many non-ZIM-path inputs.
+EXTRACT_ORIGINAL_URL_ORIGINAL = (
+    "e=this.startsWith(i,this.wb_abs_prefix)?this.wb_abs_prefix.length:this."
+    "wb_rel_prefix&&this.startsWith(i,this.wb_rel_prefix)?this.wb_rel_prefix."
+    'length:this.wb_rel_prefix?1:0;var o=i.indexOf("/http",e);'
 )
 
-LOC_CTOR_PATCHED = (
-    "e.initLocOverride(this,this.orig_setter,this.orig_getter),"
-    "e.setLoc(this,t.href),this._wb_initial_href=t.href,t)this.hasOwnProperty(r)"
-)
-
-# --- Location getters: prefer wb_info.url -------------------------------
-#
-# `location.href`/`.pathname`/`.search`/... (and the equivalent anchor/area
-# element properties, which share this same function) always re-derive
-# their value from the real served href via `extractOriginalURL`, which can
-# only reverse rewrites wombat itself performed. Our own urlRewriteFunction
-# (javascript/src/wombatSetup.js) has to flatten a URL's path+query into one
-# ZIM path string, escaping '?'/'&' into literal '%3F'/'%26' so they survive
-# as path characters -- extractOriginalURL cannot reverse that, even though
-# the real, correctly-delimited original URL is already available as
-# `wb_info.url`.
-#
-# `this.wombat` is only set on a WombatLocation (not on an anchor/area
-# element), so this only kicks in for `location.*`, and only as long as the
-# served href hasn't changed since `_wb_initial_href` was recorded above
-# (i.e. no client-side navigation happened since): a `history.pushState()`/
-# `location.href = ...`/etc. still falls back to extractOriginalURL exactly
-# as before, since wb_info.url has nothing to say about those.
-GETLOC_ORIGINAL = (
-    "b.prototype.makeGetLocProp=function(t,e){var r=this;return function(){"
-    "if(this._no_rewrite)return e.call(this,t);"
-    '"maybeHref"===t&&(t="href");'
-    'var i=e.call(this,"href");'
-    'return"href"===t?r.extractOriginalURL(i):"ancestorOrigins"===t?[]:'
-    '(this._orig_href!==i&&r.setLoc(this,i),this["_"+t])'
-    "}}"
-)
-
-GETLOC_PATCHED = (
-    "b.prototype.makeGetLocProp=function(t,e){var r=this;return function(){"
-    "if(this._no_rewrite)return e.call(this,t);"
-    '"maybeHref"===t&&(t="href");'
-    'var i=e.call(this,"href"),'
-    "k=this.wombat&&r.wb_info&&r.wb_info.url&&i===this._wb_initial_href;"
-    "return k&&(i=r.wb_info.url),"
-    '"href"===t?k?i:r.extractOriginalURL(i):"ancestorOrigins"===t?[]:'
-    '(this._orig_href!==i&&r.setLoc(this,i),this["_"+t])'
-    "}}"
+EXTRACT_ORIGINAL_URL_PATCHED = (
+    "e=this.startsWith(i,this.wb_abs_prefix)?this.wb_abs_prefix.length:this."
+    "wb_rel_prefix&&this.startsWith(i,this.wb_rel_prefix)?this.wb_rel_prefix."
+    "length:this.wb_rel_prefix?1:0;if(this.wb_info.extract_original_url_function){"
+    "var c=this.wb_info.extract_original_url_function(i.substr(e));"
+    'if(c!==undefined)return c}var o=i.indexOf("/http",e);'
 )
 
 # --- Element properties: return and forget a recorded original --------
@@ -369,8 +351,11 @@ content = wombat_js.read_text(encoding="utf-8")
 patches = [
     ("fetch()/Request() POST-to-GET conversion", FETCH_ORIGINAL, FETCH_PATCHED),
     ("fetch()/Request() POST-to-GET conversion", REQUEST_ORIGINAL, REQUEST_PATCHED),
-    ("Location getters preferring wb_info.url", LOC_CTOR_ORIGINAL, LOC_CTOR_PATCHED),
-    ("Location getters preferring wb_info.url", GETLOC_ORIGINAL, GETLOC_PATCHED),
+    (
+        "extractOriginalURL() deferring to extract_original_url_function",
+        EXTRACT_ORIGINAL_URL_ORIGINAL,
+        EXTRACT_ORIGINAL_URL_PATCHED,
+    ),
     (
         "Element properties returning/forgetting a recorded original",
         RETRIEVE_WBOSRC_ORIGINAL,
