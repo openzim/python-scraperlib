@@ -19,6 +19,12 @@ yet:
   and (unlike the narrower Location-getter patch this supersedes, previously here
   for openzim/python-scraperlib#382, webrecorder/wombat#244) `location.replace()`/
   `.assign()`/`updateLocation` (openzim/python-scraperlib#396).
+- `CSSStyleSheet.prototype.replaceSync`/`.replace()` (the Constructable
+  Stylesheets API used by Shadow DOM web components to adopt a stylesheet built
+  from a plain JS string, e.g. `new CSSStyleSheet().replaceSync(cssText)`) not
+  rewriting `url()` references in that text, unlike `insertRule()` (which already
+  calls `rewriteStyle()`) -- so any `url()` in such a sheet stays as the original,
+  unrewritten, absolute URL and 404s on replay. Not yet reported upstream.
 
 This script is invoked via `execute_after` on the wombat.js `get_file` action
 in openzim.toml, right after wombat.js is downloaded, so it runs on every
@@ -358,6 +364,48 @@ OVERRIDE_HREF_PATCHED = (
     ")),this._no_rewrite?t:o.extractOriginalURL(t)}))}"
 )
 
+# --- CSSStyleSheet.prototype.replaceSync()/.replace(): rewrite url() too ----
+#
+# `insertRule()` already runs its argument through `rewriteStyle()` (the same
+# regex-based `url()`/`@import` rewriter used for inline `style` attributes),
+# but the Constructable Stylesheets API -- `new CSSStyleSheet()` followed by
+# `.replaceSync(cssText)` or the async `.replace(cssText)` -- is not patched
+# at all, even though it is the standard way a Shadow DOM web component
+# adopts a shared stylesheet built from a plain JS string
+# (`shadowRoot.adoptedStyleSheets = [sheet]`). Any `url()` reference in that
+# text is never seen by any part of the rewriting pipeline: it is not a
+# `text/css` HTTP response (`CssRewriter`), not an inline `<style>` tag or
+# `style=""` attribute in captured HTML (`HtmlRewriter`'s inline-CSS path),
+# and `JsRewriter` deliberately does not rewrite arbitrary string literals.
+# It stays the original, unrewritten, absolute URL, and 404s on replay.
+#
+# Guarded on each method's own existence (`replaceSync`/`replace`), since
+# Constructable Stylesheets is a newer API some engines may not implement.
+CSS_STYLESHEET_ORIGINAL = (
+    "this.overrideStyleSetProp(t),this.$wbwindow.CSSStyleSheet&&this."
+    "$wbwindow.CSSStyleSheet.prototype){var o=this,n=this.$wbwindow."
+    "CSSStyleSheet.prototype.insertRule;this.$wbwindow.CSSStyleSheet."
+    "prototype.insertRule=function(t,e){return n.call(this,o.rewriteStyle"
+    "(t),e)}}this.$wbwindow.CSSRule&&this.$wbwindow.CSSRule.prototype&&"
+    'this.overrideStyleAttr(this.$wbwindow.CSSRule.prototype,"cssText")'
+)
+
+CSS_STYLESHEET_PATCHED = (
+    "this.overrideStyleSetProp(t),this.$wbwindow.CSSStyleSheet&&this."
+    "$wbwindow.CSSStyleSheet.prototype){var o=this,n=this.$wbwindow."
+    "CSSStyleSheet.prototype.insertRule;this.$wbwindow.CSSStyleSheet."
+    "prototype.insertRule=function(t,e){return n.call(this,o.rewriteStyle"
+    "(t),e)};if(this.$wbwindow.CSSStyleSheet.prototype.replaceSync){var rs="
+    "this.$wbwindow.CSSStyleSheet.prototype.replaceSync;this.$wbwindow."
+    "CSSStyleSheet.prototype.replaceSync=function(t){return rs.call(this,"
+    "o.rewriteStyle(t))}}if(this.$wbwindow.CSSStyleSheet.prototype.replace)"
+    "{var rp=this.$wbwindow.CSSStyleSheet.prototype.replace;this.$wbwindow."
+    "CSSStyleSheet.prototype.replace=function(t){return rp.call(this,o."
+    "rewriteStyle(t))}}}this.$wbwindow.CSSRule&&this.$wbwindow.CSSRule."
+    "prototype&&this.overrideStyleAttr(this.$wbwindow.CSSRule.prototype,"
+    '"cssText")'
+)
+
 content = wombat_js.read_text(encoding="utf-8")
 
 patches = [
@@ -367,6 +415,11 @@ patches = [
         "extractOriginalURL() deferring to extract_original_url_function",
         EXTRACT_ORIGINAL_URL_ORIGINAL,
         EXTRACT_ORIGINAL_URL_PATCHED,
+    ),
+    (
+        "CSSStyleSheet.prototype.replaceSync()/.replace() url() rewriting",
+        CSS_STYLESHEET_ORIGINAL,
+        CSS_STYLESHEET_PATCHED,
     ),
     (
         "Element properties returning/forgetting a recorded original",
