@@ -136,8 +136,11 @@ def test_validate_short_grapheme_title_check_enabled():
 
 
 def test_validate_too_long_title_check_enabled():
-    with pytest.raises(ValueError, match="Title value is too long"):
-        assert metadata.TitleMetadata("T" * 31)
+    value = "T" * 31
+    with pytest.raises(
+        ValueError, match=rf"Title value \('{value}'\) is too long \(31/30\)"
+    ):
+        assert metadata.TitleMetadata(value)
 
 
 def test_validate_too_long_title_check_disabled(
@@ -155,8 +158,11 @@ def test_validate_short_grapheme_description_check_enabled():
 
 
 def test_validate_too_long_description_check_enabled():
-    with pytest.raises(ValueError, match="Description value is too long"):
-        assert metadata.DescriptionMetadata("T" * 81)
+    value = "T" * 81
+    with pytest.raises(
+        ValueError, match=rf"Description value \('{value}'\) is too long"
+    ):
+        assert metadata.DescriptionMetadata(value)
 
 
 def test_validate_too_long_description_check_disabled(
@@ -174,8 +180,11 @@ def test_validate_short_grapheme_longdescription_check_enabled():
 
 
 def test_validate_too_long_longdescription_check_enabled():
-    with pytest.raises(ValueError, match="LongDescription value is too long"):
-        assert metadata.LongDescriptionMetadata("T" * 4001)
+    value = "T" * 4001
+    with pytest.raises(
+        ValueError, match=rf"LongDescription value \('{value}'\) is too long"
+    ):
+        assert metadata.LongDescriptionMetadata(value)
 
 
 def test_validate_too_long_longdescription_check_disabled(
@@ -287,7 +296,10 @@ def metadata_init(request: pytest.FixtureRequest) -> MetadataInitConfig:
     ],
 )
 def test_reserved_names(metadata_name: str, metadata_type: type):
-    with pytest.raises(ValueError, match="Custom metdata name must be X- prefixed"):
+    with pytest.raises(
+        ValueError,
+        match=rf"Custom metadata name \('{metadata_name}'\) must be X- prefixed",
+    ):
         value = "x" if metadata_type == metadata.CustomTextMetadata else b"x"
         metadata_type(name=metadata_name, value=value)
 

@@ -128,7 +128,9 @@ class MetadataBase[T](ABC):
             and not self.meta_name.startswith("X-")
             and self.matches_reserved_name(self.meta_name)
         ):
-            raise ValueError("Custom metdata name must be X- prefixed")
+            raise ValueError(
+                f"Custom metadata name ('{self.meta_name}') must be X- prefixed"
+            )
         if (
             self.oz_x_prefixed
             and APPLY_RECOMMENDATIONS
@@ -270,9 +272,11 @@ class TextBasedMetadata(MetadataBase[str]):
 
         # max-length is openZIM recommendation
         if getattr(self, "oz_max_length", 0) and APPLY_RECOMMENDATIONS:
-            if nb_grapheme_for(value) > self.oz_max_length:
+            nb_graphemes = nb_grapheme_for(value)
+            if nb_graphemes > self.oz_max_length:
                 raise ValueError(
-                    f"{self.name} value is too long ({self.oz_max_length})"
+                    f"{self.name} value ('{value}') is too long "
+                    f"({nb_graphemes}/{self.oz_max_length})"
                 )
         return value
 
