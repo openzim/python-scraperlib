@@ -5,46 +5,39 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) (as of version 1.5.0).
 
-## [Unreleased]
+## [5.6.0] - 2026-11-20
 
 ### Added
 
 - `VideoWebmMedium` preset: VP9 at 240k with the height capped at 720, a middle ground between `VideoWebmLow` and `VideoWebmHigh` (#271)
-- `ArticleUrlRewriter.denormalize`/`defuzzify` (and their JS ports in `wombatSetup.js`), the best-effort reverse of `normalize`/the fuzzy rules, reconstructing a plausible (not guaranteed exact) original URL from a ZIM path (#396)
-- Patch vendored `wombat.js` so `extractOriginalURL` defers to a new `wb_info.extract_original_url_function` hook (the same way `rewriteUrl` already defers to `wb_info.rewrite_function`), letting it call `denormalize`/`defuzzify` for cases its own pywb-oriented heuristic can never handle: CSS `url()` reads, `document.referrer`, dynamically created elements, and `location.replace()`/`.assign()`/`updateLocation` (#396)
+- `ArticleUrlRewriter.denormalize`/`defuzzify` (and their JS ports in `wombatSetup.js`), the best-effort reverse of `normalize`/the fuzzy rules, reconstructing a plausible (not guaranteed exact) original URL from a ZIM path (#396, #409)
+- Patch vendored `wombat.js` so `extractOriginalURL` defers to a new `wb_info.extract_original_url_function` hook (the same way `rewriteUrl` already defers to `wb_info.rewrite_function`), letting it call `denormalize`/`defuzzify` for cases its own pywb-oriented heuristic can never handle: CSS `url()` reads, `document.referrer`, dynamically created elements, and `location.replace()`/`.assign()`/`updateLocation` (#396, #409)
+- Host-gated `SITE_JS_PATCHES` mechanism in `JsRewriter`, to patch specific sites' JS content at rewrite time (#394)
+- Polyfill `crypto.randomUUID()` when missing in a non-secure context (plain HTTP, non-`localhost`) (#391)
+- Polyfill `crypto.subtle.digest()` (SHA-1/SHA-256) when missing in a non-secure context (#393)
 
 ### Changed
 
 - `VideoMp4High` now encodes at CRF 28 instead of 20, which regularly produced a file larger than its input, and adds `-movflags +faststart` (#271)
 - All Webm presets (`VideoWebmLow`, `VideoWebmMedium`, `VideoWebmHigh`) now use `-row-mt 1` for faster VP9 encoding (#271)
 - Bumped `VideoWebmLow` to v4 and `VideoWebmHigh` to v3 following the `-row-mt` addition (#271)
-- `import zimscraperlib.zim` no longer imports yt-dlp, beautifulsoup4 or lxml, and `import zimscraperlib.inputs` no longer imports yt-dlp: `stream_file`, `get_retry_adapter` and `find_title_in_file` are now imported where they are used (#244)
+- `import zimscraperlib.zim` no longer imports yt-dlp, beautifulsoup4 or lxml, and `import zimscraperlib.inputs` no longer imports yt-dlp: `stream_file`, `get_retry_adapter` and `find_title_in_file` are now imported where they are used (#403)
 
 ### Fixed
 
 - Fix JS rewriting of `this.<prop>` so it reliably detects a leading newline (and prepends the needed `;`) regardless of the amount of whitespace, and no longer wrongly rewrites `this` when preceded by `.`/`$` and several spaces (#381)
-- Align JS rewriting of `this.<prop>` with the cleaner implementation wabac.js landed instead of ours (webrecorder/wabac.js#398, superseding our own webrecorder/wabac.js#395): a leading `this.<prop>` at the very start of a script is now rewritten too, and a preceding `$` only blocks the rewrite when directly adjacent (a `.` still blocks it regardless of the amount of whitespace in between)
-- Patch vendored `wombat.js` so `location.href`/`.search`/`.pathname` (and the rest of the `Location` getters) prefer `wb_info.url` over re-deriving a value via `extractOriginalURL`, fixing their value for any archived page whose captured URL has a query string (#382, webrecorder/wombat#244)
-- Keep escaped Unicode characters in CSS strings instead of turning them into literal characters when rewriting (#377)
+- Align JS rewriting of `this.<prop>` with the cleaner implementation wabac.js landed instead of ours (webrecorder/wabac.js#398, superseding our own webrecorder/wabac.js#395): a leading `this.<prop>` at the very start of a script is now rewritten too, and a preceding `$` only blocks the rewrite when directly adjacent (a `.` still blocks it regardless of the amount of whitespace in between) (#404)
+- Keep escaped Unicode characters in CSS strings instead of turning them into literal characters when rewriting (#376)
 - Patch vendored `wombat.js` so element properties (`img.src`, `script.src`, `link.href`, `a.href` and its derived `.pathname`/`.search`/..., `Attr.value`) return and forget a server-side-rewriter-recorded original the same way `getAttribute` already does (#386, webrecorder/wombat#240)
 - Detect `export const`/`let`/`var`/`function`/`async function`/`*` as module code (`EXPORT_RX` only recognized `export {...}`, `export default` and `export class`), fixing JS rewriting wrongly injecting a non-module `let arguments;` wrapper into ES modules using these common export forms, which is a syntax error in strict/module code (#387)
 - Fix JS URL rewriter confusing a percent-encoded `%2B` with a raw `+` in query strings (#389)
 - Patch vendored `wombat.js` so `retrieveWBOSRCAsURL` (the helper behind the above element-property fix) resolves a recorded original against the frame's true original URL (`wb_info.url`) instead of its replay-time `ownerDocument`, fixing it returning/using a URL under the wrong host for a page whose own URL was changed by a fuzzy rule (e.g. YouTube embeds), which broke playback (#398)
-
-### Removed
-
-- Patch vendored `wombat.js` so `location.href`/`.search`/`.pathname` prefer `wb_info.url` over `extractOriginalURL` (#382, webrecorder/wombat#244): superseded by the new, more general `extract_original_url_function` hook above, which also covers `location.replace()`/`.assign()`/`updateLocation`, CSS, referrer and dynamic elements that the narrower patch never did (#396)
-- Add a host-gated `SITE_JS_PATCHES` mechanism to `JsRewriter`, fixing MDN's `<interactive-example>` widget missing a deterministic `permalink` attribute (#394)
-- Polyfill `crypto.randomUUID()` when missing in a non-secure context (plain HTTP, non-`localhost`) (#391)
-- Polyfill `crypto.subtle.digest()` (SHA-1/SHA-256) when missing in a non-secure context (#393)
-- `ArticleUrlRewriter.normalize()` no longer decodes a percent-encoded `/` (`%2F`) in the path into a literal `/`, fixing a content collision between e.g. `/foo%2Fbar` (one segment, containing a literal `/`) and `/foo/bar` (two segments), which used to normalize to the same ZIM path (#396)
-- `ArticleUrlRewriter.escape_dot_segments()` now also escapes a literal `_.`/`_..` (and further escaped forms like `__.`/`__..`) segment with one more leading `_`, fixing a content collision with the escaped form of an actual `.`/`..` dot-segment, which used to normalize to the same ZIM path (#396)
-- `ArticleUrlRewriter.normalize()` now prefixes every ZIM path with a constant `replay://` marker, and `wombatSetup.js`'s `urlRewriteFunction`/`head_insert.html` do the same, fixing wombat.js computing an empty or single-`/` replay prefix ("`wb_rel_prefix`") for a ZIM served with no extra "collection" path segment (e.g. a bare `kiwix.app/<path>`), which corrupted any `innerHTML`/`outerHTML` read on the page by deleting arbitrary `/text/` spans, and caused related, quieter bugs in `rewriteUrl`/`rewriteCookie` (#396, openzim/zimit#589)
+- Patch vendored `wombat.js` so `CSSStyleSheet.prototype.replaceSync`/`.replace()` (the Constructable Stylesheets API used by Shadow DOM web components) run their CSS text through the existing `rewriteStyle()` helper, fixing `url()` references left unrewritten and 404ing on replay (#410, webrecorder/wombat#249)
+- `ArticleUrlRewriter.normalize()` no longer decodes a percent-encoded `/` (`%2F`) in the path into a literal `/`, fixing a content collision between e.g. `/foo%2Fbar` (one segment, containing a literal `/`) and `/foo/bar` (two segments), which used to normalize to the same ZIM path (#396, #406)
+- `ArticleUrlRewriter.escape_dot_segments()` now also escapes a literal `_.`/`_..` (and further escaped forms like `__.`/`__..`) segment with one more leading `_`, fixing a content collision with the escaped form of an actual `.`/`..` dot-segment, which used to normalize to the same ZIM path (#396, #406)
+- `ArticleUrlRewriter.normalize()` now prefixes every ZIM path with a constant `replay://` marker, and `wombatSetup.js`'s `urlRewriteFunction`/`head_insert.html` do the same, fixing wombat.js computing an empty or single-`/` replay prefix ("`wb_rel_prefix`") for a ZIM served with no extra "collection" path segment (e.g. a bare `kiwix.app/<path>`), which corrupted any `innerHTML`/`outerHTML` read on the page by deleting arbitrary `/text/` spans, and caused related, quieter bugs in `rewriteUrl`/`rewriteCookie` (#396, #408, openzim/zimit#589)
+- developer.mozilla.org's `<interactive-example>` widget always 404ing on replay due to a missing deterministic `permalink` attribute (#394)
 - Include values that violate metadata length restriction and names that violate custom metadata name conventions in `ValueError` messages (#405)
-
-### Changed
-
-- Re-enable `test_indexing_item_not_front` and test libzim's current indexing behavior for non-front items, including non-front `text/html` ones (#400)
 
 ## [5.5.2] - 2026-11-06
 
