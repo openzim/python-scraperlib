@@ -319,6 +319,12 @@ def test_description(
             {"tag1", "tag2", "ta:g,4"},
             id="case2",
         ),
+        pytest.param(
+            {"tag1", " "},
+            "tag2; ;tag3; ",
+            {"tag1", "tag2", "tag3"},
+            id="whitespace_only",
+        ),
     ],
 )
 def test_compute_tags(
