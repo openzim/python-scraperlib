@@ -129,9 +129,8 @@ def compute_tags(
     Returns a set of tags, ready to be passed to the creator
     """
 
-    return {
-        tag.strip() for tag in list(default_tags) + (user_tags or "").split(";") if tag
-    }
+    tags = (tag.strip() for tag in list(default_tags) + (user_tags or "").split(";"))
+    return {tag for tag in tags if tag}
 
 
 def unique_values[T](items: list[T]) -> list[T]:
