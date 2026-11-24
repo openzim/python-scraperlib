@@ -3,7 +3,12 @@
 import pathlib
 from typing import BinaryIO, TextIO
 
-from bs4 import BeautifulSoup, element
+from zimscraperlib._extras import missing_extra
+
+try:
+    from bs4 import BeautifulSoup, element
+except ModuleNotFoundError as exc:
+    raise missing_extra("html", exc) from exc
 
 from zimscraperlib.types import ARTICLE_MIME
 

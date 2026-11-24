@@ -23,7 +23,12 @@ from html.parser import HTMLParser
 from inspect import Signature, signature
 from typing import Any, NamedTuple
 
-from bs4 import BeautifulSoup
+from zimscraperlib._extras import missing_extra
+
+try:
+    from bs4 import BeautifulSoup
+except ModuleNotFoundError as exc:
+    raise missing_extra("rewriting", exc) from exc
 
 from zimscraperlib.rewriting.css import CssRewriter
 from zimscraperlib.rewriting.js import JsRewriter

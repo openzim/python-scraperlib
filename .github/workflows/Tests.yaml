@@ -40,6 +40,80 @@ jobs:
           name: rules
           retention-days: 1
 
+  check-extras-errors:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version-file: pyproject.toml
+          architecture: x64
+
+      - name: Install minimal dependencies (and project)
+        run: |
+          pip install -U pip
+          pip install -e .[test]
+
+      - name: Check optional dependency errors
+        run: pytest -q tests/test_extras.py
+
+  check-extras:
+    runs-on: ubuntu-24.04
+    needs: generate-rules
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - extra: none
+            module: zimscraperlib
+          - extra: zim
+            module: zimscraperlib.zim
+          - extra: image
+            module: zimscraperlib.image
+          - extra: video
+            module: zimscraperlib.video
+          - extra: download
+            module: zimscraperlib.download
+          - extra: filesystem
+            module: zimscraperlib.filesystem
+          - extra: html
+            module: zimscraperlib.html
+          - extra: rewriting
+            module: zimscraperlib.rewriting.html
+          - extra: i18n
+            module: zimscraperlib.i18n
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v7
+
+      - name: Restore rules artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: rules
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version-file: pyproject.toml
+          architecture: x64
+
+      - name: Install dependencies (and project)
+        run: |
+          pip install -U pip
+          if [ "${{ matrix.extra }}" = "none" ]; then
+            pip install -e .
+          else
+            pip install -e ".[${{ matrix.extra }}]"
+          fi
+
+      - name: Import module using only that extra
+        run: python -c "import importlib; importlib.import_module('${{ matrix.module }}')"
+
   run-python-tests:
     runs-on: ubuntu-24.04
     needs: generate-rules
@@ -65,7 +139,7 @@ jobs:
       - name: Install dependencies (and project)
         run: |
           pip install -U pip
-          pip install -e .[test,scripts]
+          pip install -e .[all,test,scripts]
 
       - name: Run the tests
         run: inv coverage --args "--runslow --runinstalled -vvv"

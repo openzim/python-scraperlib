@@ -22,24 +22,22 @@ import re
 import weakref
 from contextlib import suppress
 from types import TracebackType
+from typing import TYPE_CHECKING, Any
 
-import libzim.writer  # pyright: ignore[reportMissingModuleSource]
-import PIL.Image
+from zimscraperlib._extras import missing_extra
+
+try:
+    import libzim.writer  # pyright: ignore[reportMissingModuleSource]
+except ModuleNotFoundError as exc:
+    raise missing_extra("zim", exc) from exc
 
 from zimscraperlib import logger
 from zimscraperlib.constants import FRONT_ARTICLE_MIMETYPES
-from zimscraperlib.filesystem import (
-    delete_callback,
-    get_content_mimetype,
-    get_file_mimetype,
-)
-from zimscraperlib.i18n import is_valid_iso_639_3
 from zimscraperlib.types import get_mime_for_name
 from zimscraperlib.typing import Callback
 from zimscraperlib.zim.indexing import IndexData
 from zimscraperlib.zim.items import StaticItem
 from zimscraperlib.zim.metadata import (
-    DEFAULT_DEV_ZIM_METADATA,
     MANDATORY_ZIM_METADATA_KEYS,
     AnyMetadata,
     IllustrationBasedMetadata,
@@ -65,6 +63,11 @@ def mimetype_for(
 ) -> str | None:
     """mimetype as provided or guessed from fpath, path or content"""
     if not mimetype:
+        from zimscraperlib.filesystem import (  # noqa: PLC0415
+            get_content_mimetype,
+            get_file_mimetype,
+        )
+
         mimetype = (
             get_file_mimetype(fpath)
             if fpath
@@ -141,8 +144,11 @@ class Creator(libzim.writer.Creator):
         Note: title indexing is always performed by libzim and cannot be
         disabled via this method; only the full-text index is toggled."""
         language = language or self._get_first_language_metadata_value() or ""
-        if indexing and not is_valid_iso_639_3(language):
-            raise ValueError("Not a valid ISO-639-3 language code")
+        if indexing:
+            from zimscraperlib.i18n import is_valid_iso_639_3  # noqa: PLC0415
+
+            if not is_valid_iso_639_3(language):
+                raise ValueError("Not a valid ISO-639-3 language code")
         super().config_indexing(indexing, language)
         self.__indexing_configured = True
         self.__indexing_value = indexing
@@ -161,7 +167,9 @@ class Creator(libzim.writer.Creator):
             # illustration mandates an Image
             if re.match(r"^Illustration_(\d+)x(\d+)@(\d+)$", name):
                 try:
-                    with PIL.Image.open(io.BytesIO(metadata.libzim_value)) as img:
+                    from PIL import Image  # noqa: PLC0415
+
+                    with Image.open(io.BytesIO(metadata.libzim_value)) as img:
                         logger.debug(
                             f"Metadata: {name} is a {len(metadata.libzim_value)} bytes "
                             f"{img.size[0]}x{img.size[1]}px {img.format} Image"
@@ -172,6 +180,10 @@ class Creator(libzim.writer.Creator):
 
             # bytes are either encoded string or arbitrary data
             if isinstance(metadata.value, bytes | io.BytesIO):
+                from zimscraperlib.filesystem import (  # noqa: PLC0415
+                    get_content_mimetype,
+                )
+
                 raw_value = (
                     metadata.value
                     if isinstance(metadata.value, bytes)
@@ -320,6 +332,10 @@ class Creator(libzim.writer.Creator):
 
         Extra metadata can be passed, and they are not checked for proper key prefix
         """
+        from zimscraperlib.zim.metadata import (  # noqa: PLC0415
+            DEFAULT_DEV_ZIM_METADATA,
+        )
+
         return self.config_metadata(
             std_metadata=DEFAULT_DEV_ZIM_METADATA,
             extra_metadata=(
@@ -385,6 +401,8 @@ class Creator(libzim.writer.Creator):
             hints[libzim.writer.Hint.COMPRESS] = should_compress
 
         if delete_fpath and fpath:
+            from zimscraperlib.filesystem import delete_callback  # noqa: PLC0415
+
             callbacks.append(Callback(func=delete_callback, args=(fpath,)))
 
         self.add_item(
@@ -526,5 +544,19 @@ class Creator(libzim.writer.Creator):
 
 _live_creators: weakref.WeakSet[Creator] = weakref.WeakSet()
 
+if TYPE_CHECKING:
+    DEFAULT_DEV_ZIM_METADATA: StandardMetadataList
+
 
 atexit.register(Creator._abandon_live_creators)  # pyright: ignore[reportPrivateUsage]
+
+
+def __getattr__(name: str) -> Any:
+    if name == "DEFAULT_DEV_ZIM_METADATA":
+        from zimscraperlib.zim.metadata import (  # noqa: PLC0415
+            DEFAULT_DEV_ZIM_METADATA,
+        )
+
+        globals()[name] = DEFAULT_DEV_ZIM_METADATA
+        return DEFAULT_DEV_ZIM_METADATA
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

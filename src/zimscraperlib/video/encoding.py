@@ -5,7 +5,6 @@ import tempfile
 from copy import deepcopy
 
 from zimscraperlib import logger
-from zimscraperlib.filesystem import path_from
 from zimscraperlib.logging import nicer_args_join
 
 
@@ -53,6 +52,8 @@ def reencode(
         delete_src - Delete source file after convertion
         failsafe - Run in failsafe mode
     """
+
+    from zimscraperlib.filesystem import path_from  # noqa: PLC0415
 
     with path_from(existing_tmp_path or tempfile.TemporaryDirectory()) as tmp_dir:
         tmp_path = pathlib.Path(tmp_dir).joinpath(f"video.tmp{dst_path.suffix}")

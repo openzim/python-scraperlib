@@ -8,9 +8,13 @@ import urllib.parse
 from collections.abc import Callable
 from typing import Any
 
-import libzim.writer  # pyright: ignore[reportMissingModuleSource]
+from zimscraperlib._extras import missing_extra
 
-from zimscraperlib.filesystem import get_content_mimetype, get_file_mimetype
+try:
+    import libzim.writer  # pyright: ignore[reportMissingModuleSource]
+except ModuleNotFoundError as exc:
+    raise missing_extra("zim", exc) from exc
+
 from zimscraperlib.zim.indexing import (
     IndexData,
     get_epub_index_data,
@@ -149,6 +153,10 @@ class StaticItem(Item):
 
     def _get_auto_index(self):
         """Populate item index data and title automatically from content"""
+        from zimscraperlib.filesystem import (  # noqa: PLC0415
+            get_content_mimetype,
+            get_file_mimetype,
+        )
 
         # content was set manually
         content = getattr(self, "content", None)

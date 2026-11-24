@@ -5,9 +5,14 @@ from abc import ABC, abstractmethod
 from collections.abc import Iterable
 from dataclasses import asdict, dataclass, fields
 from itertools import filterfalse
-from typing import Any, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar
 
-import regex
+from zimscraperlib._extras import missing_extra
+
+try:
+    import regex
+except ModuleNotFoundError as exc:
+    raise missing_extra("zim", exc) from exc
 
 from zimscraperlib.constants import (
     DEFAULT_ZIM_ILLLUSTRATION_SCALE,
@@ -17,8 +22,6 @@ from zimscraperlib.constants import (
     MAXIMUM_LONG_DESCRIPTION_METADATA_LENGTH,
     RECOMMENDED_MAX_TITLE_LENGTH,
 )
-from zimscraperlib.i18n import is_valid_iso_639_3
-from zimscraperlib.image.probing import is_valid_image
 from zimscraperlib.inputs import unique_values
 from zimscraperlib.typing import SupportsRead, SupportsSeekableRead
 
@@ -311,6 +314,8 @@ class TextListBasedMetadata(MetadataBase[list[str]]):
         elif self.require_deduplication:
             value = unique_values(value)
         if self.oz_only_iso636_3_allowed and APPLY_RECOMMENDATIONS:
+            from zimscraperlib.i18n import is_valid_iso_639_3  # noqa: PLC0415
+
             invalid_codes = list(filterfalse(is_valid_iso_639_3, value))
             if invalid_codes:
                 raise ValueError(
@@ -356,6 +361,8 @@ class IllustrationBasedMetadata(Metadata):
 
     # native type is PNG image buffer
     def get_cleaned_value(self, value: bytes | io.IOBase | io.BytesIO) -> bytes:
+        from zimscraperlib.image.probing import is_valid_image  # noqa: PLC0415
+
         value = self.get_binary_from(value)
         if not is_valid_image(
             image=value,
@@ -528,21 +535,29 @@ class XCustomTextMetadata(CustomTextMetadata):
 
 MANDATORY_ZIM_METADATA_KEYS: list[str] = StandardMetadataList.get_reserved_names()
 
+if TYPE_CHECKING:
+    DEFAULT_DEV_ZIM_METADATA: StandardMetadataList
 
-DEFAULT_DEV_ZIM_METADATA = StandardMetadataList(
-    Name=NameMetadata("Test Name"),
-    Title=TitleMetadata("Test Title"),
-    Creator=CreatorMetadata("Test Creator"),
-    Publisher=PublisherMetadata("Test Publisher"),
-    Date=DateMetadata(dt.date(2023, 1, 1)),
-    Description=DescriptionMetadata("Test Description"),
-    Language=LanguageMetadata("fra"),
-    # blank 48x48 transparent PNG
-    Illustration_48x48_at_1=DefaultIllustrationMetadata(
-        base64.b64decode(
-            "iVBORw0KGgoAAAANSUhEUgAAADAAAAAwAQMAAABtzGvEAAAAGXRFWHRTb2Z0d2FyZQBB"
-            "ZG9iZSBJbWFnZVJlYWR5ccllPAAAAANQTFRFR3BMgvrS0gAAAAF0Uk5TAEDm2GYAAAAN"
-            "SURBVBjTY2AYBdQEAAFQAAGn4toWAAAAAElFTkSuQmCC"
+
+def __getattr__(name: str) -> Any:
+    if name != "DEFAULT_DEV_ZIM_METADATA":
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+    default_metadata = StandardMetadataList(
+        Name=NameMetadata("Test Name"),
+        Title=TitleMetadata("Test Title"),
+        Creator=CreatorMetadata("Test Creator"),
+        Publisher=PublisherMetadata("Test Publisher"),
+        Date=DateMetadata(dt.date(2023, 1, 1)),
+        Description=DescriptionMetadata("Test Description"),
+        Language=LanguageMetadata("fra"),
+        Illustration_48x48_at_1=DefaultIllustrationMetadata(
+            base64.b64decode(
+                "iVBORw0KGgoAAAANSUhEUgAAADAAAAAwAQMAAABtzGvEAAAAGXRFWHRTb2Z0d2FyZQBB"
+                "ZG9iZSBJbWFnZVJlYWR5ccllPAAAAANQTFRFR3BMgvrS0gAAAAF0Uk5TAEDm2GYAAAAN"
+                "SURBVBjTY2AYBdQEAAFQAAGn4toWAAAAAElFTkSuQmCC"
+            ),
         ),
-    ),
-)
+    )
+    globals()[name] = default_metadata
+    return default_metadata

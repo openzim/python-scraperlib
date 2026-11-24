@@ -2,9 +2,6 @@ import pathlib
 import zipfile
 
 import pytest
-import requests
-
-from zimscraperlib.download import stream_file
 
 
 def pytest_addoption(parser: pytest.Parser):
@@ -90,6 +87,8 @@ GZIP_NONHTML_URLS = (
 
 def _serves_gzipped(url: str) -> bool:
     """Whether this URL answers, and answers gzipped. Never raises."""
+    import requests  # noqa: PLC0415
+
     try:
         response = requests.get(
             url, headers={"Accept-Encoding": "gzip"}, timeout=10, stream=True
@@ -113,6 +112,12 @@ def gzip_nonhtml_url() -> str:
 
 def file_src(fname: str) -> pathlib.Path:
     return pathlib.Path(__file__).parent.joinpath("files", fname)
+
+
+def _stream_file(url: str, dst: pathlib.Path) -> None:
+    from zimscraperlib.download import stream_file  # noqa: PLC0415
+
+    stream_file(url, dst)
 
 
 @pytest.fixture(scope="module")
@@ -200,7 +205,7 @@ def valid_user_agent():
 def small_zim_file(tmpdir_factory: pytest.TempdirFactory) -> pathlib.Path:
 
     dst = pathlib.Path(tmpdir_factory.mktemp("data") / "small.zim")
-    stream_file(
+    _stream_file(
         "https://github.com/openzim/zim-testing-suite/raw/v0.3/data/nons/small.zim",
         dst,
     )
@@ -211,7 +216,7 @@ def small_zim_file(tmpdir_factory: pytest.TempdirFactory) -> pathlib.Path:
 def ns_zim_file(tmpdir_factory: pytest.TempdirFactory) -> pathlib.Path:
 
     dst = pathlib.Path(tmpdir_factory.mktemp("data") / "ns.zim")
-    stream_file(
+    _stream_file(
         "https://github.com/openzim/zim-testing-suite/raw/v0.4/data/withns/"
         "wikibooks_be_all_nopic_2017-02.zim",
         dst,
@@ -223,7 +228,7 @@ def ns_zim_file(tmpdir_factory: pytest.TempdirFactory) -> pathlib.Path:
 def real_zim_file(tmpdir_factory: pytest.TempdirFactory) -> pathlib.Path:
 
     dst = pathlib.Path(tmpdir_factory.mktemp("data") / "small.zim")
-    stream_file(
+    _stream_file(
         "https://github.com/openzim/zim-testing-suite/raw/v0.3/data/withns/"
         "wikipedia_en_climate_change_nopic_2020-01.zim",
         dst,

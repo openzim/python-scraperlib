@@ -7,7 +7,12 @@ from contextlib import contextmanager
 from tempfile import TemporaryDirectory
 from typing import Any
 
-import magic
+from zimscraperlib._extras import missing_extra
+
+try:
+    import magic
+except ModuleNotFoundError as exc:
+    raise missing_extra("filesystem", exc) from exc
 
 # override some MIME-types found by libmagic to different ones
 MIME_OVERRIDES = {

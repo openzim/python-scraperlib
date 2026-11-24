@@ -1,8 +1,13 @@
 import re
 
-import babel
-import iso639  # pyright: ignore[reportMissingTypeStubs]
-import iso639.exceptions  # pyright: ignore[reportMissingTypeStubs]
+from zimscraperlib._extras import missing_extra
+
+try:
+    import babel
+    import iso639  # pyright: ignore[reportMissingTypeStubs]
+    import iso639.exceptions  # pyright: ignore[reportMissingTypeStubs]
+except ModuleNotFoundError as exc:
+    raise missing_extra("i18n", exc) from exc
 
 ISO_LEVELS = ["1", "2b", "2t", "3", "5"]
 

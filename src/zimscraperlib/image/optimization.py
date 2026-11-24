@@ -26,18 +26,23 @@ import tempfile
 import warnings
 from dataclasses import dataclass
 
-import piexif  # pyright: ignore[reportMissingTypeStubs]
-from optimize_images.img_aux_processing import (  # pyright: ignore[reportMissingTypeStubs]
-    do_reduce_colors,
-    rebuild_palette,
-)
-from optimize_images.img_aux_processing import (  # pyright: ignore[reportMissingTypeStubs]
-    remove_transparency as remove_alpha,
-)
-from optimize_images.img_dynamic_quality import (  # pyright: ignore[reportMissingTypeStubs]
-    jpeg_dynamic_quality,
-)
-from PIL import Image
+from zimscraperlib._extras import missing_extra
+
+try:
+    import piexif  # pyright: ignore[reportMissingTypeStubs]
+    from optimize_images.img_aux_processing import (  # pyright: ignore[reportMissingTypeStubs]
+        do_reduce_colors,
+        rebuild_palette,
+    )
+    from optimize_images.img_aux_processing import (  # pyright: ignore[reportMissingTypeStubs]
+        remove_transparency as remove_alpha,
+    )
+    from optimize_images.img_dynamic_quality import (  # pyright: ignore[reportMissingTypeStubs]
+        jpeg_dynamic_quality,
+    )
+    from PIL import Image
+except ModuleNotFoundError as exc:
+    raise missing_extra("image", exc) from exc
 
 from zimscraperlib.image.probing import format_for
 

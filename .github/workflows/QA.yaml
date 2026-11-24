@@ -62,7 +62,7 @@ jobs:
       - name: Install dependencies (and project)
         run: |
           pip install -U pip
-          pip install -e .[qa,scripts,test]
+          pip install -e .[all,qa,scripts,test]
 
       - name: Check Linting
         run: inv check-lint

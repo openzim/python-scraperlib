@@ -2,8 +2,13 @@ import io
 import pathlib
 from typing import IO, Any
 
-from PIL.Image import Image
-from PIL.ImageFile import ImageFile
+from zimscraperlib._extras import missing_extra
+
+try:
+    from PIL.Image import Image
+    from PIL.ImageFile import ImageFile
+except ModuleNotFoundError as exc:
+    raise missing_extra("image", exc) from exc
 
 
 def save_image(

@@ -1,8 +1,13 @@
 import io
 import pathlib
 
-from PIL.Image import open as pilopen
-from resizeimage import resizeimage  # pyright: ignore[reportMissingTypeStubs]
+from zimscraperlib._extras import missing_extra
+
+try:
+    from PIL.Image import open as pilopen
+    from resizeimage import resizeimage  # pyright: ignore[reportMissingTypeStubs]
+except ModuleNotFoundError as exc:
+    raise missing_extra("image", exc) from exc
 
 from zimscraperlib.constants import ALPHA_NOT_SUPPORTED
 from zimscraperlib.image.utils import save_image
