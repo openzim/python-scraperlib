@@ -26,14 +26,14 @@ import PIL.Image
 
 from zimscraperlib import logger
 from zimscraperlib.constants import FRONT_ARTICLE_MIMETYPES
+from zimscraperlib.content_types import get_mime_for_name
+from zimscraperlib.custom_types import Callback
 from zimscraperlib.filesystem import (
     delete_callback,
     get_content_mimetype,
     get_file_mimetype,
 )
 from zimscraperlib.i18n import is_valid_iso_639_3
-from zimscraperlib.types import get_mime_for_name
-from zimscraperlib.typing import Callback
 from zimscraperlib.zim.indexing import IndexData
 from zimscraperlib.zim.items import StaticItem
 from zimscraperlib.zim.metadata import (

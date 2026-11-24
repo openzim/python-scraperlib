@@ -18,7 +18,7 @@ from zimscraperlib.constants import (
     DEFAULT_WEB_REQUESTS_TIMEOUT,
     WIKIMEDIA_UPLOAD_HOST,
 )
-from zimscraperlib.typing import SupportsSeekableWrite, SupportsWrite
+from zimscraperlib.custom_types import SupportsSeekableWrite, SupportsWrite
 
 
 class YoutubeDownloader:

@@ -17,8 +17,8 @@ from collections.abc import Callable
 import pytest
 
 from zimscraperlib.rewriting import js_ast
-from zimscraperlib.rewriting.js import JsRewriter
 from zimscraperlib.rewriting.js_ast import TopLevel
+from zimscraperlib.rewriting.js_rewriting import JsRewriter
 from zimscraperlib.rewriting.url_rewriting import ArticleUrlRewriter
 
 
@@ -242,7 +242,9 @@ def test_a_script_the_parser_cannot_read_is_wrapped_unchanged(
     def cannot_read(_text: str) -> TopLevel | None:
         return None
 
-    monkeypatch.setattr("zimscraperlib.rewriting.js.parse_top_level", cannot_read)
+    monkeypatch.setattr(
+        "zimscraperlib.rewriting.js_rewriting.parse_top_level", cannot_read
+    )
     out = js_rewriter.rewrite("const glyphs = {a: 1};\nwindow.x = 1;")
     assert "___WB_hoist_" not in out
     assert "const glyphs = {a: 1};" in out

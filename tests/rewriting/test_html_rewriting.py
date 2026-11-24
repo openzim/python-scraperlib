@@ -3,8 +3,8 @@ from textwrap import dedent
 
 import pytest
 
-from zimscraperlib.rewriting.css import CssRewriter
-from zimscraperlib.rewriting.html import (
+from zimscraperlib.rewriting.css_rewriting import CssRewriter
+from zimscraperlib.rewriting.html_rewriting import (
     AttrNameAndValue,
     AttrsList,
     HtmlRewriter,
@@ -14,7 +14,7 @@ from zimscraperlib.rewriting.html import (
     get_attr_value_from,
     rewrite_meta_http_equiv_redirect,
 )
-from zimscraperlib.rewriting.js import JsRewriter
+from zimscraperlib.rewriting.js_rewriting import JsRewriter
 from zimscraperlib.rewriting.url_rewriting import (
     ArticleUrlRewriter,
     HttpUrl,

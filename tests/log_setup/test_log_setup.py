@@ -2,7 +2,7 @@ import io
 import logging
 import pathlib
 
-from zimscraperlib.logging import getLogger, nicer_args_join
+from zimscraperlib.log_setup import getLogger, nicer_args_join
 
 
 def assert_message_console(

@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **BREAKING**: Do not shadow Python standard-library modules (#246). As this is a breaking change planned for the next major release, no deprecation shims or re-exports are provided:
+  - `zimscraperlib.html` -> `zimscraperlib.html_parsing`
+  - `zimscraperlib.types` -> `zimscraperlib.content_types`
+  - `zimscraperlib.typing` -> `zimscraperlib.custom_types`
+  - `zimscraperlib.logging` -> `zimscraperlib.log_setup`
+  - `zimscraperlib.rewriting.html` -> `zimscraperlib.rewriting.html_rewriting`
+  - `zimscraperlib.rewriting.js` -> `zimscraperlib.rewriting.js_rewriting`
+  - `zimscraperlib.rewriting.css` -> `zimscraperlib.rewriting.css_rewriting`
+
 ## [5.5.1] - 2026-10-30
 
 ### Fixed

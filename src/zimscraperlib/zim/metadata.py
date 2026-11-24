@@ -17,10 +17,10 @@ from zimscraperlib.constants import (
     MAXIMUM_LONG_DESCRIPTION_METADATA_LENGTH,
     RECOMMENDED_MAX_TITLE_LENGTH,
 )
+from zimscraperlib.custom_types import SupportsRead, SupportsSeekableRead
 from zimscraperlib.i18n import is_valid_iso_639_3
 from zimscraperlib.image.probing import is_valid_image
 from zimscraperlib.inputs import unique_values
-from zimscraperlib.typing import SupportsRead, SupportsSeekableRead
 
 # All control characters are disallowed in str metadata except \n, \r and \t
 UNWANTED_CONTROL_CHARACTERS_REGEX = regex.compile(r"(?![\n\t\r])\p{C}")

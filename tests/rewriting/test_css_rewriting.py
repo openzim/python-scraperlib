@@ -2,7 +2,7 @@ from textwrap import dedent
 
 import pytest
 
-from zimscraperlib.rewriting.css import CssRewriter
+from zimscraperlib.rewriting.css_rewriting import CssRewriter
 from zimscraperlib.rewriting.url_rewriting import ArticleUrlRewriter, HttpUrl
 
 from .utils import ContentForTests

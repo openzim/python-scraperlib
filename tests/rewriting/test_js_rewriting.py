@@ -2,7 +2,7 @@ from collections.abc import Callable
 
 import pytest
 
-from zimscraperlib.rewriting.js import JsRewriter
+from zimscraperlib.rewriting.js_rewriting import JsRewriter
 from zimscraperlib.rewriting.url_rewriting import (
     ArticleUrlRewriter,
     HttpUrl,

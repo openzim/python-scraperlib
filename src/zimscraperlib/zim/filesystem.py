@@ -30,9 +30,9 @@ import tempfile
 from collections.abc import Sequence
 
 from zimscraperlib import logger
+from zimscraperlib.content_types import get_mime_for_name
 from zimscraperlib.filesystem import get_file_mimetype
-from zimscraperlib.html import find_title_in_file
-from zimscraperlib.types import get_mime_for_name
+from zimscraperlib.html_parsing import find_title_in_file
 from zimscraperlib.zim import metadata
 from zimscraperlib.zim.creator import Creator
 from zimscraperlib.zim.items import StaticItem

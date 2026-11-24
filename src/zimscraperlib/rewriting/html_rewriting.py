@@ -25,8 +25,8 @@ from typing import Any, NamedTuple
 
 from bs4 import BeautifulSoup
 
-from zimscraperlib.rewriting.css import CssRewriter
-from zimscraperlib.rewriting.js import JsRewriter
+from zimscraperlib.rewriting.css_rewriting import CssRewriter
+from zimscraperlib.rewriting.js_rewriting import JsRewriter
 from zimscraperlib.rewriting.url_rewriting import ArticleUrlRewriter, ZimPath
 
 AttrNameAndValue = tuple[str, str | None]

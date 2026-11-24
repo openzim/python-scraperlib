@@ -2,7 +2,7 @@ import pathlib
 
 import pytest
 
-from zimscraperlib.html import (
+from zimscraperlib.html_parsing import (
     find_language_in,
     find_language_in_file,
     find_title_in,

@@ -6,7 +6,7 @@ from copy import deepcopy
 
 from zimscraperlib import logger
 from zimscraperlib.filesystem import path_from
-from zimscraperlib.logging import nicer_args_join
+from zimscraperlib.log_setup import nicer_args_join
 
 
 def _build_ffmpeg_args(

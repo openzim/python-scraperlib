@@ -17,9 +17,9 @@ import pytest
 from libzim.writer import Compression  # pyright: ignore[reportMissingModuleSource]
 
 from zimscraperlib.constants import UTF8
+from zimscraperlib.custom_types import Callback
 from zimscraperlib.download import save_large_file, stream_file
 from zimscraperlib.filesystem import delete_callback
-from zimscraperlib.typing import Callback
 from zimscraperlib.zim import Archive, Creator, StaticItem, URLItem
 from zimscraperlib.zim.metadata import (
     DEFAULT_DEV_ZIM_METADATA,

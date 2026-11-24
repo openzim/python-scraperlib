@@ -2,8 +2,8 @@ from collections.abc import Callable, Generator
 
 import pytest
 
-from zimscraperlib.rewriting.css import CssRewriter
-from zimscraperlib.rewriting.js import JsRewriter
+from zimscraperlib.rewriting.css_rewriting import CssRewriter
+from zimscraperlib.rewriting.js_rewriting import JsRewriter
 from zimscraperlib.rewriting.url_rewriting import (
     ArticleUrlRewriter,
     HttpUrl,

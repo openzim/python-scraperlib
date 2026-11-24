@@ -5,7 +5,7 @@ from typing import BinaryIO, TextIO
 
 from bs4 import BeautifulSoup, element
 
-from zimscraperlib.types import ARTICLE_MIME
+from zimscraperlib.content_types import ARTICLE_MIME
 
 
 def find_title_in(content: str | BinaryIO | TextIO, mime_type: str | None) -> str:

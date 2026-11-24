@@ -1,4 +1,4 @@
-import logging as stdlogging
+import logging
 import os
 
 from beartype.claw import beartype_this_package
@@ -6,7 +6,7 @@ from beartype.claw import beartype_this_package
 beartype_this_package()
 
 from zimscraperlib.constants import NAME
-from zimscraperlib.logging import getLogger
+from zimscraperlib.log_setup import getLogger
 
 debug = os.getenv("ZIMSCRAPERLIB_DEBUG")
-logger = getLogger(NAME, level=stdlogging.DEBUG if debug else stdlogging.INFO)
+logger = getLogger(NAME, level=logging.DEBUG if debug else logging.INFO)

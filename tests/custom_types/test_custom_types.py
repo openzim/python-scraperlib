@@ -1,4 +1,4 @@
-from zimscraperlib.typing import Callback
+from zimscraperlib.custom_types import Callback
 
 
 class GlobalCounter:
