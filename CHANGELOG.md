@@ -25,6 +25,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bumped `VideoWebmLow` to v4 and `VideoWebmHigh` to v3 following the `-row-mt` addition (#271)
 - `import zimscraperlib.zim` no longer imports yt-dlp, beautifulsoup4 or lxml, and `import zimscraperlib.inputs` no longer imports yt-dlp: `stream_file`, `get_retry_adapter` and `find_title_in_file` are now imported where they are used (#403)
 
+### Removed
+
+- **BREAKING** Remove deprecated `convert` parameter from `optimize_image` (use `dst_format` instead) (#292)
+
 ### Fixed
 
 - Fix JS rewriting of `this.<prop>` so it reliably detects a leading newline (and prepends the needed `;`) regardless of the amount of whitespace, and no longer wrongly rewrites `this` when preceded by `.`/`$` and several spaces (#381)
