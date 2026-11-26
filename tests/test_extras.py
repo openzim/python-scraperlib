@@ -234,15 +234,14 @@ def test_url_provider_missing_download_extra(monkeypatch: pytest.MonkeyPatch) ->
 
 
 @pytest.mark.installed
-def test_creator_lazy_default_metadata(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_creator_reexports_default_dev_metadata(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     _remove_module(monkeypatch, "zimscraperlib.zim.creator")
+    metadata = importlib.import_module("zimscraperlib.zim.metadata")
     creator = importlib.import_module("zimscraperlib.zim.creator")
 
-    assert creator.DEFAULT_DEV_ZIM_METADATA.Name.value == "Test Name"
-    assert creator.DEFAULT_DEV_ZIM_METADATA is creator.DEFAULT_DEV_ZIM_METADATA
-    unknown = "UNKNOWN_ATTRIBUTE"
-    with pytest.raises(AttributeError):
-        getattr(creator, unknown)
+    assert creator.DEFAULT_DEV_ZIM_METADATA is metadata.DEFAULT_DEV_ZIM_METADATA
 
 
 def test_missing_extra_without_module_name() -> None:

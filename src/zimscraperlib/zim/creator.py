@@ -22,7 +22,6 @@ import re
 import weakref
 from contextlib import suppress
 from types import TracebackType
-from typing import TYPE_CHECKING, Any
 
 from zimscraperlib._extras import missing_extra
 
@@ -38,6 +37,7 @@ from zimscraperlib.typing import Callback
 from zimscraperlib.zim.indexing import IndexData
 from zimscraperlib.zim.items import StaticItem
 from zimscraperlib.zim.metadata import (
+    DEFAULT_DEV_ZIM_METADATA,
     MANDATORY_ZIM_METADATA_KEYS,
     AnyMetadata,
     IllustrationBasedMetadata,
@@ -332,10 +332,6 @@ class Creator(libzim.writer.Creator):
 
         Extra metadata can be passed, and they are not checked for proper key prefix
         """
-        from zimscraperlib.zim.metadata import (  # noqa: PLC0415
-            DEFAULT_DEV_ZIM_METADATA,
-        )
-
         return self.config_metadata(
             std_metadata=DEFAULT_DEV_ZIM_METADATA,
             extra_metadata=(
@@ -544,19 +540,4 @@ class Creator(libzim.writer.Creator):
 
 _live_creators: weakref.WeakSet[Creator] = weakref.WeakSet()
 
-if TYPE_CHECKING:
-    DEFAULT_DEV_ZIM_METADATA: StandardMetadataList
-
-
 atexit.register(Creator._abandon_live_creators)  # pyright: ignore[reportPrivateUsage]
-
-
-def __getattr__(name: str) -> Any:
-    if name == "DEFAULT_DEV_ZIM_METADATA":
-        from zimscraperlib.zim.metadata import (  # noqa: PLC0415
-            DEFAULT_DEV_ZIM_METADATA,
-        )
-
-        globals()[name] = DEFAULT_DEV_ZIM_METADATA
-        return DEFAULT_DEV_ZIM_METADATA
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

@@ -7,13 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
-
-- Optional dependency groups `zim`, `image`, `video`, `download`, `filesystem`, `html`, `rewriting`, `i18n` and `all`; the base install now only requires `beartype` (#244)
-- Missing optional dependencies now raise an `ImportError` naming the extra to install (#244)
-
 ### Changed
 
+- **Breaking:** Runtime dependencies are now optional extras (`zim`, `image`, `video`, `download`, `filesystem`, `html`, `rewriting`, `i18n`, `all`); a base install only provides `beartype`, so install `zimscraperlib[all]` (or the extras you need) to keep the previous behavior (#244)
+- Missing optional dependencies now raise an `ImportError` naming the extra to install (#244)
 - Cross-feature imports are now resolved where they are used, so each extra only needs its own dependencies (#244)
 
 ### Fixed

@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Iterable
 from dataclasses import asdict, dataclass, fields
 from itertools import filterfalse
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import Any, TypeVar
 
 from zimscraperlib._extras import missing_extra
 
@@ -295,8 +295,16 @@ class TextListBasedMetadata(MetadataBase[list[str]]):
     value: list[str]  # we accept single str input but store as list[str]
     require_textlist_cleanup = True
     require_utf8_encoding = True
+    _skip_validation: bool = False
 
-    def __init__(self, value: Iterable[str] | str, name: str | None = None) -> None:
+    def __init__(
+        self,
+        value: Iterable[str] | str,
+        name: str | None = None,
+        *,
+        skip_validation: bool = False,
+    ) -> None:
+        self._skip_validation = skip_validation
         super().__init__(value=value, name=name)
 
     # native type is list[str]
@@ -313,7 +321,11 @@ class TextListBasedMetadata(MetadataBase[list[str]]):
             raise ValueError("Duplicate entries not allowed")
         elif self.require_deduplication:
             value = unique_values(value)
-        if self.oz_only_iso636_3_allowed and APPLY_RECOMMENDATIONS:
+        if (
+            self.oz_only_iso636_3_allowed
+            and APPLY_RECOMMENDATIONS
+            and not self._skip_validation
+        ):
             from zimscraperlib.i18n import is_valid_iso_639_3  # noqa: PLC0415
 
             invalid_codes = list(filterfalse(is_valid_iso_639_3, value))
@@ -353,17 +365,26 @@ class IllustrationBasedMetadata(Metadata):
 
     value: bytes
     meta_mimetype = "image/png"
+    _skip_validation: bool = False
 
     def __init__(
-        self, value: bytes | io.IOBase | io.BytesIO, name: str | None = None
+        self,
+        value: bytes | io.IOBase | io.BytesIO,
+        name: str | None = None,
+        *,
+        skip_validation: bool = False,
     ) -> None:
+        self._skip_validation = skip_validation
         super().__init__(value=value, name=name)
 
     # native type is PNG image buffer
     def get_cleaned_value(self, value: bytes | io.IOBase | io.BytesIO) -> bytes:
+        value = self.get_binary_from(value)
+        if self._skip_validation:
+            return value
+
         from zimscraperlib.image.probing import is_valid_image  # noqa: PLC0415
 
-        value = self.get_binary_from(value)
         if not is_valid_image(
             image=value,
             imformat="PNG",
@@ -535,29 +556,23 @@ class XCustomTextMetadata(CustomTextMetadata):
 
 MANDATORY_ZIM_METADATA_KEYS: list[str] = StandardMetadataList.get_reserved_names()
 
-if TYPE_CHECKING:
-    DEFAULT_DEV_ZIM_METADATA: StandardMetadataList
-
-
-def __getattr__(name: str) -> Any:
-    if name != "DEFAULT_DEV_ZIM_METADATA":
-        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-
-    default_metadata = StandardMetadataList(
-        Name=NameMetadata("Test Name"),
-        Title=TitleMetadata("Test Title"),
-        Creator=CreatorMetadata("Test Creator"),
-        Publisher=PublisherMetadata("Test Publisher"),
-        Date=DateMetadata(dt.date(2023, 1, 1)),
-        Description=DescriptionMetadata("Test Description"),
-        Language=LanguageMetadata("fra"),
-        Illustration_48x48_at_1=DefaultIllustrationMetadata(
-            base64.b64decode(
-                "iVBORw0KGgoAAAANSUhEUgAAADAAAAAwAQMAAABtzGvEAAAAGXRFWHRTb2Z0d2FyZQBB"
-                "ZG9iZSBJbWFnZVJlYWR5ccllPAAAAANQTFRFR3BMgvrS0gAAAAF0Uk5TAEDm2GYAAAAN"
-                "SURBVBjTY2AYBdQEAAFQAAGn4toWAAAAAElFTkSuQmCC"
-            ),
+# Both bundled values are known-valid; skipping their validation keeps the `zim`
+# extra independent from the `image` and `i18n` extras.
+DEFAULT_DEV_ZIM_METADATA = StandardMetadataList(
+    Name=NameMetadata("Test Name"),
+    Title=TitleMetadata("Test Title"),
+    Creator=CreatorMetadata("Test Creator"),
+    Publisher=PublisherMetadata("Test Publisher"),
+    Date=DateMetadata(dt.date(2023, 1, 1)),
+    Description=DescriptionMetadata("Test Description"),
+    Language=LanguageMetadata("fra", skip_validation=True),
+    # blank 48x48 transparent PNG
+    Illustration_48x48_at_1=DefaultIllustrationMetadata(
+        base64.b64decode(
+            "iVBORw0KGgoAAAANSUhEUgAAADAAAAAwAQMAAABtzGvEAAAAGXRFWHRTb2Z0d2FyZQBB"
+            "ZG9iZSBJbWFnZVJlYWR5ccllPAAAAANQTFRFR3BMgvrS0gAAAAF0Uk5TAEDm2GYAAAAN"
+            "SURBVBjTY2AYBdQEAAFQAAGn4toWAAAAAElFTkSuQmCC"
         ),
-    )
-    globals()[name] = default_metadata
-    return default_metadata
+        skip_validation=True,
+    ),
+)

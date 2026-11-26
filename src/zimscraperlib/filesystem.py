@@ -3,11 +3,16 @@
 Shortcuts to retrieve mime type using magic"""
 
 import pathlib
-from contextlib import contextmanager
-from tempfile import TemporaryDirectory
-from typing import Any
 
 from zimscraperlib._extras import missing_extra
+from zimscraperlib._paths import path_from
+
+__all__ = [
+    "delete_callback",
+    "get_content_mimetype",
+    "get_file_mimetype",
+    "path_from",
+]
 
 try:
     import magic
@@ -47,20 +52,3 @@ def get_content_mimetype(content: bytes | str) -> str:
 def delete_callback(fpath: pathlib.Path):
     """helper deleting passed filepath"""
     fpath.unlink(missing_ok=True)
-
-
-@contextmanager
-def path_from(path: pathlib.Path | TemporaryDirectory[Any] | str):
-    """Context manager to get a Path from a path as string, Path or TemporaryDirectory
-
-    Since scraperlib wants to manipulate only Path, scrapers might often needs this
-    to create a path from what they have, especially since TemporaryDirectory context
-    manager returns a string which is not really handy.
-    """
-    if isinstance(path, pathlib.Path):
-        yield path
-    elif isinstance(path, TemporaryDirectory):
-        with path as pathname:
-            yield pathlib.Path(pathname)
-    else:
-        yield pathlib.Path(path)

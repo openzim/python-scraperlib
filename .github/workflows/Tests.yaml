@@ -8,7 +8,7 @@ on:
 
 jobs:
   generate-rules:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
 
     steps:
       - name: Checkout repo
@@ -41,7 +41,7 @@ jobs:
           retention-days: 1
 
   check-extras-errors:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
 
     steps:
       - name: Checkout repo
@@ -51,18 +51,17 @@ jobs:
         uses: actions/setup-python@v7
         with:
           python-version-file: pyproject.toml
-          architecture: x64
 
-      - name: Install minimal dependencies (and project)
+      - name: Install test dependencies (and project)
         run: |
           pip install -U pip
-          pip install -e .[test]
+          pip install -e '.[test,download]'
 
       - name: Check optional dependency errors
         run: pytest -q tests/test_extras.py
 
   check-extras:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     needs: generate-rules
     strategy:
       fail-fast: false
@@ -100,7 +99,6 @@ jobs:
         uses: actions/setup-python@v7
         with:
           python-version-file: pyproject.toml
-          architecture: x64
 
       - name: Install dependencies (and project)
         run: |
@@ -115,7 +113,7 @@ jobs:
         run: python -c "import importlib; importlib.import_module('${{ matrix.module }}')"
 
   run-python-tests:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     needs: generate-rules
 
     steps:
@@ -156,7 +154,7 @@ jobs:
           python3 -m build --sdist --wheel
 
   run-js-tests:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     needs: generate-rules
 
     steps:
@@ -197,7 +195,7 @@ jobs:
         working-directory: javascript
 
   build-docs: # validate that doc can be built
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     needs: generate-rules
 
     steps:

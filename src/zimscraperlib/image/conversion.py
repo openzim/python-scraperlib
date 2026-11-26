@@ -2,12 +2,12 @@ import io
 import pathlib
 from typing import Any
 
-from zimscraperlib._extras import missing_extra
-
 try:
     import cairosvg  # pyright: ignore[reportMissingTypeStubs]
     from PIL.Image import open as pilopen
 except ModuleNotFoundError as exc:
+    from zimscraperlib._extras import missing_extra
+
     raise missing_extra("image", exc) from exc
 
 from zimscraperlib.constants import ALPHA_NOT_SUPPORTED

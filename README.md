@@ -48,7 +48,7 @@ Importing a module whose extra is missing raises an `ImportError` naming the ext
 | `zim` | `zimscraperlib.zim` | none (`libzim` ships wheels, except on unsupported platforms) |
 | `image` | `zimscraperlib.image` | libcairo for SVG conversion, gifsicle (>=1.92) for GIF optimization |
 | `video` | `zimscraperlib.video` | FFmpeg |
-| `download` | `zimscraperlib.download` | none; wget is only needed if your scraper calls it itself |
+| `download` | `zimscraperlib.download` | none; downloads use `requests`, not `wget` |
 | `filesystem` | `zimscraperlib.filesystem` and MIME-type detection | libmagic |
 | `html` | `zimscraperlib.html` | none |
 | `rewriting` | `zimscraperlib.rewriting` | none |
