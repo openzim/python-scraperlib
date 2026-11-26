@@ -162,12 +162,13 @@ def test_get_media_info(
         assert result.keys() == expected.keys()
         assert result["codecs"] == expected["codecs"]
         assert result["duration"] == expected["duration"]
-        # for bitrate, we need to allow some variability, not all ffmpeg version are
-        # reporting the same values (e.g. Alpine Linux is reporting 3837275 instead of
-        # 3818365 for video.mp4) ; we allow 1% variability with following assertion
+        # for bitrate, we need to allow some variability, not all ffmpeg versions
+        # report the same values (e.g. Alpine Linux reports 3837275 instead of
+        # 3818365 for video.mp4, and Ubuntu 26.04 reports 131533 instead of
+        # 129066 for audio.mp3); we allow 5% variability with the following assertion
         assert (
             abs(100.0 * (result["bitrate"] - expected["bitrate"]) / expected["bitrate"])
-            < 1
+            < 5
         )
 
 
