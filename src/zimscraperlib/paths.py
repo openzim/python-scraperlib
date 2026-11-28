@@ -1,4 +1,4 @@
-"""Dependency-free helpers shared by features with different extras."""
+"""Helpers for building `pathlib.Path` objects from common scraper inputs."""
 
 import pathlib
 from contextlib import contextmanager

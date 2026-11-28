@@ -5,13 +5,11 @@ Shortcuts to retrieve mime type using magic"""
 import pathlib
 
 from zimscraperlib._extras import missing_extra
-from zimscraperlib._paths import path_from
 
 __all__ = [
     "delete_callback",
     "get_content_mimetype",
     "get_file_mimetype",
-    "path_from",
 ]
 
 try:
