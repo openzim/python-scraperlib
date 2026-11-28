@@ -10,8 +10,12 @@ import io
 import pathlib
 from collections.abc import Generator
 
-import libzim.writer  # pyright: ignore[reportMissingModuleSource]
-import requests
+from zimscraperlib._extras import missing_extra
+
+try:
+    import libzim.writer  # pyright: ignore[reportMissingModuleSource]
+except ModuleNotFoundError as exc:
+    raise missing_extra("zim", exc) from exc
 
 
 class FileProvider(libzim.writer.FileProvider):
@@ -66,6 +70,11 @@ class URLProvider(libzim.writer.ContentProvider):
 
     def __init__(self, url: str, size: int | None = None, ref: object | None = None):
         from zimscraperlib.download import get_retry_adapter  # noqa: PLC0415
+
+        try:
+            import requests  # noqa: PLC0415
+        except ModuleNotFoundError as exc:
+            raise missing_extra("download", exc) from exc
 
         super().__init__()
         self.url = url

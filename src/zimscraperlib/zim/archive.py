@@ -9,9 +9,14 @@ Convenient subclass of libzim.reader.Archive with:
 from collections.abc import Iterable
 from types import TracebackType
 
-import libzim.reader  # pyright: ignore[reportMissingModuleSource]
-import libzim.search  # pyright: ignore[reportMissingModuleSource]
-import libzim.suggestion  # pyright: ignore[reportMissingModuleSource]
+from zimscraperlib._extras import missing_extra
+
+try:
+    import libzim.reader  # pyright: ignore[reportMissingModuleSource]
+    import libzim.search  # pyright: ignore[reportMissingModuleSource]
+    import libzim.suggestion  # pyright: ignore[reportMissingModuleSource]
+except ModuleNotFoundError as exc:
+    raise missing_extra("zim", exc) from exc
 
 from zimscraperlib.zim._libkiwix import CounterMap, convertTags, parseMimetypeCounter
 

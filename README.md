@@ -34,33 +34,49 @@ See documentation at [Read the Docs](https://python-scraperlib.readthedocs.io/) 
 
 # Dependencies
 
-Most dependencies are installed automatically by pip (from PyPI by default). The following system packages may be required depending on which features you use:
+The base install only pulls in `beartype`. Install the extras for the features you use:
 
-- **libmagic** — required for file type detection (used in most scrapers)
-- **wget** — required only for `zimscraperlib.download` functions
-- **FFmpeg** — required only for video processing functions
-- **gifsicle** (>=1.92) — required only for GIF optimization
-- **libcairo** — required only for SVG-to-PNG conversion
-- **libzim** — auto-installed via PyPI, not available on Windows
-- **Pillow** — auto-installed via PyPI; pre-built wheels are used by default and no system image libraries are needed. Only if you need to build Pillow from source should you install additional system libraries — see [Pillow's build documentation](https://pillow.readthedocs.io/en/latest/installation/building-from-source.html) for details.
-  > **Note:** To run the full test suite, all system dependencies listed above must be installed.
+```sh
+python -m pip install 'zimscraperlib[zim,image]'
+python -m pip install 'zimscraperlib[all]'
+```
+
+Importing a module whose extra is missing raises an `ImportError` naming the extra to install.
+
+| Extra | Python dependencies for | System dependencies |
+| --- | --- | --- |
+| `zim` | `zimscraperlib.zim` | none (`libzim` ships wheels, except on unsupported platforms) |
+| `image` | `zimscraperlib.image` | libcairo for SVG conversion, gifsicle (>=1.92) for GIF optimization |
+| `video` | `zimscraperlib.video` | FFmpeg |
+| `download` | `zimscraperlib.download` | none; downloads use `requests`, not `wget` |
+| `filesystem` | `zimscraperlib.filesystem` and MIME-type detection | libmagic |
+| `html` | `zimscraperlib.html` | none |
+| `rewriting` | `zimscraperlib.rewriting` | none |
+| `i18n` | `zimscraperlib.i18n` | none |
+| `all` | every runtime extra | every system dependency above |
+
+Pillow uses pre-built wheels by default; no system image libraries are needed unless you build it from source (see [Pillow's build documentation](https://pillow.readthedocs.io/en/latest/installation/building-from-source.html)).
+
+> **Note:** To run the full test suite, install `all` and all system dependencies listed above.
+
+To install every system dependency listed above:
 
 ## macOS
 
 ```sh
-brew install libmagic wget ffmpeg gifsicle cairo
+brew install libmagic ffmpeg gifsicle cairo
 ```
 
 ## Linux
 
 ```sh
-sudo apt install libmagic1 wget ffmpeg gifsicle libcairo2
+sudo apt install libmagic1 ffmpeg gifsicle libcairo2
 ```
 
 ## Alpine
 
 ```sh
-apk add ffmpeg gifsicle libmagic wget cairo
+apk add ffmpeg gifsicle libmagic cairo
 ```
 
 # Contribution

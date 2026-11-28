@@ -97,7 +97,12 @@ from urllib.parse import (
     uses_relative,
 )
 
-import idna
+from zimscraperlib._extras import missing_extra
+
+try:
+    import idna
+except ModuleNotFoundError as exc:
+    raise missing_extra("rewriting", exc) from exc
 
 from zimscraperlib import logger
 from zimscraperlib.rewriting.rules import DEFUZZY_RULES, FUZZY_RULES

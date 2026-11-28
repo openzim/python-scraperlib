@@ -16,16 +16,21 @@ from collections.abc import Iterable, Sequence
 from functools import partial
 from typing import Any
 
-from tinycss2 import (  # pyright: ignore[reportMissingTypeStubs]
-    ast,
-    parse_declaration_list,  # pyright: ignore[reportUnknownVariableType]
-    parse_stylesheet,  # pyright: ignore[reportUnknownVariableType]
-    parse_stylesheet_bytes,  # pyright: ignore[reportUnknownVariableType]
-    serialize,  # pyright: ignore[reportUnknownVariableType]
-)
-from tinycss2.serializer import (  # pyright: ignore[reportMissingTypeStubs]
-    serialize_url,  # pyright: ignore[reportUnknownVariableType]
-)
+from zimscraperlib._extras import missing_extra
+
+try:
+    from tinycss2 import (  # pyright: ignore[reportMissingTypeStubs]
+        ast,
+        parse_declaration_list,  # pyright: ignore[reportUnknownVariableType]
+        parse_stylesheet,  # pyright: ignore[reportUnknownVariableType]
+        parse_stylesheet_bytes,  # pyright: ignore[reportUnknownVariableType]
+        serialize,  # pyright: ignore[reportUnknownVariableType]
+    )
+    from tinycss2.serializer import (  # pyright: ignore[reportMissingTypeStubs]
+        serialize_url,  # pyright: ignore[reportUnknownVariableType]
+    )
+except ModuleNotFoundError as exc:
+    raise missing_extra("rewriting", exc) from exc
 
 from zimscraperlib import logger
 from zimscraperlib.rewriting.rx_replacer import RxRewriter, TransformationRule

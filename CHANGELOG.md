@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Breaking Changes
+
+- Runtime dependencies are now optional extras (`zim`, `image`, `video`, `download`, `filesystem`, `html`, `rewriting`, `i18n`, `all`); a base install only provides `beartype`, so install `zimscraperlib[all]` (or the extras you need) to keep the previous behavior (#244)
+- `path_from` moved from `zimscraperlib.filesystem` to the new public `zimscraperlib.paths` module (#244)
+- Missing optional dependencies now raise an `ImportError` naming the extra to install (#244)
+- Cross-feature imports are now resolved where they are used, so each extra only needs its own dependencies (#244)
+
+### Fixed
+
+- The `rewriting` extra now declares `tinycss2` explicitly instead of relying on it being pulled in through `CairoSVG` (#244)
+
 ## [5.6.0] - 2026-11-20
 
 ### Added

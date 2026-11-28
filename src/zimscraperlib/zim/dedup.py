@@ -2,8 +2,13 @@ import pathlib
 import re
 from typing import Any
 
-import xxhash
-from libzim.writer import Hint  # pyright: ignore[reportMissingModuleSource]
+from zimscraperlib._extras import missing_extra
+
+try:
+    import xxhash
+    from libzim.writer import Hint  # pyright: ignore[reportMissingModuleSource]
+except ModuleNotFoundError as exc:
+    raise missing_extra("zim", exc) from exc
 
 from zimscraperlib.zim.creator import Creator
 

@@ -3,8 +3,13 @@
 import io
 import pathlib
 
-import libzim.writer  # pyright: ignore[reportMissingModuleSource]
-import pymupdf  # pyright: ignore[reportMissingTypeStubs]
+from zimscraperlib._extras import missing_extra
+
+try:
+    import libzim.writer  # pyright: ignore[reportMissingModuleSource]
+    import pymupdf  # pyright: ignore[reportMissingTypeStubs]
+except ModuleNotFoundError as exc:
+    raise missing_extra("zim", exc) from exc
 
 from zimscraperlib import logger
 

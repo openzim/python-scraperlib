@@ -6,11 +6,16 @@ from concurrent.futures import Future, ThreadPoolExecutor
 from typing import Any, ClassVar
 from urllib.parse import urlparse
 
-import requests
-import requests.adapters
-import requests.structures
-import urllib3.util
-import yt_dlp as youtube_dl  # pyright: ignore[reportMissingTypeStubs]
+from zimscraperlib._extras import missing_extra
+
+try:
+    import requests
+    import requests.adapters
+    import requests.structures
+    import urllib3.util
+    import yt_dlp as youtube_dl  # pyright: ignore[reportMissingTypeStubs]
+except ModuleNotFoundError as exc:
+    raise missing_extra("download", exc) from exc
 
 from zimscraperlib import logger
 from zimscraperlib.constants import (

@@ -28,8 +28,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-import tree_sitter_javascript
-from tree_sitter import Language, Node, Parser
+from zimscraperlib._extras import missing_extra
+
+try:
+    import tree_sitter_javascript
+    from tree_sitter import Language, Node, Parser
+except ModuleNotFoundError as exc:
+    raise missing_extra("rewriting", exc) from exc
 
 __all__ = ["Declaration", "TopLevel", "node_text", "parse_top_level"]
 

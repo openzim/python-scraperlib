@@ -8,7 +8,7 @@ on:
 
 jobs:
   generate-rules:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
 
     steps:
       - name: Checkout repo
@@ -41,7 +41,7 @@ jobs:
           retention-days: 1
 
   check-python-qa:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     needs: generate-rules
 
     steps:
@@ -62,7 +62,7 @@ jobs:
       - name: Install dependencies (and project)
         run: |
           pip install -U pip
-          pip install -e .[qa,scripts,test]
+          pip install -e .[all,qa,scripts,test]
 
       - name: Check Linting
         run: inv check-lint
@@ -74,7 +74,7 @@ jobs:
         run: inv check-type
 
   check-javascript-qa:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     needs: generate-rules
 
     steps:

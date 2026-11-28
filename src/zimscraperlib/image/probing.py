@@ -3,12 +3,16 @@ import io
 import pathlib
 import re
 
-import colorthief  # pyright: ignore[reportMissingTypeStubs]
-import PIL.Image
-from PIL.Image import EXTENSION as PIL_FMT_EXTENSION
-from PIL.Image import init as init_pil
+from zimscraperlib._extras import missing_extra
 
-from zimscraperlib.filesystem import get_content_mimetype, get_file_mimetype
+try:
+    import colorthief  # pyright: ignore[reportMissingTypeStubs]
+    import PIL.Image
+    from PIL.Image import EXTENSION as PIL_FMT_EXTENSION
+    from PIL.Image import init as init_pil
+except ModuleNotFoundError as exc:
+    raise missing_extra("image", exc) from exc
+
 
 init_pil()  # populate the PIL_FMT_EXTENSION dictionary
 
@@ -75,6 +79,11 @@ def format_for(
             with PIL.Image.open(src) as img:
                 return img.format
         except PIL.UnidentifiedImageError:
+            from zimscraperlib.filesystem import (  # noqa: PLC0415
+                get_content_mimetype,
+                get_file_mimetype,
+            )
+
             # Fallback based on mimetype for SVG which are not supported by PIL
             if (
                 isinstance(src, pathlib.Path)
